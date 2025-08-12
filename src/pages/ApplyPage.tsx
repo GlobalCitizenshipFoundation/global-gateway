@@ -190,11 +190,13 @@ const ApplyPage = () => {
         let newValue: DynamicFormValues[typeof field.id]; // Declare with the exact target type
 
         if (field.field_type === 'checkbox') {
-          newValue = [] as any; // Cast to any to satisfy initial assignment, will be string[]
+          newValue = [] as DynamicFormValues[typeof field.id];
         } else if (field.field_type === 'number') {
-          newValue = undefined as any; // Cast to any, will be number | undefined
+          // If a required number field is hidden, set it to 0 (a valid number)
+          // If an optional number field is hidden, set it to undefined
+          newValue = (field.is_required ? 0 : undefined) as DynamicFormValues[typeof field.id];
         } else {
-          newValue = '' as any; // Cast to any, will be string | undefined
+          newValue = '' as DynamicFormValues[typeof field.id];
         }
 
         // Only update if the value is actually changing to avoid unnecessary re-renders/validations

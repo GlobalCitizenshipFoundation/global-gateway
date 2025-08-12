@@ -23,7 +23,7 @@ const ProgramCard = ({ program }: ProgramCardProps) => {
       </CardContent>
       <CardFooter>
         <Button asChild className="w-full">
-          <Link to={`/apply/${program.id}`}>Apply Now</Link>
+          <Link to={`/programs/${program.id}`}>View Details</Link> {/* Updated link */}
         </Button>
       </CardFooter>
     </Card>

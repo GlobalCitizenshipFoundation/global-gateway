@@ -20,6 +20,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import ManageWorkflowPage from "./pages/ManageWorkflowPage";
 import PipelineViewPage from "./pages/PipelineViewPage";
 import FormBuilderPage from "./pages/FormBuilderPage";
+import ProgramDetailsPage from "./pages/ProgramDetailsPage"; // New import
 
 const queryClient = new QueryClient();
 
@@ -34,6 +35,7 @@ const App = () => (
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/login" element={<LoginPage />} />
+              <Route path="/programs/:programId" element={<ProgramDetailsPage />} /> {/* New route */}
               
               {/* Protected Routes */}
               <Route element={<ProtectedRoute />}>
