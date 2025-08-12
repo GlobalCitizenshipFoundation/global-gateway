@@ -12,7 +12,7 @@ import {
   PaginationPrevious,
   PaginationEllipsis,
 } from "@/components/ui/pagination";
-import { Label } from "@/components/ui/label"; // Import Label
+import { Label } from "@/components/ui/label";
 
 import { useFormsData } from "@/hooks/useFormsData";
 import { useFormManagementActions } from "@/hooks/useFormManagementActions";
@@ -174,15 +174,18 @@ const FormManagementPage = () => {
           </div>
         </div>
 
-        {/* Filters and Sorting */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          <Input
-            placeholder="Search forms..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="col-span-full lg:col-span-1"
-          />
-          <div className="grid gap-2">
+        {/* Filters and Sorting - Optimized Layout */}
+        <div className="flex flex-wrap items-end gap-4 mb-8">
+          <div className="grid gap-2 flex-grow min-w-[200px] max-w-sm">
+            <Label htmlFor="search-forms">Search Forms</Label>
+            <Input
+              id="search-forms"
+              placeholder="Search by name or description..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          <div className="grid gap-2 min-w-[150px]">
             <Label htmlFor="status-filter">Filter by Status</Label>
             <Select value={statusFilter} onValueChange={(value: "all" | "draft" | "published") => setStatusFilter(value)}>
               <SelectTrigger id="status-filter">
@@ -195,7 +198,7 @@ const FormManagementPage = () => {
               </SelectContent>
             </Select>
           </div>
-          <div className="grid gap-2">
+          <div className="grid gap-2 min-w-[150px]">
             <Label htmlFor="type-filter">Filter by Type</Label>
             <Select value={typeFilter} onValueChange={(value: "all" | "template" | "program_form") => setTypeFilter(value)}>
               <SelectTrigger id="type-filter">
@@ -208,7 +211,7 @@ const FormManagementPage = () => {
               </SelectContent>
             </Select>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 min-w-[200px]">
             <div className="grid gap-2 flex-grow">
               <Label htmlFor="sort-by">Sort by</Label>
               <Select value={sortBy} onValueChange={(value: "name" | "updated_at" | "created_at") => setSortBy(value)}>
