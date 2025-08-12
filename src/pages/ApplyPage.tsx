@@ -10,7 +10,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Program } from "@/types";
+import { Program, FormField } from "@/types";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/contexts/SessionContext";
@@ -23,50 +23,69 @@ const ApplyPage = () => {
   const navigate = useNavigate();
 
   const [program, setProgram] = useState<Program | null>(null);
+  const [formFields, setFormFields] = useState<FormField[]>([]);
+  const [responses, setResponses] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-
-  const [fullName, setFullName] = useState('');
-  const [email, setEmail] = useState('');
-  const [personalStatement, setPersonalStatement] = useState('');
+  const [profileFullName, setProfileFullName] = useState('');
+  const [profileEmail, setProfileEmail] = useState('');
 
   useEffect(() => {
-    const fetchProgram = async () => {
-      if (!programId) return;
+    const fetchData = async () => {
+      if (!programId || !user) return;
       setLoading(true);
-      const { data, error } = await supabase
+
+      // Fetch user profile
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('full_name')
+        .eq('id', user.id)
+        .single();
+      setProfileFullName(profileData?.full_name || '');
+      setProfileEmail(user.email || '');
+
+      // Fetch program details
+      const { data: programData, error: programError } = await supabase
         .from('programs')
         .select('*')
         .eq('id', programId)
         .single();
 
-      if (error) {
-        console.error("Error fetching program:", error);
+      if (programError) {
+        showError("Error fetching program details.");
         setProgram(null);
       } else {
-        setProgram({ ...data, deadline: new Date(data.deadline) } as Program);
+        setProgram({ ...programData, deadline: new Date(programData.deadline) } as Program);
       }
+
+      // Fetch form fields
+      const { data: fieldsData, error: fieldsError } = await supabase
+        .from('form_fields')
+        .select('*')
+        .eq('program_id', programId)
+        .order('order', { ascending: true });
+
+      if (fieldsError) {
+        showError("Could not load application form.");
+      } else {
+        setFormFields(fieldsData as FormField[]);
+        // Initialize responses state
+        const initialResponses: Record<string, string> = {};
+        fieldsData.forEach(field => {
+          initialResponses[field.id] = '';
+        });
+        setResponses(initialResponses);
+      }
+
       setLoading(false);
     };
 
-    const fetchUserProfile = async () => {
-      if (user) {
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('full_name')
-          .eq('id', user.id)
-          .single();
-        
-        if (data) {
-          setFullName(data.full_name || '');
-        }
-        setEmail(user.email || '');
-      }
-    };
-
-    fetchProgram();
-    fetchUserProfile();
+    fetchData();
   }, [programId, user]);
+
+  const handleResponseChange = (fieldId: string, value: string) => {
+    setResponses(prev => ({ ...prev, [fieldId]: value }));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -74,7 +93,6 @@ const ApplyPage = () => {
 
     setSubmitting(true);
 
-    // Get the first stage of the program's workflow
     const { data: firstStage, error: stageError } = await supabase
       .from('program_stages')
       .select('id')
@@ -89,17 +107,34 @@ const ApplyPage = () => {
       return;
     }
 
-    const { error } = await supabase.from('applications').insert({
+    // 1. Create the main application record
+    const { data: appData, error: appError } = await supabase.from('applications').insert({
       program_id: program.id,
       user_id: user.id,
-      full_name: fullName,
-      email: email,
-      personal_statement: personalStatement,
+      full_name: profileFullName,
+      email: profileEmail,
       stage_id: firstStage.id,
-    });
+    }).select('id').single();
 
-    if (error) {
-      showError(`Submission failed: ${error.message}`);
+    if (appError || !appData) {
+      showError(`Submission failed: ${appError.message}`);
+      setSubmitting(false);
+      return;
+    }
+
+    // 2. Prepare and insert all form responses
+    const responseRecords = Object.entries(responses).map(([field_id, value]) => ({
+      application_id: appData.id,
+      field_id,
+      value,
+    }));
+
+    const { error: responsesError } = await supabase.from('application_responses').insert(responseRecords);
+
+    if (responsesError) {
+      showError(`Failed to save form responses: ${responsesError.message}`);
+      // Attempt to clean up the created application record
+      await supabase.from('applications').delete().eq('id', appData.id);
     } else {
       showSuccess("Application submitted successfully!");
       navigate('/dashboard');
@@ -115,24 +150,10 @@ const ApplyPage = () => {
             <Skeleton className="h-8 w-3/4 mb-2" />
             <Skeleton className="h-4 w-1/2" />
           </CardHeader>
-          <CardContent>
-            <div className="grid gap-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="grid gap-2">
-                  <Skeleton className="h-4 w-20" />
-                  <Skeleton className="h-10 w-full" />
-                </div>
-                <div className="grid gap-2">
-                  <Skeleton className="h-4 w-20" />
-                  <Skeleton className="h-10 w-full" />
-                </div>
-              </div>
-              <div className="grid gap-2">
-                <Skeleton className="h-4 w-32" />
-                <Skeleton className="h-36 w-full" />
-              </div>
-              <Skeleton className="h-10 w-full" />
-            </div>
+          <CardContent className="grid gap-6">
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-24 w-full" />
+            <Skeleton className="h-10 w-full" />
           </CardContent>
         </Card>
       </div>
@@ -143,9 +164,6 @@ const ApplyPage = () => {
     return (
       <div className="container text-center py-12">
         <h1 className="text-2xl font-bold">Program not found</h1>
-        <p className="text-muted-foreground">
-          The program you are trying to apply for does not exist.
-        </p>
       </div>
     );
   }
@@ -156,38 +174,29 @@ const ApplyPage = () => {
         <CardHeader>
           <CardTitle className="text-2xl">Apply for: {program.title}</CardTitle>
           <CardDescription>
-            Please fill out the form below to submit your application. Your name and email are pre-filled from your profile.
+            Your name and email are automatically included. Please fill out the custom fields below.
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit}>
-            <div className="grid gap-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="full-name">Full Name</Label>
-                  <Input id="full-name" value={fullName} onChange={e => setFullName(e.target.value)} placeholder="John Doe" required disabled={submitting} />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input id="email" type="email" value={email} disabled placeholder="m@example.com" />
-                </div>
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="statement">Personal Statement</Label>
-                <Textarea
-                  id="statement"
-                  placeholder="Tell us about yourself and why you're a good fit for this opportunity..."
-                  className="min-h-[150px]"
-                  required
-                  value={personalStatement}
-                  onChange={e => setPersonalStatement(e.target.value)}
+          <form onSubmit={handleSubmit} className="grid gap-6">
+            {formFields.map(field => (
+              <div key={field.id} className="grid gap-2">
+                <Label htmlFor={field.id}>{field.label}</Label>
+                <Input
+                  id={field.id}
+                  value={responses[field.id] || ''}
+                  onChange={e => handleResponseChange(field.id, e.target.value)}
+                  required={field.is_required}
                   disabled={submitting}
                 />
               </div>
-              <Button type="submit" className="w-full" disabled={submitting}>
-                {submitting ? 'Submitting...' : 'Submit Application'}
-              </Button>
-            </div>
+            ))}
+            <Button type="submit" className="w-full" disabled={submitting || formFields.length === 0}>
+              {submitting ? 'Submitting...' : 'Submit Application'}
+            </Button>
+            {formFields.length === 0 && (
+              <p className="text-sm text-center text-muted-foreground">This program does not have any application fields yet.</p>
+            )}
           </form>
         </CardContent>
       </Card>

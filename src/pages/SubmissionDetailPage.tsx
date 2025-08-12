@@ -28,7 +28,6 @@ type SubmissionDetail = {
   submitted_date: string;
   full_name: string;
   email: string;
-  personal_statement: string;
   stage_id: string;
   programs: {
     title: string;
@@ -38,9 +37,17 @@ type SubmissionDetail = {
   } | null;
 };
 
+type Response = {
+  value: string | null;
+  form_fields: {
+    label: string;
+  } | null;
+}
+
 const SubmissionDetailPage = () => {
   const { programId, submissionId } = useParams<{ programId: string, submissionId: string }>();
   const [submission, setSubmission] = useState<SubmissionDetail | null>(null);
+  const [responses, setResponses] = useState<Response[]>([]);
   const [programStages, setProgramStages] = useState<ProgramStage[]>([]);
   const [selectedStage, setSelectedStage] = useState<string>('');
   const [loading, setLoading] = useState(true);
@@ -67,6 +74,22 @@ const SubmissionDetailPage = () => {
       }
       setSubmission(submissionData as SubmissionDetail);
       setSelectedStage(submissionData.stage_id);
+
+      // Fetch responses
+      const { data: responsesData, error: responsesError } = await supabase
+        .from('application_responses')
+        .select(`value, form_fields ( label )`)
+        .eq('application_id', submissionId);
+      
+      if (responsesError) {
+        showError("Could not load application responses.");
+      } else if (responsesData) {
+        const formattedData = responsesData.map(res => ({
+          ...res,
+          form_fields: Array.isArray(res.form_fields) ? res.form_fields[0] : res.form_fields
+        }));
+        setResponses(formattedData as Response[]);
+      }
 
       // Fetch all possible stages for the program
       const { data: stagesData, error: stagesError } = await supabase
@@ -120,7 +143,9 @@ const SubmissionDetailPage = () => {
               <Skeleton className="h-7 w-24" />
             </div>
           </CardHeader>
-          <CardContent className="space-y-6" />
+          <CardContent className="space-y-6">
+            <Skeleton className="h-24 w-full" />
+          </CardContent>
           <CardFooter className="flex justify-end gap-2">
             <Skeleton className="h-10 w-48" />
             <Skeleton className="h-10 w-28" />
@@ -158,16 +183,14 @@ const SubmissionDetailPage = () => {
         <CardContent>
           <div className="space-y-6">
             <div>
-              <h3 className="font-semibold text-lg mb-2">Personal Statement</h3>
-              <p className="text-muted-foreground whitespace-pre-wrap">{submission.personal_statement}</p>
-            </div>
-            <div>
-              <h3 className="font-semibold text-lg mb-2">Application Details</h3>
-              <dl className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2 text-sm">
-                <dt className="text-muted-foreground">Program:</dt>
-                <dd>{submission.programs?.title || 'Unknown Program'}</dd>
-                <dt className="text-muted-foreground">Submitted On:</dt>
-                <dd>{new Date(submission.submitted_date).toLocaleDateString()}</dd>
+              <h3 className="font-semibold text-lg mb-4">Application Responses</h3>
+              <dl className="space-y-4">
+                {responses.map((res, index) => (
+                  <div key={index}>
+                    <dt className="font-medium text-sm">{res.form_fields?.label || 'Untitled Question'}</dt>
+                    <dd className="text-muted-foreground whitespace-pre-wrap mt-1">{res.value || 'No answer provided'}</dd>
+                  </div>
+                ))}
               </dl>
             </div>
           </div>
