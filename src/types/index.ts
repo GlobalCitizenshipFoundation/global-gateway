@@ -1,7 +1,7 @@
-export interface Program {
+export type Program = {
   id: string;
   title: string;
   description: string;
   deadline: Date;
-  status: 'Open' | 'Reviewing' | 'Closed';
-}
+  status: 'Open' | 'Closed' | 'Reviewing';
+};
