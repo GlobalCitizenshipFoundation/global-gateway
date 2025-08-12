@@ -268,8 +268,8 @@ const PipelineViewPage = () => {
         return response.value; // Fallback for invalid date string
       }
     }
-    // Handle 'file' type as a URL link
-    if (response.form_fields?.field_type === 'text' && (response.form_fields.label.toLowerCase().includes('url') || response.form_fields.label.toLowerCase().includes('link'))) {
+    // For any text field, try to render as a URL if it's valid
+    if (response.form_fields?.field_type === 'text') {
       try {
         new URL(response.value); // Validate if it's a valid URL
         return (
