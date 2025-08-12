@@ -12,7 +12,6 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { CalendarIcon } from "lucide-react";
@@ -22,6 +21,7 @@ import RichTextEditor from "@/components/RichTextEditor";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import React from "react";
+import CheckboxGroup from "./CheckboxGroup"; // New import
 
 interface FormFieldRendererProps {
   field: FormField;
@@ -94,25 +94,12 @@ const FormFieldRenderer = ({ field, submitting }: FormFieldRendererProps) => {
             </FormControl>
           ) : field.field_type === 'checkbox' ? (
             <FormControl>
-              <div className="space-y-2">
-                {(field.options as string[] || []).map((option, index) => (
-                  <div key={index} className="flex items-center space-x-2">
-                    <Checkbox
-                      id={`${field.id}-${index}`}
-                      checked={Array.isArray(formHookField.value) && formHookField.value.includes(option)}
-                      onCheckedChange={(checked) => {
-                        const currentValues = Array.isArray(formHookField.value) ? formHookField.value : [];
-                        const newValues = checked
-                          ? [...currentValues, option]
-                          : currentValues.filter(v => v !== option);
-                        formHookField.onChange(newValues);
-                      }}
-                      disabled={submitting}
-                    />
-                    <Label htmlFor={`${field.id}-${index}`}>{option}</Label>
-                  </div>
-                ))}
-              </div>
+              <CheckboxGroup
+                options={field.options as string[] || []}
+                value={Array.isArray(formHookField.value) ? formHookField.value : []}
+                onValueChange={formHookField.onChange}
+                disabled={submitting}
+              />
             </FormControl>
           ) : field.field_type === 'email' ? (
             <FormControl>
