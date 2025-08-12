@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { FormField, DisplayRule, FormSection } from "@/types";
 import { ArrowLeft } from "lucide-react";
 import { useState, useEffect } from "react";
-import { Link, useParams, useSearchParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom"; // Removed useSearchParams
 import { DndContext, DragOverlay, closestCenter, DragEndEvent, DragStartEvent } from '@dnd-kit/core';
 import { FormFieldItem } from "@/components/FormFieldItem";
 import ConditionalLogicBuilder from "@/components/ConditionalLogicBuilder";
@@ -29,7 +29,7 @@ import RichTextEditor from "@/components/RichTextEditor"; // Import RichTextEdit
 
 const FormBuilderPage = () => {
   const { formId } = useParams<{ formId: string }>();
-  const [searchParams, setSearchParams] = useSearchParams();
+  // Removed useSearchParams and setSearchParams
   const [formName, setFormName] = useState('');
   const [formDescription, setFormDescription] = useState(''); // New state for form description
   const [formStatus, setFormStatus] = useState<'draft' | 'published'>('draft');
@@ -64,13 +64,7 @@ const FormBuilderPage = () => {
     setFormStatus(fetchedFormStatus);
   }, [fetchedFormName, fetchedFormDescription, fetchedFormStatus]);
 
-  useEffect(() => {
-    if (searchParams.get('saveAsTemplate') === 'true' && formName) {
-      setNewTemplateName(`${formName} Template`);
-      setIsSaveAsTemplateDialogOpen(true);
-      setSearchParams({}, { replace: true });
-    }
-  }, [searchParams, formName, setSearchParams]);
+  // Removed useEffect that listened to searchParams
 
   const {
     sensors: fieldSensors,
@@ -283,11 +277,12 @@ const FormBuilderPage = () => {
         tooltip: field.tooltip,
       }));
 
+      // 3. Insert new sections and fields
       const { error: insertSectionsError } = await supabase.from('form_sections').insert(newSectionsToInsert);
       const { error: insertFieldsError } = await supabase.from('form_fields').insert(newFieldsToInsert);
 
       if (insertSectionsError || insertFieldsError) {
-        showError(`Failed to copy form content to template: ${insertSectionsError?.message || insertFieldsError?.message}`);
+        showError(`Failed to copy template content: ${insertSectionsError?.message || insertFieldsError?.message}`);
         await supabase.from('forms').delete().eq('id', newTemplateFormData.id);
         return;
       }
@@ -329,7 +324,10 @@ const FormBuilderPage = () => {
                   {isUpdatingStatus ? 'Unpublishing...' : 'Unpublish Form'}
                 </Button>
               )}
-              <Button variant="outline" onClick={() => setIsSaveAsTemplateDialogOpen(true)} disabled={isSavingTemplate}>
+              <Button variant="outline" onClick={() => {
+                setNewTemplateName(`${formName} Template`); // Pre-fill with current form name
+                setIsSaveAsTemplateDialogOpen(true);
+              }} disabled={isSavingTemplate}>
                 Save as Template
               </Button>
             </div>

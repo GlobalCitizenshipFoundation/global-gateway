@@ -313,9 +313,9 @@ const FormManagementPage = () => {
                           <DropdownMenuSeparator />
                           {!form.is_template && ( // Only show "Save as Template" for non-template forms
                             <DropdownMenuItem onClick={() => {
-                              setSelectedForm(form);
-                              // This will be handled by FormBuilderPage's save as template logic
-                              window.location.href = `/creator/forms/${form.id}/edit?saveAsTemplate=true`;
+                              setSelectedTemplateId(form.id); // Pre-select this form as the template
+                              setNewFormName(`${form.name} Copy`); // Suggest a new name
+                              setIsCreateFromTemplateDialogOpen(true); // Open the dialog
                             }}>
                               Save as Template
                             </DropdownMenuItem>
