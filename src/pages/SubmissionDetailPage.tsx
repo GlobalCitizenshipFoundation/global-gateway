@@ -16,12 +16,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ArrowLeft, Download } from "lucide-react"; // Import Download icon
-import { useEffect, useState } from "react";
+import { ArrowLeft, Download } from "lucide-react";
+import { useEffect, useState, useMemo } from "react"; // Import useMemo
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 import { showError, showSuccess } from "@/utils/toast";
-import { ProgramStage } from "@/types";
+import { ProgramStage, FormField, DisplayRule } from "@/types"; // Import FormField and DisplayRule
 import { format } from "date-fns";
 
 type SubmissionDetail = {
@@ -38,18 +38,15 @@ type SubmissionDetail = {
   } | null;
 };
 
-type Response = {
+type ResponseWithField = {
   value: string | null;
-  form_fields: {
-    label: string;
-    field_type: string;
-  } | null;
+  form_fields: FormField | null; // Now includes full FormField type
 }
 
 const SubmissionDetailPage = () => {
   const { programId, submissionId } = useParams<{ programId: string, submissionId: string }>();
   const [submission, setSubmission] = useState<SubmissionDetail | null>(null);
-  const [responses, setResponses] = useState<Response[]>([]);
+  const [allResponses, setAllResponses] = useState<ResponseWithField[]>([]); // Store all fetched responses
   const [programStages, setProgramStages] = useState<ProgramStage[]>([]);
   const [selectedStage, setSelectedStage] = useState<string>('');
   const [loading, setLoading] = useState(true);
@@ -77,10 +74,10 @@ const SubmissionDetailPage = () => {
       setSubmission(submissionData as SubmissionDetail);
       setSelectedStage(submissionData.stage_id);
 
-      // Fetch responses
+      // Fetch responses with full form_fields data including display_rules
       const { data: responsesData, error: responsesError } = await supabase
         .from('application_responses')
-        .select(`value, form_fields ( label, field_type )`)
+        .select(`value, form_fields ( id, label, field_type, options, is_required, order, display_rules )`)
         .eq('application_id', submissionId);
       
       if (responsesError) {
@@ -90,7 +87,7 @@ const SubmissionDetailPage = () => {
           ...res,
           form_fields: Array.isArray(res.form_fields) ? res.form_fields[0] : res.form_fields
         }));
-        setResponses(formattedData as Response[]);
+        setAllResponses(formattedData as ResponseWithField[]);
       }
 
       // Fetch all possible stages for the program
@@ -112,6 +109,88 @@ const SubmissionDetailPage = () => {
     fetchSubmissionDetails();
   }, [submissionId, programId]);
 
+  // Helper function to evaluate a single display rule
+  const evaluateRule = (rule: DisplayRule, currentResponsesMap: Record<string, string>, allFormFields: FormField[]): boolean => {
+    const triggerFieldResponse = currentResponsesMap[rule.field_id];
+    const triggerField = allFormFields.find(f => f.id === rule.field_id);
+
+    if (!triggerField) return false; // Trigger field not found
+
+    switch (rule.operator) {
+      case 'equals':
+        if (triggerField.field_type === 'checkbox') {
+          try {
+            const responseArray = JSON.parse(triggerFieldResponse || '[]') as string[];
+            return Array.isArray(rule.value) ? rule.value.every(val => responseArray.includes(val)) : responseArray.includes(rule.value as string);
+          } catch {
+            return false;
+          }
+        }
+        return triggerFieldResponse === rule.value;
+      case 'not_equals':
+        if (triggerField.field_type === 'checkbox') {
+          try {
+            const responseArray = JSON.parse(triggerFieldResponse || '[]') as string[];
+            return Array.isArray(rule.value) ? !rule.value.every(val => responseArray.includes(val)) : !responseArray.includes(rule.value as string);
+          } catch {
+            return true;
+          }
+        }
+        return triggerFieldResponse !== rule.value;
+      case 'contains':
+        return typeof triggerFieldResponse === 'string' && typeof rule.value === 'string' && triggerFieldResponse.includes(rule.value);
+      case 'not_contains':
+        return typeof triggerFieldResponse === 'string' && typeof rule.value === 'string' && !triggerFieldResponse.includes(rule.value);
+      case 'is_empty':
+        if (triggerField.field_type === 'checkbox') {
+          try {
+            const responseArray = JSON.parse(triggerFieldResponse || '[]') as string[];
+            return responseArray.length === 0;
+          } catch {
+            return true;
+          }
+        }
+        return !triggerFieldResponse || triggerFieldResponse.trim() === '';
+      case 'is_not_empty':
+        if (triggerField.field_type === 'checkbox') {
+          try {
+            const responseArray = JSON.parse(triggerFieldResponse || '[]') as string[];
+            return responseArray.length > 0;
+          } catch {
+            return false;
+          }
+        }
+        return !!triggerFieldResponse && triggerFieldResponse.trim() !== '';
+      default:
+        return false;
+    }
+  };
+
+  // Helper function to determine if a field should be displayed based on rules and current responses
+  const shouldFieldBeDisplayed = (field: FormField, currentResponsesMap: Record<string, string>, allFormFields: FormField[]): boolean => {
+    if (!field.display_rules || field.display_rules.length === 0) {
+      return true; // No rules, always display
+    }
+    // Assuming 'AND' logic for multiple rules for simplicity
+    return field.display_rules.every(rule => evaluateRule(rule, currentResponsesMap, allFormFields));
+  };
+
+  // Memoize the filtered responses to avoid re-calculation on every render
+  const displayedResponses = useMemo(() => {
+    const currentResponsesMap: Record<string, string> = {};
+    allResponses.forEach(res => {
+      if (res.form_fields?.id && res.value !== null) {
+        currentResponsesMap[res.form_fields.id] = res.value;
+      }
+    });
+
+    const allFormFields = allResponses.map(res => res.form_fields).filter((f): f is FormField => f !== null);
+
+    return allResponses.filter(res => 
+      res.form_fields && shouldFieldBeDisplayed(res.form_fields, currentResponsesMap, allFormFields)
+    );
+  }, [allResponses]);
+
   const handleStageUpdate = async () => {
     if (!submission || !selectedStage || submission.stage_id === selectedStage) return;
     setUpdating(true);
@@ -131,7 +210,7 @@ const SubmissionDetailPage = () => {
     setUpdating(false);
   };
 
-  const formatResponseValue = (response: Response) => {
+  const formatResponseValue = (response: ResponseWithField) => {
     if (!response.value) return 'No answer provided';
     if (response.form_fields?.field_type === 'checkbox') {
       try {
@@ -221,12 +300,16 @@ const SubmissionDetailPage = () => {
             <div>
               <h3 className="font-semibold text-lg mb-4">Application Responses</h3>
               <dl className="space-y-4">
-                {responses.map((res, index) => (
-                  <div key={index}>
-                    <dt className="font-medium text-sm">{res.form_fields?.label || 'Untitled Question'}</dt>
-                    <dd className="text-muted-foreground whitespace-pre-wrap mt-1">{formatResponseValue(res)}</dd>
-                  </div>
-                ))}
+                {displayedResponses.length > 0 ? (
+                  displayedResponses.map((res, index) => (
+                    <div key={index}>
+                      <dt className="font-medium text-sm">{res.form_fields?.label || 'Untitled Question'}</dt>
+                      <dd className="text-muted-foreground whitespace-pre-wrap mt-1">{formatResponseValue(res)}</dd>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-muted-foreground text-sm">No responses to display for this application.</p>
+                )}
               </dl>
             </div>
           </div>

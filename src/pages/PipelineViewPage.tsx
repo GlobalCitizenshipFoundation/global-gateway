@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { Link, useParams } from "react-router-dom";
 import {
   DndContext,
@@ -11,17 +11,17 @@ import {
 } from "@dnd-kit/core";
 import { SortableContext } from "@dnd-kit/sortable";
 import { supabase } from "@/integrations/supabase/client";
-import { ProgramStage } from "@/types";
+import { ProgramStage, FormField, DisplayRule } from "@/types"; // Import FormField and DisplayRule
 import { Applicant, ApplicantCard } from "@/components/ApplicantCard";
 import { KanbanColumn } from "@/components/KanbanColumn";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft, Download } from "lucide-react"; // Import Download icon
+import { ArrowLeft, Download } from "lucide-react";
 import { showError, showSuccess } from "@/utils/toast";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { format } from "date-fns"; // Import format for date display
+import { format } from "date-fns";
 
 type SubmissionDetail = {
   id: string;
@@ -32,12 +32,9 @@ type SubmissionDetail = {
   program_stages: { name: string } | null;
 };
 
-type Response = {
+type ResponseWithField = {
   value: string | null;
-  form_fields: {
-    label: string;
-    field_type: string; // Add field_type here
-  } | null;
+  form_fields: FormField | null; // Now includes full FormField type
 };
 
 const PipelineViewPage = () => {
@@ -50,7 +47,7 @@ const PipelineViewPage = () => {
 
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [selectedSubmission, setSelectedSubmission] = useState<SubmissionDetail | null>(null);
-  const [selectedSubmissionResponses, setSelectedSubmissionResponses] = useState<Response[]>([]);
+  const [allSubmissionResponses, setAllSubmissionResponses] = useState<ResponseWithField[]>([]); // Store all fetched responses
   const [sheetLoading, setSheetLoading] = useState(false);
   const [currentStageInSheet, setCurrentStageInSheet] = useState('');
 
@@ -120,11 +117,93 @@ const PipelineViewPage = () => {
     }
   };
 
+  // Helper function to evaluate a single display rule
+  const evaluateRule = (rule: DisplayRule, currentResponsesMap: Record<string, string>, allFormFields: FormField[]): boolean => {
+    const triggerFieldResponse = currentResponsesMap[rule.field_id];
+    const triggerField = allFormFields.find(f => f.id === rule.field_id);
+
+    if (!triggerField) return false; // Trigger field not found
+
+    switch (rule.operator) {
+      case 'equals':
+        if (triggerField.field_type === 'checkbox') {
+          try {
+            const responseArray = JSON.parse(triggerFieldResponse || '[]') as string[];
+            return Array.isArray(rule.value) ? rule.value.every(val => responseArray.includes(val)) : responseArray.includes(rule.value as string);
+          } catch {
+            return false;
+          }
+        }
+        return triggerFieldResponse === rule.value;
+      case 'not_equals':
+        if (triggerField.field_type === 'checkbox') {
+          try {
+            const responseArray = JSON.parse(triggerFieldResponse || '[]') as string[];
+            return Array.isArray(rule.value) ? !rule.value.every(val => responseArray.includes(val)) : !responseArray.includes(rule.value as string);
+          } catch {
+            return true;
+          }
+        }
+        return triggerFieldResponse !== rule.value;
+      case 'contains':
+        return typeof triggerFieldResponse === 'string' && typeof rule.value === 'string' && triggerFieldResponse.includes(rule.value);
+      case 'not_contains':
+        return typeof triggerFieldResponse === 'string' && typeof rule.value === 'string' && !triggerFieldResponse.includes(rule.value);
+      case 'is_empty':
+        if (triggerField.field_type === 'checkbox') {
+          try {
+            const responseArray = JSON.parse(triggerFieldResponse || '[]') as string[];
+            return responseArray.length === 0;
+          } catch {
+            return true;
+          }
+        }
+        return !triggerFieldResponse || triggerFieldResponse.trim() === '';
+      case 'is_not_empty':
+        if (triggerField.field_type === 'checkbox') {
+          try {
+            const responseArray = JSON.parse(triggerFieldResponse || '[]') as string[];
+            return responseArray.length > 0;
+          } catch {
+            return false;
+          }
+        }
+        return !!triggerFieldResponse && triggerFieldResponse.trim() !== '';
+      default:
+        return false;
+    }
+  };
+
+  // Helper function to determine if a field should be displayed based on rules and current responses
+  const shouldFieldBeDisplayed = (field: FormField, currentResponsesMap: Record<string, string>, allFormFields: FormField[]): boolean => {
+    if (!field.display_rules || field.display_rules.length === 0) {
+      return true; // No rules, always display
+    }
+    // Assuming 'AND' logic for multiple rules for simplicity
+    return field.display_rules.every(rule => evaluateRule(rule, currentResponsesMap, allFormFields));
+  };
+
+  // Memoize the filtered responses for the sheet
+  const displayedSubmissionResponses = useMemo(() => {
+    const currentResponsesMap: Record<string, string> = {};
+    allSubmissionResponses.forEach(res => {
+      if (res.form_fields?.id && res.value !== null) {
+        currentResponsesMap[res.form_fields.id] = res.value;
+      }
+    });
+
+    const allFormFields = allSubmissionResponses.map(res => res.form_fields).filter((f): f is FormField => f !== null);
+
+    return allSubmissionResponses.filter(res => 
+      res.form_fields && shouldFieldBeDisplayed(res.form_fields, currentResponsesMap, allFormFields)
+    );
+  }, [allSubmissionResponses]);
+
   const handleApplicantClick = async (applicant: Applicant) => {
     setIsSheetOpen(true);
     setSheetLoading(true);
     setSelectedSubmission(null);
-    setSelectedSubmissionResponses([]);
+    setAllSubmissionResponses([]);
 
     const { data: submissionData, error: submissionError } = await supabase
       .from('applications').select(`*, program_stages(name)`).eq('id', applicant.id).single();
@@ -138,8 +217,9 @@ const PipelineViewPage = () => {
     setSelectedSubmission(submissionData as SubmissionDetail);
     setCurrentStageInSheet(submissionData.stage_id);
 
+    // Fetch responses with full form_fields data including display_rules
     const { data: responsesData, error: responsesError } = await supabase
-      .from('application_responses').select(`value, form_fields ( label, field_type )`).eq('application_id', applicant.id); // Fetch field_type
+      .from('application_responses').select(`value, form_fields ( id, label, field_type, options, is_required, order, display_rules )`).eq('application_id', applicant.id);
     
     if (responsesError) {
       showError("Could not load application responses.");
@@ -148,7 +228,7 @@ const PipelineViewPage = () => {
         ...res,
         form_fields: Array.isArray(res.form_fields) ? res.form_fields[0] : res.form_fields
       }));
-      setSelectedSubmissionResponses(formattedData as Response[]);
+      setAllSubmissionResponses(formattedData as ResponseWithField[]);
     }
     
     setSheetLoading(false);
@@ -171,7 +251,7 @@ const PipelineViewPage = () => {
     setSheetLoading(false);
   };
 
-  const formatResponseValue = (response: Response) => {
+  const formatResponseValue = (response: ResponseWithField) => {
     if (!response.value) return 'No answer provided';
     if (response.form_fields?.field_type === 'checkbox') {
       try {
@@ -275,12 +355,16 @@ const PipelineViewPage = () => {
               <div>
                 <h3 className="font-semibold text-lg mb-4">Application Responses</h3>
                 <dl className="space-y-4">
-                  {selectedSubmissionResponses.map((res, index) => (
-                    <div key={index}>
-                      <dt className="font-medium text-sm">{res.form_fields?.label || 'Untitled Question'}</dt>
-                      <dd className="text-muted-foreground whitespace-pre-wrap mt-1">{formatResponseValue(res)}</dd>
-                    </div>
-                  ))}
+                  {displayedSubmissionResponses.length > 0 ? (
+                    displayedSubmissionResponses.map((res, index) => (
+                      <div key={index}>
+                        <dt className="font-medium text-sm">{res.form_fields?.label || 'Untitled Question'}</dt>
+                        <dd className="text-muted-foreground whitespace-pre-wrap mt-1">{formatResponseValue(res)}</dd>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-muted-foreground text-sm">No responses to display for this application.</p>
+                  )}
                 </dl>
               </div>
             </div>
