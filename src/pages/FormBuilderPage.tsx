@@ -14,7 +14,7 @@ import { useFormBuilderData } from "@/hooks/useFormBuilderData";
 import { useFormFieldDragAndDrop } from "@/hooks/useFormFieldDragAndDrop";
 import { useFormBuilderActions } from "@/hooks/useFormBuilderActions";
 import { AddSectionForm } from "@/components/form-builder/AddSectionForm";
-import { AddFieldForm } from "@/components/form-builder/AddFieldForm";
+import { AddFieldForm } from "@/components/form-builder/AddFieldForm"; // Corrected import statement
 import { FormSectionsList } from "@/components/form-builder/FormSectionsList";
 import { UncategorizedFieldsList } from "@/components/form-builder/UncategorizedFieldsList";
 import { supabase } from "@/integrations/supabase/client";
@@ -41,7 +41,7 @@ const FormBuilderPage = () => {
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
 
   const [isAutoSaving, setIsAutoSaving] = useState(false);
-  const [lastSavedTimestamp, setLastSavedTimestamp] = useState<string | null>(null);
+  const [lastSavedTimestamp, setLastSavedTimestamp] = useState<Date | null>(null); // Changed to Date | null
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -76,7 +76,8 @@ const FormBuilderPage = () => {
     setFormStatus(fetchedFormStatus);
     if (!loading) {
       setHasUnsavedChanges(false); // Reset unsaved changes after initial load
-      setLastSavedTimestamp(formLastEditedAt ? new Date(formLastEditedAt).toLocaleTimeString() : null); // Set initial saved time from DB
+      // Correctly set Date object or null
+      setLastSavedTimestamp(formLastEditedAt ? new Date(formLastEditedAt) : null);
     }
   }, [fetchedFormName, fetchedFormDescription, fetchedFormStatus, loading, formLastEditedAt]);
 
@@ -175,7 +176,7 @@ const FormBuilderPage = () => {
       setIsAutoSaving(true);
       const success = await performUpdateFormDetails(formId, formName, formDescription);
       if (success) {
-        setLastSavedTimestamp(new Date().toLocaleTimeString());
+        setLastSavedTimestamp(new Date()); // Store Date object
         setHasUnsavedChanges(false);
       } else {
         showError("Auto-save failed. Please check your connection.");
@@ -296,7 +297,7 @@ const FormBuilderPage = () => {
       // Manually save all sections and fields by re-fetching and then updating their `updated_at`
       // This is a simplified approach; a more robust solution would track individual changes.
       // For now, we'll just ensure the form's main timestamp is updated.
-      setLastSavedTimestamp(new Date().toLocaleTimeString());
+      setLastSavedTimestamp(new Date()); // Store Date object
       setHasUnsavedChanges(false);
       showSuccess("Form draft saved successfully!");
     } else {
@@ -437,7 +438,8 @@ const FormBuilderPage = () => {
               ) : hasUnsavedChanges ? (
                 <span className="text-orange-500">Unsaved changes</span>
               ) : (
-                <span>Last saved: {lastSavedTimestamp ? new Date(lastSavedTimestamp).toLocaleString() : 'Never'}</span>
+                // Use toLocaleString directly on the Date object
+                <span>Last saved: {lastSavedTimestamp ? lastSavedTimestamp.toLocaleString() : 'Never'}</span>
               )}
               {lastEditedByUserName && (
                 <p className="text-xs">By: {lastEditedByUserName}</p>
