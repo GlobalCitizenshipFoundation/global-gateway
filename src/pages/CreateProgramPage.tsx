@@ -9,6 +9,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  FormDescription, // Import FormDescription
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -32,7 +33,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/contexts/SessionContext";
 import { useNavigate } from "react-router-dom";
 import { showError, showSuccess } from "@/utils/toast";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Form as FormType } from "@/types";
+import { Label } from "@/components/ui/label";
+import { DropdownMenuSeparator } from "@/components/ui/dropdown-menu"; // Import DropdownMenuSeparator
 
 const programFormSchema = z.object({
   title: z.string().min(5, {
@@ -44,6 +49,7 @@ const programFormSchema = z.object({
   deadline: z.date({
     required_error: "A deadline date is required.",
   }),
+  formTemplateId: z.string().nullable().optional(), // New field for template selection
 });
 
 type ProgramFormValues = z.infer<typeof programFormSchema>;
@@ -52,14 +58,35 @@ const CreateProgramPage = () => {
   const { user } = useSession();
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [templates, setTemplates] = useState<FormType[]>([]);
 
   const form = useForm<ProgramFormValues>({
     resolver: zodResolver(programFormSchema),
     defaultValues: {
       title: "",
       description: "",
+      formTemplateId: null, // Default to no template selected
     },
   });
+
+  useEffect(() => {
+    const fetchTemplates = async () => {
+      if (!user) return;
+      const { data, error } = await supabase
+        .from('forms')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('is_template', true)
+        .order('name', { ascending: true });
+
+      if (error) {
+        showError("Failed to load form templates: " + error.message);
+      } else {
+        setTemplates(data as FormType[]);
+      }
+    };
+    fetchTemplates();
+  }, [user]);
 
   async function onSubmit(values: ProgramFormValues) {
     if (!user) {
@@ -68,38 +95,125 @@ const CreateProgramPage = () => {
     }
     setIsSubmitting(true);
 
-    // 1. Create a new form first
-    const { data: newFormData, error: formError } = await supabase.from("forms").insert({
-      user_id: user.id,
-      name: `${values.title} Application Form`, // Default name for the form
-      is_template: false,
-      status: 'draft',
-    }).select('id').single();
+    let newFormId: string;
 
-    if (formError || !newFormData) {
-      showError(`Failed to create application form: ${formError?.message}`);
-      setIsSubmitting(false);
-      return;
+    if (values.formTemplateId) {
+      // Create new form by copying from template
+      const template = templates.find(t => t.id === values.formTemplateId);
+      if (!template) {
+        showError("Selected template not found.");
+        setIsSubmitting(false);
+        return;
+      }
+
+      // 1. Create the new form entry
+      const { data: newFormData, error: newFormError } = await supabase.from("forms").insert({
+        user_id: user.id,
+        name: `${values.title} Application Form`, // Name based on program title
+        is_template: false,
+        status: 'draft',
+      }).select('id').single();
+
+      if (newFormError || !newFormData) {
+        showError(`Failed to create application form from template: ${newFormError?.message}`);
+        setIsSubmitting(false);
+        return;
+      }
+      newFormId = newFormData.id;
+
+      // 2. Fetch sections and fields from the template
+      const { data: templateSections, error: sectionsError } = await supabase
+        .from('form_sections')
+        .select('*')
+        .eq('form_id', values.formTemplateId)
+        .order('order', { ascending: true });
+
+      const { data: templateFields, error: fieldsError } = await supabase
+        .from('form_fields')
+        .select('*')
+        .eq('form_id', values.formTemplateId)
+        .order('order', { ascending: true });
+
+      if (sectionsError || fieldsError) {
+        showError(`Failed to load template content: ${sectionsError?.message || fieldsError?.message}`);
+        await supabase.from('forms').delete().eq('id', newFormId); // Rollback
+        setIsSubmitting(false);
+        return;
+      }
+
+      const oldSectionIdMap = new Map<string, string>();
+      const newSectionsToInsert = templateSections.map(section => {
+        const newSectionId = crypto.randomUUID();
+        oldSectionIdMap.set(section.id, newSectionId);
+        return {
+          id: newSectionId,
+          form_id: newFormId,
+          name: section.name,
+          order: section.order,
+        };
+      });
+
+      const newFieldsToInsert = templateFields.map(field => ({
+        id: crypto.randomUUID(),
+        form_id: newFormId,
+        section_id: field.section_id ? oldSectionIdMap.get(field.section_id) : null,
+        label: field.label,
+        field_type: field.field_type,
+        options: field.options,
+        is_required: field.is_required,
+        order: field.order,
+        display_rules: field.display_rules,
+        help_text: field.help_text,
+        description: field.description,
+        tooltip: field.tooltip,
+      }));
+
+      // 3. Insert new sections and fields
+      const { error: insertSectionsError } = await supabase.from('form_sections').insert(newSectionsToInsert);
+      const { error: insertFieldsError } = await supabase.from('form_fields').insert(newFieldsToInsert);
+
+      if (insertSectionsError || insertFieldsError) {
+        showError(`Failed to copy template content: ${insertSectionsError?.message || insertFieldsError?.message}`);
+        await supabase.from('forms').delete().eq('id', newFormId); // Rollback
+        setIsSubmitting(false);
+        return;
+      }
+
+    } else {
+      // Create a new blank form
+      const { data: newFormData, error: formError } = await supabase.from("forms").insert({
+        user_id: user.id,
+        name: `${values.title} Application Form`,
+        is_template: false,
+        status: 'draft',
+      }).select('id').single();
+
+      if (formError || !newFormData) {
+        showError(`Failed to create blank application form: ${formError?.message}`);
+        setIsSubmitting(false);
+        return;
+      }
+      newFormId = newFormData.id;
     }
 
-    // 2. Then create the program, linking it to the new form
+    // 4. Then create the program, linking it to the new form
     const { data: programData, error: programError } = await supabase.from("programs").insert({
       user_id: user.id,
       title: values.title,
       description: values.description,
       deadline: values.deadline.toISOString(),
       status: 'draft',
-      form_id: newFormData.id, // Link the new form
+      form_id: newFormId, // Link the new form
     }).select('id').single();
 
     if (programError || !programData) {
       showError(`Failed to create program: ${programError?.message}`);
       // Optionally, delete the created form if program creation fails
-      await supabase.from('forms').delete().eq('id', newFormData.id);
+      await supabase.from('forms').delete().eq('id', newFormId);
       setIsSubmitting(false);
     } else {
       showSuccess("Program and its application form created successfully! Now, let's design your form.");
-      navigate(`/creator/forms/${newFormData.id}/edit`); // Redirect to form builder
+      navigate(`/creator/forms/${newFormId}/edit`); // Redirect to form builder
     }
   }
 
@@ -180,6 +294,33 @@ const CreateProgramPage = () => {
                         />
                       </PopoverContent>
                     </Popover>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="formTemplateId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Start with Form Template (Optional)</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value || ''}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a template or start blank" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="">Start from scratch (blank form)</SelectItem>
+                        {templates.length > 0 && <DropdownMenuSeparator />}
+                        {templates.map(template => (
+                          <SelectItem key={template.id} value={template.id}>{template.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormDescription>
+                      Choose an existing form template to pre-populate your new program's application form.
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}

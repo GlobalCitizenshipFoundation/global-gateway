@@ -35,9 +35,13 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/contexts/SessionContext";
 import { Skeleton } from "@/components/ui/skeleton";
-import { MoreHorizontal } from "lucide-react";
+import { MoreHorizontal, Plus } from "lucide-react";
 import { showError, showSuccess } from "@/utils/toast";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label"; // Import Label
 
 const FormManagementPage = () => {
   const { user } = useSession();
@@ -46,6 +50,12 @@ const FormManagementPage = () => {
   const [error, setError] = useState<string | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedForm, setSelectedForm] = useState<FormType | null>(null);
+
+  const [isCreateFromTemplateDialogOpen, setIsCreateFromTemplateDialogOpen] = useState(false);
+  const [templates, setTemplates] = useState<FormType[]>([]);
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
+  const [newFormName, setNewFormName] = useState('');
+  const [isCreatingForm, setIsCreatingForm] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -65,6 +75,7 @@ const FormManagementPage = () => {
         console.error("Error fetching forms:", error);
       } else {
         setForms(data as FormType[]);
+        setTemplates(data.filter(f => f.is_template) as FormType[]);
       }
       setLoading(false);
     };
@@ -85,6 +96,7 @@ const FormManagementPage = () => {
     } else {
       showSuccess(`Form "${selectedForm.name}" deleted successfully.`);
       setForms(forms.filter(f => f.id !== selectedForm.id));
+      setTemplates(templates.filter(t => t.id !== selectedForm.id));
     }
     setSelectedForm(null);
     setIsDeleteDialogOpen(false);
@@ -108,37 +120,123 @@ const FormManagementPage = () => {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="container py-12">
-        <div className="flex justify-between items-center mb-8">
-          <div>
-            <Skeleton className="h-9 w-64 mb-2" />
-            <Skeleton className="h-5 w-80" />
-          </div>
-          <Skeleton className="h-10 w-40" />
-        </div>
-        <Card>
-          <CardContent className="p-6">
-            <div className="space-y-4">
-              {Array.from({ length: 3 }).map((_, i) => (
-                <div key={i} className="flex justify-between items-center">
-                  <Skeleton className="h-5 w-1/3" />
-                  <Skeleton className="h-5 w-24" />
-                  <Skeleton className="h-5 w-16" />
-                  <Skeleton className="h-9 w-32" />
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
+  const handleCreateBlankForm = async () => {
+    if (!user) {
+      showError("You must be logged in to create a form.");
+      return;
+    }
+    setIsCreatingForm(true);
+    const { data: newFormData, error: formError } = await supabase.from("forms").insert({
+      user_id: user.id, // Include user_id
+      name: "New Blank Form",
+      is_template: false,
+      status: 'draft',
+      description: null, // Include description
+    }).select('id').single();
 
-  if (error) {
-    return <div className="container py-12 text-center text-destructive">Error: {error}</div>;
-  }
+    if (formError || !newFormData) {
+      showError(`Failed to create blank form: ${formError?.message}`);
+    } else {
+      showSuccess("Blank form created successfully! Redirecting to form builder.");
+      setForms(prev => [...prev, { ...newFormData, user_id: user.id, name: "New Blank Form", is_template: false, status: 'draft', description: null, created_at: new Date().toISOString(), updated_at: new Date().toISOString() }]);
+      window.location.href = `/creator/forms/${newFormData.id}/edit`; // Full refresh to ensure form builder loads correctly
+    }
+    setIsCreatingForm(false);
+  };
+
+  const handleCreateFormFromTemplate = async () => {
+    if (!user || !selectedTemplateId || !newFormName.trim()) {
+      showError("Please select a template and provide a name for the new form.");
+      return;
+    }
+    setIsCreatingForm(true);
+
+    const template = templates.find(t => t.id === selectedTemplateId);
+    if (!template) {
+      showError("Selected template not found.");
+      setIsCreatingForm(false);
+      return;
+    }
+
+    // 1. Create the new form entry
+    const { data: newFormData, error: newFormError } = await supabase.from("forms").insert({
+      user_id: user.id, // Include user_id
+      name: newFormName,
+      is_template: false, // New form is not a template by default
+      status: 'draft',
+      description: null, // Include description
+    }).select('id').single();
+
+    if (newFormError || !newFormData) {
+      showError(`Failed to create new form: ${newFormError?.message}`);
+      setIsCreatingForm(false);
+      return;
+    }
+
+    // 2. Fetch sections and fields from the template
+    const { data: templateSections, error: sectionsError } = await supabase
+      .from('form_sections')
+      .select('*')
+      .eq('form_id', selectedTemplateId)
+      .order('order', { ascending: true });
+
+    const { data: templateFields, error: fieldsError } = await supabase
+      .from('form_fields')
+      .select('*')
+      .eq('form_id', selectedTemplateId)
+      .order('order', { ascending: true });
+
+    if (sectionsError || fieldsError) {
+      showError(`Failed to load template content: ${sectionsError?.message || fieldsError?.message}`);
+      await supabase.from('forms').delete().eq('id', newFormData.id); // Rollback
+      setIsCreatingForm(false);
+      return;
+    }
+
+    const oldSectionIdMap = new Map<string, string>();
+    const newSectionsToInsert = templateSections.map(section => {
+      const newSectionId = crypto.randomUUID();
+      oldSectionIdMap.set(section.id, newSectionId);
+      return {
+        id: newSectionId,
+        form_id: newFormData.id,
+        name: section.name,
+        order: section.order,
+      };
+    });
+
+    const newFieldsToInsert = templateFields.map(field => ({
+      id: crypto.randomUUID(),
+      form_id: newFormData.id,
+      section_id: field.section_id ? oldSectionIdMap.get(field.section_id) : null,
+      label: field.label,
+      field_type: field.field_type,
+      options: field.options,
+      is_required: field.is_required,
+      order: field.order,
+      display_rules: field.display_rules,
+      help_text: field.help_text,
+      description: field.description,
+      tooltip: field.tooltip,
+    }));
+
+    // 3. Insert new sections and fields
+    const { error: insertSectionsError } = await supabase.from('form_sections').insert(newSectionsToInsert);
+    const { error: insertFieldsError } = await supabase.from('form_fields').insert(newFieldsToInsert);
+
+    if (insertSectionsError || insertFieldsError) {
+      showError(`Failed to copy template content: ${insertSectionsError?.message || insertFieldsError?.message}`);
+      await supabase.from('forms').delete().eq('id', newFormData.id); // Rollback
+      setIsCreatingForm(false);
+      return;
+    }
+
+    showSuccess("Form created from template successfully! Redirecting to form builder.");
+    setForms(prev => [...prev, { ...newFormData, user_id: user.id, name: newFormName, is_template: false, status: 'draft', description: null, created_at: new Date().toISOString(), updated_at: new Date().toISOString() }]);
+    setIsCreateFromTemplateDialogOpen(false);
+    window.location.href = `/creator/forms/${newFormData.id}/edit`; // Full refresh
+    setIsCreatingForm(false);
+  };
 
   return (
     <>
@@ -148,9 +246,14 @@ const FormManagementPage = () => {
             <h1 className="text-3xl font-bold">Manage Forms & Templates</h1>
             <p className="text-muted-foreground">Oversee all your custom forms and templates.</p>
           </div>
-          <Button asChild>
-            <Link to="/creator/new-program">Create New Program (with new form)</Link>
-          </Button>
+          <div className="flex gap-2">
+            <Button onClick={handleCreateBlankForm} disabled={isCreatingForm}>
+              <Plus className="mr-2 h-4 w-4" /> Create Blank Form
+            </Button>
+            <Button variant="outline" onClick={() => setIsCreateFromTemplateDialogOpen(true)} disabled={templates.length === 0 || isCreatingForm}>
+              Create from Template
+            </Button>
+          </div>
         </div>
         <Card>
           <CardContent className="p-0">
@@ -208,6 +311,15 @@ const FormManagementPage = () => {
                             </DropdownMenuItem>
                           )}
                           <DropdownMenuSeparator />
+                          {!form.is_template && ( // Only show "Save as Template" for non-template forms
+                            <DropdownMenuItem onClick={() => {
+                              setSelectedForm(form);
+                              // This will be handled by FormBuilderPage's save as template logic
+                              window.location.href = `/creator/forms/${form.id}/edit?saveAsTemplate=true`;
+                            }}>
+                              Save as Template
+                            </DropdownMenuItem>
+                          )}
                           <DropdownMenuItem
                             className="text-destructive focus:text-destructive"
                             onClick={() => {
@@ -249,6 +361,52 @@ const FormManagementPage = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Create from Template Dialog */}
+      <Dialog open={isCreateFromTemplateDialogOpen} onOpenChange={setIsCreateFromTemplateDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Create Form from Template</DialogTitle>
+            <DialogDescription>
+              Select an existing template and provide a name for your new form.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="template-select">Select Template</Label>
+              <Select value={selectedTemplateId || ''} onValueChange={setSelectedTemplateId}>
+                <SelectTrigger id="template-select">
+                  <SelectValue placeholder="Choose a template" />
+                </SelectTrigger>
+                <SelectContent>
+                  {templates.length === 0 ? (
+                    <SelectItem value="no-templates" disabled>No templates available</SelectItem>
+                  ) : (
+                    templates.map(template => (
+                      <SelectItem key={template.id} value={template.id}>{template.name}</SelectItem>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="new-form-name">New Form Name</Label>
+              <Input
+                id="new-form-name"
+                placeholder="e.g., My New Program Application"
+                value={newFormName}
+                onChange={(e) => setNewFormName(e.target.value)}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsCreateFromTemplateDialogOpen(false)}>Cancel</Button>
+            <Button onClick={handleCreateFormFromTemplate} disabled={!selectedTemplateId || !newFormName.trim() || isCreatingForm}>
+              {isCreatingForm ? 'Creating...' : 'Create Form'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 };
