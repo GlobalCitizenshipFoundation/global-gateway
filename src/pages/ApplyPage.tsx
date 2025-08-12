@@ -10,7 +10,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Program, FormField, DisplayRule, FormSection } from "@/types"; // Import FormSection
+import { Program, FormField, FormSection } from "@/types"; // Removed DisplayRule
 import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/contexts/SessionContext";
@@ -21,10 +21,11 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { CalendarIcon, Link as LinkIcon } from "lucide-react"; // Import LinkIcon
+import { CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import RichTextEditor from "@/components/RichTextEditor";
+import { shouldFieldBeDisplayed } from "@/utils/formFieldUtils"; // Import the utility function
 
 const ApplyPage = () => {
   const { programId } = useParams<{ programId: string }>();
@@ -32,7 +33,7 @@ const ApplyPage = () => {
   const navigate = useNavigate();
 
   const [program, setProgram] = useState<Program | null>(null);
-  const [formSections, setFormSections] = useState<FormSection[]>([]); // New state for sections
+  const [formSections, setFormSections] = useState<FormSection[]>([]);
   const [formFields, setFormFields] = useState<FormField[]>([]);
   const [responses, setResponses] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
@@ -93,77 +94,11 @@ const ApplyPage = () => {
     fetchData();
   }, [programId, user]);
 
-  const evaluateRule = (rule: DisplayRule, currentResponses: Record<string, string>): boolean => {
-    const triggerFieldResponse = currentResponses[rule.field_id];
-    const triggerField = formFields.find(f => f.id === rule.field_id);
-
-    if (!triggerField) return false; // Trigger field not found
-
-    switch (rule.operator) {
-      case 'equals':
-        if (triggerField.field_type === 'checkbox') {
-          try {
-            const responseArray = JSON.parse(triggerFieldResponse || '[]') as string[];
-            return Array.isArray(rule.value) ? rule.value.every(val => responseArray.includes(val)) : responseArray.includes(rule.value as string);
-          } catch {
-            return false;
-          }
-        }
-        return triggerFieldResponse === rule.value;
-      case 'not_equals':
-        if (triggerField.field_type === 'checkbox') {
-          try {
-            const responseArray = JSON.parse(triggerFieldResponse || '[]') as string[];
-            return Array.isArray(rule.value) ? !rule.value.every(val => responseArray.includes(val)) : !responseArray.includes(rule.value as string);
-          } catch {
-            return true;
-          }
-        }
-        return triggerFieldResponse !== rule.value;
-      case 'contains':
-        return typeof triggerFieldResponse === 'string' && typeof rule.value === 'string' && triggerFieldResponse.includes(rule.value);
-      case 'not_contains':
-        return typeof triggerFieldResponse === 'string' && typeof rule.value === 'string' && !triggerFieldResponse.includes(rule.value);
-      case 'is_empty':
-        if (triggerField.field_type === 'checkbox') {
-          try {
-            const responseArray = JSON.parse(triggerFieldResponse || '[]') as string[];
-            return responseArray.length === 0;
-          } catch {
-            return true;
-          }
-        }
-        return !triggerFieldResponse || triggerFieldResponse.trim() === '';
-      case 'is_not_empty':
-        if (triggerField.field_type === 'checkbox') {
-          try {
-            const responseArray = JSON.parse(triggerFieldResponse || '[]') as string[];
-            return responseArray.length > 0;
-          } catch {
-            return false;
-          }
-        }
-        return !!triggerFieldResponse && triggerFieldResponse.trim() !== '';
-      default:
-        return false;
-    }
-  };
-
-  const shouldFieldBeDisplayed = (field: FormField, currentResponses: Record<string, string>): boolean => {
-    if (!field.display_rules || field.display_rules.length === 0) {
-      return true; // No rules, always display
-    }
-
-    // For simplicity, we'll assume 'AND' logic if not specified or if multiple rules
-    // A more complex implementation would handle 'OR' and nested logic_type
-    return field.display_rules.every(rule => evaluateRule(rule, currentResponses));
-  };
-
   const displayedFormFields = useMemo(() => {
     const newResponses: Record<string, string> = { ...responses };
 
     const filtered = formFields.filter(field => {
-      const shouldDisplay = shouldFieldBeDisplayed(field, responses);
+      const shouldDisplay = shouldFieldBeDisplayed(field, responses, formFields); // Use utility function
       if (!shouldDisplay) {
         // Clear response if field is hidden
         if (newResponses[field.id] !== undefined) {
