@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { FormField, FormSection, DisplayRule } from "@/types";
 import { showError, showSuccess } from "@/utils/toast";
 import { ArrowLeft, Plus, Trash2 } from "lucide-react";
-import { useEffect, useState, useCallback } from "react"; // Import useCallback
+import { useEffect, useState, useCallback } from "react";
 import { Link, useParams } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -259,72 +259,81 @@ const FormBuilderPage = () => {
     const activeField = fields.find(f => f.id === activeFieldId);
     if (!activeField) return;
 
-    const sourceContainerId = active.data.current?.sortable?.containerId || activeField.section_id || 'uncategorized-fields';
-    let targetContainerId: string | null = null;
+    const sourceSectionId = activeField.section_id;
+    let targetSectionId: string | null = null;
 
-    // Determine target container ID
+    // Determine target section ID
     if (sections.some(s => s.id === overId)) {
-      targetContainerId = overId;
+      targetSectionId = overId; // Dropped directly onto a section header
     } else if (overId === 'uncategorized-fields-droppable-area') {
-      targetContainerId = 'uncategorized-fields';
+      targetSectionId = null; // Dropped onto the uncategorized droppable area
     } else if (over.data.current?.field) {
-      targetContainerId = over.data.current.field.section_id || 'uncategorized-fields';
+      targetSectionId = over.data.current.field.section_id; // Dropped onto another field
     } else {
-      targetContainerId = sourceContainerId; // Fallback
+      return; // No valid drop target found
     }
 
-    // If the field is dropped back onto itself or its original container without a change in order/section, do nothing.
-    if (activeFieldId === overId && sourceContainerId === targetContainerId) {
-      return;
+    // If no effective change in section or order, do nothing.
+    // This check is more robust after determining targetSectionId
+    if (sourceSectionId === targetSectionId) {
+      const currentSectionFields = fields.filter(f => f.section_id === sourceSectionId).sort((a, b) => a.order - b.order);
+      const oldIndex = currentSectionFields.findIndex(f => f.id === activeFieldId);
+      const newIndex = currentSectionFields.findIndex(f => f.id === overId);
+
+      if (oldIndex === -1 || newIndex === -1 || oldIndex === newIndex) {
+        return; // No actual reorder happened
+      }
     }
 
     const originalFields = [...fields]; // Store for potential revert
+    let updatedFields: FormField[] = [];
+    let updatesToSend: { id: string; order: number; section_id: string | null; }[] = [];
 
-    let newFieldsState = [...fields]; // Temporary state for local update
+    // Create a mutable copy of fields for local manipulation
+    let tempFields = [...fields];
+
+    // Remove the active field from its current position in tempFields
+    tempFields = tempFields.filter(f => f.id !== activeFieldId);
+
+    // Find the index where the active field should be inserted in the target section
+    let insertIndex = -1;
+    if (over.data.current?.field) {
+      insertIndex = tempFields.filter(f => f.section_id === targetSectionId).findIndex(f => f.id === overId);
+    }
     
-    const newSectionIdForDb = targetContainerId === 'uncategorized-fields' ? null : targetContainerId;
+    // Prepare the field to be moved/reordered
+    const fieldToMove = { ...activeField, section_id: targetSectionId };
 
-    // Update section_id for the active field if it changed
-    if ((activeField.section_id || 'uncategorized-fields') !== targetContainerId) {
-      newFieldsState = newFieldsState.map(f => f.id === activeFieldId ? { ...f, section_id: newSectionIdForDb } : f);
+    // Insert the field into its new position in the temporary array
+    if (insertIndex !== -1) {
+      const fieldsInTargetSection = tempFields.filter(f => f.section_id === targetSectionId).sort((a, b) => a.order - b.order);
+      fieldsInTargetSection.splice(insertIndex, 0, fieldToMove);
+      tempFields = tempFields.filter(f => f.section_id !== targetSectionId);
+      tempFields.push(...fieldsInTargetSection);
+    } else {
+      // If no specific overId or dropped into an empty section, add to the end of the target section
+      tempFields.push(fieldToMove);
     }
 
-    // Recalculate orders for all fields in both source and target containers
-    // This ensures correct ordering after any move (reorder or cross-container)
-    const allContainerIds = new Set([...sections.map(s => s.id), 'uncategorized-fields']);
+    // Recalculate orders for all fields in all affected sections
+    const allContainerIds = new Set([...sections.map(s => s.id), null]); // null for uncategorized
     
     allContainerIds.forEach(containerId => {
-      const currentContainerFields = newFieldsState
-        .filter(f => (f.section_id || 'uncategorized-fields') === containerId)
+      const currentContainerFields = tempFields
+        .filter(f => f.section_id === containerId)
         .sort((a, b) => a.order - b.order); // Sort by current order to get correct index
 
       const updatedContainerFields = currentContainerFields.map((f, idx) => ({ ...f, order: idx + 1 }));
 
-      newFieldsState = newFieldsState.map(f => {
-        const updatedField = updatedContainerFields.find(uf => uf.id === f.id);
-        return updatedField ? updatedField : f;
-      });
+      updatedFields = updatedFields.filter(f => f.section_id !== containerId); // Remove old versions
+      updatedFields.push(...updatedContainerFields); // Add new versions
     });
 
-    // If the active field was reordered within its original container
-    if (sourceContainerId === targetContainerId) {
-      const currentSectionFields = newFieldsState.filter(f => (f.section_id || 'uncategorized-fields') === sourceContainerId);
-      const oldIndex = currentSectionFields.findIndex(f => f.id === activeFieldId);
-      const newIndex = currentSectionFields.findIndex(f => f.id === overId);
-
-      if (oldIndex !== -1 && newIndex !== -1 && oldIndex !== newIndex) {
-        const reorderedWithinSection = arrayMove(currentSectionFields, oldIndex, newIndex);
-        const updatedOrders = reorderedWithinSection.map((f, idx) => ({ ...f, order: idx + 1 }));
-
-        newFieldsState = newFieldsState.map(f => {
-          const updatedField = updatedOrders.find(uf => uf.id === f.id);
-          return updatedField ? updatedField : f;
-        });
-      }
-    }
+    // Sort the final array by order to ensure correct display
+    updatedFields.sort((a, b) => a.order - b.order);
 
     // Prepare batch update for Supabase
-    const updatesToSend = newFieldsState.filter(f => {
+    updatesToSend = updatedFields.filter(f => {
       const originalField = originalFields.find(orig => orig.id === f.id);
       return originalField && (originalField.order !== f.order || originalField.section_id !== f.section_id);
     }).map(f => ({
@@ -335,7 +344,7 @@ const FormBuilderPage = () => {
 
     if (updatesToSend.length > 0) {
       // Optimistic update
-      setFields(newFieldsState);
+      setFields(updatedFields);
 
       const { error } = await supabase.from('form_fields').upsert(updatesToSend);
       if (error) {
