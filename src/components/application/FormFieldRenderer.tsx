@@ -47,8 +47,8 @@ const FormFieldRenderer = ({ field, submitting }: FormFieldRendererProps) => {
           </FormLabel>
           {field.help_text && <FormDescription>{field.help_text}</FormDescription>}
           <FormControl>
-            {/* Wrap the entire conditional rendering block in a fragment */}
-            <React.Fragment>
+            {/* Wrap the entire conditional rendering block in an explicit div */}
+            <div>
               {field.field_type === 'textarea' ? (
                 <Textarea
                   id={field.id}
@@ -180,7 +180,7 @@ const FormFieldRenderer = ({ field, submitting }: FormFieldRendererProps) => {
                   disabled={submitting}
                 />
               )}
-            </React.Fragment>
+            </div>
           </FormControl>
           <FormMessage />
         </FormItem>
