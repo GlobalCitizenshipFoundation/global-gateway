@@ -12,6 +12,8 @@ export type Application = {
   programId: string;
   status: 'Submitted' | 'In Review' | 'Accepted' | 'Rejected';
   submittedDate: Date;
-  submitterName: string;
-  submitterEmail: string;
+  // Renaming for consistency with form fields
+  fullName: string;
+  email: string;
+  personalStatement: string;
 };

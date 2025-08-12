@@ -73,8 +73,8 @@ const SubmissionsListPage = () => {
               {submissions.map((app) => (
                 <TableRow key={app.id}>
                   <TableCell>
-                    <div className="font-medium">{app.submitterName}</div>
-                    <div className="text-sm text-muted-foreground">{app.submitterEmail}</div>
+                    <div className="font-medium">{app.fullName}</div>
+                    <div className="text-sm text-muted-foreground">{app.email}</div>
                   </TableCell>
                   <TableCell className="hidden md:table-cell">
                     {app.submittedDate.toLocaleDateString()}
@@ -83,7 +83,9 @@ const SubmissionsListPage = () => {
                     <Badge variant={getStatusVariant(app.status)}>{app.status}</Badge>
                   </TableCell>
                   <TableCell className="text-right">
-                    <Button variant="outline" size="sm" disabled>Review</Button>
+                    <Button asChild variant="outline" size="sm">
+                      <Link to={`/creator/program/${programId}/submission/${app.id}`}>Review</Link>
+                    </Button>
                   </TableCell>
                 </TableRow>
               ))}

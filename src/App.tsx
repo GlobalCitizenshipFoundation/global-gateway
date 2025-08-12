@@ -13,6 +13,7 @@ import DashboardPage from "./pages/DashboardPage";
 import ProfilePage from "./pages/ProfilePage";
 import CreatorDashboardPage from "./pages/CreatorDashboardPage";
 import SubmissionsListPage from "./pages/SubmissionsListPage";
+import SubmissionDetailPage from "./pages/SubmissionDetailPage";
 
 const queryClient = new QueryClient();
 
@@ -34,6 +35,7 @@ const App = () => (
             {/* Creator Routes */}
             <Route path="/creator/dashboard" element={<CreatorDashboardPage />} />
             <Route path="/creator/program/:programId/submissions" element={<SubmissionsListPage />} />
+            <Route path="/creator/program/:programId/submission/:submissionId" element={<SubmissionDetailPage />} />
 
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
