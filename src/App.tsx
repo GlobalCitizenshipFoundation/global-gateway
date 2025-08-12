@@ -22,6 +22,7 @@ import PipelineViewPage from "./pages/PipelineViewPage";
 import FormBuilderPage from "./pages/FormBuilderPage";
 import ProgramDetailsPage from "./pages/ProgramDetailsPage";
 import FormManagementPage from "./pages/FormManagementPage";
+import WorkflowTemplatesPage from "./pages/WorkflowTemplatesPage"; // Import the new page
 import { ThemeProvider } from "next-themes"; // Import ThemeProvider
 
 const queryClient = new QueryClient();
@@ -61,6 +62,9 @@ const App = () => (
                   {/* New Form Management Routes */}
                   <Route path="/creator/forms" element={<FormManagementPage />} />
                   <Route path="/creator/forms/:formId/edit" element={<FormBuilderPage />} />
+
+                  {/* New Workflow Templates Route */}
+                  <Route path="/creator/workflow-templates" element={<WorkflowTemplatesPage />} />
                 </Route>
 
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
