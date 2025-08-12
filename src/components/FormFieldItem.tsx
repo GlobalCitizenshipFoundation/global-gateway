@@ -1,19 +1,31 @@
+import { useState } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { FormField } from '@/types';
-import { GripVertical, Trash2, Eye, Pencil } from 'lucide-react'; // Import Pencil icon
+import { GripVertical, Trash2, Eye, Pencil } from 'lucide-react';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
 import { Switch } from './ui/switch';
 import { Label } from './ui/label';
-import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip'; // Import Tooltip
+import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 interface FormFieldItemProps {
   field: FormField;
   onDelete: (fieldId: string) => void;
   onToggleRequired: (fieldId: string, isRequired: boolean) => void;
   onEditLogic: (field: FormField) => void;
-  onEdit: (field: FormField) => void; // New prop for editing field details
+  onEdit: (field: FormField) => void;
 }
 
 export const FormFieldItem = ({ field, onDelete, onToggleRequired, onEditLogic, onEdit }: FormFieldItemProps) => {
@@ -31,6 +43,7 @@ export const FormFieldItem = ({ field, onDelete, onToggleRequired, onEditLogic, 
   };
 
   const hasLogic = field.display_rules && field.display_rules.length > 0;
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
   return (
     <li
@@ -69,12 +82,30 @@ export const FormFieldItem = ({ field, onDelete, onToggleRequired, onEditLogic, 
         <Button variant="outline" size="sm" onClick={() => onEditLogic(field)}>
           {hasLogic ? 'Edit Logic' : 'Add Logic'}
         </Button>
-        <Button variant="outline" size="sm" onClick={() => onEdit(field)}> {/* New Edit button */}
+        <Button variant="outline" size="sm" onClick={() => onEdit(field)}>
           <Pencil className="mr-2 h-4 w-4" /> Edit
         </Button>
-        <Button variant="ghost" size="icon" onClick={() => onDelete(field.id)}>
-            <Trash2 className="h-4 w-4 text-destructive" />
-        </Button>
+        <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+          <AlertDialogTrigger asChild>
+            <Button variant="ghost" size="icon">
+              <Trash2 className="h-4 w-4 text-destructive" />
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This action cannot be undone. This will permanently delete the field
+                <span className="font-semibold"> "{field.label}" </span>
+                and any associated responses.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={() => onDelete(field.id)}>Continue</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </li>
   );

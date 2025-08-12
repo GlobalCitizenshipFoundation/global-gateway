@@ -22,6 +22,29 @@ interface ConditionalLogicBuilderProps {
   onSave: (fieldId: string, rules: DisplayRule[]) => void;
 }
 
+// Define allowed operators per field type
+const fieldTypeOperators: Record<FormField['field_type'], Array<DisplayRule['operator']>> = {
+  text: ['equals', 'not_equals', 'contains', 'not_contains', 'is_empty', 'is_not_empty'],
+  textarea: ['equals', 'not_equals', 'contains', 'not_contains', 'is_empty', 'is_not_empty'],
+  email: ['equals', 'not_equals', 'contains', 'not_contains', 'is_empty', 'is_not_empty'],
+  phone: ['equals', 'not_equals', 'contains', 'not_contains', 'is_empty', 'is_not_empty'],
+  number: ['equals', 'not_equals', 'is_empty', 'is_not_empty'], // For numbers, 'contains' is less relevant
+  date: ['equals', 'not_equals', 'is_empty', 'is_not_empty'],
+  select: ['equals', 'not_equals', 'is_empty', 'is_not_empty'],
+  radio: ['equals', 'not_equals', 'is_empty', 'is_not_empty'],
+  checkbox: ['equals', 'not_equals', 'is_empty', 'is_not_empty'],
+  richtext: ['equals', 'not_equals', 'contains', 'not_contains', 'is_empty', 'is_not_empty'],
+};
+
+const operatorLabels: Record<DisplayRule['operator'], string> = {
+  equals: 'is equal to',
+  not_equals: 'is not equal to',
+  contains: 'contains',
+  not_contains: 'does not contain',
+  is_empty: 'is empty',
+  is_not_empty: 'is not empty',
+};
+
 const ConditionalLogicBuilder = ({
   isOpen,
   onClose,
@@ -60,17 +83,19 @@ const ConditionalLogicBuilder = ({
 
     // Basic validation: ensure all parts of a rule are selected/filled
     for (const rule of rules) {
-      if (!rule.field_id || !rule.operator || (rule.operator !== 'is_empty' && rule.operator !== 'is_not_empty' && rule.value === null)) {
-        showError("Please complete all parts of each display rule.");
+      const triggerField = allFields.find(f => f.id === rule.field_id);
+      if (!rule.field_id || !rule.operator) {
+        showError("Please select a field and an operator for all rules.");
+        return;
+      }
+      if (rule.operator !== 'is_empty' && rule.operator !== 'is_not_empty' && (rule.value === null || rule.value === undefined || (typeof rule.value === 'string' && rule.value.trim() === '') || (Array.isArray(rule.value) && rule.value.length === 0))) {
+        showError("Please provide a value for all rules that require one.");
         return;
       }
       // Additional validation for checkbox values
-      if (rule.operator === 'equals' || rule.operator === 'not_equals') {
-        const triggerField = allFields.find(f => f.id === rule.field_id);
-        if (triggerField?.field_type === 'checkbox' && Array.isArray(rule.value) && rule.value.length === 0) {
-          showError("Checkbox rules must have at least one selected option.");
-          return;
-        }
+      if (triggerField?.field_type === 'checkbox' && (rule.operator === 'equals' || rule.operator === 'not_equals') && Array.isArray(rule.value) && rule.value.length === 0) {
+        showError("Checkbox rules must have at least one selected option.");
+        return;
       }
     }
 
@@ -188,6 +213,8 @@ const ConditionalLogicBuilder = ({
           )}
           {rules.map((rule, index) => {
             const triggerField = allFields.find(f => f.id === rule.field_id);
+            const allowedOperators = triggerField ? fieldTypeOperators[triggerField.field_type] : [];
+
             return (
               <div key={index} className="flex flex-col sm:flex-row items-center gap-2 border p-3 rounded-md">
                 <div className="flex-grow grid grid-cols-1 sm:grid-cols-3 gap-2 w-full">
@@ -195,8 +222,9 @@ const ConditionalLogicBuilder = ({
                     value={rule.field_id}
                     onValueChange={(val) => {
                       updateRule(index, 'field_id', val);
-                      // Reset value when trigger field changes
+                      // Reset value and operator when trigger field changes
                       updateRule(index, 'value', null);
+                      updateRule(index, 'operator', 'equals'); // Default operator
                     }}
                   >
                     <SelectTrigger>
@@ -220,17 +248,15 @@ const ConditionalLogicBuilder = ({
                         updateRule(index, 'value', null);
                       }
                     }}
+                    disabled={!triggerField} // Disable if no trigger field selected
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select operator" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="equals">is equal to</SelectItem>
-                      <SelectItem value="not_equals">is not equal to</SelectItem>
-                      <SelectItem value="contains">contains</SelectItem>
-                      <SelectItem value="not_contains">does not contain</SelectItem>
-                      <SelectItem value="is_empty">is empty</SelectItem>
-                      <SelectItem value="is_not_empty">is not empty</SelectItem>
+                      {allowedOperators.map(op => (
+                        <SelectItem key={op} value={op}>{operatorLabels[op]}</SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
 

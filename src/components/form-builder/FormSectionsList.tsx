@@ -6,6 +6,19 @@ import { FormField, FormSection } from "@/types";
 import { Trash2 } from "lucide-react";
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { useDroppable } from "@dnd-kit/core";
+import { cn } from "@/lib/utils";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { useState } from "react";
 
 interface FormSectionsListProps {
   sections: FormSection[];
@@ -21,8 +34,8 @@ interface FormSectionsListProps {
 
 // Helper component for droppable areas
 const DroppableContainer = ({ id, children, className }: { id: string; children: React.ReactNode; className?: string; }) => {
-  const { setNodeRef } = useDroppable({ id });
-  return <div ref={setNodeRef} className={className}>{children}</div>;
+  const { setNodeRef, isOver } = useDroppable({ id });
+  return <div ref={setNodeRef} className={cn(className, isOver && "ring-2 ring-blue-500 ring-offset-2")}>{children}</div>;
 };
 
 export const FormSectionsList = ({
@@ -36,6 +49,22 @@ export const FormSectionsList = ({
   onEditLogic,
   onEditField,
 }: FormSectionsListProps) => {
+  const [sectionToDelete, setSectionToDelete] = useState<FormSection | null>(null);
+  const [isSectionDeleteDialogOpen, setIsSectionDeleteDialogOpen] = useState(false);
+
+  const confirmDeleteSection = (section: FormSection) => {
+    setSectionToDelete(section);
+    setIsSectionDeleteDialogOpen(true);
+  };
+
+  const executeDeleteSection = async () => {
+    if (sectionToDelete) {
+      await handleDeleteSection(sectionToDelete.id);
+      setSectionToDelete(null);
+      setIsSectionDeleteDialogOpen(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <h3 className="text-lg font-medium">Form Sections</h3>
@@ -48,7 +77,7 @@ export const FormSectionsList = ({
               <DroppableContainer id={section.id} className="rounded-md border">
                 <AccordionTrigger className="flex justify-between items-center w-full pr-4">
                   <span className="font-semibold">{section.name}</span>
-                  <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); handleDeleteSection(section.id); }}>
+                  <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); confirmDeleteSection(section); }}>
                     <Trash2 className="h-4 w-4 text-destructive" />
                   </Button>
                 </AccordionTrigger>
@@ -79,6 +108,23 @@ export const FormSectionsList = ({
       ) : (
         <p className="text-muted-foreground text-sm">No sections defined yet. Add one to get started.</p>
       )}
+
+      <AlertDialog open={isSectionDeleteDialogOpen} onOpenChange={setIsSectionDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the section
+              <span className="font-semibold"> "{sectionToDelete?.name}" </span>
+              and move all its associated fields to the "Uncategorized Fields" list.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setSectionToDelete(null)}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={executeDeleteSection}>Continue</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

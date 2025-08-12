@@ -2,6 +2,7 @@ import { FormFieldItem } from "@/components/FormFieldItem";
 import { FormField } from "@/types";
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { useDroppable } from "@dnd-kit/core";
+import { cn } from "@/lib/utils";
 
 interface UncategorizedFieldsListProps {
   uncategorizedFields: FormField[];
@@ -13,8 +14,8 @@ interface UncategorizedFieldsListProps {
 
 // Helper component for droppable areas
 const DroppableContainer = ({ id, children, className }: { id: string; children: React.ReactNode; className?: string; }) => {
-  const { setNodeRef } = useDroppable({ id });
-  return <div ref={setNodeRef} className={className}>{children}</div>;
+  const { setNodeRef, isOver } = useDroppable({ id });
+  return <div ref={setNodeRef} className={cn(className, isOver && "ring-2 ring-blue-500 ring-offset-2")}>{children}</div>;
 };
 
 export const UncategorizedFieldsList = ({

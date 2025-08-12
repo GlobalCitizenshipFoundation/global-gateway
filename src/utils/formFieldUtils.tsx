@@ -2,6 +2,7 @@ import { DisplayRule, FormField } from "@/types";
 import { format } from "date-fns";
 import { ExternalLink } from "lucide-react";
 import React from "react";
+import DOMPurify from 'dompurify';
 
 /**
  * Evaluates a single display rule against current form responses.
@@ -119,11 +120,10 @@ export const formatResponseValue = (value: string | null, fieldType: FormField['
     }
   }
   if (fieldType === 'richtext') {
-    // WARNING: Using dangerouslySetInnerHTML can expose your application to XSS attacks
-    // if the content is not sanitized. For a production application, consider
-    // using a library like DOMPurify to sanitize the HTML before rendering.
+    // Sanitize HTML content to prevent XSS attacks
+    const cleanHtml = DOMPurify.sanitize(value, { USE_PROFILES: { html: true } });
     return (
-      <div dangerouslySetInnerHTML={{ __html: value }} className="prose max-w-none" />
+      <div dangerouslySetInnerHTML={{ __html: cleanHtml }} className="prose max-w-none" />
     );
   }
   return value;
