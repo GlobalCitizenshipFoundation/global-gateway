@@ -84,7 +84,7 @@ export const FormsTable = ({ forms, onUpdateStatus, onSaveAsTemplate, onDelete }
               </Link>
             </TableCell>
             <TableCell className="md:table-cell">
-              <Badge variant="outline">{form.is_template ? 'Template' : 'Program Form'}</Badge>
+              <Badge variant="outline">{form.is_template ? 'Template' : 'Form'}</Badge>
             </TableCell>
             <TableCell className="lg:table-cell">
               <Badge variant={form.status === 'published' ? 'default' : 'secondary'}>
