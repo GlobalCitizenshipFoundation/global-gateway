@@ -1,8 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { supabase } from "@/integrations/supabase/client";
 import { FormField, DisplayRule } from "@/types";
-import { showError, showSuccess } from "@/utils/toast";
 import { ArrowLeft } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
@@ -14,6 +12,7 @@ import EditFormFieldDialog from "@/components/EditFormFieldDialog";
 // Import new modular components and hooks
 import { useFormBuilderData } from "@/hooks/useFormBuilderData";
 import { useFormFieldDragAndDrop } from "@/hooks/useFormFieldDragAndDrop";
+import { useFormBuilderActions } from "@/hooks/useFormBuilderActions"; // New import
 import { AddSectionForm } from "@/components/form-builder/AddSectionForm";
 import { AddFieldForm } from "@/components/form-builder/AddFieldForm";
 import { FormSectionsList } from "@/components/form-builder/FormSectionsList";
@@ -41,6 +40,16 @@ const FormBuilderPage = () => {
     activeDragItem,
   } = useFormFieldDragAndDrop({ fields, setFields, sections, fetchData });
 
+  const {
+    handleAddSection: performAddSection, // Renamed to avoid conflict
+    handleDeleteSection: performDeleteSection, // Renamed
+    handleAddField: performAddField, // Renamed
+    handleDeleteField: performDeleteField, // Renamed
+    handleToggleRequired: performToggleRequired, // Renamed
+    handleSaveLogic: performSaveLogic, // Renamed
+    handleSaveEditedField: performSaveEditedField, // Renamed
+  } = useFormBuilderActions({ programId, setSections, setFields, fetchData });
+
   const [newSectionName, setNewSectionName] = useState('');
   const [newFieldLabel, setNewFieldLabel] = useState('');
   const [newFieldType, setNewFieldType] = useState<FormField['field_type']>('text');
@@ -57,129 +66,37 @@ const FormBuilderPage = () => {
 
   const handleAddSection = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newSectionName.trim() || !programId) return;
-
     setIsSubmitting(true);
-    const nextOrder = sections.length > 0 ? Math.max(...sections.map(s => s.order)) + 1 : 1;
-
-    const { data, error } = await supabase
-      .from('form_sections')
-      .insert({
-        program_id: programId,
-        name: newSectionName,
-        order: nextOrder,
-      })
-      .select()
-      .single();
-
-    if (error) {
-      showError(`Failed to add section: ${error.message}`);
-    } else if (data) {
-      setSections([...sections, data]);
+    const newSection = await performAddSection(newSectionName, sections);
+    if (newSection) {
       setNewSectionName('');
-      showSuccess("Section added successfully.");
-      setNewFieldSectionId(data.id); // Automatically select the new section
+      setNewFieldSectionId(newSection.id); // Automatically select the new section
     }
     setIsSubmitting(false);
   };
 
   const handleDeleteSection = async (sectionId: string) => {
-    // Optimistically update local state first
-    const originalSections = [...sections];
-    const originalFields = [...fields];
-    setSections(sections.filter(s => s.id !== sectionId));
-    setFields(fields.map(f => f.section_id === sectionId ? { ...f, section_id: null } : f)); // Move fields to uncategorized
-
-    const { data: fieldsToUpdate, error: fetchFieldsError } = await supabase
-      .from('form_fields')
-      .select('id')
-      .eq('section_id', sectionId);
-
-    if (fetchFieldsError) {
-      showError(`Failed to fetch fields for section deletion: ${fetchFieldsError.message}. Reverting.`);
-      setSections(originalSections);
-      setFields(originalFields);
-      return;
-    }
-
-    const updatesForFields = fieldsToUpdate.map(field => ({
-      id: field.id,
-      section_id: null, // Set to null (uncategorized)
-    }));
-
-    const { error: updateFieldsError } = await supabase
-      .from('form_fields')
-      .upsert(updatesForFields); // Batch update fields to null section_id
-
-    if (updateFieldsError) {
-      showError(`Failed to uncategorize fields: ${updateFieldsError.message}. Reverting.`);
-      setSections(originalSections);
-      setFields(originalFields);
-      return;
-    }
-
-    const { error: deleteSectionError } = await supabase.from('form_sections').delete().eq('id', sectionId);
-    if (deleteSectionError) {
-      showError(`Failed to delete section: ${deleteSectionError.message}. Reverting.`);
-      setSections(originalSections);
-      setFields(originalFields); // Revert fields too if section deletion fails
-    } else {
-      showSuccess("Section and its fields uncategorized successfully.");
-      fetchData(); // Re-fetch to ensure full consistency
-    }
+    await performDeleteSection(sectionId, sections, fields);
   };
 
   const handleAddField = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newFieldLabel.trim() || !programId) return;
-
     setIsSubmitting(true);
-    // Calculate order within the target section
-    const targetSectionFields = fields.filter(f => f.section_id === newFieldSectionId);
-    const nextOrder = targetSectionFields.length > 0 ? Math.max(...targetSectionFields.map(f => f.order)) + 1 : 1;
-
-    const { data, error } = await supabase
-      .from('form_fields')
-      .insert({
-        program_id: programId,
-        label: newFieldLabel,
-        field_type: newFieldType,
-        order: nextOrder,
-        section_id: newFieldSectionId,
-        options: (newFieldType === 'select' || newFieldType === 'radio' || newFieldType === 'checkbox') ? newFieldOptions.split(',').map(opt => opt.trim()) : null,
-      })
-      .select()
-      .single();
-
-    if (error) {
-      showError(`Failed to add field: ${error.message}`);
-    } else if (data) {
-      setFields([...fields, data as FormField]);
+    const newField = await performAddField(newFieldLabel, newFieldType, newFieldOptions, newFieldSectionId, fields);
+    if (newField) {
       setNewFieldLabel('');
       setNewFieldOptions('');
       setNewFieldType('text');
-      showSuccess("Field added successfully.");
     }
     setIsSubmitting(false);
   };
 
   const handleDeleteField = async (fieldId: string) => {
-    const { error } = await supabase.from('form_fields').delete().eq('id', fieldId);
-    if (error) {
-      showError(`Failed to delete field: ${error.message}`);
-    } else {
-      setFields(fields.filter(f => f.id !== fieldId));
-      showSuccess("Field deleted successfully.");
-    }
+    await performDeleteField(fieldId);
   };
 
   const handleToggleRequired = async (fieldId: string, isRequired: boolean) => {
-    setFields(fields => fields.map(f => f.id === fieldId ? { ...f, is_required: isRequired } : f));
-    const { error } = await supabase.from('form_fields').update({ is_required: isRequired }).eq('id', fieldId);
-    if (error) {
-      showError(`Failed to update field: ${error.message}`);
-      setFields(fields => fields.map(f => f.id === fieldId ? { ...f, is_required: !isRequired } : f));
-    }
+    await performToggleRequired(fieldId, isRequired);
   };
 
   const handleEditLogic = (field: FormField) => {
@@ -188,19 +105,7 @@ const FormBuilderPage = () => {
   };
 
   const handleSaveLogic = async (fieldId: string, rules: DisplayRule[]) => {
-    setFields(prevFields =>
-      prevFields.map(f => (f.id === fieldId ? { ...f, display_rules: rules } : f))
-    );
-    const { error } = await supabase
-      .from('form_fields')
-      .update({ display_rules: rules })
-      .eq('id', fieldId);
-
-    if (error) {
-      showError(`Failed to save display logic: ${error.message}`);
-    } else {
-      showSuccess("Display logic saved successfully!");
-    }
+    await performSaveLogic(fieldId, rules);
   };
 
   const handleEditField = (field: FormField) => {
@@ -209,33 +114,7 @@ const FormBuilderPage = () => {
   };
 
   const handleSaveEditedField = async (fieldId: string, values: { label: string; field_type: FormField['field_type']; options?: string; is_required: boolean; }) => {
-    const updatedOptions = (values.field_type === 'select' || values.field_type === 'radio' || values.field_type === 'checkbox')
-      ? values.options?.split(',').map(opt => opt.trim()) || null
-      : null;
-
-    setFields(prevFields =>
-      prevFields.map(f =>
-        f.id === fieldId
-          ? { ...f, label: values.label, field_type: values.field_type, options: updatedOptions, is_required: values.is_required }
-          : f
-      )
-    );
-
-    const { error } = await supabase
-      .from('form_fields')
-      .update({
-        label: values.label,
-        field_type: values.field_type,
-        options: updatedOptions,
-        is_required: values.is_required,
-      })
-      .eq('id', fieldId);
-
-    if (error) {
-      showError(`Failed to update field: ${error.message}`);
-    } else {
-      showSuccess("Field updated successfully!");
-    }
+    await performSaveEditedField(fieldId, values);
     setIsEditFieldDialogOpen(false);
     setFieldToEditDetails(null);
   };
