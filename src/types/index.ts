@@ -83,3 +83,13 @@ export type FormField = {
   last_edited_by_user_id: string | null; // New
   last_edited_at: string | null; // New
 };
+
+export type Profile = {
+  id: string;
+  first_name: string | null;
+  middle_name: string | null;
+  last_name: string | null;
+  avatar_url: string | null;
+  updated_at: string;
+  role: 'applicant' | 'creator' | 'admin'; // New: Role for the user
+};

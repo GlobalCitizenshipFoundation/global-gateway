@@ -1,4 +1,4 @@
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import AvatarWithInitials from "@/components/AvatarWithInitials"; // Import the new component
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -28,28 +28,19 @@ const UserNav = () => {
     }
   };
 
-  const getInitials = (name: string) => {
-    return name
-      .split(' ')
-      .map(n => n[0])
-      .join('')
-      .toUpperCase();
-  };
-
-  const fullName = user?.user_metadata?.full_name;
+  // Derive full name from user_metadata, which will be updated by ProfilePage
+  const firstName = user?.user_metadata?.first_name;
+  const middleName = user?.user_metadata?.middle_name;
+  const lastName = user?.user_metadata?.last_name;
   const avatarUrl = user?.user_metadata?.avatar_url;
+
+  const fullName = [firstName, middleName, lastName].filter(Boolean).join(' ').trim();
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        {/* Replaced Button with a div to ensure a single, simple child for DropdownMenuTrigger's asChild prop */}
         <div className="relative h-8 w-8 rounded-full cursor-pointer">
-          <Avatar className="h-8 w-8">
-            <AvatarImage src={avatarUrl} alt={fullName || 'User'} />
-            <AvatarFallback>
-              {fullName ? getInitials(fullName) : 'U'}
-            </AvatarFallback>
-          </Avatar>
+          <AvatarWithInitials name={fullName} src={avatarUrl} className="h-8 w-8" />
         </div>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-56" align="end" forceMount>
