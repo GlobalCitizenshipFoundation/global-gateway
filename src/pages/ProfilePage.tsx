@@ -180,13 +180,17 @@ const ProfilePage = () => {
               </div>
 
               <div className="grid gap-2">
-                <Label>Account Creation Date</Label>
-                <Input value={user?.created_at ? new Date(user.created_at).toLocaleDateString() : 'N/A'} disabled />
+                <Label className="font-medium text-sm">Account Creation Date</Label>
+                <p className="text-muted-foreground text-sm">
+                  {user?.created_at ? new Date(user.created_at).toLocaleDateString() : 'N/A'}
+                </p>
               </div>
 
               <div className="grid gap-2">
-                <Label>Last Login Date</Label>
-                <Input value={user?.last_sign_in_at ? new Date(user.last_sign_in_at).toLocaleString() : 'N/A'} disabled />
+                <Label className="font-medium text-sm">Last Login Date</Label>
+                <p className="text-muted-foreground text-sm">
+                  {user?.last_sign_in_at ? new Date(user.last_sign_in_at).toLocaleString() : 'N/A'}
+                </p>
               </div>
 
               <div className="flex justify-between items-center pt-4 border-t">
