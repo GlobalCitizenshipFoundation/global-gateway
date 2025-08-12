@@ -1,5 +1,6 @@
-import { Link } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -15,8 +16,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { mockPrograms, mockApplications } from "@/lib/mock-data";
 import { Application } from "@/types";
-import { mockApplications } from "@/lib/mock-data";
+import { ArrowLeft } from "lucide-react";
 
 const getStatusVariant = (status: Application['status']) => {
   switch (status) {
@@ -31,38 +33,57 @@ const getStatusVariant = (status: Application['status']) => {
   }
 };
 
-const DashboardPage = () => {
+const SubmissionsListPage = () => {
+  const { programId } = useParams<{ programId: string }>();
+  const program = mockPrograms.find(p => p.id === programId);
+  const submissions = mockApplications.filter(app => app.programId === programId);
+
+  if (!program) {
+    return (
+      <div className="container text-center py-12">
+        <h1 className="text-2xl font-bold">Program not found</h1>
+      </div>
+    );
+  }
+
   return (
     <div className="container py-12">
+      <Link to="/creator/dashboard" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-4">
+        <ArrowLeft className="h-4 w-4" />
+        Back to Programs
+      </Link>
       <Card>
         <CardHeader>
-          <CardTitle>My Applications</CardTitle>
+          <CardTitle>Submissions for: {program.title}</CardTitle>
           <CardDescription>
-            Here is a list of all your submitted applications.
+            Review and manage all applications for this program.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Program</TableHead>
+                <TableHead>Submitter</TableHead>
                 <TableHead className="hidden md:table-cell">Submitted</TableHead>
                 <TableHead>Status</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {mockApplications.map((app) => (
+              {submissions.map((app) => (
                 <TableRow key={app.id}>
                   <TableCell>
-                    <Link to={`/apply/${app.programId}`} className="font-medium hover:underline">
-                      {app.programTitle}
-                    </Link>
+                    <div className="font-medium">{app.submitterName}</div>
+                    <div className="text-sm text-muted-foreground">{app.submitterEmail}</div>
                   </TableCell>
                   <TableCell className="hidden md:table-cell">
                     {app.submittedDate.toLocaleDateString()}
                   </TableCell>
                   <TableCell>
                     <Badge variant={getStatusVariant(app.status)}>{app.status}</Badge>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Button variant="outline" size="sm" disabled>Review</Button>
                   </TableCell>
                 </TableRow>
               ))}
@@ -74,4 +95,4 @@ const DashboardPage = () => {
   );
 };
 
-export default DashboardPage;
+export default SubmissionsListPage;

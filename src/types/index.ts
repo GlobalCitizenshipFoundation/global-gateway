@@ -12,4 +12,6 @@ export type Application = {
   programId: string;
   status: 'Submitted' | 'In Review' | 'Accepted' | 'Rejected';
   submittedDate: Date;
+  submitterName: string;
+  submitterEmail: string;
 };

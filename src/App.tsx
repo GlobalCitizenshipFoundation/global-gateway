@@ -11,6 +11,8 @@ import LoginPage from "./pages/LoginPage";
 import ApplyPage from "./pages/ApplyPage";
 import DashboardPage from "./pages/DashboardPage";
 import ProfilePage from "./pages/ProfilePage";
+import CreatorDashboardPage from "./pages/CreatorDashboardPage";
+import SubmissionsListPage from "./pages/SubmissionsListPage";
 
 const queryClient = new QueryClient();
 
@@ -28,6 +30,11 @@ const App = () => (
             <Route path="/apply/:programId" element={<ApplyPage />} />
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/profile" element={<ProfilePage />} />
+            
+            {/* Creator Routes */}
+            <Route path="/creator/dashboard" element={<CreatorDashboardPage />} />
+            <Route path="/creator/program/:programId/submissions" element={<SubmissionsListPage />} />
+
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
