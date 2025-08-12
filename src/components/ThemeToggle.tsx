@@ -18,12 +18,13 @@ export function ThemeToggle() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" className="relative overflow-hidden">
-          {/* Sun icon: visible and normal in light mode, faded and larger in dark mode (watermark) */}
-          <Sun className="absolute inset-0 m-auto h-[1.2rem] w-[1.2rem] transition-all duration-300 opacity-100 scale-100 dark:opacity-20 dark:scale-150" />
-          {/* Moon icon: faded and larger in light mode (watermark), visible and normal in dark mode */}
-          <Moon className="absolute inset-0 m-auto h-[1.2rem] w-[1.2rem] transition-all duration-300 opacity-20 scale-150 dark:opacity-100 dark:scale-100" />
-          <span className="sr-only">Toggle theme</span>
+        <Button variant="ghost" size="icon">
+          {/* Wrap multiple icons/span in a single span to satisfy React.Children.only requirement */}
+          <span>
+            <Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+            <Moon className="h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+            <span className="sr-only">Toggle theme</span>
+          </span>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
