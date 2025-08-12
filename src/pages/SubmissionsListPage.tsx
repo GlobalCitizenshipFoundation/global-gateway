@@ -123,10 +123,15 @@ const SubmissionsListPage = () => {
 
   return (
     <div className="container py-12">
-      <Link to="/creator/dashboard" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-4">
-        <ArrowLeft className="h-4 w-4" />
-        Back to Programs
-      </Link>
+      <div className="flex items-center justify-between mb-4">
+        <Link to="/creator/dashboard" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
+          <ArrowLeft className="h-4 w-4" />
+          Back to Programs
+        </Link>
+        <Button asChild variant="outline">
+          <Link to={`/creator/program/${programId}/form`}>Manage Form</Link>
+        </Button>
+      </div>
       <Card>
         <CardHeader>
           <CardTitle>Submissions for: {program.title}</CardTitle>

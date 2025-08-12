@@ -183,10 +183,15 @@ const PipelineViewPage = () => {
 
   return (
     <div className="container py-12">
-      <Link to={`/creator/program/${programId}/submissions`} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-4">
-        <ArrowLeft className="h-4 w-4" />
-        Back to Submissions
-      </Link>
+      <div className="flex items-center justify-between mb-4">
+        <Link to={`/creator/program/${programId}/submissions`} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
+          <ArrowLeft className="h-4 w-4" />
+          Back to Submissions
+        </Link>
+        <Button asChild variant="outline">
+          <Link to={`/creator/program/${programId}/form`}>Manage Form</Link>
+        </Button>
+      </div>
       <h1 className="text-3xl font-bold mb-8">Pipeline for: {programTitle}</h1>
       <DndContext sensors={sensors} onDragStart={onDragStart} onDragEnd={onDragEnd}>
         <div className="flex gap-4 overflow-x-auto pb-4">
