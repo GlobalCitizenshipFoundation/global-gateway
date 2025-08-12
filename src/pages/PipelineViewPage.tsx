@@ -11,7 +11,7 @@ import {
 } from "@dnd-kit/core";
 import { SortableContext } from "@dnd-kit/sortable";
 import { supabase } from "@/integrations/supabase/client";
-import { FormField, ProgramStage } from "@/types"; // Added ProgramStage import
+import { FormField, ProgramStage } from "@/types";
 import { Applicant, ApplicantCard } from "@/components/ApplicantCard";
 import { KanbanColumn } from "@/components/KanbanColumn";
 import { Skeleton } from "@/components/ui/skeleton";

@@ -10,7 +10,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Program, FormField, FormSection } from "@/types"; // Removed DisplayRule
+import { Program, FormField, FormSection } from "@/types";
 import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/contexts/SessionContext";
@@ -121,7 +121,7 @@ const ApplyPage = () => {
   };
 
   const handleCheckboxChange = (fieldId: string, option: string, checked: boolean) => {
-    const currentValues = JSON.parse(responses[fieldId] || '[]') as string[];
+    const currentValues = JSON.parse(responses[field.id] || '[]') as string[];
     const newValues = checked
       ? [...currentValues, option]
       : currentValues.filter(v => v !== option);
