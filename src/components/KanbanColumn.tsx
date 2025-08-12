@@ -6,9 +6,10 @@ import { useMemo } from "react";
 interface KanbanColumnProps {
   stage: ProgramStage;
   applicants: Applicant[];
+  onApplicantClick: (applicant: Applicant) => void;
 }
 
-export const KanbanColumn = ({ stage, applicants }: KanbanColumnProps) => {
+export const KanbanColumn = ({ stage, applicants, onApplicantClick }: KanbanColumnProps) => {
   const applicantIds = useMemo(() => applicants.map((app) => app.id), [applicants]);
 
   const { setNodeRef } = useSortable({
@@ -28,7 +29,11 @@ export const KanbanColumn = ({ stage, applicants }: KanbanColumnProps) => {
       <div className="min-h-[100px]">
         <SortableContext items={applicantIds}>
           {applicants.map((applicant) => (
-            <ApplicantCard key={applicant.id} applicant={applicant} />
+            <ApplicantCard
+              key={applicant.id}
+              applicant={applicant}
+              onClick={() => onApplicantClick(applicant)}
+            />
           ))}
         </SortableContext>
       </div>

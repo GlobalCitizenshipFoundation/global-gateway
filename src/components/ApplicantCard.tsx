@@ -9,9 +9,10 @@ export type Applicant = {
 
 interface ApplicantCardProps {
   applicant: Applicant;
+  onClick: () => void;
 }
 
-export const ApplicantCard = ({ applicant }: ApplicantCardProps) => {
+export const ApplicantCard = ({ applicant, onClick }: ApplicantCardProps) => {
   const {
     attributes,
     listeners,
@@ -28,7 +29,10 @@ export const ApplicantCard = ({ applicant }: ApplicantCardProps) => {
 
   return (
     <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
-      <Card className={`mb-2 ${isDragging ? "opacity-50" : "opacity-100"}`}>
+      <Card
+        className={`mb-2 ${isDragging ? "opacity-50" : "opacity-100"} cursor-pointer hover:ring-2 hover:ring-ring`}
+        onClick={onClick}
+      >
         <CardHeader className="p-3">
           <CardTitle className="text-sm font-medium">{applicant.full_name}</CardTitle>
         </CardHeader>

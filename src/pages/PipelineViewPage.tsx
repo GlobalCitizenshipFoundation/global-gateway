@@ -17,6 +17,24 @@ import { KanbanColumn } from "@/components/KanbanColumn";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowLeft } from "lucide-react";
 import { showError, showSuccess } from "@/utils/toast";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from "@/components/ui/sheet";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
+type SubmissionDetail = {
+  id: string;
+  submitted_date: string;
+  full_name: string;
+  email: string;
+  stage_id: string;
+  program_stages: { name: string } | null;
+};
+
+type Response = {
+  value: string | null;
+  form_fields: { label: string } | null;
+};
 
 const PipelineViewPage = () => {
   const { programId } = useParams<{ programId: string }>();
@@ -25,6 +43,12 @@ const PipelineViewPage = () => {
   const [applications, setApplications] = useState<Applicant[]>([]);
   const [activeApplicant, setActiveApplicant] = useState<Applicant | null>(null);
   const [loading, setLoading] = useState(true);
+
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const [selectedSubmission, setSelectedSubmission] = useState<SubmissionDetail | null>(null);
+  const [selectedSubmissionResponses, setSelectedSubmissionResponses] = useState<Response[]>([]);
+  const [sheetLoading, setSheetLoading] = useState(false);
+  const [currentStageInSheet, setCurrentStageInSheet] = useState('');
 
   useEffect(() => {
     const fetchData = async () => {
@@ -76,16 +100,12 @@ const PipelineViewPage = () => {
       const applicantId = activeId as string;
       const newStageId = overId as string;
       
-      // Optimistic update
-      const originalApplications = applications;
+      const originalApplications = [...applications];
       setApplications((apps) =>
         apps.map((app) => (app.id === applicantId ? { ...app, stage_id: newStageId } : app))
       );
 
-      const { error } = await supabase
-        .from("applications")
-        .update({ stage_id: newStageId })
-        .eq("id", applicantId);
+      const { error } = await supabase.from("applications").update({ stage_id: newStageId }).eq("id", applicantId);
 
       if (error) {
         showError("Failed to move applicant. Reverting.");
@@ -94,6 +114,57 @@ const PipelineViewPage = () => {
         showSuccess("Applicant moved successfully.");
       }
     }
+  };
+
+  const handleApplicantClick = async (applicant: Applicant) => {
+    setIsSheetOpen(true);
+    setSheetLoading(true);
+    setSelectedSubmission(null);
+    setSelectedSubmissionResponses([]);
+
+    const { data: submissionData, error: submissionError } = await supabase
+      .from('applications').select(`*, program_stages(name)`).eq('id', applicant.id).single();
+
+    if (submissionError) {
+      showError("Failed to load submission details.");
+      setIsSheetOpen(false);
+      setSheetLoading(false);
+      return;
+    }
+    setSelectedSubmission(submissionData as SubmissionDetail);
+    setCurrentStageInSheet(submissionData.stage_id);
+
+    const { data: responsesData, error: responsesError } = await supabase
+      .from('application_responses').select(`value, form_fields ( label )`).eq('application_id', applicant.id);
+    
+    if (responsesError) {
+      showError("Could not load application responses.");
+    } else if (responsesData) {
+      const formattedData = responsesData.map(res => ({
+        ...res,
+        form_fields: Array.isArray(res.form_fields) ? res.form_fields[0] : res.form_fields
+      }));
+      setSelectedSubmissionResponses(formattedData as Response[]);
+    }
+    
+    setSheetLoading(false);
+  };
+
+  const handleStageUpdateInSheet = async () => {
+    if (!selectedSubmission || selectedSubmission.stage_id === currentStageInSheet) return;
+    
+    setSheetLoading(true);
+    const { error } = await supabase
+      .from('applications').update({ stage_id: currentStageInSheet }).eq('id', selectedSubmission.id);
+
+    if (error) {
+      showError(`Failed to update stage: ${error.message}`);
+    } else {
+      setApplications(apps => apps.map(app => app.id === selectedSubmission.id ? { ...app, stage_id: currentStageInSheet } : app));
+      showSuccess(`Application moved to a new stage.`);
+      setIsSheetOpen(false);
+    }
+    setSheetLoading(false);
   };
 
   if (loading) {
@@ -125,14 +196,75 @@ const PipelineViewPage = () => {
                 key={stage.id}
                 stage={stage}
                 applicants={applications.filter((app) => app.stage_id === stage.id)}
+                onApplicantClick={handleApplicantClick}
               />
             ))}
           </SortableContext>
         </div>
         <DragOverlay>
-          {activeApplicant ? <ApplicantCard applicant={activeApplicant} /> : null}
+          {activeApplicant ? <ApplicantCard applicant={activeApplicant} onClick={() => {}} /> : null}
         </DragOverlay>
       </DndContext>
+
+      <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
+        <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
+          <SheetHeader className="mb-6">
+            {sheetLoading || !selectedSubmission ? (
+              <>
+                <Skeleton className="h-8 w-48" />
+                <Skeleton className="h-5 w-64" />
+              </>
+            ) : (
+              <>
+                <SheetTitle className="text-2xl">{selectedSubmission.full_name}</SheetTitle>
+                <SheetDescription>{selectedSubmission.email}</SheetDescription>
+              </>
+            )}
+          </SheetHeader>
+          
+          {sheetLoading ? (
+            <div className="space-y-4">
+              <Skeleton className="h-20 w-full" />
+              <Skeleton className="h-20 w-full" />
+            </div>
+          ) : (
+            <div className="space-y-6">
+              <div>
+                <h3 className="font-semibold text-lg mb-4">Application Responses</h3>
+                <dl className="space-y-4">
+                  {selectedSubmissionResponses.map((res, index) => (
+                    <div key={index}>
+                      <dt className="font-medium text-sm">{res.form_fields?.label || 'Untitled Question'}</dt>
+                      <dd className="text-muted-foreground whitespace-pre-wrap mt-1">{res.value || 'No answer provided'}</dd>
+                    </div>
+                  ))}
+                </dl>
+              </div>
+            </div>
+          )}
+
+          {!sheetLoading && selectedSubmission && (
+            <SheetFooter className="mt-8 pt-4 border-t">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium">Change Stage:</span>
+                <Select value={currentStageInSheet} onValueChange={setCurrentStageInSheet}>
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder="Select a stage" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {stages.map(stage => (
+                      <SelectItem key={stage.id} value={stage.id}>{stage.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button onClick={handleStageUpdateInSheet} disabled={sheetLoading || selectedSubmission.stage_id === currentStageInSheet}>
+                Update Stage
+              </Button>
+            </SheetFooter>
+          )}
+        </SheetContent>
+      </Sheet>
     </div>
   );
 };
