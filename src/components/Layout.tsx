@@ -1,6 +1,5 @@
 import React from "react";
 import Header from "@/components/Header";
-import { MadeWithDyad } from "@/components/made-with-dyad";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -13,7 +12,6 @@ const Layout = ({ children }: LayoutProps) => {
       <main className="flex-grow">
         {children}
       </main>
-      <MadeWithDyad />
     </div>
   );
 };
