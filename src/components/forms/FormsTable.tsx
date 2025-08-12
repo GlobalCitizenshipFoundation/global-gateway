@@ -68,17 +68,21 @@ export const FormsTable = ({ forms, onUpdateStatus, onSaveAsTemplate, onDelete }
       <TableHeader>
         <TableRow>
           <TableHead>Form Name</TableHead>
-          <TableHead className="md:table-cell">Type</TableHead> {/* Removed hidden */}
-          <TableHead className="lg:table-cell">Publication Status</TableHead> {/* Removed hidden */}
-          <TableHead className="xl:table-cell">Form Updated Date</TableHead> {/* Removed hidden */}
-          <TableHead className="xl:table-cell">Created Date</TableHead> {/* Removed hidden */}
+          <TableHead className="md:table-cell">Type</TableHead>
+          <TableHead className="lg:table-cell">Publication Status</TableHead>
+          <TableHead className="xl:table-cell">Form Updated Date</TableHead>
+          <TableHead className="xl:table-cell">Created Date</TableHead>
           <TableHead className="text-right">Actions</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
         {forms.length > 0 ? forms.map((form) => (
           <TableRow key={form.id} className={cn(form.is_template && "bg-blue-50/50 dark:bg-blue-950/20")}>
-            <TableCell className="font-medium">{form.name}</TableCell>
+            <TableCell className="font-medium">
+              <Link to={`/creator/forms/${form.id}/edit`} className="hover:underline">
+                {form.name}
+              </Link>
+            </TableCell>
             <TableCell className="md:table-cell">
               <Badge variant="outline">{form.is_template ? 'Template' : 'Program Form'}</Badge>
             </TableCell>
