@@ -30,7 +30,7 @@ import { CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, Link } from "react-router-dom"; // Import Link
 import { showError, showSuccess } from "@/utils/toast";
 import { useEffect, useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -46,8 +46,8 @@ const programFormSchema = z.object({
   deadline: z.date({
     required_error: "A deadline date is required.",
   }),
-  submission_button_text: z.string().optional().nullable(), // New
-  allow_pdf_download: z.boolean().optional(), // New
+  submission_button_text: z.string().optional().nullable(),
+  allow_pdf_download: z.boolean().optional(),
 });
 
 type ProgramFormValues = z.infer<typeof programFormSchema>;
@@ -57,6 +57,7 @@ const EditProgramPage = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formId, setFormId] = useState<string | null>(null); // State to store formId
 
   const form = useForm<ProgramFormValues>({
     resolver: zodResolver(programFormSchema),
@@ -68,7 +69,7 @@ const EditProgramPage = () => {
       setLoading(true);
       const { data, error } = await supabase
         .from('programs')
-        .select('title, description, deadline, submission_button_text, allow_pdf_download') // Optimized select
+        .select('title, description, deadline, submission_button_text, allow_pdf_download, form_id') // Fetch form_id
         .eq('id', programId)
         .single();
 
@@ -80,9 +81,10 @@ const EditProgramPage = () => {
           title: data.title,
           description: data.description || '',
           deadline: new Date(data.deadline),
-          submission_button_text: data.submission_button_text || '', // New
-          allow_pdf_download: data.allow_pdf_download || false, // New
+          submission_button_text: data.submission_button_text || '',
+          allow_pdf_download: data.allow_pdf_download || false,
         });
+        setFormId(data.form_id); // Set the formId
       }
       setLoading(false);
     };
@@ -97,8 +99,8 @@ const EditProgramPage = () => {
         title: values.title,
         description: values.description,
         deadline: values.deadline.toISOString(),
-        submission_button_text: values.submission_button_text || null, // New
-        allow_pdf_download: values.allow_pdf_download || false, // New
+        submission_button_text: values.submission_button_text || null,
+        allow_pdf_download: values.allow_pdf_download || false,
       })
       .eq('id', programId!);
 
@@ -252,9 +254,16 @@ const EditProgramPage = () => {
                   </FormItem>
                 )}
               />
-              <Button type="submit" className="w-full" disabled={isSubmitting}>
-                {isSubmitting ? "Saving Changes..." : "Save Changes"}
-              </Button>
+              <div className="flex justify-between items-center">
+                {formId && (
+                  <Button variant="outline" asChild>
+                    <Link to={`/creator/forms/${formId}/edit`}>Manage Application Form</Link>
+                  </Button>
+                )}
+                <Button type="submit" disabled={isSubmitting}>
+                  {isSubmitting ? "Saving Changes..." : "Save Changes"}
+                </Button>
+              </div>
             </form>
           </Form>
         </CardContent>

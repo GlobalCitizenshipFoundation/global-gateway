@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo, useCallback } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Program, FormField, FormSection } from "@/types";
+import { Program, FormField, FormSection, Form as FormType } from "@/types"; // Import FormType
 import { useSession } from "@/contexts/SessionContext";
 import { showError } from "@/utils/toast";
 import { useForm } from "react-hook-form";
@@ -17,6 +17,7 @@ export const useApplicationForm = () => {
   const { user } = useSession();
 
   const [program, setProgram] = useState<Program | null>(null);
+  const [applicationForm, setApplicationForm] = useState<FormType | null>(null); // New state for the form itself
   const [formSections, setFormSections] = useState<FormSection[]>([]);
   const [formFields, setFormFields] = useState<FormField[]>([]);
   const [loading, setLoading] = useState(true);
@@ -90,25 +91,53 @@ export const useApplicationForm = () => {
 
   useEffect(() => {
     const fetchData = async () => {
-      if (!programId || !user) return;
+      if (!programId || !user) {
+        setLoading(false);
+        return;
+      }
       setLoading(true);
 
       const { data: profileData } = await supabase.from('profiles').select('full_name').eq('id', user.id).single();
       setProfileFullName(profileData?.full_name || '');
       setProfileEmail(user.email || '');
 
-      const { data: programData, error: programError } = await supabase.from('programs').select('id, title, description, deadline, status, submission_button_text, allow_pdf_download').eq('id', programId).single(); // Updated select
+      const { data: programData, error: programError } = await supabase.from('programs').select('id, title, description, deadline, status, submission_button_text, allow_pdf_download, form_id').eq('id', programId).single();
       if (programError) {
         showError("Error fetching program details.");
         setProgram(null);
+        setLoading(false);
+        return;
       } else {
         setProgram({ ...programData, deadline: new Date(programData.deadline) } as Program);
+      }
+
+      const formId = programData.form_id;
+      if (!formId) {
+        showError("No application form found for this program.");
+        setLoading(false);
+        return;
+      }
+
+      // Fetch the form itself to check its status
+      const { data: applicationFormData, error: applicationFormError } = await supabase
+        .from('forms')
+        .select('*')
+        .eq('id', formId)
+        .single();
+
+      if (applicationFormError) {
+        showError("Could not load application form details.");
+        setApplicationForm(null);
+        setLoading(false);
+        return;
+      } else {
+        setApplicationForm(applicationFormData as FormType);
       }
 
       const { data: sectionsData, error: sectionsError } = await supabase
         .from('form_sections')
         .select('*')
-        .eq('program_id', programId)
+        .eq('form_id', formId) // Use formId
         .order('order', { ascending: true });
 
       if (sectionsError) {
@@ -117,9 +146,9 @@ export const useApplicationForm = () => {
         setFormSections(sectionsData || []);
       }
 
-      const { data: fieldsData, error: fieldsError } = await supabase.from('form_fields').select('*').eq('program_id', programId).order('order', { ascending: true });
+      const { data: fieldsData, error: fieldsError } = await supabase.from('form_fields').select('*').eq('form_id', formId).order('order', { ascending: true }); // Use formId
       if (fieldsError) {
-        showError("Could not load application form.");
+        showError("Could not load application form fields.");
       } else {
         setFormFields(fieldsData as FormField[]);
         const initialFormValues: DynamicFormValues = {};
@@ -174,6 +203,7 @@ export const useApplicationForm = () => {
 
   return {
     program,
+    applicationForm, // Export the form object
     formSections,
     formFields,
     loading,

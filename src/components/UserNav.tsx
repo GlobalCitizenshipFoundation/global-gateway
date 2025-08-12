@@ -75,6 +75,9 @@ const UserNav = () => {
           <DropdownMenuItem asChild>
             <Link to="/creator/dashboard">Manage Programs</Link>
           </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link to="/creator/forms">Manage Forms</Link> {/* New link */}
+          </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleLogout}>

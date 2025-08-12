@@ -22,7 +22,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 import { showError, showSuccess } from "@/utils/toast";
 import { ProgramStage, FormField } from "@/types";
-import { evaluateRule, shouldFieldBeDisplayed, formatResponseValue } from "@/utils/formFieldUtils"; // Updated import
+import { evaluateRule, shouldFieldBeDisplayed, formatResponseValue } from "@/utils/formFieldUtils";
 
 type SubmissionDetail = {
   id: string;
@@ -32,6 +32,7 @@ type SubmissionDetail = {
   stage_id: string;
   programs: {
     title: string;
+    form_id: string | null; // Fetch form_id
   } | null;
   program_stages: {
     name: string;
@@ -47,6 +48,7 @@ const SubmissionDetailPage = () => {
   const { programId, submissionId } = useParams<{ programId: string, submissionId: string }>();
   const [submission, setSubmission] = useState<SubmissionDetail | null>(null);
   const [allResponses, setAllResponses] = useState<ResponseWithField[]>([]);
+  const [allFormFieldsForLogic, setAllFormFieldsForLogic] = useState<FormField[]>([]); // Store all fields for logic evaluation
   const [programStages, setProgramStages] = useState<ProgramStage[]>([]);
   const [selectedStage, setSelectedStage] = useState<string>('');
   const [loading, setLoading] = useState(true);
@@ -59,10 +61,10 @@ const SubmissionDetailPage = () => {
       setLoading(true);
       setError(null);
 
-      // Fetch submission
+      // Fetch submission and program's form_id
       const { data: submissionData, error: submissionError } = await supabase
         .from('applications')
-        .select(`id, submitted_date, full_name, email, stage_id, programs(title), program_stages(name)`) // Optimized select
+        .select(`id, submitted_date, full_name, email, stage_id, programs(title, form_id), program_stages(name)`)
         .eq('id', submissionId)
         .single();
 
@@ -71,7 +73,6 @@ const SubmissionDetailPage = () => {
         setLoading(false);
         return;
       }
-      // Correctly unwrap nested objects from arrays if they are returned as such
       const formattedSubmissionData: SubmissionDetail = {
         ...submissionData,
         programs: Array.isArray(submissionData.programs) ? submissionData.programs[0] : submissionData.programs,
@@ -80,10 +81,27 @@ const SubmissionDetailPage = () => {
       setSubmission(formattedSubmissionData);
       setSelectedStage(formattedSubmissionData.stage_id);
 
-      // Fetch responses with full form_fields data including display_rules and help_text
+      const formId = formattedSubmissionData.programs?.form_id;
+
+      // Fetch all form fields for the program's form (needed for display logic evaluation)
+      if (formId) {
+        const { data: allFieldsData, error: allFieldsError } = await supabase
+          .from('form_fields')
+          .select('*')
+          .eq('form_id', formId)
+          .order('order', { ascending: true });
+
+        if (allFieldsError) {
+          showError("Could not load all form fields for logic evaluation.");
+        } else {
+          setAllFormFieldsForLogic(allFieldsData as FormField[]);
+        }
+      }
+
+      // Fetch responses with full form_fields data
       const { data: responsesData, error: responsesError } = await supabase
         .from('application_responses')
-        .select(`value, form_fields ( id, label, field_type, options, is_required, order, display_rules, help_text )`) // Added help_text
+        .select(`value, form_fields ( id, label, field_type, options, is_required, order, display_rules, help_text, description, tooltip )`) // Added description, tooltip
         .eq('application_id', submissionId);
       
       if (responsesError) {
@@ -99,7 +117,7 @@ const SubmissionDetailPage = () => {
       // Fetch all possible stages for the program
       const { data: stagesData, error: stagesError } = await supabase
         .from('program_stages')
-        .select('id, name, order, program_id, created_at') // Optimized select to include all ProgramStage properties
+        .select('id, name, order, program_id, created_at')
         .eq('program_id', programId)
         .order('order', { ascending: true });
       
@@ -117,26 +135,34 @@ const SubmissionDetailPage = () => {
 
   // Memoize the filtered responses to avoid re-calculation on every render
   const displayedResponses = useMemo(() => {
-    const currentResponsesMap: Record<string, string> = {};
+    const currentResponsesMap: Record<string, any> = {};
     allResponses.forEach(res => {
       if (res.form_fields?.id && res.value !== null) {
-        currentResponsesMap[res.form_fields.id] = res.value;
+        // For checkbox, parse the JSON string back to an array for logic evaluation
+        if (res.form_fields.field_type === 'checkbox') {
+          try {
+            currentResponsesMap[res.form_fields.id] = JSON.parse(res.value);
+          } catch {
+            currentResponsesMap[res.form_fields.id] = [];
+          }
+        } else if (res.form_fields.field_type === 'number') {
+          currentResponsesMap[res.form_fields.id] = parseFloat(res.value);
+        }
+        else {
+          currentResponsesMap[res.form_fields.id] = res.value;
+        }
       }
     });
 
-    const allFormFields = allResponses.map(res => res.form_fields).filter((f): f is FormField => f !== null);
-
-    // Determine which fields were *actually* displayed at the time of submission
-    // This is a simplification; ideally, we'd store the display state at submission time.
-    // For now, we re-evaluate based on current logic and submitted responses.
+    // Use allFormFieldsForLogic for shouldFieldBeDisplayed to ensure all fields are considered
     return allResponses.map(res => {
       const field = res.form_fields;
       if (!field) return null;
 
-      const wasDisplayed = shouldFieldBeDisplayed(field, currentResponsesMap, allFormFields);
+      const wasDisplayed = shouldFieldBeDisplayed(field, currentResponsesMap, allFormFieldsForLogic);
       return { ...res, wasDisplayed };
     }).filter(Boolean) as (ResponseWithField & { wasDisplayed: boolean })[];
-  }, [allResponses]);
+  }, [allResponses, allFormFieldsForLogic]);
 
   const handleStageUpdate = async () => {
     if (!submission || !selectedStage || submission.stage_id === selectedStage) return;
@@ -145,13 +171,12 @@ const SubmissionDetailPage = () => {
       .from('applications')
       .update({ stage_id: selectedStage })
       .eq('id', submission.id)
-      .select(`id, submitted_date, full_name, email, stage_id, programs(title), program_stages(name)`) // Optimized select
+      .select(`id, submitted_date, full_name, email, stage_id, programs(title, form_id), program_stages(name)`)
       .single();
 
     if (error) {
       showError(`Failed to update stage: ${error.message}`);
     } else {
-      // Correctly unwrap nested objects from arrays if they are returned as such
       const updatedSubmissionData: SubmissionDetail = {
         ...data,
         programs: Array.isArray(data.programs) ? data.programs[0] : data.programs,
@@ -167,7 +192,7 @@ const SubmissionDetailPage = () => {
     return (
       <div className="container py-12">
         <Skeleton className="h-6 w-48 mb-4" />
-        <Card>
+        <Card className="mx-auto max-w-2xl">
           <CardHeader>
             <div className="flex justify-between items-start">
               <div>
@@ -204,7 +229,7 @@ const SubmissionDetailPage = () => {
         <ArrowLeft className="h-4 w-4" />
         Back to Submissions
       </Link>
-      <Card>
+      <Card className="mx-auto max-w-2xl">
         <CardHeader>
           <div className="flex justify-between items-start">
             <div>
@@ -228,10 +253,13 @@ const SubmissionDetailPage = () => {
                           <span className="ml-2 text-xs text-muted-foreground italic">(Hidden by logic)</span>
                         )}
                       </dt>
-                      {res.form_fields?.help_text && ( // New: Display help text
+                      {res.form_fields?.description && ( // Display description
+                        <dd className="text-sm text-muted-foreground mt-1">{res.form_fields.description}</dd>
+                      )}
+                      {res.form_fields?.help_text && (
                         <dd className="text-xs text-muted-foreground mt-1">{res.form_fields.help_text}</dd>
                       )}
-                      <dd className="text-muted-foreground whitespace-pre-wrap mt-1">{formatResponseValue(res.value, res.form_fields?.field_type)}</dd> {/* Use utility function */}
+                      <dd className="text-muted-foreground whitespace-pre-wrap mt-1">{formatResponseValue(res.value, res.form_fields?.field_type)}</dd>
                     </div>
                   ))
                 ) : (

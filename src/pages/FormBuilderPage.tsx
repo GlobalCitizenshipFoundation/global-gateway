@@ -2,8 +2,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { FormField, DisplayRule } from "@/types";
 import { ArrowLeft } from "lucide-react";
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useState, useEffect } from "react"; // Import useEffect
+import { Link, useParams } from "react-router-dom";
 import { DndContext, DragOverlay, closestCenter } from '@dnd-kit/core';
 import { FormFieldItem } from "@/components/FormFieldItem";
 import ConditionalLogicBuilder from "@/components/ConditionalLogicBuilder";
@@ -17,21 +17,45 @@ import { AddSectionForm } from "@/components/form-builder/AddSectionForm";
 import { AddFieldForm } from "@/components/form-builder/AddFieldForm";
 import { FormSectionsList } from "@/components/form-builder/FormSectionsList";
 import { UncategorizedFieldsList } from "@/components/form-builder/UncategorizedFieldsList";
+import { supabase } from "@/integrations/supabase/client"; // Import supabase
+import { showError, showSuccess } from "@/utils/toast"; // Import toasts
 
 const FormBuilderPage = () => {
+  const { formId } = useParams<{ formId: string }>(); // Changed from programId
+  const [formName, setFormName] = useState('');
+  const [formStatus, setFormStatus] = useState<'draft' | 'published'>('draft');
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+
   const {
-    programId,
-    programTitle,
     sections,
-    setSections, // Passed to actions hook
+    setSections,
     fields,
-    setFields, // Passed to actions hook
+    setFields,
     loading,
     newFieldSectionId,
     setNewFieldSectionId,
     fetchData,
     getFieldsForSection,
-  } = useFormBuilderData();
+  } = useFormBuilderData(formId); // Pass formId
+
+  useEffect(() => {
+    const fetchFormDetails = async () => {
+      if (!formId) return;
+      const { data, error } = await supabase
+        .from('forms')
+        .select('name, status')
+        .eq('id', formId)
+        .single();
+
+      if (error) {
+        showError("Failed to load form details: " + error.message);
+      } else if (data) {
+        setFormName(data.name);
+        setFormStatus(data.status);
+      }
+    };
+    fetchFormDetails();
+  }, [formId]);
 
   const {
     sensors,
@@ -48,7 +72,8 @@ const FormBuilderPage = () => {
     handleToggleRequired: performToggleRequired,
     handleSaveLogic: performSaveLogic,
     handleSaveEditedField: performSaveEditedField,
-  } = useFormBuilderActions({ programId, setSections, setFields, fetchData });
+    handleUpdateFormStatus: performUpdateFormStatus, // New
+  } = useFormBuilderActions({ formId, setSections, setFields, fetchData }); // Pass formId
 
   // States for Add Section Form
   const [newSectionName, setNewSectionName] = useState('');
@@ -59,8 +84,8 @@ const FormBuilderPage = () => {
   const [newFieldType, setNewFieldType] = useState<FormField['field_type']>('text');
   const [newFieldOptions, setNewFieldOptions] = useState('');
   const [newFieldHelpText, setNewFieldHelpText] = useState('');
-  const [newFieldDescription, setNewFieldDescription] = useState(''); // New
-  const [newFieldTooltip, setNewFieldTooltip] = useState(''); // New
+  const [newFieldDescription, setNewFieldDescription] = useState('');
+  const [newFieldTooltip, setNewFieldTooltip] = useState('');
   const [isAddingField, setIsAddingField] = useState(false);
 
   // State for ConditionalLogicBuilder
@@ -95,8 +120,8 @@ const FormBuilderPage = () => {
       setNewFieldOptions('');
       setNewFieldType('text');
       setNewFieldHelpText('');
-      setNewFieldDescription(''); // Reset new field description
-      setNewFieldTooltip(''); // Reset new field tooltip
+      setNewFieldDescription('');
+      setNewFieldTooltip('');
     }
     setIsAddingField(false);
   };
@@ -129,20 +154,47 @@ const FormBuilderPage = () => {
     setFieldToEditDetails(null);
   };
 
+  const handlePublishUnpublish = async (status: 'draft' | 'published') => {
+    if (!formId) return;
+    setIsUpdatingStatus(true);
+    const success = await performUpdateFormStatus(formId, status);
+    if (success) {
+      setFormStatus(status);
+    }
+    setIsUpdatingStatus(false);
+  };
+
   const uncategorizedFields = getFieldsForSection(null);
 
   return (
     <div className="container py-12">
-      <Link to="/creator/dashboard" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-4">
+      <Link to="/creator/forms" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-4">
         <ArrowLeft className="h-4 w-4" />
-        Back to Programs
+        Back to Forms
       </Link>
       <Card className="mx-auto max-w-3xl">
         <CardHeader>
-          <CardTitle>Form Builder</CardTitle>
-          <CardDescription>
-            Design the application form for your program: <span className="font-semibold">{programTitle}</span>
-          </CardDescription>
+          <div className="flex justify-between items-center">
+            <div>
+              <CardTitle>Form Builder: {formName}</CardTitle>
+              <CardDescription>
+                Design your application form. Current Status: <Badge variant={formStatus === 'published' ? 'default' : 'secondary'}>{formStatus.charAt(0).toUpperCase() + formStatus.slice(1)}</Badge>
+              </CardDescription>
+            </div>
+            <div className="flex gap-2">
+              {formStatus === 'draft' ? (
+                <Button onClick={() => handlePublishUnpublish('published')} disabled={isUpdatingStatus}>
+                  {isUpdatingStatus ? 'Publishing...' : 'Publish Form'}
+                </Button>
+              ) : (
+                <Button variant="outline" onClick={() => handlePublishUnpublish('draft')} disabled={isUpdatingStatus}>
+                  {isUpdatingStatus ? 'Unpublishing...' : 'Unpublish Form'}
+                </Button>
+              )}
+              {/* Placeholder for Save as Template */}
+              <Button variant="outline" disabled={true}>Save as Template</Button>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd} onDragStart={onDragStart}>
@@ -197,10 +249,10 @@ const FormBuilderPage = () => {
             setNewFieldSectionId={setNewFieldSectionId}
             newFieldHelpText={newFieldHelpText}
             setNewFieldHelpText={setNewFieldHelpText}
-            newFieldDescription={newFieldDescription} // New
-            setNewFieldDescription={setNewFieldDescription} // New
-            newFieldTooltip={newFieldTooltip} // New
-            setNewFieldTooltip={setNewFieldTooltip} // New
+            newFieldDescription={newFieldDescription}
+            setNewFieldDescription={setNewFieldDescription}
+            newFieldTooltip={newFieldTooltip}
+            setNewFieldTooltip={setNewFieldTooltip}
             isSubmitting={isAddingField}
             handleAddField={handleAddField}
             sections={sections}

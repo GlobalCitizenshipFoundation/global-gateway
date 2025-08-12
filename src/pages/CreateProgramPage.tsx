@@ -68,20 +68,38 @@ const CreateProgramPage = () => {
     }
     setIsSubmitting(true);
 
-    const { data: programData, error } = await supabase.from("programs").insert({
+    // 1. Create a new form first
+    const { data: newFormData, error: formError } = await supabase.from("forms").insert({
+      user_id: user.id,
+      name: `${values.title} Application Form`, // Default name for the form
+      is_template: false,
+      status: 'draft',
+    }).select('id').single();
+
+    if (formError || !newFormData) {
+      showError(`Failed to create application form: ${formError?.message}`);
+      setIsSubmitting(false);
+      return;
+    }
+
+    // 2. Then create the program, linking it to the new form
+    const { data: programData, error: programError } = await supabase.from("programs").insert({
       user_id: user.id,
       title: values.title,
       description: values.description,
       deadline: values.deadline.toISOString(),
-      status: 'draft', // Default to draft
+      status: 'draft',
+      form_id: newFormData.id, // Link the new form
     }).select('id').single();
 
-    if (error || !programData) {
-      showError(`Failed to create program: ${error?.message}`);
+    if (programError || !programData) {
+      showError(`Failed to create program: ${programError?.message}`);
+      // Optionally, delete the created form if program creation fails
+      await supabase.from('forms').delete().eq('id', newFormData.id);
       setIsSubmitting(false);
     } else {
-      showSuccess("Program created successfully! Now, let's set up its workflow.");
-      navigate(`/creator/program/${programData.id}/workflow`);
+      showSuccess("Program and its application form created successfully! Now, let's design your form.");
+      navigate(`/creator/forms/${newFormData.id}/edit`); // Redirect to form builder
     }
   }
 
@@ -91,7 +109,7 @@ const CreateProgramPage = () => {
         <CardHeader>
           <CardTitle>Create a New Program</CardTitle>
           <CardDescription>
-            Fill out the details below to add a new opportunity. You'll define the application workflow in the next step.
+            Fill out the details below to add a new opportunity. An application form will be automatically created for it.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -167,7 +185,7 @@ const CreateProgramPage = () => {
                 )}
               />
               <Button type="submit" className="w-full" disabled={isSubmitting}>
-                {isSubmitting ? "Creating Program..." : "Create and Continue"}
+                {isSubmitting ? "Creating Program..." : "Create and Design Form"}
               </Button>
             </form>
           </Form>

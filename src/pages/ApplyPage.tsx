@@ -15,7 +15,7 @@ import { Form } from "@/components/ui/form";
 import { useApplicationForm } from "@/hooks/useApplicationForm";
 import { ApplicantInfoCard } from "@/components/application/ApplicantInfoCard";
 import ApplicationFormSections from "@/components/application/ApplicationFormSections";
-import { useState } from "react"; // Import useState
+import { useState, useEffect } from "react"; // Import useEffect
 
 // Explicitly define the type for dynamic form values
 type DynamicFormValues = Record<string, string | string[] | number | undefined | null>;
@@ -32,13 +32,26 @@ const ApplyPage = () => {
     displayedFormFields,
     user,
     programId,
+    applicationForm, // New: the actual form object
   } = useApplicationForm();
 
   const [submitting, setSubmitting] = useState(false);
-  const navigate = useNavigate(); // Initialize useNavigate
+  const navigate = useNavigate();
+
+  // Check form status once data is loaded
+  useEffect(() => {
+    if (!loading && program && applicationForm && applicationForm.status !== 'published') {
+      showError("This application form is not currently published and cannot be accessed.");
+      navigate(`/programs/${programId}`); // Redirect back to program details or home
+    }
+  }, [loading, program, applicationForm, navigate, programId]);
+
 
   const onSubmit = async (values: DynamicFormValues) => {
-    if (!user || !program) return;
+    if (!user || !program || !applicationForm || applicationForm.status !== 'published') {
+      showError("Cannot submit: form is not published or data is missing.");
+      return;
+    }
     setSubmitting(true);
 
     const { data: firstStage, error: stageError } = await supabase.from('program_stages').select('id').eq('program_id', program.id).order('order', { ascending: true }).limit(1).single();
@@ -105,8 +118,9 @@ const ApplyPage = () => {
     );
   }
 
-  if (!program) {
-    return <div className="container text-center py-12"><h1 className="text-2xl font-bold">Program not found</h1></div>;
+  // If form is not published, display a message (handled by useEffect redirect)
+  if (!program || !applicationForm || applicationForm.status !== 'published') {
+    return null; // Or a loading spinner while redirecting
   }
 
   return (

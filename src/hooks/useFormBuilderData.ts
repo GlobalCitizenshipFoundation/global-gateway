@@ -1,35 +1,49 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { FormField, FormSection, Program } from '@/types';
+import { FormField, FormSection, Form as FormType } from '@/types'; // Import FormType
 import { showError } from '@/utils/toast';
 
-export const useFormBuilderData = () => {
-  const { programId } = useParams<{ programId: string }>();
-  const [programTitle, setProgramTitle] = useState('');
+export const useFormBuilderData = (initialFormId?: string) => { // Accept initialFormId as prop
+  const { formId: paramFormId } = useParams<{ formId: string }>(); // Get formId from URL
+  const currentFormId = initialFormId || paramFormId; // Use prop or URL param
+
+  const [formName, setFormName] = useState('');
+  const [formStatus, setFormStatus] = useState<'draft' | 'published'>('draft');
   const [sections, setSections] = useState<FormSection[]>([]);
   const [fields, setFields] = useState<FormField[]>([]);
   const [loading, setLoading] = useState(true);
   const [newFieldSectionId, setNewFieldSectionId] = useState<string | null>(null);
 
   const fetchData = useCallback(async () => {
-    if (!programId) {
+    if (!currentFormId) {
       setLoading(false);
       return;
     }
     setLoading(true);
 
-    const { data: programData, error: programError } = await supabase
-      .from('programs').select('title').eq('id', programId).single(); // Optimized select
+    // Fetch form details
+    const { data: formData, error: formError } = await supabase
+      .from('forms')
+      .select('name, status')
+      .eq('id', currentFormId)
+      .single();
     
-    if (programError) {
-      showError("Could not fetch program details.");
+    if (formError) {
+      showError("Could not fetch form details.");
+      setFormName('');
+      setFormStatus('draft');
     } else {
-      setProgramTitle(programData.title);
+      setFormName(formData.name);
+      setFormStatus(formData.status);
     }
 
+    // Fetch sections for the form
     const { data: sectionsData, error: sectionsError } = await supabase
-      .from('form_sections').select('*').eq('program_id', programId).order('order', { ascending: true });
+      .from('form_sections')
+      .select('*')
+      .eq('form_id', currentFormId) // Use form_id
+      .order('order', { ascending: true });
     
     if (sectionsError) {
       showError("Could not fetch form sections.");
@@ -37,8 +51,12 @@ export const useFormBuilderData = () => {
       setSections(sectionsData || []);
     }
 
+    // Fetch fields for the form
     const { data: fieldsData, error: fieldsError } = await supabase
-      .from('form_fields').select('*').eq('program_id', programId).order('order', { ascending: true });
+      .from('form_fields')
+      .select('*')
+      .eq('form_id', currentFormId) // Use form_id
+      .order('order', { ascending: true });
 
     if (fieldsError) {
       showError("Could not fetch form fields.");
@@ -46,7 +64,7 @@ export const useFormBuilderData = () => {
       setFields(fieldsData as FormField[]);
     }
     setLoading(false);
-  }, [programId]);
+  }, [currentFormId]);
 
   useEffect(() => {
     fetchData();
@@ -63,8 +81,9 @@ export const useFormBuilderData = () => {
   }, [fields]);
 
   return {
-    programId,
-    programTitle,
+    formId: currentFormId, // Return the resolved formId
+    formName,
+    formStatus,
     sections,
     setSections,
     fields,

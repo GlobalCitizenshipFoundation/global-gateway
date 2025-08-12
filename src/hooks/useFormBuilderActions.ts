@@ -3,27 +3,27 @@ import { FormField, FormSection, DisplayRule } from '@/types';
 import { showError, showSuccess } from '@/utils/toast';
 
 interface UseFormBuilderActionsProps {
-  programId: string | undefined;
+  formId: string | undefined; // Changed from programId
   setSections: React.Dispatch<React.SetStateAction<FormSection[]>>;
   setFields: React.Dispatch<React.SetStateAction<FormField[]>>;
   fetchData: () => Promise<void>; // To re-fetch data after certain operations
 }
 
 export const useFormBuilderActions = ({
-  programId,
+  formId, // Changed from programId
   setSections,
   setFields,
   fetchData,
 }: UseFormBuilderActionsProps) => {
 
   const handleAddSection = async (name: string) => {
-    if (!name.trim() || !programId) return null;
+    if (!name.trim() || !formId) return null; // Use formId
 
     // Fetch current sections to determine next order
     const { data: currentSections, error: fetchError } = await supabase
       .from('form_sections')
       .select('order')
-      .eq('program_id', programId);
+      .eq('form_id', formId); // Use formId
 
     if (fetchError) {
       showError(`Failed to fetch sections for new order: ${fetchError.message}`);
@@ -35,7 +35,7 @@ export const useFormBuilderActions = ({
     const { data, error } = await supabase
       .from('form_sections')
       .insert({
-        program_id: programId,
+        form_id: formId, // Use formId
         name: name,
         order: nextOrder,
       })
@@ -102,13 +102,13 @@ export const useFormBuilderActions = ({
   };
 
   const handleAddField = async (label: string, type: FormField['field_type'], options: string, sectionId: string | null, helpText: string | null, description: string | null, tooltip: string | null) => {
-    if (!label.trim() || !programId) return null;
+    if (!label.trim() || !formId) return null; // Use formId
 
     // Fetch current fields for the target section to determine next order
     const { data: currentFieldsInTargetSection, error: fetchError } = await supabase
       .from('form_fields')
       .select('order')
-      .eq('program_id', programId)
+      .eq('form_id', formId) // Use formId
       .eq('section_id', sectionId);
 
     if (fetchError) {
@@ -121,7 +121,7 @@ export const useFormBuilderActions = ({
     const { data, error } = await supabase
       .from('form_fields')
       .insert({
-        program_id: programId,
+        form_id: formId, // Use formId
         label: label,
         field_type: type,
         order: nextOrder,
@@ -130,8 +130,8 @@ export const useFormBuilderActions = ({
         is_required: false, // Default to not required when adding
         display_rules: null, // Default to no display rules
         help_text: helpText || null,
-        description: description || null, // New
-        tooltip: tooltip || null, // New
+        description: description || null,
+        tooltip: tooltip || null,
       })
       .select()
       .single();
@@ -211,8 +211,8 @@ export const useFormBuilderActions = ({
         options: updatedOptions,
         is_required: values.is_required,
         help_text: values.help_text || null,
-        description: values.description || null, // New
-        tooltip: values.tooltip || null, // New
+        description: values.description || null,
+        tooltip: values.tooltip || null,
       })
       .eq('id', fieldId);
 
@@ -224,6 +224,21 @@ export const useFormBuilderActions = ({
     }
   };
 
+  const handleUpdateFormStatus = async (id: string, status: 'draft' | 'published') => {
+    const { error } = await supabase
+      .from('forms')
+      .update({ status: status, updated_at: new Date().toISOString() })
+      .eq('id', id);
+
+    if (error) {
+      showError(`Failed to update form status: ${error.message}`);
+      return false;
+    } else {
+      showSuccess(`Form status updated to "${status}".`);
+      return true;
+    }
+  };
+
   return {
     handleAddSection,
     handleDeleteSection,
@@ -232,5 +247,6 @@ export const useFormBuilderActions = ({
     handleToggleRequired,
     handleSaveLogic,
     handleSaveEditedField,
+    handleUpdateFormStatus, // Export new function
   };
 };

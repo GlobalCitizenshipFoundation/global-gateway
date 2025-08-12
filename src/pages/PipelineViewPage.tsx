@@ -20,7 +20,7 @@ import { showError, showSuccess } from "@/utils/toast";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { shouldFieldBeDisplayed, formatResponseValue } from "@/utils/formFieldUtils"; // Updated import
+import { shouldFieldBeDisplayed, formatResponseValue } from "@/utils/formFieldUtils";
 
 type SubmissionDetail = {
   id: string;
@@ -39,6 +39,7 @@ type ResponseWithField = {
 const PipelineViewPage = () => {
   const { programId } = useParams<{ programId: string }>();
   const [programTitle, setProgramTitle] = useState("");
+  const [programFormId, setProgramFormId] = useState<string | null>(null); // New state for form_id
   const [stages, setStages] = useState<ProgramStage[]>([]);
   const [applications, setApplications] = useState<Applicant[]>([]);
   const [activeApplicant, setActiveApplicant] = useState<Applicant | null>(null);
@@ -47,6 +48,7 @@ const PipelineViewPage = () => {
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [selectedSubmission, setSelectedSubmission] = useState<SubmissionDetail | null>(null);
   const [allSubmissionResponses, setAllSubmissionResponses] = useState<ResponseWithField[]>([]);
+  const [allFormFieldsForLogic, setAllFormFieldsForLogic] = useState<FormField[]>([]); // Store all fields for logic evaluation
   const [sheetLoading, setSheetLoading] = useState(false);
   const [currentStageInSheet, setCurrentStageInSheet] = useState('');
 
@@ -55,9 +57,9 @@ const PipelineViewPage = () => {
       if (!programId) return;
       setLoading(true);
 
-      const programPromise = supabase.from("programs").select("title").eq("id", programId).single(); // Optimized select
-      const stagesPromise = supabase.from("program_stages").select("id, name, order").eq("program_id", programId).order("order", { ascending: true }); // Optimized select
-      const applicationsPromise = supabase.from("applications").select("id, full_name, stage_id").eq("program_id", programId); // Optimized select
+      const programPromise = supabase.from("programs").select("title, form_id").eq("id", programId).single(); // Fetch form_id
+      const stagesPromise = supabase.from("program_stages").select("id, name, order").eq("program_id", programId).order("order", { ascending: true });
+      const applicationsPromise = supabase.from("applications").select("id, full_name, stage_id").eq("program_id", programId);
 
       const [
         { data: programData, error: programError },
@@ -69,8 +71,24 @@ const PipelineViewPage = () => {
         showError("Failed to load pipeline data.");
       } else {
         setProgramTitle(programData.title);
+        setProgramFormId(programData.form_id); // Set form_id
         setStages(stagesData as ProgramStage[]);
         setApplications(applicationsData as Applicant[]);
+
+        // Fetch all form fields for the program's form (needed for display logic evaluation)
+        if (programData.form_id) {
+          const { data: allFieldsData, error: allFieldsError } = await supabase
+            .from('form_fields')
+            .select('*')
+            .eq('form_id', programData.form_id)
+            .order('order', { ascending: true });
+
+          if (allFieldsError) {
+            showError("Could not load all form fields for logic evaluation.");
+          } else {
+            setAllFormFieldsForLogic(allFieldsData as FormField[]);
+          }
+        }
       }
       setLoading(false);
     };
@@ -118,23 +136,34 @@ const PipelineViewPage = () => {
 
   // Memoize the filtered responses for the sheet
   const displayedSubmissionResponses = useMemo(() => {
-    const currentResponsesMap: Record<string, string> = {};
+    const currentResponsesMap: Record<string, any> = {};
     allSubmissionResponses.forEach(res => {
       if (res.form_fields?.id && res.value !== null) {
-        currentResponsesMap[res.form_fields.id] = res.value;
+        // For checkbox, parse the JSON string back to an array for logic evaluation
+        if (res.form_fields.field_type === 'checkbox') {
+          try {
+            currentResponsesMap[res.form_fields.id] = JSON.parse(res.value);
+          } catch {
+            currentResponsesMap[res.form_fields.id] = [];
+          }
+        } else if (res.form_fields.field_type === 'number') {
+          currentResponsesMap[res.form_fields.id] = parseFloat(res.value);
+        }
+        else {
+          currentResponsesMap[res.form_fields.id] = res.value;
+        }
       }
     });
 
-    const allFormFields = allSubmissionResponses.map(res => res.form_fields).filter((f): f is FormField => f !== null);
-
+    // Use allFormFieldsForLogic for shouldFieldBeDisplayed to ensure all fields are considered
     return allSubmissionResponses.map(res => {
       const field = res.form_fields;
       if (!field) return null;
 
-      const wasDisplayed = shouldFieldBeDisplayed(field, currentResponsesMap, allFormFields);
+      const wasDisplayed = shouldFieldBeDisplayed(field, currentResponsesMap, allFormFieldsForLogic);
       return { ...res, wasDisplayed };
     }).filter(Boolean) as (ResponseWithField & { wasDisplayed: boolean })[];
-  }, [allSubmissionResponses]);
+  }, [allSubmissionResponses, allFormFieldsForLogic]);
 
   const handleApplicantClick = async (applicant: Applicant) => {
     setIsSheetOpen(true);
@@ -143,7 +172,7 @@ const PipelineViewPage = () => {
     setAllSubmissionResponses([]);
 
     const { data: submissionData, error: submissionError } = await supabase
-      .from('applications').select(`id, submitted_date, full_name, email, stage_id, program_stages(name)`).eq('id', applicant.id).single(); // Optimized select
+      .from('applications').select(`id, submitted_date, full_name, email, stage_id, program_stages(name)`).eq('id', applicant.id).single();
 
     if (submissionError) {
       showError("Failed to load submission details.");
@@ -151,7 +180,6 @@ const PipelineViewPage = () => {
       setSheetLoading(false);
       return;
     }
-    // Correctly unwrap nested objects from arrays if they are returned as such
     const formattedSubmissionData: SubmissionDetail = {
       ...submissionData,
       program_stages: Array.isArray(submissionData.program_stages) ? submissionData.program_stages[0] : submissionData.program_stages,
@@ -159,9 +187,9 @@ const PipelineViewPage = () => {
     setSelectedSubmission(formattedSubmissionData);
     setCurrentStageInSheet(formattedSubmissionData.stage_id);
 
-    // Fetch responses with full form_fields data including display_rules and help_text
+    // Fetch responses with full form_fields data including display_rules, help_text, description, tooltip
     const { data: responsesData, error: responsesError } = await supabase
-      .from('application_responses').select(`value, form_fields ( id, label, field_type, options, is_required, order, display_rules, help_text )`).eq('application_id', applicant.id);
+      .from('application_responses').select(`value, form_fields ( id, label, field_type, options, is_required, order, display_rules, help_text, description, tooltip )`).eq('application_id', applicant.id);
     
     if (responsesError) {
       showError("Could not load application responses.");
@@ -214,9 +242,11 @@ const PipelineViewPage = () => {
           <ArrowLeft className="h-4 w-4" />
           Back to Submissions
         </Link>
-        <Button asChild variant="outline">
-          <Link to={`/creator/program/${programId}/form`}>Manage Form</Link>
-        </Button>
+        {programFormId && (
+          <Button asChild variant="outline">
+            <Link to={`/creator/forms/${programFormId}/edit`}>Manage Form</Link>
+          </Button>
+        )}
       </div>
       <h1 className="text-3xl font-bold mb-8">Pipeline for: {programTitle}</h1>
       <DndContext sensors={sensors} onDragStart={onDragStart} onDragEnd={onDragEnd}>
@@ -272,10 +302,13 @@ const PipelineViewPage = () => {
                             <span className="ml-2 text-xs text-muted-foreground italic">(Hidden by logic)</span>
                           )}
                         </dt>
-                        {res.form_fields?.help_text && ( // New: Display help text
+                        {res.form_fields?.description && ( // Display description
+                          <dd className="text-sm text-muted-foreground mt-1">{res.form_fields.description}</dd>
+                        )}
+                        {res.form_fields?.help_text && (
                           <dd className="text-xs text-muted-foreground mt-1">{res.form_fields.help_text}</dd>
                         )}
-                        <dd className="text-muted-foreground whitespace-pre-wrap mt-1">{formatResponseValue(res.value, res.form_fields?.field_type)}</dd> {/* Use utility function */}
+                        <dd className="text-muted-foreground whitespace-pre-wrap mt-1">{formatResponseValue(res.value, res.form_fields?.field_type)}</dd>
                       </div>
                     ))
                   ) : (

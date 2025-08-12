@@ -20,7 +20,8 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import ManageWorkflowPage from "./pages/ManageWorkflowPage";
 import PipelineViewPage from "./pages/PipelineViewPage";
 import FormBuilderPage from "./pages/FormBuilderPage";
-import ProgramDetailsPage from "./pages/ProgramDetailsPage"; // New import
+import ProgramDetailsPage from "./pages/ProgramDetailsPage";
+import FormManagementPage from "./pages/FormManagementPage"; // New import
 
 const queryClient = new QueryClient();
 
@@ -35,7 +36,7 @@ const App = () => (
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/login" element={<LoginPage />} />
-              <Route path="/programs/:programId" element={<ProgramDetailsPage />} /> {/* New route */}
+              <Route path="/programs/:programId" element={<ProgramDetailsPage />} />
               
               {/* Protected Routes */}
               <Route element={<ProtectedRoute />}>
@@ -46,10 +47,13 @@ const App = () => (
                 <Route path="/creator/new-program" element={<CreateProgramPage />} />
                 <Route path="/creator/program/:programId/edit" element={<EditProgramPage />} />
                 <Route path="/creator/program/:programId/workflow" element={<ManageWorkflowPage />} />
-                <Route path="/creator/program/:programId/form" element={<FormBuilderPage />} />
                 <Route path="/creator/program/:programId/submissions" element={<SubmissionsListPage />} />
                 <Route path="/creator/program/:programId/pipeline" element={<PipelineViewPage />} />
                 <Route path="/creator/program/:programId/submission/:submissionId" element={<SubmissionDetailPage />} />
+                
+                {/* New Form Management Routes */}
+                <Route path="/creator/forms" element={<FormManagementPage />} />
+                <Route path="/creator/forms/:formId/edit" element={<FormBuilderPage />} />
               </Route>
 
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
