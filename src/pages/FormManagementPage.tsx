@@ -4,10 +4,10 @@ import { Plus } from "lucide-react";
 
 import { useFormsData } from "@/hooks/useFormsData";
 import { useFormManagementActions } from "@/hooks/useFormManagementActions";
-import { FormsTable } from "@/components/forms/FormsTable.tsx";
-import { DeleteFormDialog } from "@/components/forms/DeleteFormDialog.tsx";
-import { CreateFormFromTemplateDialog } from "@/components/forms/CreateFormFromTemplateDialog.tsx";
-import { SaveAsTemplateDialog } from "@/components/forms/SaveAsTemplateDialog.tsx";
+import { FormsTable } from "@/components/forms/FormsTable";
+import { DeleteFormDialog } from "@/components/forms/DeleteFormDialog";
+import { CreateFormFromTemplateDialog } from "@/components/forms/CreateFormFromTemplateDialog";
+import { SaveAsTemplateDialog } from "@/components/forms/SaveAsTemplateDialog";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const FormManagementPage = () => {

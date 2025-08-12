@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { FormField, DisplayRule, FormSection } from "@/types";
 import { ArrowLeft } from "lucide-react";
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Link, useParams, useNavigation } from "react-router-dom"; // Corrected import for useNavigation
+import { Link, useParams, useNavigation } from "react-router-dom";
 import { DndContext, DragOverlay, closestCenter, DragEndEvent, DragStartEvent } from '@dnd-kit/core';
 import { FormFieldItem } from "@/components/FormFieldItem";
 import ConditionalLogicBuilder from "@/components/ConditionalLogicBuilder";
@@ -25,15 +25,15 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { useSession } from "@/contexts/SessionContext";
 import { useFormSectionDragAndDrop } from "@/hooks/useFormSectionDragAndDrop";
-import RichTextEditor from "@/components/RichTextEditor"; // Import RichTextEditor
-import { SaveAsTemplateDialog } from "@/components/forms/SaveAsTemplateDialog"; // Import SaveAsTemplateDialog
+import RichTextEditor from "@/components/RichTextEditor";
+import { SaveAsTemplateDialog } from "@/components/forms/SaveAsTemplateDialog";
 
 const AUTO_SAVE_DEBOUNCE_TIME = 2000; // 2 seconds
 
 const FormBuilderPage = () => {
   const { formId } = useParams<{ formId: string }>();
   const { user } = useSession();
-  const navigation = useNavigation(); // Corrected use of useNavigation
+  const navigation = useNavigation();
 
   const [formName, setFormName] = useState('');
   const [formDescription, setFormDescription] = useState('');
@@ -62,7 +62,12 @@ const FormBuilderPage = () => {
     formName: fetchedFormName,
     formDescription: fetchedFormDescription,
     formStatus: fetchedFormStatus,
+    formLastEditedAt,
+    formLastEditedByUserId,
   } = useFormBuilderData(formId);
+
+  // State for last edited user's full name
+  const [lastEditedByUserName, setLastEditedByUserName] = useState<string | null>(null);
 
   // Sync local states with fetched data
   useEffect(() => {
@@ -71,9 +76,31 @@ const FormBuilderPage = () => {
     setFormStatus(fetchedFormStatus);
     if (!loading) {
       setHasUnsavedChanges(false); // Reset unsaved changes after initial load
-      setLastSavedTimestamp(new Date().toLocaleTimeString()); // Set initial saved time
+      setLastSavedTimestamp(formLastEditedAt ? new Date(formLastEditedAt).toLocaleTimeString() : null); // Set initial saved time from DB
     }
-  }, [fetchedFormName, fetchedFormDescription, fetchedFormStatus, loading]);
+  }, [fetchedFormName, fetchedFormDescription, fetchedFormStatus, loading, formLastEditedAt]);
+
+  // Fetch last edited by user's full name
+  useEffect(() => {
+    const fetchUserName = async () => {
+      if (formLastEditedByUserId) {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('full_name')
+          .eq('id', formLastEditedByUserId)
+          .single();
+        if (error) {
+          console.error("Error fetching last edited user name:", error);
+          setLastEditedByUserName(null);
+        } else if (data) {
+          setLastEditedByUserName(data.full_name || 'Unknown User');
+        }
+      } else {
+        setLastEditedByUserName(null);
+      }
+    };
+    fetchUserName();
+  }, [formLastEditedByUserId]);
 
   const {
     sensors: fieldSensors,
@@ -180,22 +207,10 @@ const FormBuilderPage = () => {
 
     window.addEventListener('beforeunload', handleBeforeUnload);
 
-    // Removed the problematic navigation.history.block
-    // const unblock = navigation.history.block((tx) => {
-    //   if (hasUnsavedChanges) {
-    //     if (window.confirm("You have unsaved changes. Are you sure you want to leave?")) {
-    //       return true;
-    //     }
-    //     return false;
-    //   }
-    //   return true;
-    // });
-
     return () => {
       window.removeEventListener('beforeunload', handleBeforeUnload);
-      // unblock(); // No longer needed as history.block is removed
     };
-  }, [hasUnsavedChanges]); // Removed navigation.history from dependencies
+  }, [hasUnsavedChanges]);
 
   const handleAddSection = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -339,6 +354,8 @@ const FormBuilderPage = () => {
         is_template: true,
         status: 'published', // Templates are published by default
         description: currentFormData.description, // Copy description from current form
+        last_edited_by_user_id: user.id, // Set editor
+        last_edited_at: new Date().toISOString(), // Set timestamp
       }).select('id').single();
 
       if (newTemplateFormError || !newTemplateFormData) {
@@ -356,6 +373,8 @@ const FormBuilderPage = () => {
           form_id: newTemplateFormData.id,
           name: section.name,
           order: section.order,
+          last_edited_by_user_id: user.id, // Set editor
+          last_edited_at: new Date().toISOString(), // Set timestamp
         };
       });
 
@@ -372,6 +391,8 @@ const FormBuilderPage = () => {
         help_text: field.help_text,
         description: field.description,
         tooltip: field.tooltip,
+        last_edited_by_user_id: user.id, // Set editor
+        last_edited_at: new Date().toISOString(), // Set timestamp
       }));
 
       const { error: insertSectionsError } = await supabase.from('form_sections').insert(newSectionsToInsert);
@@ -410,13 +431,16 @@ const FormBuilderPage = () => {
                 Design your application form. Current Status: <Badge variant={formStatus === 'published' ? 'default' : 'secondary'}>{formStatus.charAt(0).toUpperCase() + formStatus.slice(1)}</Badge>
               </CardDescription>
             </div>
-            <div className="text-sm text-muted-foreground">
+            <div className="text-sm text-muted-foreground text-right">
               {isAutoSaving ? (
                 <span className="text-blue-500">Saving...</span>
               ) : hasUnsavedChanges ? (
                 <span className="text-orange-500">Unsaved changes</span>
               ) : (
-                <span>Saved at {lastSavedTimestamp}</span>
+                <span>Last saved: {lastSavedTimestamp ? new Date(lastSavedTimestamp).toLocaleString() : 'Never'}</span>
+              )}
+              {lastEditedByUserName && (
+                <p className="text-xs">By: {lastEditedByUserName}</p>
               )}
             </div>
           </div>
@@ -563,7 +587,18 @@ const FormBuilderPage = () => {
       <SaveAsTemplateDialog
         isOpen={isSaveAsTemplateDialogOpen}
         onClose={() => setIsSaveAsTemplateDialogOpen(false)}
-        formToCopy={{ id: formId || '', name: formName, description: formDescription, is_template: false, status: formStatus, user_id: user?.id || '', created_at: '', updated_at: '' }} // Pass current form details
+        formToCopy={{
+          id: formId || '',
+          name: formName,
+          description: formDescription,
+          is_template: false,
+          status: formStatus,
+          user_id: user?.id || '',
+          created_at: '', // Placeholder, will be overwritten by DB
+          updated_at: '', // Placeholder, will be overwritten by DB
+          last_edited_by_user_id: formLastEditedByUserId, // Include fetched value
+          last_edited_at: formLastEditedAt, // Include fetched value
+        }}
         newTemplateName={newTemplateName}
         setNewTemplateName={setNewTemplateName}
         isSaving={isSavingTemplate}

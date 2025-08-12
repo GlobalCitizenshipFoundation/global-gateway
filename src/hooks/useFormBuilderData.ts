@@ -11,6 +11,8 @@ export const useFormBuilderData = (initialFormId?: string) => { // Accept initia
   const [formName, setFormName] = useState('');
   const [formDescription, setFormDescription] = useState<string | null>(null); // New state for description
   const [formStatus, setFormStatus] = useState<'draft' | 'published'>('draft');
+  const [formLastEditedAt, setFormLastEditedAt] = useState<string | null>(null); // New
+  const [formLastEditedByUserId, setFormLastEditedByUserId] = useState<string | null>(null); // New
   const [sections, setSections] = useState<FormSection[]>([]);
   const [fields, setFields] = useState<FormField[]>([]);
   const [loading, setLoading] = useState(true);
@@ -26,7 +28,7 @@ export const useFormBuilderData = (initialFormId?: string) => { // Accept initia
     // Fetch form details
     const { data: formData, error: formError } = await supabase
       .from('forms')
-      .select('name, status, description') // Fetch description
+      .select('name, status, description, last_edited_at, last_edited_by_user_id') // Fetch new columns
       .eq('id', currentFormId)
       .single();
     
@@ -35,10 +37,14 @@ export const useFormBuilderData = (initialFormId?: string) => { // Accept initia
       setFormName('');
       setFormDescription(null); // Reset description on error
       setFormStatus('draft');
+      setFormLastEditedAt(null);
+      setFormLastEditedByUserId(null);
     } else {
       setFormName(formData.name);
       setFormDescription(formData.description); // Set description
       setFormStatus(formData.status);
+      setFormLastEditedAt(formData.last_edited_at);
+      setFormLastEditedByUserId(formData.last_edited_by_user_id);
     }
 
     // Fetch sections for the form
@@ -88,6 +94,8 @@ export const useFormBuilderData = (initialFormId?: string) => { // Accept initia
     formName,
     formDescription, // Return formDescription
     formStatus,
+    formLastEditedAt, // New
+    formLastEditedByUserId, // New
     sections,
     setSections,
     fields,

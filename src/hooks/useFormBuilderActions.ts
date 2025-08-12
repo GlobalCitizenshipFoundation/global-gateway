@@ -1,6 +1,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { FormField, FormSection, DisplayRule } from '@/types';
 import { showError, showSuccess } from '@/utils/toast';
+import { useSession } from '@/contexts/SessionContext'; // Import useSession
 
 interface UseFormBuilderActionsProps {
   formId: string | undefined; // Changed from programId
@@ -15,9 +16,10 @@ export const useFormBuilderActions = ({
   setFields,
   fetchData,
 }: UseFormBuilderActionsProps) => {
+  const { user } = useSession(); // Get current user
 
   const handleAddSection = async (name: string) => {
-    if (!name.trim() || !formId) return null; // Use formId
+    if (!name.trim() || !formId || !user) return null; // Use formId and user
 
     // Fetch current sections to determine next order
     const { data: currentSections, error: fetchError } = await supabase
@@ -38,6 +40,8 @@ export const useFormBuilderActions = ({
         form_id: formId, // Use formId
         name: name,
         order: nextOrder,
+        last_edited_by_user_id: user.id, // Set editor
+        last_edited_at: new Date().toISOString(), // Set timestamp
       })
       .select()
       .single();
@@ -75,6 +79,8 @@ export const useFormBuilderActions = ({
     const updatesForFields = fieldsToUpdate.map(field => ({
       id: field.id,
       section_id: null, // Set to null (uncategorized)
+      last_edited_by_user_id: user?.id || null, // Set editor
+      last_edited_at: new Date().toISOString(), // Set timestamp
     }));
 
     // Perform batch update for fields
@@ -102,7 +108,7 @@ export const useFormBuilderActions = ({
   };
 
   const handleAddField = async (label: string, type: FormField['field_type'], options: string, sectionId: string | null, helpText: string | null, description: string | null, tooltip: string | null) => {
-    if (!label.trim() || !formId) return null; // Use formId
+    if (!label.trim() || !formId || !user) return null; // Use formId and user
 
     // Fetch current fields for the target section to determine next order
     const { data: currentFieldsInTargetSection, error: fetchError } = await supabase
@@ -132,6 +138,8 @@ export const useFormBuilderActions = ({
         help_text: helpText || null,
         description: description || null,
         tooltip: tooltip || null,
+        last_edited_by_user_id: user.id, // Set editor
+        last_edited_at: new Date().toISOString(), // Set timestamp
       })
       .select()
       .single();
@@ -160,9 +168,10 @@ export const useFormBuilderActions = ({
   };
 
   const handleToggleRequired = async (fieldId: string, isRequired: boolean) => {
+    if (!user) return;
     // Optimistic update
     setFields(prev => prev.map(f => f.id === fieldId ? { ...f, is_required: isRequired } : f));
-    const { error } = await supabase.from('form_fields').update({ is_required: isRequired }).eq('id', fieldId);
+    const { error } = await supabase.from('form_fields').update({ is_required: isRequired, last_edited_by_user_id: user.id, last_edited_at: new Date().toISOString() }).eq('id', fieldId);
     if (error) {
       showError(`Failed to update field: ${error.message}. Reverting.`);
       setFields(prev => prev.map(f => f.id === fieldId ? { ...f, is_required: !isRequired } : f)); // Revert
@@ -172,13 +181,14 @@ export const useFormBuilderActions = ({
   };
 
   const handleSaveLogic = async (fieldId: string, rules: DisplayRule[]) => {
+    if (!user) return;
     // Optimistic update
     setFields(prevFields =>
       prevFields.map(f => (f.id === fieldId ? { ...f, display_rules: rules } : f))
     );
     const { error } = await supabase
       .from('form_fields')
-      .update({ display_rules: rules })
+      .update({ display_rules: rules, last_edited_by_user_id: user.id, last_edited_at: new Date().toISOString() })
       .eq('id', fieldId);
 
     if (error) {
@@ -190,6 +200,7 @@ export const useFormBuilderActions = ({
   };
 
   const handleSaveEditedField = async (fieldId: string, values: { label: string; field_type: FormField['field_type']; options?: string; is_required: boolean; help_text?: string | null; description?: string | null; tooltip?: string | null; section_id?: string | null; }) => {
+    if (!user) return;
     const updatedOptions = (values.field_type === 'select' || values.field_type === 'radio' || values.field_type === 'checkbox')
       ? values.options?.split(',').map(opt => opt.trim()) || null
       : null;
@@ -214,6 +225,8 @@ export const useFormBuilderActions = ({
         description: values.description || null,
         tooltip: values.tooltip || null,
         section_id: values.section_id === 'none' ? null : values.section_id, // Handle 'none' for uncategorized
+        last_edited_by_user_id: user.id, // Set editor
+        last_edited_at: new Date().toISOString(), // Set timestamp
       })
       .eq('id', fieldId);
 
@@ -227,9 +240,10 @@ export const useFormBuilderActions = ({
   };
 
   const handleUpdateFormStatus = async (id: string, status: 'draft' | 'published') => {
+    if (!user) return false;
     const { error } = await supabase
       .from('forms')
-      .update({ status: status, updated_at: new Date().toISOString() })
+      .update({ status: status, updated_at: new Date().toISOString(), last_edited_by_user_id: user.id, last_edited_at: new Date().toISOString() })
       .eq('id', id);
 
     if (error) {
@@ -242,9 +256,10 @@ export const useFormBuilderActions = ({
   };
 
   const handleUpdateFormDetails = async (id: string, name: string, description: string | null) => {
+    if (!user) return false;
     const { error } = await supabase
       .from('forms')
-      .update({ name: name, description: description, updated_at: new Date().toISOString() })
+      .update({ name: name, description: description, updated_at: new Date().toISOString(), last_edited_by_user_id: user.id, last_edited_at: new Date().toISOString() })
       .eq('id', id);
 
     if (error) {

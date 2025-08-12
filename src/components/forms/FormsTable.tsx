@@ -19,6 +19,9 @@ import {
 import { Form as FormType } from "@/types";
 import { MoreHorizontal } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils"; // Import cn for conditional styling
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface FormsTableProps {
   forms: FormType[];
@@ -28,6 +31,37 @@ interface FormsTableProps {
 }
 
 export const FormsTable = ({ forms, onUpdateStatus, onSaveAsTemplate, onDelete }: FormsTableProps) => {
+  const [userNames, setUserNames] = useState<Map<string, string>>(new Map());
+
+  useEffect(() => {
+    const fetchUserNames = async () => {
+      const uniqueUserIds = new Set<string>();
+      forms.forEach(form => {
+        if (form.last_edited_by_user_id && !userNames.has(form.last_edited_by_user_id)) {
+          uniqueUserIds.add(form.last_edited_by_user_id);
+        }
+      });
+
+      if (uniqueUserIds.size > 0) {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('id, full_name')
+          .in('id', Array.from(uniqueUserIds));
+
+        if (error) {
+          console.error("Error fetching user names for forms table:", error);
+        } else if (data) {
+          const newNames = new Map(userNames);
+          data.forEach(profile => {
+            newNames.set(profile.id, profile.full_name || 'Unknown User');
+          });
+          setUserNames(newNames);
+        }
+      }
+    };
+    fetchUserNames();
+  }, [forms, userNames]); // Depend on forms and userNames to re-fetch if new users appear
+
   return (
     <Table>
       <TableHeader>
@@ -35,14 +69,13 @@ export const FormsTable = ({ forms, onUpdateStatus, onSaveAsTemplate, onDelete }
           <TableHead>Form Name</TableHead>
           <TableHead className="hidden md:table-cell">Type</TableHead>
           <TableHead className="hidden lg:table-cell">Status</TableHead>
-          <TableHead className="hidden xl:table-cell">Created</TableHead>
           <TableHead className="hidden xl:table-cell">Last Modified</TableHead>
           <TableHead className="text-right">Actions</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
         {forms.length > 0 ? forms.map((form) => (
-          <TableRow key={form.id}>
+          <TableRow key={form.id} className={cn(form.is_template && "bg-blue-50/50 dark:bg-blue-950/20")}> {/* Visual distinction */}
             <TableCell className="font-medium">{form.name}</TableCell>
             <TableCell className="hidden md:table-cell">
               <Badge variant="outline">{form.is_template ? 'Template' : 'Program Form'}</Badge>
@@ -53,10 +86,12 @@ export const FormsTable = ({ forms, onUpdateStatus, onSaveAsTemplate, onDelete }
               </Badge>
             </TableCell>
             <TableCell className="hidden xl:table-cell">
-              {new Date(form.created_at).toLocaleDateString()}
-            </TableCell>
-            <TableCell className="hidden xl:table-cell">
-              {new Date(form.updated_at).toLocaleDateString()}
+              {form.last_edited_at ? new Date(form.last_edited_at).toLocaleString() : new Date(form.created_at).toLocaleString()}
+              {form.last_edited_by_user_id && (
+                <div className="text-xs text-muted-foreground">
+                  By: {userNames.get(form.last_edited_by_user_id) || 'Loading...'}
+                </div>
+              )}
             </TableCell>
             <TableCell className="text-right">
               <DropdownMenu>

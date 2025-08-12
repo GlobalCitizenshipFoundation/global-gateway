@@ -21,6 +21,8 @@ export type Form = {
   status: 'draft' | 'published'; // New: Status for the form itself
   created_at: string;
   updated_at: string;
+  last_edited_by_user_id: string | null; // New
+  last_edited_at: string | null; // New
 };
 
 export type ProgramStage = {
@@ -53,6 +55,8 @@ export type FormSection = {
   name: string;
   order: number;
   created_at: string;
+  last_edited_by_user_id: string | null; // New
+  last_edited_at: string | null; // New
 };
 
 export type DisplayRule = {
@@ -75,4 +79,6 @@ export type FormField = {
   help_text: string | null;
   description: string | null;
   tooltip: string | null;
+  last_edited_by_user_id: string | null; // New
+  last_edited_at: string | null; // New
 };

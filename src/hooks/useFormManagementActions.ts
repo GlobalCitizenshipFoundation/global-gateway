@@ -78,13 +78,15 @@ export const useFormManagementActions = ({ setForms, setTemplates, templates }: 
       is_template: false,
       status: 'draft',
       description: null,
+      last_edited_by_user_id: user.id, // Added
+      last_edited_at: new Date().toISOString(), // Added
     }).select('id').single();
 
     if (formError || !newFormData) {
       showError(`Failed to create blank form: ${formError?.message}`);
     } else {
       showSuccess("Blank form created successfully! Redirecting to form builder.");
-      setForms(prev => [...prev, { ...newFormData, user_id: user.id, name: "New Blank Form", is_template: false, status: 'draft', description: null, created_at: new Date().toISOString(), updated_at: new Date().toISOString() }]);
+      setForms(prev => [...prev, { ...newFormData, user_id: user.id, name: "New Blank Form", is_template: false, status: 'draft', description: null, created_at: new Date().toISOString(), updated_at: new Date().toISOString(), last_edited_by_user_id: user.id, last_edited_at: new Date().toISOString() }]);
       window.location.href = `/creator/forms/${newFormData.id}/edit`;
     }
     setIsCreatingForm(false);
@@ -110,6 +112,8 @@ export const useFormManagementActions = ({ setForms, setTemplates, templates }: 
       is_template: false,
       status: 'draft',
       description: template.description,
+      last_edited_by_user_id: user.id, // Added
+      last_edited_at: new Date().toISOString(), // Added
     }).select('id').single();
 
     if (newFormError || !newFormData) {
@@ -175,7 +179,7 @@ export const useFormManagementActions = ({ setForms, setTemplates, templates }: 
     }
 
     showSuccess("Form created from template successfully! Redirecting to form builder.");
-    setForms(prev => [...prev, { ...newFormData, user_id: user!.id, name: newFormName, is_template: false, status: 'draft', description: template.description, created_at: new Date().toISOString(), updated_at: new Date().toISOString() }]);
+    setForms(prev => [...prev, { ...newFormData, user_id: user!.id, name: newFormName, is_template: false, status: 'draft', description: template.description, created_at: new Date().toISOString(), updated_at: new Date().toISOString(), last_edited_by_user_id: user!.id, last_edited_at: new Date().toISOString() }]);
     setIsCreateFromTemplateDialogOpen(false);
     window.location.href = `/creator/forms/${newFormData.id}/edit`;
     setIsCreatingForm(false);
@@ -200,6 +204,8 @@ export const useFormManagementActions = ({ setForms, setTemplates, templates }: 
         is_template: true,
         status: 'published',
         description: templateFormToCopy.description,
+        last_edited_by_user_id: user.id, // Added
+        last_edited_at: new Date().toISOString(), // Added
       }).select('id').single();
 
       if (newTemplateFormError || !newTemplateFormData) {
@@ -262,8 +268,8 @@ export const useFormManagementActions = ({ setForms, setTemplates, templates }: 
       }
 
       showSuccess("Form saved as template successfully!");
-      setForms(prev => [...prev, { ...newTemplateFormData, user_id: user!.id, name: newTemplateName, is_template: true, status: 'published', description: templateFormToCopy.description, created_at: new Date().toISOString(), updated_at: new Date().toISOString() }]);
-      setTemplates(prev => [...prev, { ...newTemplateFormData, user_id: user!.id, name: newTemplateName, is_template: true, status: 'published', description: templateFormToCopy.description, created_at: new Date().toISOString(), updated_at: new Date().toISOString() }]);
+      setForms(prev => [...prev, { ...newTemplateFormData, user_id: user!.id, name: newTemplateName, is_template: true, status: 'published', description: templateFormToCopy.description, created_at: new Date().toISOString(), updated_at: new Date().toISOString(), last_edited_by_user_id: user!.id, last_edited_at: new Date().toISOString() }]);
+      setTemplates(prev => [...prev, { ...newTemplateFormData, user_id: user!.id, name: newTemplateName, is_template: true, status: 'published', description: templateFormToCopy.description, created_at: new Date().toISOString(), updated_at: new Date().toISOString(), last_edited_by_user_id: user!.id, last_edited_at: new Date().toISOString() }]);
       setIsSaveAsTemplateDialogOpen(false);
       setNewTemplateName('');
       setTemplateFormToCopy(null);
