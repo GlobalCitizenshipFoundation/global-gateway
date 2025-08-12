@@ -64,17 +64,17 @@ const SortableAccordionItem = ({ section, children, confirmDeleteSection, isDrag
       style={style}
       className={cn("rounded-md border mb-2", isDragging && "opacity-50")}
     >
-      <div className="flex items-center justify-between w-full pr-4 cursor-grab"> {/* Added cursor-grab */}
-        <Button variant="ghost" size="icon" className="cursor-grab" {...attributes} {...listeners}>
-          <GripVertical className="h-5 w-5 text-muted-foreground" />
-        </Button>
-        <AccordionTrigger className="flex-grow flex justify-between items-center pr-4">
+      <AccordionTrigger className="flex justify-between items-center pr-4 cursor-grab">
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" size="icon" className="cursor-grab" {...attributes} {...listeners}>
+            <GripVertical className="h-5 w-5 text-muted-foreground" />
+          </Button>
           <span className="font-semibold">{section.name}</span>
-        </AccordionTrigger>
+        </div>
         <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); confirmDeleteSection(section); }}>
           <Trash2 className="h-4 w-4 text-destructive" />
         </Button>
-      </div>
+      </AccordionTrigger>
       {children}
     </AccordionItem>
   );
