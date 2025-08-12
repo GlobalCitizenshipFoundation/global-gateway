@@ -18,7 +18,7 @@ const FormBuilderPage = () => {
   const [programTitle, setProgramTitle] = useState('');
   const [fields, setFields] = useState<FormField[]>([]);
   const [newFieldLabel, setNewFieldLabel] = useState('');
-  const [newFieldType, setNewFieldType] = useState<'text' | 'textarea' | 'select' | 'radio' | 'checkbox'>('text');
+  const [newFieldType, setNewFieldType] = useState<'text' | 'textarea' | 'select' | 'radio' | 'checkbox' | 'email' | 'date'>('text');
   const [newFieldOptions, setNewFieldOptions] = useState('');
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -182,6 +182,8 @@ const FormBuilderPage = () => {
                     <SelectItem value="select">Dropdown</SelectItem>
                     <SelectItem value="radio">Radio Group</SelectItem>
                     <SelectItem value="checkbox">Checkboxes</SelectItem>
+                    <SelectItem value="email">Email Address</SelectItem>
+                    <SelectItem value="date">Date Picker</SelectItem>
                   </SelectContent>
                 </Select>
                 {(newFieldType === 'select' || newFieldType === 'radio' || newFieldType === 'checkbox') && (

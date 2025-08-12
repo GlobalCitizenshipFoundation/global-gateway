@@ -22,6 +22,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 import { showError, showSuccess } from "@/utils/toast";
 import { ProgramStage } from "@/types";
+import { format } from "date-fns";
 
 type SubmissionDetail = {
   id: string;
@@ -138,6 +139,13 @@ const SubmissionDetailPage = () => {
         return Array.isArray(values) ? values.join(', ') : response.value;
       } catch (e) {
         return response.value; // Fallback for malformed data
+      }
+    }
+    if (response.form_fields?.field_type === 'date') {
+      try {
+        return format(new Date(response.value), "PPP");
+      } catch (e) {
+        return response.value; // Fallback for invalid date string
       }
     }
     return response.value;

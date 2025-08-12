@@ -19,6 +19,11 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { CalendarIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { format } from "date-fns";
 
 const ApplyPage = () => {
   const { programId } = useParams<{ programId: string }>();
@@ -180,6 +185,36 @@ const ApplyPage = () => {
                       </div>
                     ))}
                   </div>
+                ) : field.field_type === 'email' ? (
+                  <Input id={field.id} type="email" value={responses[field.id] || ''} onChange={e => handleResponseChange(field.id, e.target.value)} required={field.is_required} disabled={submitting} />
+                ) : field.field_type === 'date' ? (
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant={"outline"}
+                        className={cn(
+                          "w-full pl-3 text-left font-normal",
+                          !responses[field.id] && "text-muted-foreground"
+                        )}
+                        disabled={submitting}
+                      >
+                        {responses[field.id] ? (
+                          format(new Date(responses[field.id]), "PPP")
+                        ) : (
+                          <span>Pick a date</span>
+                        )}
+                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={responses[field.id] ? new Date(responses[field.id]) : undefined}
+                        onSelect={(date) => handleResponseChange(field.id, date ? date.toISOString() : '')}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
                 ) : (
                   <Input id={field.id} value={responses[field.id] || ''} onChange={e => handleResponseChange(field.id, e.target.value)} required={field.is_required} disabled={submitting} />
                 )}
