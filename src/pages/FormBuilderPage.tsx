@@ -84,13 +84,48 @@ const FormBuilderPage = () => {
   };
 
   const handleDeleteSection = async (sectionId: string) => {
-    const { error } = await supabase.from('form_sections').delete().eq('id', sectionId);
-    if (error) {
-      showError(`Failed to delete section: ${error.message}`);
+    // Optimistically update local state first
+    const originalSections = [...sections];
+    const originalFields = [...fields];
+    setSections(sections.filter(s => s.id !== sectionId));
+    setFields(fields.map(f => f.section_id === sectionId ? { ...f, section_id: null } : f)); // Move fields to uncategorized
+
+    const { data: fieldsToUpdate, error: fetchFieldsError } = await supabase
+      .from('form_fields')
+      .select('id')
+      .eq('section_id', sectionId);
+
+    if (fetchFieldsError) {
+      showError(`Failed to fetch fields for section deletion: ${fetchFieldsError.message}. Reverting.`);
+      setSections(originalSections);
+      setFields(originalFields);
+      return;
+    }
+
+    const updatesForFields = fieldsToUpdate.map(field => ({
+      id: field.id,
+      section_id: null, // Set to null (uncategorized)
+    }));
+
+    const { error: updateFieldsError } = await supabase
+      .from('form_fields')
+      .upsert(updatesForFields); // Batch update fields to null section_id
+
+    if (updateFieldsError) {
+      showError(`Failed to uncategorize fields: ${updateFieldsError.message}. Reverting.`);
+      setSections(originalSections);
+      setFields(originalFields);
+      return;
+    }
+
+    const { error: deleteSectionError } = await supabase.from('form_sections').delete().eq('id', sectionId);
+    if (deleteSectionError) {
+      showError(`Failed to delete section: ${deleteSectionError.message}. Reverting.`);
+      setSections(originalSections);
+      setFields(originalFields); // Revert fields too if section deletion fails
     } else {
-      setSections(sections.filter(s => s.id !== sectionId));
-      setFields(fields.filter(f => f.section_id !== sectionId)); // Also remove fields associated with this section
-      showSuccess("Section deleted successfully.");
+      showSuccess("Section and its fields uncategorized successfully.");
+      fetchData(); // Re-fetch to ensure full consistency
     }
   };
 
