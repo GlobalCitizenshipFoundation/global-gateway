@@ -3,11 +3,11 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { FormFieldItem } from "@/components/FormFieldItem";
 import { FormField, FormSection } from "@/types";
-import { GripVertical, Trash2, LayoutList } from "lucide-react"; // Import LayoutList for empty state
+import { GripVertical, Trash2 } from "lucide-react"; // Import GripVertical
 import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { useDroppable } from "@dnd-kit/core";
 import { cn } from "@/lib/utils";
-import { CSS } from '@dnd-kit/utilities';
+import { CSS } from '@dnd-kit/utilities'; // Import CSS for transform
 import {
   AlertDialog,
   AlertDialogAction,
@@ -31,7 +31,6 @@ interface FormSectionsListProps {
   handleToggleRequired: (fieldId: string, isRequired: boolean) => Promise<void>;
   onEditLogic: (field: FormField) => void;
   onEditField: (field: FormField) => void;
-  fieldTypeIcons: Record<FormField['field_type'], React.ElementType>; // New prop
 }
 
 // Helper component for droppable areas
@@ -48,13 +47,13 @@ const SortableAccordionItem = ({ section, children, confirmDeleteSection }: { se
     setNodeRef,
     transform,
     transition,
-    isDragging, // Get isDragging state from useSortable
+    isDragging,
   } = useSortable({ id: section.id, data: { type: "Section", section } });
 
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    zIndex: isDragging ? 10 : 0,
+    zIndex: isDragging ? 10 : 0, // Bring dragged item to front
   };
 
   return (
@@ -63,19 +62,19 @@ const SortableAccordionItem = ({ section, children, confirmDeleteSection }: { se
       value={section.id}
       ref={setNodeRef}
       style={style}
-      className={cn("rounded-md border mb-2", isDragging && "opacity-0")} // Apply opacity-0 when dragging
+      className={cn("rounded-md border mb-2", isDragging && "opacity-50")}
     >
-      <AccordionTrigger className="flex justify-between items-center pr-4 cursor-grab">
-        <div className="flex items-center gap-2">
-          <Button variant="ghost" size="icon" className="cursor-grab" {...attributes} {...listeners}>
-            <GripVertical className="h-5 w-5 text-muted-foreground" />
-          </Button>
+      <div className="flex items-center justify-between w-full pr-4">
+        <Button variant="ghost" size="icon" className="cursor-grab" {...attributes} {...listeners}>
+          <GripVertical className="h-5 w-5 text-muted-foreground" />
+        </Button>
+        <AccordionTrigger className="flex-grow flex justify-between items-center pr-4">
           <span className="font-semibold">{section.name}</span>
-        </div>
+        </AccordionTrigger>
         <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); confirmDeleteSection(section); }}>
           <Trash2 className="h-4 w-4 text-destructive" />
         </Button>
-      </AccordionTrigger>
+      </div>
       {children}
     </AccordionItem>
   );
@@ -91,7 +90,6 @@ export const FormSectionsList = ({
   handleToggleRequired,
   onEditLogic,
   onEditField,
-  fieldTypeIcons,
 }: FormSectionsListProps) => {
   const [sectionToDelete, setSectionToDelete] = useState<FormSection | null>(null);
   const [isSectionDeleteDialogOpen, setIsSectionDeleteDialogOpen] = useState(false);
@@ -132,14 +130,10 @@ export const FormSectionsList = ({
                               onToggleRequired={handleToggleRequired}
                               onEditLogic={onEditLogic}
                               onEdit={onEditField}
-                              fieldTypeIcons={fieldTypeIcons}
                             />
                           ))
                         ) : (
-                          <div className="text-muted-foreground text-sm text-center py-4 flex flex-col items-center">
-                            <LayoutList className="h-8 w-8 mb-2" />
-                            <p>Drag fields here or add new ones below.</p>
-                          </div>
+                          <p className="text-muted-foreground text-sm text-center py-4">Drag fields here or add new ones below.</p>
                         )}
                       </ul>
                     </SortableContext>
@@ -150,11 +144,7 @@ export const FormSectionsList = ({
           </SortableContext>
         </Accordion>
       ) : (
-        <div className="text-muted-foreground text-sm text-center py-8 flex flex-col items-center border rounded-md">
-          <LayoutList className="h-12 w-12 mb-4" />
-          <p>No sections defined yet.</p>
-          <p>Add a new section below to organize your form fields.</p>
-        </div>
+        <p className="text-muted-foreground text-sm">No sections defined yet. Add one to get started.</p>
       )}
 
       <AlertDialog open={isSectionDeleteDialogOpen} onOpenChange={setIsSectionDeleteDialogOpen}>

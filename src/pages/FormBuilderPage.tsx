@@ -1,9 +1,9 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { FormField, DisplayRule, FormSection } from "@/types";
-import { ArrowLeft, CheckCircle2, FileText, Calendar, Mail, Phone, Hash, Type, List, Radio, CheckSquare, Text, Info } from "lucide-react"; // Import new icons
-import { useState, useEffect, useCallback } from "react";
-import { Link, useParams } from "react-router-dom";
+import { ArrowLeft } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Link, useParams, useSearchParams } from "react-router-dom";
 import { DndContext, DragOverlay, closestCenter, DragEndEvent, DragStartEvent } from '@dnd-kit/core';
 import { FormFieldItem } from "@/components/FormFieldItem";
 import ConditionalLogicBuilder from "@/components/ConditionalLogicBuilder";
@@ -25,16 +25,16 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { useSession } from "@/contexts/SessionContext";
 import { useFormSectionDragAndDrop } from "@/hooks/useFormSectionDragAndDrop";
-import RichTextEditor from "@/components/RichTextEditor";
+import RichTextEditor from "@/components/RichTextEditor"; // Import RichTextEditor
 
 const FormBuilderPage = () => {
   const { formId } = useParams<{ formId: string }>();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [formName, setFormName] = useState('');
-  const [formDescription, setFormDescription] = useState('');
+  const [formDescription, setFormDescription] = useState(''); // New state for form description
   const [formStatus, setFormStatus] = useState<'draft' | 'published'>('draft');
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
-  const [isUpdatingFormDetails, setIsUpdatingFormDetails] = useState(false);
-  const [showSavedMessage, setShowSavedMessage] = useState(false); // New state for save feedback
+  const [isUpdatingFormDetails, setIsUpdatingFormDetails] = useState(false); // New state for saving form details
 
   const [isSaveAsTemplateDialogOpen, setIsSaveAsTemplateDialogOpen] = useState(false);
   const [newTemplateName, setNewTemplateName] = useState('');
@@ -52,9 +52,9 @@ const FormBuilderPage = () => {
     setNewFieldSectionId,
     fetchData,
     getFieldsForSection,
-    formName: fetchedFormName,
-    formDescription: fetchedFormDescription,
-    formStatus: fetchedFormStatus,
+    formName: fetchedFormName, // Get formName from hook
+    formDescription: fetchedFormDescription, // Get formDescription from hook
+    formStatus: fetchedFormStatus, // Get formStatus from hook
   } = useFormBuilderData(formId);
 
   // Sync local states with fetched data
@@ -63,6 +63,14 @@ const FormBuilderPage = () => {
     setFormDescription(fetchedFormDescription || '');
     setFormStatus(fetchedFormStatus);
   }, [fetchedFormName, fetchedFormDescription, fetchedFormStatus]);
+
+  useEffect(() => {
+    if (searchParams.get('saveAsTemplate') === 'true' && formName) {
+      setNewTemplateName(`${formName} Template`);
+      setIsSaveAsTemplateDialogOpen(true);
+      setSearchParams({}, { replace: true });
+    }
+  }, [searchParams, formName, setSearchParams]);
 
   const {
     sensors: fieldSensors,
@@ -105,7 +113,7 @@ const FormBuilderPage = () => {
     handleSaveLogic: performSaveLogic,
     handleSaveEditedField: performSaveEditedField,
     handleUpdateFormStatus: performUpdateFormStatus,
-    handleUpdateFormDetails: performUpdateFormDetails,
+    handleUpdateFormDetails: performUpdateFormDetails, // New: import form details update
   } = useFormBuilderActions({ formId, setSections, setFields, fetchData });
 
   const [newSectionName, setNewSectionName] = useState('');
@@ -199,8 +207,7 @@ const FormBuilderPage = () => {
     setIsUpdatingFormDetails(true);
     const success = await performUpdateFormDetails(formId, formName, formDescription);
     if (success) {
-      setShowSavedMessage(true);
-      setTimeout(() => setShowSavedMessage(false), 3000); // Hide after 3 seconds
+      showSuccess("Form details updated successfully!");
     }
     setIsUpdatingFormDetails(false);
   };
@@ -218,22 +225,71 @@ const FormBuilderPage = () => {
     setIsSavingTemplate(true);
 
     try {
-      // Call the Edge Function to copy the current form as a template
-      const { data, error: invokeError } = await supabase.functions.invoke('copy-form-template', {
-        body: JSON.stringify({
-          templateFormId: formId,
-          newFormName: newTemplateName,
-          newFormDescription: formDescription,
-          userId: user.id,
-          isTemplate: true, // This is a template
-        }),
+      const { data: newTemplateFormData, error: newTemplateFormError } = await supabase.from("forms").insert({
+        user_id: user.id,
+        name: newTemplateName,
+        is_template: true,
+        status: 'published',
+        description: formDescription, // Copy description to template
+      }).select('id').single();
+
+      if (newTemplateFormError || !newTemplateFormData) {
+        showError(`Failed to create template form: ${newTemplateFormError?.message}`);
+        return;
+      }
+
+      const { data: currentSections, error: sectionsError } = await supabase
+        .from('form_sections')
+        .select('*')
+        .eq('form_id', formId)
+        .order('order', { ascending: true });
+
+      const { data: currentFields, error: fieldsError } = await supabase
+        .from('form_fields')
+        .select('*')
+        .eq('form_id', formId)
+        .order('order', { ascending: true });
+
+      if (sectionsError || fieldsError) {
+        showError(`Failed to load current form content: ${sectionsError?.message || fieldsError?.message}`);
+        await supabase.from('forms').delete().eq('id', newTemplateFormData.id);
+        return;
+      }
+
+      const oldSectionIdMap = new Map<string, string>();
+      const newSectionsToInsert = currentSections.map(section => {
+        const newSectionId = crypto.randomUUID();
+        oldSectionIdMap.set(section.id, newSectionId);
+        return {
+          id: newSectionId,
+          form_id: newTemplateFormData.id,
+          name: section.name,
+          order: section.order,
+        };
       });
 
-      if (invokeError) {
-        throw new Error(`Edge function error: ${invokeError.message}`);
-      }
-      if (data.error) {
-        throw new Error(`Failed to save as template: ${data.error}`);
+      const newFieldsToInsert = currentFields.map(field => ({
+        id: crypto.randomUUID(),
+        form_id: newTemplateFormData.id,
+        section_id: field.section_id ? oldSectionIdMap.get(field.section_id) : null,
+        label: field.label,
+        field_type: field.field_type,
+        options: field.options,
+        is_required: field.is_required,
+        order: field.order,
+        display_rules: field.display_rules,
+        help_text: field.help_text,
+        description: field.description,
+        tooltip: field.tooltip,
+      }));
+
+      const { error: insertSectionsError } = await supabase.from('form_sections').insert(newSectionsToInsert);
+      const { error: insertFieldsError } = await supabase.from('form_fields').insert(newFieldsToInsert);
+
+      if (insertSectionsError || insertFieldsError) {
+        showError(`Failed to copy form content to template: ${insertSectionsError?.message || insertFieldsError?.message}`);
+        await supabase.from('forms').delete().eq('id', newTemplateFormData.id);
+        return;
       }
 
       showSuccess("Form saved as template successfully!");
@@ -247,20 +303,6 @@ const FormBuilderPage = () => {
   };
 
   const uncategorizedFields = getFieldsForSection(null);
-
-  // Map field types to Lucide icons
-  const fieldTypeIcons: Record<FormField['field_type'], React.ElementType> = {
-    text: Type,
-    textarea: FileText,
-    select: List,
-    radio: Radio,
-    checkbox: CheckSquare,
-    email: Mail,
-    date: Calendar,
-    phone: Phone,
-    number: Hash,
-    richtext: Text,
-  };
 
   return (
     <div className="container py-12">
@@ -287,10 +329,7 @@ const FormBuilderPage = () => {
                   {isUpdatingStatus ? 'Unpublishing...' : 'Unpublish Form'}
                 </Button>
               )}
-              <Button variant="outline" onClick={() => {
-                setNewTemplateName(`${formName} Template`); // Pre-fill with current form name
-                setIsSaveAsTemplateDialogOpen(true);
-              }} disabled={isSavingTemplate}>
+              <Button variant="outline" onClick={() => setIsSaveAsTemplateDialogOpen(true)} disabled={isSavingTemplate}>
                 Save as Template
               </Button>
             </div>
@@ -318,12 +357,7 @@ const FormBuilderPage = () => {
               />
               <p className="text-sm text-muted-foreground">This description will appear at the top of the application form.</p>
             </div>
-            <div className="flex justify-end items-center gap-2">
-              {showSavedMessage && (
-                <span className="text-sm text-green-600 flex items-center gap-1">
-                  <CheckCircle2 className="h-4 w-4" /> Saved!
-                </span>
-              )}
+            <div className="flex justify-end">
               <Button type="submit" disabled={isUpdatingFormDetails}>
                 {isUpdatingFormDetails ? 'Saving...' : 'Save Details'}
               </Button>
@@ -341,7 +375,6 @@ const FormBuilderPage = () => {
               handleToggleRequired={handleToggleRequired}
               onEditLogic={handleEditLogic}
               onEditField={handleEditField}
-              fieldTypeIcons={fieldTypeIcons} // Pass icons
             />
 
             <UncategorizedFieldsList
@@ -350,7 +383,6 @@ const FormBuilderPage = () => {
               handleToggleRequired={handleToggleRequired}
               onEditLogic={handleEditLogic}
               onEditField={handleEditField}
-              fieldTypeIcons={fieldTypeIcons} // Pass icons
             />
 
             <DragOverlay>
@@ -361,7 +393,6 @@ const FormBuilderPage = () => {
                   onToggleRequired={() => {}}
                   onEditLogic={() => {}}
                   onEdit={() => {}}
-                  fieldTypeIcons={fieldTypeIcons} // Pass icons
                 />
               ) : activeSectionDragItem ? (
                 <div className="p-4 bg-secondary rounded-md shadow-lg cursor-grabbing">

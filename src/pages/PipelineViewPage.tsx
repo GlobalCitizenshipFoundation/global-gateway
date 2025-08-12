@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo, useCallback } from "react"; // Added useCallback
+import { useEffect, useState, useMemo } from "react";
 import { Link, useParams } from "react-router-dom";
 import {
   DndContext,
@@ -39,7 +39,7 @@ type ResponseWithField = {
 const PipelineViewPage = () => {
   const { programId } = useParams<{ programId: string }>();
   const [programTitle, setProgramTitle] = useState("");
-  const [programFormId, setProgramFormId] = useState<string | null>(null);
+  const [programFormId, setProgramFormId] = useState<string | null>(null); // New state for form_id
   const [stages, setStages] = useState<ProgramStage[]>([]);
   const [applications, setApplications] = useState<Applicant[]>([]);
   const [activeApplicant, setActiveApplicant] = useState<Applicant | null>(null);
@@ -48,66 +48,52 @@ const PipelineViewPage = () => {
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [selectedSubmission, setSelectedSubmission] = useState<SubmissionDetail | null>(null);
   const [allSubmissionResponses, setAllSubmissionResponses] = useState<ResponseWithField[]>([]);
-  const [allFormFieldsForLogic, setAllFormFieldsForLogic] = useState<FormField[]>([]);
+  const [allFormFieldsForLogic, setAllFormFieldsForLogic] = useState<FormField[]>([]); // Store all fields for logic evaluation
   const [sheetLoading, setSheetLoading] = useState(false);
   const [currentStageInSheet, setCurrentStageInSheet] = useState('');
 
-  const fetchData = useCallback(async () => {
-    if (!programId) return;
-    setLoading(true);
+  useEffect(() => {
+    const fetchData = async () => {
+      if (!programId) return;
+      setLoading(true);
 
-    const programPromise = supabase.from("programs").select("title, form_id").eq("id", programId).single();
-    const stagesPromise = supabase.from("program_stages").select("id, name, order").eq("program_id", programId).order("order", { ascending: true });
-    const applicationsPromise = supabase.from("applications").select("id, full_name, stage_id").eq("program_id", programId);
+      const programPromise = supabase.from("programs").select("title, form_id").eq("id", programId).single(); // Fetch form_id
+      const stagesPromise = supabase.from("program_stages").select("id, name, order").eq("program_id", programId).order("order", { ascending: true });
+      const applicationsPromise = supabase.from("applications").select("id, full_name, stage_id").eq("program_id", programId);
 
-    const [
-      { data: programData, error: programError },
-      { data: stagesData, error: stagesError },
-      { data: applicationsData, error: applicationsError },
-    ] = await Promise.all([programPromise, stagesPromise, applicationsPromise]);
+      const [
+        { data: programData, error: programError },
+        { data: stagesData, error: stagesError },
+        { data: applicationsData, error: applicationsError },
+      ] = await Promise.all([programPromise, stagesPromise, applicationsPromise]);
 
-    if (programError || stagesError || applicationsError) {
-      showError("Failed to load pipeline data.");
-    } else {
-      setProgramTitle(programData.title);
-      setProgramFormId(programData.form_id);
-      setStages(stagesData as ProgramStage[]);
-      setApplications(applicationsData as Applicant[]);
+      if (programError || stagesError || applicationsError) {
+        showError("Failed to load pipeline data.");
+      } else {
+        setProgramTitle(programData.title);
+        setProgramFormId(programData.form_id); // Set form_id
+        setStages(stagesData as ProgramStage[]);
+        setApplications(applicationsData as Applicant[]);
 
-      // Fetch all form fields for the program's form (needed for display logic evaluation)
-      if (programData.form_id) {
-        const { data: allFieldsData, error: allFieldsError } = await supabase
-          .from('form_fields')
-          .select('*')
-          .eq('form_id', programData.form_id)
-          .order('order', { ascending: true });
+        // Fetch all form fields for the program's form (needed for display logic evaluation)
+        if (programData.form_id) {
+          const { data: allFieldsData, error: allFieldsError } = await supabase
+            .from('form_fields')
+            .select('*')
+            .eq('form_id', programData.form_id)
+            .order('order', { ascending: true });
 
-        if (allFieldsError) {
-          showError("Could not load all form fields for logic evaluation.");
-        } else {
-          setAllFormFieldsForLogic(allFieldsData as FormField[]);
+          if (allFieldsError) {
+            showError("Could not load all form fields for logic evaluation.");
+          } else {
+            setAllFormFieldsForLogic(allFieldsData as FormField[]);
+          }
         }
       }
-    }
-    setLoading(false);
-  }, [programId]);
-
-  useEffect(() => {
-    fetchData();
-
-    // Set up real-time subscription for applications table
-    const channel = supabase
-      .channel(`pipeline_applications_${programId}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'applications', filter: `program_id=eq.${programId}` }, payload => {
-        // When an application changes (inserted, updated, deleted), re-fetch data
-        fetchData();
-      })
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
+      setLoading(false);
     };
-  }, [fetchData, programId]);
+    fetchData();
+  }, [programId]);
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
@@ -228,7 +214,7 @@ const PipelineViewPage = () => {
     if (error) {
       showError(`Failed to update stage: ${error.message}`);
     } else {
-      // No need to manually update applications state here, real-time subscription will trigger fetchData
+      setApplications(apps => apps.map(app => app.id === selectedSubmission.id ? { ...app, stage_id: currentStageInSheet } : app));
       showSuccess(`Application moved to a new stage.`);
       setIsSheetOpen(false);
     }
@@ -316,7 +302,7 @@ const PipelineViewPage = () => {
                             <span className="ml-2 text-xs text-muted-foreground italic">(Hidden by logic)</span>
                           )}
                         </dt>
-                        {res.form_fields?.description && (
+                        {res.form_fields?.description && ( // Display description
                           <dd className="text-sm text-muted-foreground mt-1">{res.form_fields.description}</dd>
                         )}
                         {res.form_fields?.help_text && (

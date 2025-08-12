@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { FormField } from '@/types';
-import { GripVertical, Trash2, Eye, Pencil, Info } from 'lucide-react';
+import { GripVertical, Trash2, Eye, Pencil, Info } from 'lucide-react'; // Import Info icon
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
 import { Switch } from './ui/switch';
@@ -19,7 +19,6 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { cn } from '@/lib/utils'; // Import cn for conditional classNames
 
 interface FormFieldItemProps {
   field: FormField;
@@ -27,10 +26,9 @@ interface FormFieldItemProps {
   onToggleRequired: (fieldId: string, isRequired: boolean) => void;
   onEditLogic: (field: FormField) => void;
   onEdit: (field: FormField) => void;
-  fieldTypeIcons: Record<FormField['field_type'], React.ElementType>; // New prop for icons
 }
 
-export const FormFieldItem = React.memo(({ field, onDelete, onToggleRequired, onEditLogic, onEdit, fieldTypeIcons }: FormFieldItemProps) => {
+export const FormFieldItem = ({ field, onDelete, onToggleRequired, onEditLogic, onEdit }: FormFieldItemProps) => {
   // Defensive check: If field is null or undefined, return null to prevent errors
   if (!field) {
     console.error("FormFieldItem received a null or undefined field prop.");
@@ -43,8 +41,7 @@ export const FormFieldItem = React.memo(({ field, onDelete, onToggleRequired, on
     setNodeRef,
     transform,
     transition,
-    isDragging, // Get isDragging state from useSortable
-  } = useSortable({ id: field.id, data: { type: "FormField", field } }); // Added data for drag context
+  } = useSortable({ id: field.id });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -52,42 +49,36 @@ export const FormFieldItem = React.memo(({ field, onDelete, onToggleRequired, on
   };
 
   const hasLogic = field.display_rules && field.display_rules.length > 0;
-  const hasTooltip = field.tooltip && field.tooltip.trim() !== '';
+  const hasTooltip = field.tooltip && field.tooltip.trim() !== ''; // Check for tooltip
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-
-  const FieldIcon = fieldTypeIcons[field.field_type];
 
   return (
     <li
       ref={setNodeRef}
       style={style}
-      className={cn(
-        "flex items-center justify-between p-3 bg-secondary rounded-md gap-4 cursor-grab",
-        isDragging && "opacity-0" // Apply opacity-0 when dragging
-      )}
+      className="flex items-center justify-between p-3 bg-secondary rounded-md gap-4"
     >
       <div className="flex items-center gap-2 flex-grow">
         <Button variant="ghost" size="icon" className="cursor-grab" {...attributes} {...listeners}>
             <GripVertical className="h-5 w-5 text-muted-foreground" />
         </Button>
-        <div className="flex-grow flex items-center">
-            {FieldIcon && <FieldIcon className="h-4 w-4 mr-2 text-muted-foreground" />} {/* Display icon */}
+        <div className="flex-grow">
             <span className="font-medium">{field.label}</span>
             <Badge variant="outline" className="ml-2 capitalize">{field.field_type}</Badge>
             {hasLogic && (
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Eye className="h-4 w-4 ml-2 inline-block text-blue-500 cursor-help" />
+                  <Eye className="h-4 w-4 ml-2 inline-block text-blue-500" />
                 </TooltipTrigger>
                 <TooltipContent>
                   This field has conditional display logic.
                 </TooltipContent>
               </Tooltip>
             )}
-            {hasTooltip && (
+            {hasTooltip && ( // Display tooltip icon if tooltip exists
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Info className="h-4 w-4 ml-2 inline-block text-gray-500 cursor-help" />
+                  <Info className="h-4 w-4 ml-2 inline-block text-gray-500" />
                 </TooltipTrigger>
                 <TooltipContent>
                   {field.tooltip}
@@ -135,6 +126,4 @@ export const FormFieldItem = React.memo(({ field, onDelete, onToggleRequired, on
       </div>
     </li>
   );
-});
-
-export default FormFieldItem;
+};

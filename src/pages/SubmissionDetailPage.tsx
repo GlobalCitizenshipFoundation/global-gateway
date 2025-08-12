@@ -21,9 +21,9 @@ import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 import { showError, showSuccess } from "@/utils/toast";
-import { ProgramStage, FormField, FormSection } from "@/types";
+import { ProgramStage, FormField, FormSection } from "@/types"; // Import FormSection
 import { evaluateRule, shouldFieldBeDisplayed, formatResponseValue } from "@/utils/formFieldUtils";
-import ApplicationPdfViewer from "@/components/application/ApplicationPdfViewer";
+import ApplicationPdfViewer from "@/components/application/ApplicationPdfViewer"; // Import the new component
 
 type SubmissionDetail = {
   id: string;
@@ -33,8 +33,8 @@ type SubmissionDetail = {
   stage_id: string;
   programs: {
     title: string;
-    form_id: string | null;
-    allow_pdf_download: boolean;
+    form_id: string | null; // Fetch form_id
+    allow_pdf_download: boolean; // Added for PDF download
   } | null;
   program_stages: {
     name: string;
@@ -50,8 +50,8 @@ const SubmissionDetailPage = () => {
   const { programId, submissionId } = useParams<{ programId: string, submissionId: string }>();
   const [submission, setSubmission] = useState<SubmissionDetail | null>(null);
   const [allResponses, setAllResponses] = useState<ResponseWithField[]>([]);
-  const [allFormFieldsForLogic, setAllFormFieldsForLogic] = useState<FormField[]>([]);
-  const [allFormSections, setAllFormSections] = useState<FormSection[]>([]);
+  const [allFormFieldsForLogic, setAllFormFieldsForLogic] = useState<FormField[]>([]); // Store all fields for logic evaluation
+  const [allFormSections, setAllFormSections] = useState<FormSection[]>([]); // State to hold all form sections
   const [programStages, setProgramStages] = useState<ProgramStage[]>([]);
   const [selectedStage, setSelectedStage] = useState<string>('');
   const [loading, setLoading] = useState(true);
@@ -117,7 +117,7 @@ const SubmissionDetailPage = () => {
       // Fetch responses with full form_fields data
       const { data: responsesData, error: responsesError } = await supabase
         .from('application_responses')
-        .select(`value, form_fields ( id, label, field_type, options, is_required, order, display_rules, help_text, description, tooltip )`)
+        .select(`value, form_fields ( id, label, field_type, options, is_required, order, display_rules, help_text, description, tooltip )`) // Added description, tooltip
         .eq('application_id', submissionId);
       
       if (responsesError) {
@@ -269,7 +269,7 @@ const SubmissionDetailPage = () => {
                           <span className="ml-2 text-xs text-muted-foreground italic">(Hidden by logic)</span>
                         )}
                       </dt>
-                      {res.form_fields?.description && (
+                      {res.form_fields?.description && ( // Display description
                         <dd className="text-sm text-muted-foreground mt-1">{res.form_fields.description}</dd>
                       )}
                       {res.form_fields?.help_text && (
@@ -294,7 +294,7 @@ const SubmissionDetailPage = () => {
               applicantEmail={submission.email}
               submittedDate={submission.submitted_date}
               currentStageName={submission.program_stages?.name || 'N/A'}
-              // Removed allResponses prop as it's now handled internally by ApplicationPdfViewer
+              allResponses={allResponses}
               allFormFields={allFormFieldsForLogic}
               formSections={allFormSections}
             />
