@@ -68,10 +68,10 @@ export const FormsTable = ({ forms, onUpdateStatus, onSaveAsTemplate, onDelete }
       <TableHeader>
         <TableRow>
           <TableHead>Form Name</TableHead>
-          <TableHead className="hidden md:table-cell">Type</TableHead>
-          <TableHead className="hidden lg:table-cell">Publication Status</TableHead>
-          <TableHead className="hidden xl:table-cell">Form Updated Date</TableHead>
-          <TableHead className="hidden xl:table-cell">Created Date</TableHead> {/* New Column */}
+          <TableHead className="md:table-cell">Type</TableHead> {/* Removed hidden */}
+          <TableHead className="lg:table-cell">Publication Status</TableHead> {/* Removed hidden */}
+          <TableHead className="xl:table-cell">Form Updated Date</TableHead> {/* Removed hidden */}
+          <TableHead className="xl:table-cell">Created Date</TableHead> {/* Removed hidden */}
           <TableHead className="text-right">Actions</TableHead>
         </TableRow>
       </TableHeader>
@@ -79,15 +79,15 @@ export const FormsTable = ({ forms, onUpdateStatus, onSaveAsTemplate, onDelete }
         {forms.length > 0 ? forms.map((form) => (
           <TableRow key={form.id} className={cn(form.is_template && "bg-blue-50/50 dark:bg-blue-950/20")}>
             <TableCell className="font-medium">{form.name}</TableCell>
-            <TableCell className="hidden md:table-cell">
+            <TableCell className="md:table-cell">
               <Badge variant="outline">{form.is_template ? 'Template' : 'Program Form'}</Badge>
             </TableCell>
-            <TableCell className="hidden lg:table-cell">
+            <TableCell className="lg:table-cell">
               <Badge variant={form.status === 'published' ? 'default' : 'secondary'}>
                 {form.status.charAt(0).toUpperCase() + form.status.slice(1)}
               </Badge>
             </TableCell>
-            <TableCell className="hidden xl:table-cell">
+            <TableCell className="xl:table-cell">
               {form.last_edited_at ? new Date(form.last_edited_at).toLocaleString() : new Date(form.updated_at).toLocaleString()}
               {form.last_edited_by_user_id && (
                 <div className="text-xs text-muted-foreground">
@@ -95,7 +95,7 @@ export const FormsTable = ({ forms, onUpdateStatus, onSaveAsTemplate, onDelete }
                 </div>
               )}
             </TableCell>
-            <TableCell className="hidden xl:table-cell"> {/* New Cell */}
+            <TableCell className="xl:table-cell">
               {new Date(form.created_at).toLocaleDateString()}
             </TableCell>
             <TableCell className="text-right">

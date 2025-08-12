@@ -3,6 +3,15 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Plus } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+  PaginationEllipsis,
+} from "@/components/ui/pagination";
 
 import { useFormsData } from "@/hooks/useFormsData";
 import { useFormManagementActions } from "@/hooks/useFormManagementActions";
@@ -28,6 +37,10 @@ const FormManagementPage = () => {
   const [typeFilter, setTypeFilter] = useState<"all" | "template" | "program_form">("all");
   const [sortBy, setSortBy] = useState<"name" | "updated_at" | "created_at">("updated_at");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
+
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
 
   const filteredAndSortedForms = useMemo(() => {
     let displayForms = [...forms];
@@ -72,8 +85,43 @@ const FormManagementPage = () => {
       return sortOrder === "asc" ? compareValue : -compareValue;
     });
 
-    return displayForms;
-  }, [forms, searchTerm, statusFilter, typeFilter, sortBy, sortOrder]);
+    // Apply pagination
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return displayForms.slice(startIndex, endIndex);
+  }, [forms, searchTerm, statusFilter, typeFilter, sortBy, sortOrder, currentPage, itemsPerPage]);
+
+  const totalFilteredForms = useMemo(() => {
+    let countForms = [...forms];
+    if (searchTerm) {
+      const lowerCaseSearch = searchTerm.toLowerCase();
+      countForms = countForms.filter(
+        (form) =>
+          form.name.toLowerCase().includes(lowerCaseSearch) ||
+          (form.description && form.description.toLowerCase().includes(lowerCaseSearch))
+      );
+    }
+    if (statusFilter !== "all") {
+      countForms = countForms.filter((form) => form.status === statusFilter);
+    }
+    if (typeFilter === "template") {
+      countForms = countForms.filter((form) => form.is_template);
+    } else if (typeFilter === "program_form") {
+      countForms = countForms.filter((form) => !form.is_template);
+    }
+    return countForms.length;
+  }, [forms, searchTerm, statusFilter, typeFilter]);
+
+  const totalPages = Math.ceil(totalFilteredForms / itemsPerPage);
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  const handleItemsPerPageChange = (value: string) => {
+    setItemsPerPage(Number(value));
+    setCurrentPage(1); // Reset to first page when items per page changes
+  };
 
   if (loading) {
     return (
@@ -193,6 +241,52 @@ const FormManagementPage = () => {
             />
           </CardContent>
         </Card>
+
+        {/* Pagination Controls */}
+        {totalFilteredForms > 0 && (
+          <div className="flex justify-between items-center mt-8">
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">Items per page:</span>
+              <Select value={String(itemsPerPage)} onValueChange={handleItemsPerPageChange}>
+                <SelectTrigger className="w-[80px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="10">10</SelectItem>
+                  <SelectItem value="25">25</SelectItem>
+                  <SelectItem value="50">50</SelectItem>
+                  <SelectItem value="100">100</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <Pagination>
+              <PaginationContent>
+                <PaginationItem>
+                  <PaginationPrevious
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    className={currentPage === 1 ? "pointer-events-none opacity-50" : undefined}
+                  />
+                </PaginationItem>
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                  <PaginationItem key={page}>
+                    <PaginationLink
+                      onClick={() => handlePageChange(page)}
+                      isActive={page === currentPage}
+                    >
+                      {page}
+                    </PaginationLink>
+                  </PaginationItem>
+                ))}
+                <PaginationItem>
+                  <PaginationNext
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    className={currentPage === totalPages ? "pointer-events-none opacity-50" : undefined}
+                  />
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
+          </div>
+        )}
       </div>
 
       <DeleteFormDialog
