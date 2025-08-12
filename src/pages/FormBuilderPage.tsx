@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { FormField, FormSection, DisplayRule } from "@/types";
 import { showError, showSuccess } from "@/utils/toast";
 import { ArrowLeft, Plus, Trash2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react"; // Import useCallback
 import { Link, useParams } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -50,7 +50,7 @@ const FormBuilderPage = () => {
   const [isEditFieldDialogOpen, setIsEditFieldDialogOpen] = useState(false);
   const [fieldToEditDetails, setFieldToEditDetails] = useState<FormField | null>(null);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     if (!programId) return;
     setLoading(true);
 
@@ -85,11 +85,11 @@ const FormBuilderPage = () => {
       setFields(fieldsData as FormField[]);
     }
     setLoading(false);
-  };
+  }, [programId, newFieldSectionId]); // Dependencies for useCallback
 
   useEffect(() => {
     fetchData();
-  }, [programId]); // Depend on programId and fetchData (which is stable due to useCallback or similar)
+  }, [fetchData]); // Depend on the memoized fetchData function
 
   const handleAddSection = async (e: React.FormEvent) => {
     e.preventDefault();
