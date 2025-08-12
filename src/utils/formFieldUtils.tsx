@@ -11,57 +11,69 @@ import DOMPurify from 'dompurify';
  * @param allFormFields An array of all available form fields, including their types and options.
  * @returns True if the rule condition is met, false otherwise.
  */
-export const evaluateRule = (rule: DisplayRule, currentResponsesMap: Record<string, string>, allFormFields: FormField[]): boolean => {
+export const evaluateRule = (rule: DisplayRule, currentResponsesMap: Record<string, any>, allFormFields: FormField[]): boolean => {
   const triggerFieldResponse = currentResponsesMap[rule.field_id];
   const triggerField = allFormFields.find(f => f.id === rule.field_id);
 
   if (!triggerField) return false; // Trigger field not found
 
+  // Normalize triggerFieldResponse for comparison
+  let normalizedResponse: any = triggerFieldResponse;
+  if (triggerField.field_type === 'checkbox') {
+    // Checkbox values are stored as JSON string in DB, but as string[] in react-hook-form
+    // So, if it's a string, try to parse it. If it's already an array, use it.
+    try {
+      normalizedResponse = typeof triggerFieldResponse === 'string' ? JSON.parse(triggerFieldResponse) : triggerFieldResponse;
+    } catch {
+      normalizedResponse = []; // Fallback for malformed or empty string
+    }
+    if (!Array.isArray(normalizedResponse)) normalizedResponse = [];
+  } else if (triggerField.field_type === 'number') {
+    // Numbers can be number or undefined from react-hook-form, or string from DB
+    normalizedResponse = typeof triggerFieldResponse === 'string' ? parseFloat(triggerFieldResponse) : triggerFieldResponse;
+    if (isNaN(normalizedResponse)) normalizedResponse = undefined; // Treat NaN as undefined for consistency
+  } else if (triggerField.field_type === 'date') {
+    // Dates are ISO strings from react-hook-form
+    normalizedResponse = triggerFieldResponse;
+  } else {
+    // For other types, ensure it's a string
+    normalizedResponse = typeof triggerFieldResponse === 'string' ? triggerFieldResponse : String(triggerFieldResponse || '');
+  }
+
+
   switch (rule.operator) {
     case 'equals':
       if (triggerField.field_type === 'checkbox') {
-        try {
-          const responseArray = JSON.parse(triggerFieldResponse || '[]') as string[];
-          return Array.isArray(rule.value) ? rule.value.every(val => responseArray.includes(val)) : responseArray.includes(rule.value as string);
-        } catch {
-          return false;
-        }
+        // For checkboxes, rule.value is string[], normalizedResponse is string[]
+        return Array.isArray(rule.value) && Array.isArray(normalizedResponse) && rule.value.every(val => normalizedResponse.includes(val));
       }
-      return triggerFieldResponse === rule.value;
+      // For numbers, compare directly. For others, compare as strings.
+      return normalizedResponse === rule.value;
     case 'not_equals':
       if (triggerField.field_type === 'checkbox') {
-        try {
-          const responseArray = JSON.parse(triggerFieldResponse || '[]') as string[];
-          return Array.isArray(rule.value) ? !rule.value.every(val => responseArray.includes(val)) : !responseArray.includes(rule.value as string);
-        } catch {
-          return true;
-        }
+        return Array.isArray(rule.value) && Array.isArray(normalizedResponse) && !rule.value.every(val => normalizedResponse.includes(val));
       }
-      return triggerFieldResponse !== rule.value;
+      return normalizedResponse !== rule.value;
     case 'contains':
-      return typeof triggerFieldResponse === 'string' && typeof rule.value === 'string' && triggerFieldResponse.includes(rule.value);
+      return typeof normalizedResponse === 'string' && typeof rule.value === 'string' && normalizedResponse.includes(rule.value);
     case 'not_contains':
-      return typeof triggerFieldResponse === 'string' && typeof rule.value === 'string' && !triggerFieldResponse.includes(rule.value);
+      return typeof normalizedResponse === 'string' && typeof rule.value === 'string' && !normalizedResponse.includes(rule.value);
     case 'is_empty':
       if (triggerField.field_type === 'checkbox') {
-        try {
-          const responseArray = JSON.parse(triggerFieldResponse || '[]') as string[];
-          return responseArray.length === 0;
-        } catch {
-          return true;
-        }
+        return Array.isArray(normalizedResponse) && normalizedResponse.length === 0;
       }
-      return !triggerFieldResponse || triggerFieldResponse.trim() === '';
+      if (triggerField.field_type === 'number') {
+        return normalizedResponse === undefined || normalizedResponse === null;
+      }
+      return !normalizedResponse || String(normalizedResponse).trim() === '';
     case 'is_not_empty':
       if (triggerField.field_type === 'checkbox') {
-        try {
-          const responseArray = JSON.parse(triggerFieldResponse || '[]') as string[];
-          return responseArray.length > 0;
-        } catch {
-          return false;
-        }
+        return Array.isArray(normalizedResponse) && normalizedResponse.length > 0;
       }
-      return !!triggerFieldResponse && triggerFieldResponse.trim() !== '';
+      if (triggerField.field_type === 'number') {
+        return normalizedResponse !== undefined && normalizedResponse !== null;
+      }
+      return !!normalizedResponse && String(normalizedResponse).trim() !== '';
     default:
       return false;
   }
@@ -74,7 +86,7 @@ export const evaluateRule = (rule: DisplayRule, currentResponsesMap: Record<stri
  * @param allFormFields An array of all available form fields, including their types and options.
  * @returns True if the field should be displayed, false otherwise.
  */
-export const shouldFieldBeDisplayed = (field: FormField, currentResponsesMap: Record<string, string>, allFormFields: FormField[]): boolean => {
+export const shouldFieldBeDisplayed = (field: FormField, currentResponsesMap: Record<string, any>, allFormFields: FormField[]): boolean => {
   if (!field.display_rules || field.display_rules.length === 0) {
     return true; // No rules, always display
   }

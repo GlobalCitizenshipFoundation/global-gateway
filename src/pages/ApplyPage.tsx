@@ -40,6 +40,9 @@ import {
   FormDescription,
 } from "@/components/ui/form";
 
+// Explicitly define the type for dynamic form values
+type DynamicFormValues = Record<string, string | string[] | number | undefined | null>;
+
 const ApplyPage = () => {
   const { programId } = useParams<{ programId: string }>();
   const { user } = useSession();
@@ -102,12 +105,10 @@ const ApplyPage = () => {
     return z.object(schemaFields);
   }, [formFields]);
 
-  type DynamicFormValues = z.infer<typeof dynamicFormSchema>;
-
   const form = useForm<DynamicFormValues>({
     resolver: zodResolver(dynamicFormSchema),
     defaultValues: useMemo(() => {
-      const defaults: { [key: string]: any } = {};
+      const defaults: DynamicFormValues = {};
       formFields.forEach(field => {
         if (field.field_type === 'checkbox') {
           defaults[field.id] = [];
@@ -160,7 +161,7 @@ const ApplyPage = () => {
       } else {
         setFormFields(fieldsData as FormField[]);
         // Set default values for react-hook-form after fields are loaded
-        const initialFormValues: { [key: string]: any } = {};
+        const initialFormValues: DynamicFormValues = {};
         fieldsData.forEach(field => {
           if (field.field_type === 'checkbox') {
             initialFormValues[field.id] = [];
@@ -183,25 +184,25 @@ const ApplyPage = () => {
     const allFormFields = formFields; // All fields are needed for conditional logic evaluation
 
     const filtered = formFields.filter(field => {
-      const shouldDisplay = shouldFieldBeDisplayed(field, currentResponses as Record<string, string>, allFormFields);
+      const shouldDisplay = shouldFieldBeDisplayed(field, currentResponses, allFormFields);
       if (!shouldDisplay) {
         // Clear value if field is hidden
-        const currentValue = currentResponses[field.id as keyof DynamicFormValues];
-        let newValue: DynamicFormValues[typeof field.id]; // Declare with the exact target type
+        const currentValue = currentResponses[field.id];
+        let newValue: DynamicFormValues[typeof field.id];
 
         if (field.field_type === 'checkbox') {
-          newValue = [] as DynamicFormValues[typeof field.id];
+          newValue = [];
         } else if (field.field_type === 'number') {
           // If a required number field is hidden, set it to 0 (a valid number)
           // If an optional number field is hidden, set it to undefined
-          newValue = (field.is_required ? 0 : undefined) as DynamicFormValues[typeof field.id];
+          newValue = (field.is_required ? 0 : undefined);
         } else {
-          newValue = '' as DynamicFormValues[typeof field.id];
+          newValue = '';
         }
 
         // Only update if the value is actually changing to avoid unnecessary re-renders/validations
         if (currentValue !== newValue) {
-          setValue(field.id as keyof DynamicFormValues, newValue, { shouldValidate: false });
+          setValue(field.id, newValue, { shouldValidate: false });
         }
       }
       return shouldDisplay;
@@ -243,7 +244,7 @@ const ApplyPage = () => {
 
     // Only save responses for fields that were displayed and had a value
     for (const field of displayedFormFields) {
-      const fieldValue = values[field.id as keyof DynamicFormValues];
+      const fieldValue = values[field.id];
       // Convert number (or undefined) back to string for storage if it's a number field
       const valueToStore = field.field_type === 'checkbox' ? JSON.stringify(fieldValue) :
                            (field.field_type === 'number' && fieldValue === undefined) ? '' : String(fieldValue);
@@ -285,7 +286,7 @@ const ApplyPage = () => {
               <Textarea
                 id={field.id}
                 {...formHookField}
-                value={formHookField.value || ''}
+                value={String(formHookField.value || '')} // Ensure value is string
                 required={field.is_required}
                 disabled={submitting}
                 className="min-h-[120px] resize-y"
@@ -293,7 +294,7 @@ const ApplyPage = () => {
             ) : field.field_type === 'select' ? (
               <Select
                 onValueChange={formHookField.onChange}
-                value={formHookField.value || ''}
+                value={String(formHookField.value || '')} // Ensure value is string
                 required={field.is_required}
                 disabled={submitting}
               >
@@ -309,7 +310,7 @@ const ApplyPage = () => {
             ) : field.field_type === 'radio' ? (
               <RadioGroup
                 onValueChange={formHookField.onChange}
-                value={formHookField.value || ''}
+                value={String(formHookField.value || '')} // Ensure value is string
                 required={field.is_required}
                 disabled={submitting}
                 className="space-y-2"
@@ -346,7 +347,7 @@ const ApplyPage = () => {
                 id={field.id}
                 type="email"
                 {...formHookField}
-                value={formHookField.value || ''}
+                value={String(formHookField.value || '')} // Ensure value is string
                 required={field.is_required}
                 disabled={submitting}
               />
@@ -361,7 +362,8 @@ const ApplyPage = () => {
                     )}
                     disabled={submitting}
                   >
-                    {formHookField.value ? (
+                    {/* Type guard to ensure value is string before passing to Date constructor */}
+                    {typeof formHookField.value === 'string' && formHookField.value ? (
                       format(new Date(formHookField.value), "PPP")
                     ) : (
                       <span>Pick a date</span>
@@ -372,7 +374,8 @@ const ApplyPage = () => {
                 <PopoverContent className="w-auto p-0" align="start">
                   <Calendar
                     mode="single"
-                    selected={formHookField.value ? new Date(formHookField.value) : undefined}
+                    // Type guard to ensure value is string before passing to Date constructor
+                    selected={typeof formHookField.value === 'string' && formHookField.value ? new Date(formHookField.value) : undefined}
                     onSelect={(date) => formHookField.onChange(date ? date.toISOString() : '')}
                     initialFocus
                   />
@@ -383,7 +386,7 @@ const ApplyPage = () => {
                 id={field.id}
                 type="tel"
                 {...formHookField}
-                value={formHookField.value || ''}
+                value={String(formHookField.value || '')} // Ensure value is string
                 required={field.is_required}
                 disabled={submitting}
               />
@@ -398,7 +401,7 @@ const ApplyPage = () => {
               />
             ) : field.field_type === 'richtext' ? (
               <RichTextEditor
-                value={formHookField.value || ''}
+                value={String(formHookField.value || '')} // Ensure value is string
                 onChange={formHookField.onChange}
                 readOnly={submitting}
                 className="min-h-[120px]"
@@ -407,7 +410,7 @@ const ApplyPage = () => {
               <Input
                 id={field.id}
                 {...formHookField}
-                value={formHookField.value || ''}
+                value={String(formHookField.value || '')} // Ensure value is string
                 required={field.is_required}
                 disabled={submitting}
               />
