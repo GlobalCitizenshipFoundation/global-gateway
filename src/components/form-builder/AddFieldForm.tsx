@@ -5,7 +5,7 @@ import { FormField, FormSection } from "@/types";
 import { Plus } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-// Removed: import { FormDescription } from "@/components/ui/form"; // Import FormDescription
+import RichTextEditor from "@/components/RichTextEditor"; // Import RichTextEditor
 
 interface AddFieldFormProps {
   newFieldLabel: string;
@@ -22,8 +22,8 @@ interface AddFieldFormProps {
   setNewFieldDescription: (text: string) => void;
   newFieldTooltip: string;
   setNewFieldTooltip: (text: string) => void;
-  newFieldPlaceholder: string; // New
-  setNewFieldPlaceholder: (text: string) => void; // New
+  newFieldPlaceholder: string;
+  setNewFieldPlaceholder: (text: string) => void;
   isSubmitting: boolean;
   handleAddField: (e: React.FormEvent) => void;
   sections: FormSection[];
@@ -44,8 +44,8 @@ export const AddFieldForm = ({
   setNewFieldDescription,
   newFieldTooltip,
   setNewFieldTooltip,
-  newFieldPlaceholder, // New
-  setNewFieldPlaceholder, // New
+  newFieldPlaceholder,
+  setNewFieldPlaceholder,
   isSubmitting,
   handleAddField,
   sections,
@@ -92,24 +92,22 @@ export const AddFieldForm = ({
         </div>
         <div>
           <Label htmlFor="new-field-description" className="sr-only">Description</Label>
-          <Textarea
-            id="new-field-description"
-            placeholder="Optional: Add a description for this field (e.g., 'This section asks about your academic background.')"
+          <RichTextEditor
             value={newFieldDescription}
-            onChange={e => setNewFieldDescription(e.target.value)}
-            disabled={isSubmitting}
-            className="resize-y min-h-[60px]"
+            onChange={setNewFieldDescription}
+            readOnly={isSubmitting}
+            className="min-h-[60px]"
+            placeholder="Optional: Add a description for this field (e.g., 'This section asks about your academic background.')"
           />
         </div>
         <div>
           <Label htmlFor="new-field-help-text" className="sr-only">Help Text</Label>
-          <Textarea
-            id="new-field-help-text"
-            placeholder="Optional: Add help text for this field (e.g., 'Max 500 words')"
+          <RichTextEditor
             value={newFieldHelpText}
-            onChange={e => setNewFieldHelpText(e.target.value)}
-            disabled={isSubmitting}
-            className="resize-y min-h-[60px]"
+            onChange={setNewFieldHelpText}
+            readOnly={isSubmitting}
+            className="min-h-[60px]"
+            placeholder="Optional: Add help text for this field (e.g., 'Max 500 words')"
           />
         </div>
         <div>
@@ -122,7 +120,7 @@ export const AddFieldForm = ({
             disabled={isSubmitting}
           />
         </div>
-        {showPlaceholder && ( // Conditionally render placeholder
+        {showPlaceholder && (
           <div>
             <Label htmlFor="new-field-placeholder" className="sr-only">Placeholder Text</Label>
             <Input
@@ -132,7 +130,6 @@ export const AddFieldForm = ({
               onChange={e => setNewFieldPlaceholder(e.target.value)}
               disabled={isSubmitting}
             />
-            {/* Replaced FormDescription with p tag */}
             <p className="text-sm text-muted-foreground mt-1">
               This text will appear inside the input field when it's empty.
             </p>

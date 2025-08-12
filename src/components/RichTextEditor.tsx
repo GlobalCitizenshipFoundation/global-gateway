@@ -7,9 +7,10 @@ interface RichTextEditorProps {
   readOnly?: boolean;
   disabled?: boolean;
   className?: string;
+  placeholder?: string; // Added placeholder prop
 }
 
-const RichTextEditor = ({ value, onChange, readOnly = false, disabled = false, className }: RichTextEditorProps) => {
+const RichTextEditor = ({ value, onChange, readOnly = false, disabled = false, className, placeholder }: RichTextEditorProps) => {
   const modules = {
     toolbar: [
       [{ 'header': [1, 2, false] }],
@@ -36,7 +37,7 @@ const RichTextEditor = ({ value, onChange, readOnly = false, disabled = false, c
       formats={formats}
       readOnly={readOnly}
       className={className}
-      placeholder="Enter your response here..."
+      placeholder={placeholder} // Pass the placeholder prop to ReactQuill
       bounds={'.app'} // This helps contain the toolbar within the app
     />
   );
