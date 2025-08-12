@@ -10,6 +10,7 @@ export type Program = {
   allow_pdf_download: boolean;
   updated_at: string;
   form_id: string | null; // Link to Form
+  workflow_template_id: string | null; // New: Link to WorkflowTemplate
 };
 
 export type Form = {
