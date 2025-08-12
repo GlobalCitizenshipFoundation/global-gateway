@@ -9,11 +9,25 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { mockApplications } from "@/lib/mock-data";
-import { Application } from "@/types";
 import { ArrowLeft, Check, X } from "lucide-react";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { Skeleton } from "@/components/ui/skeleton";
+import { showError, showSuccess } from "@/utils/toast";
 
-const getStatusVariant = (status: Application['status']) => {
+type SubmissionDetail = {
+  id: string;
+  submitted_date: string;
+  status: 'Submitted' | 'In Review' | 'Accepted' | 'Rejected';
+  full_name: string;
+  email: string;
+  personal_statement: string;
+  programs: {
+    title: string;
+  } | null;
+};
+
+const getStatusVariant = (status: SubmissionDetail['status']) => {
   switch (status) {
     case 'Accepted':
       return 'default';
@@ -28,12 +42,100 @@ const getStatusVariant = (status: Application['status']) => {
 
 const SubmissionDetailPage = () => {
   const { programId, submissionId } = useParams<{ programId: string, submissionId: string }>();
-  const submission = mockApplications.find(app => app.id === submissionId);
+  const [submission, setSubmission] = useState<SubmissionDetail | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [updating, setUpdating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  if (!submission) {
+  useEffect(() => {
+    const fetchSubmission = async () => {
+      if (!submissionId) return;
+      setLoading(true);
+      setError(null);
+
+      const { data, error } = await supabase
+        .from('applications')
+        .select(`
+          *,
+          programs (
+            title
+          )
+        `)
+        .eq('id', submissionId)
+        .single();
+
+      if (error) {
+        setError(error.message);
+        console.error("Error fetching submission:", error);
+      } else {
+        setSubmission(data as SubmissionDetail);
+      }
+      setLoading(false);
+    };
+
+    fetchSubmission();
+  }, [submissionId]);
+
+  const handleStatusUpdate = async (newStatus: 'Accepted' | 'Rejected') => {
+    if (!submission) return;
+    setUpdating(true);
+    const { data, error } = await supabase
+      .from('applications')
+      .update({ status: newStatus })
+      .eq('id', submission.id)
+      .select(`*, programs(title)`)
+      .single();
+
+    if (error) {
+      showError(`Failed to update status: ${error.message}`);
+    } else {
+      setSubmission(data as SubmissionDetail);
+      showSuccess(`Application has been ${newStatus.toLowerCase()}.`);
+    }
+    setUpdating(false);
+  };
+
+  if (loading) {
+    return (
+      <div className="container py-12">
+        <Skeleton className="h-6 w-48 mb-4" />
+        <Card>
+          <CardHeader>
+            <div className="flex justify-between items-start">
+              <div>
+                <Skeleton className="h-8 w-48 mb-2" />
+                <Skeleton className="h-5 w-64" />
+              </div>
+              <Skeleton className="h-7 w-24" />
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div>
+              <Skeleton className="h-7 w-48 mb-2" />
+              <Skeleton className="h-4 w-full mb-1" />
+              <Skeleton className="h-4 w-full mb-1" />
+              <Skeleton className="h-4 w-3/4" />
+            </div>
+            <div>
+              <Skeleton className="h-7 w-48 mb-2" />
+              <Skeleton className="h-4 w-1/2 mb-1" />
+              <Skeleton className="h-4 w-1/2" />
+            </div>
+          </CardContent>
+          <CardFooter className="flex justify-end gap-2">
+            <Skeleton className="h-10 w-28" />
+            <Skeleton className="h-10 w-28" />
+          </CardFooter>
+        </Card>
+      </div>
+    );
+  }
+
+  if (error || !submission) {
     return (
       <div className="container text-center py-12">
         <h1 className="text-2xl font-bold">Submission not found</h1>
+        {error && <p className="text-destructive mt-2">{error}</p>}
       </div>
     );
   }
@@ -48,7 +150,7 @@ const SubmissionDetailPage = () => {
         <CardHeader>
           <div className="flex justify-between items-start">
             <div>
-              <CardTitle className="text-2xl">{submission.fullName}</CardTitle>
+              <CardTitle className="text-2xl">{submission.full_name}</CardTitle>
               <CardDescription>{submission.email}</CardDescription>
             </div>
             <Badge variant={getStatusVariant(submission.status)}>{submission.status}</Badge>
@@ -58,25 +160,25 @@ const SubmissionDetailPage = () => {
           <div className="space-y-6">
             <div>
               <h3 className="font-semibold text-lg mb-2">Personal Statement</h3>
-              <p className="text-muted-foreground whitespace-pre-wrap">{submission.personalStatement}</p>
+              <p className="text-muted-foreground whitespace-pre-wrap">{submission.personal_statement}</p>
             </div>
             <div>
               <h3 className="font-semibold text-lg mb-2">Application Details</h3>
               <dl className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2 text-sm">
                 <dt className="text-muted-foreground">Program:</dt>
-                <dd>{submission.programTitle}</dd>
+                <dd>{submission.programs?.title || 'Unknown Program'}</dd>
                 <dt className="text-muted-foreground">Submitted On:</dt>
-                <dd>{submission.submittedDate.toLocaleDateString()}</dd>
+                <dd>{new Date(submission.submitted_date).toLocaleDateString()}</dd>
               </dl>
             </div>
           </div>
         </CardContent>
         <CardFooter className="flex justify-end gap-2">
-          <Button variant="destructive" disabled>
+          <Button variant="destructive" onClick={() => handleStatusUpdate('Rejected')} disabled={updating || submission.status !== 'Submitted' && submission.status !== 'In Review'}>
             <X className="mr-2 h-4 w-4" />
             Decline
           </Button>
-          <Button variant="default" disabled>
+          <Button variant="default" onClick={() => handleStatusUpdate('Accepted')} disabled={updating || submission.status !== 'Submitted' && submission.status !== 'In Review'}>
             <Check className="mr-2 h-4 w-4" />
             Accept
           </Button>

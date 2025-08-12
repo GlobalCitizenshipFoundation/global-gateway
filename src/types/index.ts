@@ -1,19 +1,9 @@
 export type Program = {
   id: string;
+  user_id: string;
   title: string;
-  description: string;
+  description: string | null;
   deadline: Date;
   status: 'Open' | 'Closed' | 'Reviewing';
-};
-
-export type Application = {
-  id: string;
-  programTitle: string;
-  programId: string;
-  status: 'Submitted' | 'In Review' | 'Accepted' | 'Rejected';
-  submittedDate: Date;
-  // Renaming for consistency with form fields
-  fullName: string;
-  email: string;
-  personalStatement: string;
+  created_at: string;
 };
