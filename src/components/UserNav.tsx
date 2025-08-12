@@ -71,7 +71,7 @@ const UserNav = () => {
             <Link to="/creator/forms">Manage Forms</Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
-            <Link to="/creator/workflow-templates">Manage Workflows</Link> {/* New link */}
+            <Link to="/creator/workflow-templates">Manage Workflows</Link>
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
