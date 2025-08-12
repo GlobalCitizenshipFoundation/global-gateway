@@ -121,7 +121,7 @@ const ApplyPage = () => {
   };
 
   const handleCheckboxChange = (fieldId: string, option: string, checked: boolean) => {
-    const currentValues = JSON.parse(responses[field.id] || '[]') as string[];
+    const currentValues = JSON.parse(responses[fieldId] || '[]') as string[];
     const newValues = checked
       ? [...currentValues, option]
       : currentValues.filter(v => v !== option);
