@@ -37,6 +37,13 @@ export type FormSection = {
   created_at: string;
 };
 
+export type DisplayRule = {
+  field_id: string;
+  operator: 'equals' | 'not_equals' | 'contains' | 'not_contains' | 'is_empty' | 'is_not_empty';
+  value: string | string[] | boolean | number | null;
+  logic_type?: 'AND' | 'OR'; // For combining multiple rules
+};
+
 export type FormField = {
   id: string;
   program_id: string;
@@ -46,4 +53,5 @@ export type FormField = {
   options: string[] | null;
   is_required: boolean;
   order: number;
+  display_rules: DisplayRule[] | null; // New: Conditional display logic
 };
