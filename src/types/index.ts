@@ -29,9 +29,18 @@ export type Application = {
   } | null;
 };
 
+export type FormSection = {
+  id: string;
+  program_id: string;
+  name: string;
+  order: number;
+  created_at: string;
+};
+
 export type FormField = {
   id: string;
   program_id: string;
+  section_id: string | null; // New: Link to FormSection
   label: string;
   field_type: 'text' | 'textarea' | 'select' | 'radio' | 'checkbox' | 'file' | 'email' | 'date' | 'phone' | 'number' | 'richtext';
   options: string[] | null;
