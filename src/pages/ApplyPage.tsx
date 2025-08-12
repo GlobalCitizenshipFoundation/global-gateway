@@ -10,8 +10,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Program, FormField } from "@/types";
-import { useEffect, useState } from "react";
+import { Program, FormField, DisplayRule } from "@/types";
+import { useEffect, useState, useMemo } from "react"; // Import useMemo
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/contexts/SessionContext";
 import { showError, showSuccess } from "@/utils/toast";
@@ -24,7 +24,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
-import RichTextEditor from "@/components/RichTextEditor"; // Import the new component
+import RichTextEditor from "@/components/RichTextEditor";
 
 const ApplyPage = () => {
   const { programId } = useParams<{ programId: string }>();
@@ -83,6 +83,101 @@ const ApplyPage = () => {
     fetchData();
   }, [programId, user]);
 
+  const evaluateRule = (rule: DisplayRule, currentResponses: Record<string, string>): boolean => {
+    const triggerFieldResponse = currentResponses[rule.field_id];
+    const triggerField = formFields.find(f => f.id === rule.field_id);
+
+    if (!triggerField) return false; // Trigger field not found
+
+    switch (rule.operator) {
+      case 'equals':
+        if (triggerField.field_type === 'checkbox') {
+          try {
+            const responseArray = JSON.parse(triggerFieldResponse || '[]') as string[];
+            return Array.isArray(rule.value) ? rule.value.every(val => responseArray.includes(val)) : responseArray.includes(rule.value as string);
+          } catch {
+            return false;
+          }
+        }
+        return triggerFieldResponse === rule.value;
+      case 'not_equals':
+        if (triggerField.field_type === 'checkbox') {
+          try {
+            const responseArray = JSON.parse(triggerFieldResponse || '[]') as string[];
+            return Array.isArray(rule.value) ? !rule.value.every(val => responseArray.includes(val)) : !responseArray.includes(rule.value as string);
+          } catch {
+            return true;
+          }
+        }
+        return triggerFieldResponse !== rule.value;
+      case 'contains':
+        return typeof triggerFieldResponse === 'string' && typeof rule.value === 'string' && triggerFieldResponse.includes(rule.value);
+      case 'not_contains':
+        return typeof triggerFieldResponse === 'string' && typeof rule.value === 'string' && !triggerFieldResponse.includes(rule.value);
+      case 'is_empty':
+        if (triggerField.field_type === 'checkbox') {
+          try {
+            const responseArray = JSON.parse(triggerFieldResponse || '[]') as string[];
+            return responseArray.length === 0;
+          } catch {
+            return true;
+          }
+        }
+        return !triggerFieldResponse || triggerFieldResponse.trim() === '';
+      case 'is_not_empty':
+        if (triggerField.field_type === 'checkbox') {
+          try {
+            const responseArray = JSON.parse(triggerFieldResponse || '[]') as string[];
+            return responseArray.length > 0;
+          } catch {
+            return false;
+          }
+        }
+        return !!triggerFieldResponse && triggerFieldResponse.trim() !== '';
+      default:
+        return false;
+    }
+  };
+
+  const shouldFieldBeDisplayed = (field: FormField, currentResponses: Record<string, string>): boolean => {
+    if (!field.display_rules || field.display_rules.length === 0) {
+      return true; // No rules, always display
+    }
+
+    // For simplicity, we'll assume 'AND' logic if not specified or if multiple rules
+    // A more complex implementation would handle 'OR' and nested logic_type
+    return field.display_rules.every(rule => evaluateRule(rule, currentResponses));
+  };
+
+  const displayedFormFields = useMemo(() => {
+    const newResponses: Record<string, string> = { ...responses };
+    const newFileUploads: Record<string, File | null> = { ...fileUploads };
+
+    const filtered = formFields.filter(field => {
+      const shouldDisplay = shouldFieldBeDisplayed(field, responses);
+      if (!shouldDisplay) {
+        // Clear response if field is hidden
+        if (newResponses[field.id] !== undefined) {
+          newResponses[field.id] = field.field_type === 'checkbox' ? '[]' : '';
+        }
+        if (newFileUploads[field.id] !== undefined) {
+          newFileUploads[field.id] = null;
+        }
+      }
+      return shouldDisplay;
+    });
+
+    // Only update state if changes occurred to avoid infinite loops
+    if (JSON.stringify(newResponses) !== JSON.stringify(responses)) {
+      setResponses(newResponses);
+    }
+    if (JSON.stringify(newFileUploads) !== JSON.stringify(fileUploads)) {
+      setFileUploads(newFileUploads);
+    }
+
+    return filtered;
+  }, [responses, formFields, fileUploads]); // Depend on responses to re-evaluate visibility
+
   const handleResponseChange = (fieldId: string, value: string) => {
     setResponses(prev => ({ ...prev, [fieldId]: value }));
   };
@@ -104,8 +199,8 @@ const ApplyPage = () => {
     if (!user || !program) return;
     setSubmitting(true);
 
-    // Validate required fields
-    for (const field of formFields) {
+    // Validate only currently displayed required fields
+    for (const field of displayedFormFields) {
       if (field.is_required) {
         if (field.field_type === 'file') {
           if (!fileUploads[field.id]) {
@@ -144,7 +239,7 @@ const ApplyPage = () => {
 
     const responseRecords: { application_id: string; field_id: string; value: string; }[] = [];
 
-    for (const field of formFields) {
+    for (const field of displayedFormFields) { // Only process displayed fields
       if (field.field_type === 'file') {
         const file = fileUploads[field.id];
         if (file) {
@@ -220,7 +315,7 @@ const ApplyPage = () => {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="grid gap-6">
-            {formFields.map(field => (
+            {displayedFormFields.map(field => (
               <div key={field.id} className="grid gap-2">
                 <Label htmlFor={field.id}>{field.label}{field.is_required && <span className="text-destructive ml-1">*</span>}</Label>
                 {field.field_type === 'textarea' ? (
