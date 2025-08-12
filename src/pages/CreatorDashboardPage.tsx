@@ -31,72 +31,66 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Program } from "@/types";
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/contexts/SessionContext";
 import { Skeleton } from "@/components/ui/skeleton";
-import { MoreHorizontal } from "lucide-react";
+import { MoreHorizontal, FileText, Plus } from "lucide-react"; // Added FileText and Plus icons
 import { showError, showSuccess } from "@/utils/toast";
 import { Badge } from "@/components/ui/badge";
 
+// Extend Program type to include application_count from the view
+type ProgramSummary = Program & {
+  application_count: number;
+};
+
 const CreatorDashboardPage = () => {
   const { user } = useSession();
-  const [programs, setPrograms] = useState<Program[]>([]);
-  const [applications, setApplications] = useState<any[]>([]);
+  const [programs, setPrograms] = useState<ProgramSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [selectedProgram, setSelectedProgram] = useState<Program | null>(null);
+  const [selectedProgram, setSelectedProgram] = useState<ProgramSummary | null>(null);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      if (!user) return;
+  const fetchPrograms = useCallback(async () => {
+    if (!user) return;
 
-      setLoading(true);
-      setError(null);
+    setLoading(true);
+    setError(null);
 
-      const { data: programsData, error: programsError } = await supabase
-        .from('programs')
-        .select('id, title, deadline, status, created_at, updated_at') // Fetch new fields
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
+    // Fetch from the new program_summary view
+    const { data: programsData, error: programsError } = await supabase
+      .from('program_summary')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false });
 
-      if (programsError) {
-        setError(programsError.message);
-        setLoading(false);
-        return;
-      }
-      
-      const formattedPrograms = programsData.map(p => ({ ...p, deadline: new Date(p.deadline) })) as Program[];
+    if (programsError) {
+      setError(programsError.message);
+    } else {
+      const formattedPrograms = programsData.map(p => ({ ...p, deadline: new Date(p.deadline) })) as ProgramSummary[];
       setPrograms(formattedPrograms);
-
-      const programIds = programsData.map(p => p.id);
-      if (programIds.length > 0) {
-        const { data: applicationsData, error: applicationsError } = await supabase
-          .from('applications')
-          .select('id, program_id')
-          .in('program_id', programIds);
-
-        if (applicationsError) {
-          setError(applicationsError.message);
-        } else {
-          setApplications(applicationsData || []);
-        }
-      }
-
-      setLoading(false);
-    };
-
-    fetchData();
+    }
+    setLoading(false);
   }, [user]);
 
-  const submissionCounts = useMemo(() => {
-    const counts = new Map<string, number>();
-    for (const app of applications) {
-      counts.set(app.program_id, (counts.get(app.program_id) || 0) + 1);
-    }
-    return counts;
-  }, [applications]);
+  useEffect(() => {
+    fetchPrograms();
+
+    // Set up real-time subscription for applications table
+    const channel = supabase
+      .channel('creator_dashboard_applications')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'applications' }, payload => {
+        // When an application changes (inserted, updated, deleted), re-fetch programs
+        // This will update the application_count in the program_summary view
+        fetchPrograms();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [fetchPrograms]);
 
   const handleDeleteProgram = async () => {
     if (!selectedProgram) return;
@@ -110,7 +104,7 @@ const CreatorDashboardPage = () => {
       showError(`Failed to delete program: ${error.message}`);
     } else {
       showSuccess(`Program "${selectedProgram.title}" deleted successfully.`);
-      setPrograms(programs.filter(p => p.id !== selectedProgram.id));
+      // No need to manually filter, real-time subscription will trigger fetchPrograms
     }
     setSelectedProgram(null);
     setIsDeleteDialogOpen(false);
@@ -196,7 +190,7 @@ const CreatorDashboardPage = () => {
                   <TableRow key={program.id}>
                     <TableCell className="font-medium">{program.title}</TableCell>
                     <TableCell className="text-center hidden md:table-cell">
-                      {submissionCounts.get(program.id) || 0}
+                      {program.application_count}
                     </TableCell>
                     <TableCell className="hidden lg:table-cell">
                       <Badge variant={program.status === 'published' ? 'default' : 'secondary'}>
@@ -234,7 +228,7 @@ const CreatorDashboardPage = () => {
                             <Link to={`/creator/program/${program.id}/workflow`}>Manage Workflow</Link>
                           </DropdownMenuItem>
                           <DropdownMenuItem asChild>
-                            <Link to={`/creator/program/${program.id}/form`}>Manage Form</Link>
+                            <Link to={`/creator/forms/${program.form_id}/edit`}>Manage Form</Link>
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
                           <DropdownMenuLabel>Status</DropdownMenuLabel>
@@ -264,7 +258,15 @@ const CreatorDashboardPage = () => {
                 )) : (
                   <TableRow>
                     <TableCell colSpan={6} className="text-center h-24">
-                      You haven't created any programs yet.
+                      <div className="flex flex-col items-center justify-center">
+                        <FileText className="h-12 w-12 text-muted-foreground mb-2" />
+                        <p className="text-muted-foreground text-sm">
+                          You haven't created any programs yet.
+                        </p>
+                        <p className="text-muted-foreground text-sm mt-1">
+                          Click "Create New Program" to get started!
+                        </p>
+                      </div>
                     </TableCell>
                   </TableRow>
                 )}

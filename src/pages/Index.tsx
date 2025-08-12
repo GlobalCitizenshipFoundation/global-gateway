@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardHeader, CardContent, CardFooter } from "@/components/ui/card";
+import { SearchX } from "lucide-react"; // Import SearchX icon
 
 const Index = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -104,9 +105,10 @@ const Index = () => {
           </div>
         ) : (
           <div className="text-center py-16">
+            <SearchX className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
             <h2 className="text-2xl font-semibold">No Programs Found</h2>
             <p className="text-muted-foreground mt-2">
-              There are no programs available at the moment.
+              There are no published programs available at the moment, or your search did not match any.
             </p>
           </div>
         )}
