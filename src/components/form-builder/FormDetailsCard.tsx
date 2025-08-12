@@ -18,10 +18,11 @@ export const FormDetailsCard = ({ state }: FormDetailsCardProps) => {
     formName, setFormName,
     formDescription, setFormDescription,
     formStatus,
-    lastSavedTimestamp,
+    formLastEditedAt, // Use this for the "Last updated" timestamp
+    lastEditedByUserName,
     hasUnsavedChanges,
     isAutoSaving,
-    lastEditedByUserName,
+    showSavedConfirmation, // New: for "Saved!" message
     loading,
   } = state;
 
@@ -44,11 +45,21 @@ export const FormDetailsCard = ({ state }: FormDetailsCardProps) => {
     if (!loading) { // Only auto-save after initial load
       triggerAutoSave();
     }
-    return () => {
-      // Cleanup function for the timeout
-      // This is handled internally by triggerAutoSave's useCallback and useRef
-    };
+    // The cleanup for the timeout is handled within triggerAutoSave's useCallback and useRef
   }, [formName, formDescription, state.sections, state.fields, loading, triggerAutoSave]); // Depend on sections and fields to trigger auto-save on their changes
+
+  const renderStatusMessage = () => {
+    if (isAutoSaving) {
+      return <span className="text-blue-500">Saving...</span>;
+    }
+    if (showSavedConfirmation) {
+      return <span className="text-green-500">Saved!</span>;
+    }
+    if (hasUnsavedChanges) {
+      return <span className="text-orange-500">Unsaved changes</span>;
+    }
+    return null; // No dynamic status to show
+  };
 
   return (
     <Card className="mx-auto max-w-3xl">
@@ -56,22 +67,18 @@ export const FormDetailsCard = ({ state }: FormDetailsCardProps) => {
         <div className="flex justify-between items-center">
           <div>
             <CardTitle>Form Builder: {formName}</CardTitle>
-            {/* Changed CardDescription to a div to correctly nest Badge */}
             <div className="text-sm text-muted-foreground">
               Design your application form. Current Status: <Badge variant={formStatus === 'published' ? 'default' : 'secondary'}>{formStatus.charAt(0).toUpperCase() + formStatus.slice(1)}</Badge>
             </div>
           </div>
           <div className="text-sm text-muted-foreground text-right">
-            {isAutoSaving ? (
-              <span className="text-blue-500">Saving...</span>
-            ) : hasUnsavedChanges ? (
-              <span className="text-orange-500">Unsaved changes</span>
-            ) : (
-              <span>Last saved: {lastSavedTimestamp ? lastSavedTimestamp.toLocaleString() : 'Never'}</span>
+            {formLastEditedAt && (
+              <p>Last updated: {new Date(formLastEditedAt).toLocaleString()}</p>
             )}
             {lastEditedByUserName && (
               <p className="text-xs">By: {lastEditedByUserName}</p>
             )}
+            {renderStatusMessage()}
           </div>
         </div>
       </CardHeader>

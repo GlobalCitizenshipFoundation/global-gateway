@@ -27,6 +27,7 @@ export const useFormBuilderState = (initialFormId?: string) => {
   const [lastSavedTimestamp, setLastSavedTimestamp] = useState<Date | null>(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+  const [showSavedConfirmation, setShowSavedConfirmation] = useState(false); // New state for "Saved!" message
 
   // Dialog states
   const [isLogicBuilderOpen, setIsLogicBuilderOpen] = useState(false);
@@ -153,8 +154,8 @@ export const useFormBuilderState = (initialFormId?: string) => {
     formName, setFormName,
     formDescription, setFormDescription,
     formStatus, setFormStatus,
-    formLastEditedAt,
-    formLastEditedByUserId,
+    formLastEditedAt, setFormLastEditedAt, // Expose setter for handlers
+    formLastEditedByUserId, setFormLastEditedByUserId, // Expose setter for handlers
     lastEditedByUserName,
     sections, setSections,
     fields, setFields,
@@ -165,6 +166,7 @@ export const useFormBuilderState = (initialFormId?: string) => {
     lastSavedTimestamp, setLastSavedTimestamp,
     hasUnsavedChanges, setHasUnsavedChanges,
     isUpdatingStatus, setIsUpdatingStatus,
+    showSavedConfirmation, setShowSavedConfirmation, // New: Expose setter
     isLogicBuilderOpen, setIsLogicBuilderOpen,
     fieldToEditLogic, setFieldToEditLogic,
     isEditFieldDialogOpen, setIsEditFieldDialogOpen,
