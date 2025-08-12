@@ -5,3 +5,11 @@ export type Program = {
   deadline: Date;
   status: 'Open' | 'Closed' | 'Reviewing';
 };
+
+export type Application = {
+  id: string;
+  programTitle: string;
+  programId: string;
+  status: 'Submitted' | 'In Review' | 'Accepted' | 'Rejected';
+  submittedDate: Date;
+};
