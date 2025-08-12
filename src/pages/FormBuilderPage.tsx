@@ -18,7 +18,7 @@ const FormBuilderPage = () => {
   const [programTitle, setProgramTitle] = useState('');
   const [fields, setFields] = useState<FormField[]>([]);
   const [newFieldLabel, setNewFieldLabel] = useState('');
-  const [newFieldType, setNewFieldType] = useState<'text' | 'textarea' | 'select'>('text');
+  const [newFieldType, setNewFieldType] = useState<'text' | 'textarea' | 'select' | 'radio' | 'checkbox'>('text');
   const [newFieldOptions, setNewFieldOptions] = useState('');
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -65,7 +65,7 @@ const FormBuilderPage = () => {
         label: newFieldLabel,
         field_type: newFieldType,
         order: nextOrder,
-        options: newFieldType === 'select' ? newFieldOptions.split(',').map(opt => opt.trim()) : null,
+        options: (newFieldType === 'select' || newFieldType === 'radio' || newFieldType === 'checkbox') ? newFieldOptions.split(',').map(opt => opt.trim()) : null,
       })
       .select()
       .single();
@@ -172,7 +172,7 @@ const FormBuilderPage = () => {
                 disabled={isSubmitting}
               />
               <div className="flex flex-col sm:flex-row gap-2">
-                <Select value={newFieldType} onValueChange={(value) => setNewFieldType(value as 'text' | 'textarea' | 'select')}>
+                <Select value={newFieldType} onValueChange={(value) => setNewFieldType(value as any)}>
                   <SelectTrigger className="w-full sm:w-[140px]">
                     <SelectValue placeholder="Field type" />
                   </SelectTrigger>
@@ -180,9 +180,11 @@ const FormBuilderPage = () => {
                     <SelectItem value="text">Text</SelectItem>
                     <SelectItem value="textarea">Textarea</SelectItem>
                     <SelectItem value="select">Dropdown</SelectItem>
+                    <SelectItem value="radio">Radio Group</SelectItem>
+                    <SelectItem value="checkbox">Checkboxes</SelectItem>
                   </SelectContent>
                 </Select>
-                {newFieldType === 'select' && (
+                {(newFieldType === 'select' || newFieldType === 'radio' || newFieldType === 'checkbox') && (
                   <Input
                     placeholder="Comma-separated options, e.g., Yes, No"
                     value={newFieldOptions}

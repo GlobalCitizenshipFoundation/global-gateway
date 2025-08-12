@@ -41,6 +41,7 @@ type Response = {
   value: string | null;
   form_fields: {
     label: string;
+    field_type: string;
   } | null;
 }
 
@@ -78,7 +79,7 @@ const SubmissionDetailPage = () => {
       // Fetch responses
       const { data: responsesData, error: responsesError } = await supabase
         .from('application_responses')
-        .select(`value, form_fields ( label )`)
+        .select(`value, form_fields ( label, field_type )`)
         .eq('application_id', submissionId);
       
       if (responsesError) {
@@ -127,6 +128,19 @@ const SubmissionDetailPage = () => {
       showSuccess(`Application moved to "${data.program_stages?.name}" stage.`);
     }
     setUpdating(false);
+  };
+
+  const formatResponseValue = (response: Response) => {
+    if (!response.value) return 'No answer provided';
+    if (response.form_fields?.field_type === 'checkbox') {
+      try {
+        const values = JSON.parse(response.value);
+        return Array.isArray(values) ? values.join(', ') : response.value;
+      } catch (e) {
+        return response.value; // Fallback for malformed data
+      }
+    }
+    return response.value;
   };
 
   if (loading) {
@@ -188,7 +202,7 @@ const SubmissionDetailPage = () => {
                 {responses.map((res, index) => (
                   <div key={index}>
                     <dt className="font-medium text-sm">{res.form_fields?.label || 'Untitled Question'}</dt>
-                    <dd className="text-muted-foreground whitespace-pre-wrap mt-1">{res.value || 'No answer provided'}</dd>
+                    <dd className="text-muted-foreground whitespace-pre-wrap mt-1">{formatResponseValue(res)}</dd>
                   </div>
                 ))}
               </dl>
