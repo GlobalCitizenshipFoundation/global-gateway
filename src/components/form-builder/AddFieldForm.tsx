@@ -5,7 +5,7 @@ import { FormField, FormSection } from "@/types";
 import { Plus } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { FormDescription } from "@/components/ui/form"; // Import FormDescription
+// Removed: import { FormDescription } from "@/components/ui/form"; // Import FormDescription
 
 interface AddFieldFormProps {
   newFieldLabel: string;
@@ -132,9 +132,10 @@ export const AddFieldForm = ({
               onChange={e => setNewFieldPlaceholder(e.target.value)}
               disabled={isSubmitting}
             />
-            <FormDescription>
+            {/* Replaced FormDescription with p tag */}
+            <p className="text-sm text-muted-foreground mt-1">
               This text will appear inside the input field when it's empty.
-            </FormDescription>
+            </p>
           </div>
         )}
         <Select

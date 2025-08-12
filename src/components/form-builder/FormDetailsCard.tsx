@@ -56,9 +56,10 @@ export const FormDetailsCard = ({ state }: FormDetailsCardProps) => {
         <div className="flex justify-between items-center">
           <div>
             <CardTitle>Form Builder: {formName}</CardTitle>
-            <CardDescription>
+            {/* Changed CardDescription to a div to correctly nest Badge */}
+            <div className="text-sm text-muted-foreground">
               Design your application form. Current Status: <Badge variant={formStatus === 'published' ? 'default' : 'secondary'}>{formStatus.charAt(0).toUpperCase() + formStatus.slice(1)}</Badge>
-            </CardDescription>
+            </div>
           </div>
           <div className="text-sm text-muted-foreground text-right">
             {isAutoSaving ? (

@@ -75,7 +75,7 @@ export const FormsTable = ({ forms, onUpdateStatus, onSaveAsTemplate, onDelete }
       </TableHeader>
       <TableBody>
         {forms.length > 0 ? forms.map((form) => (
-          <TableRow key={form.id} className={cn(form.is_template && "bg-blue-50/50 dark:bg-blue-950/20")}> {/* Visual distinction */}
+          <TableRow key={form.id} className={cn(form.is_template && "bg-blue-50/50 dark:bg-blue-950/20")}>
             <TableCell className="font-medium">{form.name}</TableCell>
             <TableCell className="hidden md:table-cell">
               <Badge variant="outline">{form.is_template ? 'Template' : 'Program Form'}</Badge>
