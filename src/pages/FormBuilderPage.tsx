@@ -264,82 +264,87 @@ const FormBuilderPage = () => {
 
     // Determine target container ID
     if (sections.some(s => s.id === overId)) {
-      // Dropped directly onto a section header (which is a DroppableContainer)
       targetContainerId = overId;
     } else if (overId === 'uncategorized-fields-droppable-area') {
-      // Dropped directly onto the uncategorized droppable area
       targetContainerId = 'uncategorized-fields';
-    } else if (over.data.current?.field) { // Dropped onto another field
+    } else if (over.data.current?.field) {
       targetContainerId = over.data.current.field.section_id || 'uncategorized-fields';
     } else {
-      // Fallback: if dropped somewhere else, keep in current section
-      targetContainerId = sourceContainerId;
+      targetContainerId = sourceContainerId; // Fallback
+    }
+
+    // If the field is dropped back onto itself or its original container without a change in order/section, do nothing.
+    if (activeFieldId === overId && sourceContainerId === targetContainerId) {
+      return;
     }
 
     const originalFields = [...fields]; // Store for potential revert
 
-    // Scenario 1: Reordering within the same section
+    let newFieldsState = [...fields]; // Temporary state for local update
+    
+    const newSectionIdForDb = targetContainerId === 'uncategorized-fields' ? null : targetContainerId;
+
+    // Update section_id for the active field if it changed
+    if ((activeField.section_id || 'uncategorized-fields') !== targetContainerId) {
+      newFieldsState = newFieldsState.map(f => f.id === activeFieldId ? { ...f, section_id: newSectionIdForDb } : f);
+    }
+
+    // Recalculate orders for all fields in both source and target containers
+    // This ensures correct ordering after any move (reorder or cross-container)
+    const allContainerIds = new Set([...sections.map(s => s.id), 'uncategorized-fields']);
+    
+    allContainerIds.forEach(containerId => {
+      const currentContainerFields = newFieldsState
+        .filter(f => (f.section_id || 'uncategorized-fields') === containerId)
+        .sort((a, b) => a.order - b.order); // Sort by current order to get correct index
+
+      const updatedContainerFields = currentContainerFields.map((f, idx) => ({ ...f, order: idx + 1 }));
+
+      newFieldsState = newFieldsState.map(f => {
+        const updatedField = updatedContainerFields.find(uf => uf.id === f.id);
+        return updatedField ? updatedField : f;
+      });
+    });
+
+    // If the active field was reordered within its original container
     if (sourceContainerId === targetContainerId) {
-      const currentSectionFields = fields.filter(f => (f.section_id || 'uncategorized-fields') === sourceContainerId);
+      const currentSectionFields = newFieldsState.filter(f => (f.section_id || 'uncategorized-fields') === sourceContainerId);
       const oldIndex = currentSectionFields.findIndex(f => f.id === activeFieldId);
       const newIndex = currentSectionFields.findIndex(f => f.id === overId);
 
       if (oldIndex !== -1 && newIndex !== -1 && oldIndex !== newIndex) {
-        const movedFields = arrayMove(currentSectionFields, oldIndex, newIndex);
-        
-        // Update local state with new order
-        setFields(prevFields => {
-          const otherFields = prevFields.filter(f => (f.section_id || 'uncategorized-fields') !== sourceContainerId);
-          const updatedMovedFields = movedFields.map((f, idx) => ({ ...f, order: idx + 1 }));
-          return [...otherFields, ...updatedMovedFields].sort((a, b) => a.order - b.order);
-        });
+        const reorderedWithinSection = arrayMove(currentSectionFields, oldIndex, newIndex);
+        const updatedOrders = reorderedWithinSection.map((f, idx) => ({ ...f, order: idx + 1 }));
 
-        // Update orders in DB
-        const updates = movedFields.map((field, index) => 
-          supabase.from('form_fields').update({ order: index + 1 }).eq('id', field.id)
-        );
-        const results = await Promise.all(updates);
-        if (results.some(res => res.error)) {
-          showError("Failed to save new order. Reverting.");
-          setFields(originalFields); // Revert
-        }
+        newFieldsState = newFieldsState.map(f => {
+          const updatedField = updatedOrders.find(uf => uf.id === f.id);
+          return updatedField ? updatedField : f;
+        });
       }
-    } 
-    // Scenario 2: Moving between different sections
-    else {
-      const newSectionIdForDb = targetContainerId === 'uncategorized-fields' ? null : targetContainerId;
+    }
 
-      // Update local state first
-      setFields(prevFields => {
-        const updatedActiveField = { ...activeField, section_id: newSectionIdForDb };
-        const newFields = prevFields.map(f => f.id === activeFieldId ? updatedActiveField : f);
+    // Prepare batch update for Supabase
+    const updatesToSend = newFieldsState.filter(f => {
+      const originalField = originalFields.find(orig => orig.id === f.id);
+      return originalField && (originalField.order !== f.order || originalField.section_id !== f.section_id);
+    }).map(f => ({
+      id: f.id,
+      order: f.order,
+      section_id: f.section_id,
+    }));
 
-        // Re-calculate orders for all fields in both old and new sections
-        const reorderedFields = newFields.map(field => {
-          const currentParentId = field.section_id || 'uncategorized-fields';
-          const fieldsInCurrentParent = newFields
-            .filter(item => (item.section_id || 'uncategorized-fields') === currentParentId)
-            .sort((a, b) => a.order - b.order); // Sort by current order to get correct index
+    if (updatesToSend.length > 0) {
+      // Optimistic update
+      setFields(newFieldsState);
 
-          const newOrderForField = fieldsInCurrentParent.findIndex(item => item.id === field.id) + 1;
-          return { ...field, order: newOrderForField };
-        });
-        return reorderedFields.sort((a, b) => a.order - b.order); // Ensure overall order for display
-      });
-
-      // Update section_id in DB
-      const { error } = await supabase
-        .from('form_fields')
-        .update({ section_id: newSectionIdForDb })
-        .eq('id', activeFieldId);
-
+      const { error } = await supabase.from('form_fields').upsert(updatesToSend);
       if (error) {
-        showError(`Failed to move field: ${error.message}. Reverting.`);
-        setFields(originalFields); // Revert
+        showError(`Failed to save changes: ${error.message}. Reverting.`);
+        setFields(originalFields); // Revert on error
       } else {
-        showSuccess("Field moved successfully.");
-        // After a cross-section move, re-fetch all data to ensure consistency
-        fetchData(); 
+        showSuccess("Field(s) updated successfully.");
+        // Re-fetch data to ensure full consistency after successful DB update
+        fetchData();
       }
     }
   };
@@ -378,7 +383,7 @@ const FormBuilderPage = () => {
                 <Accordion type="multiple" className="w-full">
                   {sections.map(section => (
                     <AccordionItem key={section.id} value={section.id}>
-                      <DroppableContainer id={section.id} className="rounded-md border"> {/* Make AccordionTrigger droppable */}
+                      <DroppableContainer id={section.id} className="rounded-md border">
                         <AccordionTrigger className="flex justify-between items-center w-full pr-4">
                           <span className="font-semibold">{section.name}</span>
                           <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); handleDeleteSection(section.id); }}>
@@ -387,7 +392,7 @@ const FormBuilderPage = () => {
                         </AccordionTrigger>
                         <AccordionContent>
                           <SortableContext items={getFieldsForSection(section.id).map(f => f.id)} strategy={verticalListSortingStrategy}>
-                            <ul className="space-y-2 p-2 min-h-[50px]"> {/* Added min-h for droppable area */}
+                            <ul className="space-y-2 p-2 min-h-[50px]">
                               {getFieldsForSection(section.id).length > 0 ? (
                                 getFieldsForSection(section.id).map(field => (
                                   <FormFieldItem
@@ -417,7 +422,7 @@ const FormBuilderPage = () => {
                 <DroppableContainer id="uncategorized-fields-droppable-area" className="mt-6 border-t pt-6 rounded-md border">
                   <h3 className="text-lg font-medium mb-4 px-2">Uncategorized Fields</h3>
                   <SortableContext items={uncategorizedFields.map(f => f.id)} strategy={verticalListSortingStrategy}>
-                    <ul className="space-y-2 p-2 min-h-[50px]"> {/* Added min-h for droppable area */}
+                    <ul className="space-y-2 p-2 min-h-[50px]">
                       {uncategorizedFields.map(field => (
                         <FormFieldItem
                           key={field.id}
@@ -438,16 +443,15 @@ const FormBuilderPage = () => {
               {activeDragItem ? (
                 <FormFieldItem
                   field={activeDragItem}
-                  onDelete={() => {}} // No-op for overlay
-                  onToggleRequired={() => {}} // No-op for overlay
-                  onEditLogic={() => {}} // No-op for overlay
-                  onEdit={() => {}} // No-op for overlay
+                  onDelete={() => {}}
+                  onToggleRequired={() => {}}
+                  onEditLogic={() => {}}
+                  onEdit={() => {}}
                 />
               ) : null}
             </DragOverlay>
-          </DndContext> {/* Correct closing of DndContext */}
+          </DndContext>
 
-          {/* Forms for adding new sections/fields (outside DndContext but inside CardContent) */}
           <form onSubmit={handleAddSection} className="mt-8 pt-8 border-t">
             <h3 className="text-lg font-medium">Add New Section</h3>
             <div className="flex gap-2 mt-4">
