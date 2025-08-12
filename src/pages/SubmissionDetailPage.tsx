@@ -294,7 +294,7 @@ const SubmissionDetailPage = () => {
               applicantEmail={submission.email}
               submittedDate={submission.submitted_date}
               currentStageName={submission.program_stages?.name || 'N/A'}
-              allResponses={allResponses}
+              // Removed allResponses prop as it's now handled internally by ApplicationPdfViewer
               allFormFields={allFormFieldsForLogic}
               formSections={allFormSections}
             />

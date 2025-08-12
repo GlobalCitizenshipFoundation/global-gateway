@@ -99,21 +99,22 @@ const DashboardPage = () => {
   }, [user]);
 
   // Function to fetch responses for a specific application
-  const fetchApplicationResponses = async (applicationId: string) => {
-    const { data, error } = await supabase
-      .from('application_responses')
-      .select(`value, form_fields ( id, label, field_type, options, is_required, order, display_rules, help_text, description, tooltip )`)
-      .eq('application_id', applicationId);
+  // This function is now internal to ApplicationPdfViewer, so it's no longer needed here.
+  // const fetchApplicationResponses = async (applicationId: string) => {
+  //   const { data, error } = await supabase
+  //     .from('application_responses')
+  //     .select(`value, form_fields ( id, label, field_type, options, is_required, order, display_rules, help_text, description, tooltip )`)
+  //     .eq('application_id', applicationId);
 
-    if (error) {
-      console.error("Error fetching application responses for PDF:", error);
-      return [];
-    }
-    return data.map(res => ({
-      ...res,
-      form_fields: Array.isArray(res.form_fields) ? res.form_fields[0] : res.form_fields
-    }));
-  };
+  //   if (error) {
+  //     console.error("Error fetching application responses for PDF:", error);
+  //     return [];
+  //   }
+  //   return data.map(res => ({
+  //     ...res,
+  //     form_fields: Array.isArray(res.form_fields) ? res.form_fields[0] : res.form_fields
+  //   }));
+  // };
 
   if (loading) {
     return (
@@ -123,7 +124,7 @@ const DashboardPage = () => {
             <Skeleton className="h-8 w-48 mb-2" />
             <Skeleton className="h-5 w-80" />
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-6">
             <div className="space-y-4">
               {Array.from({ length: 3 }).map((_, i) => (
                 <div key={i} className="flex justify-between items-center">
@@ -152,7 +153,7 @@ const DashboardPage = () => {
             Here is a list of all your submitted applications.
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-0">
           <Table>
             <TableHeader>
               <TableRow>
@@ -185,7 +186,7 @@ const DashboardPage = () => {
                         applicantEmail={user?.email || 'N/A'}
                         submittedDate={app.submitted_date}
                         currentStageName={app.program_stages?.name || 'N/A'}
-                        allResponses={[]} // Will be fetched inside the component
+                        // Removed allResponses prop as it's now handled internally by ApplicationPdfViewer
                         allFormFields={allFormFields.filter(f => f.form_id === app.programs?.form_id)}
                         formSections={allFormSections.filter(s => s.form_id === app.programs?.form_id)}
                       />
