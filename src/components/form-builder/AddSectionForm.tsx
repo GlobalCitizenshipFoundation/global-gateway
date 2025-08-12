@@ -36,7 +36,7 @@ export const AddSectionForm = ({
           disabled={isSubmitting}
         />
         <div>
-          <Label htmlFor="new-section-description" className="sr-only">Description</Label>
+          <Label htmlFor="new-section-description">Section Description (Optional)</Label>
           <RichTextEditor
             value={newSectionDescription}
             onChange={setNewSectionDescription}
@@ -46,10 +46,10 @@ export const AddSectionForm = ({
           />
         </div>
         <div>
-          <Label htmlFor="new-section-tooltip" className="sr-only">Tooltip</Label>
+          <Label htmlFor="new-section-tooltip">Tooltip Text (Optional)</Label>
           <Input
             id="new-section-tooltip"
-            placeholder="Optional: Add a tooltip for this section (e.g., 'What is a section tooltip?')"
+            placeholder="e.g., 'What is a section tooltip?'"
             value={newSectionTooltip}
             onChange={e => setNewSectionTooltip(e.target.value)}
             disabled={isSubmitting}

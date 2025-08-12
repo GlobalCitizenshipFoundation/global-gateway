@@ -20,14 +20,13 @@ import { Separator } from "@/components/ui/separator";
 import { FormField, FormSection, DisplayRule } from "@/types";
 import ConditionalLogicBuilder from "@/components/ConditionalLogicBuilder";
 import RichTextEditor from "@/components/RichTextEditor";
-import { X } from "lucide-react";
+import { X, FileText, FolderOpen } from "lucide-react"; // Import FileText and FolderOpen icons
 
 const editFormFieldSchema = z.object({
   label: z.string().min(1, { message: "Label cannot be empty." }),
   field_type: z.enum(['text', 'textarea', 'select', 'radio', 'checkbox', 'email', 'date', 'phone', 'number', 'richtext']),
   options: z.string().optional(), // Comma-separated for select/radio/checkbox
   is_required: z.boolean(),
-  // Removed help_text
   description: z.string().nullable().optional(),
   tooltip: z.string().nullable().optional(),
   placeholder: z.string().nullable().optional(),
@@ -60,7 +59,6 @@ export const FieldPropertiesPanel = ({
       field_type: "text",
       options: "",
       is_required: false,
-      // Removed help_text
       description: "",
       tooltip: "",
       placeholder: "",
@@ -75,7 +73,6 @@ export const FieldPropertiesPanel = ({
         field_type: field.field_type,
         options: Array.isArray(field.options) ? field.options.join(', ') : '',
         is_required: field.is_required,
-        // Removed help_text
         description: field.description || '',
         tooltip: field.tooltip || '',
         placeholder: field.placeholder || '',
@@ -120,7 +117,9 @@ export const FieldPropertiesPanel = ({
             name="field_type"
             render={({ field: formHookField }) => (
               <FormItem>
-                <FormLabel>Field Type</FormLabel>
+                <FormLabel className="flex items-center gap-1">
+                  <FileText className="h-4 w-4" /> Field Type
+                </FormLabel>
                 <Select onValueChange={formHookField.onChange} defaultValue={formHookField.value}>
                   <FormControl>
                     <SelectTrigger>
@@ -167,7 +166,7 @@ export const FieldPropertiesPanel = ({
             name="description"
             render={({ field: formHookField }) => (
               <FormItem>
-                <FormLabel>Description (Optional)</FormLabel>
+                <FormLabel>Field Description (Optional)</FormLabel>
                 <FormControl>
                   <RichTextEditor
                     value={formHookField.value || ''}
@@ -187,7 +186,7 @@ export const FieldPropertiesPanel = ({
             name="tooltip"
             render={({ field: formHookField }) => (
               <FormItem>
-                <FormLabel>Tooltip (Optional)</FormLabel>
+                <FormLabel>Tooltip Text (Optional)</FormLabel>
                 <FormControl>
                   <Input
                     placeholder="e.g., 'What is a tooltip?'"
@@ -229,7 +228,9 @@ export const FieldPropertiesPanel = ({
             name="section_id"
             render={({ field: formHookField }) => (
               <FormItem>
-                <FormLabel>Assign to Section (Optional)</FormLabel>
+                <FormLabel className="flex items-center gap-1">
+                  <FolderOpen className="h-4 w-4" /> Section
+                </FormLabel>
                 <Select onValueChange={formHookField.onChange} value={formHookField.value || 'none'}>
                   <FormControl>
                     <SelectTrigger>
@@ -283,10 +284,8 @@ export const FieldPropertiesPanel = ({
         fieldToEdit={field}
         allFields={allFields}
         onSave={onSaveLogic}
-        // ConditionalLogicBuilder no longer manages its own open/close state
-        // It's always "open" when rendered in the panel
-        isOpen={true} // Dummy prop to satisfy type, will be ignored internally
-        onClose={() => {}} // Dummy prop to satisfy type, will be ignored internally
+        isOpen={true}
+        onClose={() => {}}
       />
     </div>
   );

@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { FormField, FormSection } from "@/types";
-import { Plus } from "lucide-react";
+import { Plus, FileText, FolderOpen } from "lucide-react"; // Import FileText and FolderOpen icons
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import RichTextEditor from "@/components/RichTextEditor"; // Import RichTextEditor
@@ -16,7 +16,6 @@ interface AddFieldFormProps {
   setNewFieldOptions: (options: string) => void;
   newFieldSectionId: string | null;
   setNewFieldSectionId: (sectionId: string | null) => void;
-  // Removed newFieldHelpText
   newFieldDescription: string;
   setNewFieldDescription: (text: string) => void;
   newFieldTooltip: string;
@@ -37,7 +36,6 @@ export const AddFieldForm = ({
   setNewFieldOptions,
   newFieldSectionId,
   setNewFieldSectionId,
-  // Removed newFieldHelpText
   newFieldDescription,
   setNewFieldDescription,
   newFieldTooltip,
@@ -61,23 +59,28 @@ export const AddFieldForm = ({
           disabled={isSubmitting}
         />
         <div className="flex flex-col sm:flex-row gap-2">
-          <Select value={newFieldType} onValueChange={(value) => setNewFieldType(value as FormField['field_type'])}>
-            <SelectTrigger className="w-full sm:w-[140px]">
-              <SelectValue placeholder="Field type" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="text">Text</SelectItem>
-              <SelectItem value="textarea">Textarea</SelectItem>
-              <SelectItem value="select">Dropdown</SelectItem>
-              <SelectItem value="radio">Radio Group</SelectItem>
-              <SelectItem value="checkbox">Checkboxes</SelectItem>
-              <SelectItem value="email">Email Address</SelectItem>
-              <SelectItem value="date">Date Picker</SelectItem>
-              <SelectItem value="phone">Phone Number</SelectItem>
-              <SelectItem value="number">Number</SelectItem>
-              <SelectItem value="richtext">Rich Text</SelectItem>
-            </SelectContent>
-          </Select>
+          <div className="grid gap-2 w-full sm:w-[140px]">
+            <Label htmlFor="new-field-type" className="flex items-center gap-1">
+              <FileText className="h-4 w-4" /> Field Type
+            </Label>
+            <Select value={newFieldType} onValueChange={(value) => setNewFieldType(value as FormField['field_type'])}>
+              <SelectTrigger id="new-field-type">
+                <SelectValue placeholder="Select type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="text">Text</SelectItem>
+                <SelectItem value="textarea">Textarea</SelectItem>
+                <SelectItem value="select">Dropdown</SelectItem>
+                <SelectItem value="radio">Radio Group</SelectItem>
+                <SelectItem value="checkbox">Checkboxes</SelectItem>
+                <SelectItem value="email">Email Address</SelectItem>
+                <SelectItem value="date">Date Picker</SelectItem>
+                <SelectItem value="phone">Phone Number</SelectItem>
+                <SelectItem value="number">Number</SelectItem>
+                <SelectItem value="richtext">Rich Text</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
           {(newFieldType === 'select' || newFieldType === 'radio' || newFieldType === 'checkbox') && (
             <Input
               placeholder="Comma-separated options, e.g., Yes, No"
@@ -89,7 +92,7 @@ export const AddFieldForm = ({
           )}
         </div>
         <div>
-          <Label htmlFor="new-field-description" className="sr-only">Description</Label>
+          <Label htmlFor="new-field-description">Field Description (Optional)</Label>
           <RichTextEditor
             value={newFieldDescription}
             onChange={setNewFieldDescription}
@@ -99,10 +102,10 @@ export const AddFieldForm = ({
           />
         </div>
         <div>
-          <Label htmlFor="new-field-tooltip" className="sr-only">Tooltip</Label>
+          <Label htmlFor="new-field-tooltip">Tooltip Text (Optional)</Label>
           <Input
             id="new-field-tooltip"
-            placeholder="Optional: Add a tooltip for this field (e.g., 'What is a tooltip?')"
+            placeholder="e.g., 'What is a tooltip?'"
             value={newFieldTooltip}
             onChange={e => setNewFieldTooltip(e.target.value)}
             disabled={isSubmitting}
@@ -110,10 +113,10 @@ export const AddFieldForm = ({
         </div>
         {showPlaceholder && (
           <div>
-            <Label htmlFor="new-field-placeholder" className="sr-only">Placeholder Text</Label>
+            <Label htmlFor="new-field-placeholder">Placeholder Text (Optional)</Label>
             <Input
               id="new-field-placeholder"
-              placeholder="Optional: Add placeholder text (e.g., 'Enter your email address')"
+              placeholder="e.g., Enter your email address"
               value={newFieldPlaceholder}
               onChange={e => setNewFieldPlaceholder(e.target.value)}
               disabled={isSubmitting}
@@ -123,21 +126,26 @@ export const AddFieldForm = ({
             </p>
           </div>
         )}
-        <Select
-          value={newFieldSectionId || 'none'}
-          onValueChange={(value) => setNewFieldSectionId(value === 'none' ? null : value)}
-          disabled={isSubmitting}
-        >
-          <SelectTrigger className="w-full">
-            <SelectValue placeholder="Assign to Section (Optional)" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="none">Uncategorized</SelectItem>
-            {sections.map(section => (
-              <SelectItem key={section.id} value={section.id}>{section.name}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className="grid gap-2">
+          <Label htmlFor="new-field-section-id" className="flex items-center gap-1">
+            <FolderOpen className="h-4 w-4" /> Section
+          </Label>
+          <Select
+            value={newFieldSectionId || 'none'}
+            onValueChange={(value) => setNewFieldSectionId(value === 'none' ? null : value)}
+            disabled={isSubmitting}
+          >
+            <SelectTrigger id="new-field-section-id">
+              <SelectValue placeholder="Assign to Section (Optional)" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">Uncategorized</SelectItem>
+              {sections.map(section => (
+                <SelectItem key={section.id} value={section.id}>{section.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
         <Button type="submit" disabled={isSubmitting || !newFieldLabel.trim()} className="w-full sm:w-auto self-end">
           <Plus className="mr-2 h-4 w-4" />
           Add Field
