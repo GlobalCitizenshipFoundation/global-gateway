@@ -136,7 +136,9 @@ const CreatorDashboardPage = () => {
           <h1 className="text-3xl font-bold">Manage Programs</h1>
           <p className="text-muted-foreground">Oversee all your active and past programs.</p>
         </div>
-        <Button disabled>Create New Program</Button>
+        <Button asChild>
+          <Link to="/creator/new-program">Create New Program</Link>
+        </Button>
       </div>
       <Card>
         <CardContent className="p-0">
