@@ -18,7 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
 import { FormField, FormSection, DisplayRule } from "@/types";
-import ConditionalLogicBuilder from "@/components/ConditionalLogicBuilder"; // Re-import for embedding
+import ConditionalLogicBuilder from "@/components/ConditionalLogicBuilder";
 import RichTextEditor from "@/components/RichTextEditor";
 import { X } from "lucide-react";
 
@@ -169,11 +169,10 @@ export const FieldPropertiesPanel = ({
               <FormItem>
                 <FormLabel>Description (Optional)</FormLabel>
                 <FormControl>
-                  <Textarea
-                    placeholder="e.g., 'This section asks about your academic background.'"
-                    className="resize-y min-h-[80px]"
-                    {...formHookField}
+                  <RichTextEditor
                     value={formHookField.value || ''}
+                    onChange={formHookField.onChange}
+                    className="min-h-[80px]"
                   />
                 </FormControl>
                 <FormDescription>
@@ -190,11 +189,10 @@ export const FieldPropertiesPanel = ({
               <FormItem>
                 <FormLabel>Help Text (Optional)</FormLabel>
                 <FormControl>
-                  <Textarea
-                    placeholder="e.g., 'Please provide your full legal name as it appears on your ID.'"
-                    className="resize-y min-h-[80px]"
-                    {...formHookField}
+                  <RichTextEditor
                     value={formHookField.value || ''}
+                    onChange={formHookField.onChange}
+                    className="min-h-[80px]"
                   />
                 </FormControl>
                 <FormDescription>

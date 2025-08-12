@@ -20,7 +20,7 @@ export const FormDetailsCard = ({ state }: FormDetailsCardProps) => {
     formStatus,
     formLastEditedAt,
     lastEditedByUserName,
-    isTemplate, // New: Destructure isTemplate
+    isTemplate,
     hasUnsavedChanges,
     isAutoSaving,
     showSavedConfirmation,
