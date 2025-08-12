@@ -2,19 +2,31 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
-import { FormField, FormSection, DisplayRule } from "@/types"; // Import DisplayRule
+import { FormField, FormSection, DisplayRule } from "@/types";
 import { showError, showSuccess } from "@/utils/toast";
 import { ArrowLeft, Plus, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
+import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent, useDroppable, DragOverlay } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { FormFieldItem } from "@/components/FormFieldItem";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import ConditionalLogicBuilder from "@/components/ConditionalLogicBuilder";
-import EditFormFieldDialog from "@/components/EditFormFieldDialog"; // Import the new component
+import EditFormFieldDialog from "@/components/EditFormFieldDialog";
+
+// Helper component for droppable areas
+interface DroppableContainerProps {
+  id: string;
+  children: React.ReactNode;
+  className?: string;
+}
+
+const DroppableContainer = ({ id, children, className }: DroppableContainerProps) => {
+  const { setNodeRef } = useDroppable({ id });
+  return <div ref={setNodeRef} className={className}>{children}</div>;
+};
 
 const FormBuilderPage = () => {
   const { programId } = useParams<{ programId: string }>();
@@ -28,6 +40,7 @@ const FormBuilderPage = () => {
   const [newFieldSectionId, setNewFieldSectionId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [activeDragItem, setActiveDragItem] = useState<FormField | null>(null); // For DragOverlay
 
   // State for ConditionalLogicBuilder
   const [isLogicBuilderOpen, setIsLogicBuilderOpen] = useState(false);
@@ -37,46 +50,46 @@ const FormBuilderPage = () => {
   const [isEditFieldDialogOpen, setIsEditFieldDialogOpen] = useState(false);
   const [fieldToEditDetails, setFieldToEditDetails] = useState<FormField | null>(null);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      if (!programId) return;
-      setLoading(true);
+  const fetchData = async () => {
+    if (!programId) return;
+    setLoading(true);
 
-      const { data: programData, error: programError } = await supabase
-        .from('programs').select('title').eq('id', programId).single();
-      
-      if (programError) {
-        showError("Could not fetch program details.");
-        setLoading(false);
-        return;
-      }
-      setProgramTitle(programData.title);
-
-      const { data: sectionsData, error: sectionsError } = await supabase
-        .from('form_sections').select('*').eq('program_id', programId).order('order', { ascending: true });
-      
-      if (sectionsError) {
-        showError("Could not fetch form sections.");
-      } else {
-        setSections(sectionsData || []);
-        // Set default section for new fields if sections exist
-        if (sectionsData && sectionsData.length > 0) {
-          setNewFieldSectionId(sectionsData[0].id);
-        }
-      }
-
-      const { data: fieldsData, error: fieldsError } = await supabase
-        .from('form_fields').select('*').eq('program_id', programId).order('order', { ascending: true });
-
-      if (fieldsError) {
-        showError("Could not fetch form fields.");
-      } else {
-        setFields(fieldsData as FormField[]);
-      }
+    const { data: programData, error: programError } = await supabase
+      .from('programs').select('title').eq('id', programId).single();
+    
+    if (programError) {
+      showError("Could not fetch program details.");
       setLoading(false);
-    };
+      return;
+    }
+    setProgramTitle(programData.title);
+
+    const { data: sectionsData, error: sectionsError } = await supabase
+      .from('form_sections').select('*').eq('program_id', programId).order('order', { ascending: true });
+    
+    if (sectionsError) {
+      showError("Could not fetch form sections.");
+    } else {
+      setSections(sectionsData || []);
+      if (sectionsData && sectionsData.length > 0 && newFieldSectionId === null) {
+        setNewFieldSectionId(sectionsData[0].id);
+      }
+    }
+
+    const { data: fieldsData, error: fieldsError } = await supabase
+      .from('form_fields').select('*').eq('program_id', programId).order('order', { ascending: true });
+
+    if (fieldsError) {
+      showError("Could not fetch form fields.");
+    } else {
+      setFields(fieldsData as FormField[]);
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => {
     fetchData();
-  }, [programId]);
+  }, [programId]); // Depend on programId and fetchData (which is stable due to useCallback or similar)
 
   const handleAddSection = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -101,8 +114,7 @@ const FormBuilderPage = () => {
       setSections([...sections, data]);
       setNewSectionName('');
       showSuccess("Section added successfully.");
-      // Automatically select the new section for new fields
-      setNewFieldSectionId(data.id);
+      setNewFieldSectionId(data.id); // Automatically select the new section
     }
     setIsSubmitting(false);
   };
@@ -113,8 +125,7 @@ const FormBuilderPage = () => {
       showError(`Failed to delete section: ${error.message}`);
     } else {
       setSections(sections.filter(s => s.id !== sectionId));
-      // Also remove fields associated with this section
-      setFields(fields.filter(f => f.section_id !== sectionId));
+      setFields(fields.filter(f => f.section_id !== sectionId)); // Also remove fields associated with this section
       showSuccess("Section deleted successfully.");
     }
   };
@@ -124,7 +135,9 @@ const FormBuilderPage = () => {
     if (!newFieldLabel.trim() || !programId) return;
 
     setIsSubmitting(true);
-    const nextOrder = fields.length > 0 ? Math.max(...fields.map(f => f.order)) + 1 : 1;
+    // Calculate order within the target section
+    const targetSectionFields = fields.filter(f => f.section_id === newFieldSectionId);
+    const nextOrder = targetSectionFields.length > 0 ? Math.max(...targetSectionFields.map(f => f.order)) + 1 : 1;
 
     const { data, error } = await supabase
       .from('form_fields')
@@ -186,7 +199,6 @@ const FormBuilderPage = () => {
 
     if (error) {
       showError(`Failed to save display logic: ${error.message}`);
-      // Optionally revert local state if save fails
     } else {
       showSuccess("Display logic saved successfully!");
     }
@@ -222,7 +234,6 @@ const FormBuilderPage = () => {
 
     if (error) {
       showError(`Failed to update field: ${error.message}`);
-      // Optionally revert local state if save fails
     } else {
       showSuccess("Field updated successfully!");
     }
@@ -230,32 +241,116 @@ const FormBuilderPage = () => {
     setFieldToEditDetails(null);
   };
 
+  const onDragStart = (event: any) => {
+    if (event.active.data.current?.field) {
+      setActiveDragItem(event.active.data.current.field);
+    }
+  };
+
+  const onDragEnd = async (event: DragEndEvent) => {
+    setActiveDragItem(null);
+    const { active, over } = event;
+
+    if (!over) return;
+
+    const activeFieldId = active.id as string;
+    const overId = over.id as string;
+
+    const activeField = fields.find(f => f.id === activeFieldId);
+    if (!activeField) return;
+
+    const sourceContainerId = active.data.current?.sortable?.containerId || activeField.section_id || 'uncategorized-fields';
+    let targetContainerId: string | null = null;
+
+    // Determine target container ID
+    if (sections.some(s => s.id === overId)) {
+      // Dropped directly onto a section header (which is a DroppableContainer)
+      targetContainerId = overId;
+    } else if (overId === 'uncategorized-fields-droppable-area') {
+      // Dropped directly onto the uncategorized droppable area
+      targetContainerId = 'uncategorized-fields';
+    } else if (over.data.current?.field) { // Dropped onto another field
+      targetContainerId = over.data.current.field.section_id || 'uncategorized-fields';
+    } else {
+      // Fallback: if dropped somewhere else, keep in current section
+      targetContainerId = sourceContainerId;
+    }
+
+    const originalFields = [...fields]; // Store for potential revert
+
+    // Scenario 1: Reordering within the same section
+    if (sourceContainerId === targetContainerId) {
+      const currentSectionFields = fields.filter(f => (f.section_id || 'uncategorized-fields') === sourceContainerId);
+      const oldIndex = currentSectionFields.findIndex(f => f.id === activeFieldId);
+      const newIndex = currentSectionFields.findIndex(f => f.id === overId);
+
+      if (oldIndex !== -1 && newIndex !== -1 && oldIndex !== newIndex) {
+        const movedFields = arrayMove(currentSectionFields, oldIndex, newIndex);
+        
+        // Update local state with new order
+        setFields(prevFields => {
+          const otherFields = prevFields.filter(f => (f.section_id || 'uncategorized-fields') !== sourceContainerId);
+          const updatedMovedFields = movedFields.map((f, idx) => ({ ...f, order: idx + 1 }));
+          return [...otherFields, ...updatedMovedFields].sort((a, b) => a.order - b.order);
+        });
+
+        // Update orders in DB
+        const updates = movedFields.map((field, index) => 
+          supabase.from('form_fields').update({ order: index + 1 }).eq('id', field.id)
+        );
+        const results = await Promise.all(updates);
+        if (results.some(res => res.error)) {
+          showError("Failed to save new order. Reverting.");
+          setFields(originalFields); // Revert
+        }
+      }
+    } 
+    // Scenario 2: Moving between different sections
+    else {
+      const newSectionIdForDb = targetContainerId === 'uncategorized-fields' ? null : targetContainerId;
+
+      // Update local state first
+      setFields(prevFields => {
+        const updatedActiveField = { ...activeField, section_id: newSectionIdForDb };
+        const newFields = prevFields.map(f => f.id === activeFieldId ? updatedActiveField : f);
+
+        // Re-calculate orders for all fields in both old and new sections
+        const reorderedFields = newFields.map(field => {
+          const currentParentId = field.section_id || 'uncategorized-fields';
+          const fieldsInCurrentParent = newFields
+            .filter(item => (item.section_id || 'uncategorized-fields') === currentParentId)
+            .sort((a, b) => a.order - b.order); // Sort by current order to get correct index
+
+          const newOrderForField = fieldsInCurrentParent.findIndex(item => item.id === field.id) + 1;
+          return { ...field, order: newOrderForField };
+        });
+        return reorderedFields.sort((a, b) => a.order - b.order); // Ensure overall order for display
+      });
+
+      // Update section_id in DB
+      const { error } = await supabase
+        .from('form_fields')
+        .update({ section_id: newSectionIdForDb })
+        .eq('id', activeFieldId);
+
+      if (error) {
+        showError(`Failed to move field: ${error.message}. Reverting.`);
+        setFields(originalFields); // Revert
+      } else {
+        showSuccess("Field moved successfully.");
+        // After a cross-section move, re-fetch all data to ensure consistency
+        fetchData(); 
+      }
+    }
+  };
+
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   );
 
-  const handleDragEnd = async (event: DragEndEvent) => {
-    const { active, over } = event;
-    if (over && active.id !== over.id) {
-      const oldIndex = fields.findIndex((f) => f.id === active.id);
-      const newIndex = fields.findIndex((f) => f.id === over.id);
-      const newFields = arrayMove(fields, oldIndex, newIndex);
-      setFields(newFields);
-
-      const updates = newFields.map((field, index) => 
-        supabase.from('form_fields').update({ order: index + 1 }).eq('id', field.id)
-      );
-      
-      const results = await Promise.all(updates);
-      if (results.some(res => res.error)) {
-        showError("Failed to save new order. Please refresh.");
-      }
-    }
-  };
-
   const getFieldsForSection = (sectionId: string | null) => {
-    return fields.filter(field => field.section_id === sectionId);
+    return fields.filter(field => field.section_id === sectionId).sort((a, b) => a.order - b.order);
   };
 
   const uncategorizedFields = getFieldsForSection(null);
@@ -274,55 +369,55 @@ const FormBuilderPage = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="space-y-6">
-            <h3 className="text-lg font-medium">Form Sections</h3>
-            {loading ? (
-              <Skeleton className="h-24 w-full" />
-            ) : sections.length > 0 ? (
-              <Accordion type="multiple" className="w-full">
-                {sections.map(section => (
-                  <AccordionItem key={section.id} value={section.id}>
-                    <AccordionTrigger className="flex justify-between items-center w-full pr-4">
-                      <span className="font-semibold">{section.name}</span>
-                      <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); handleDeleteSection(section.id); }}>
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
-                    </AccordionTrigger>
-                    <AccordionContent>
-                      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-                        <SortableContext items={getFieldsForSection(section.id).map(f => f.id)} strategy={verticalListSortingStrategy}>
-                          <ul className="space-y-2 p-2">
-                            {getFieldsForSection(section.id).length > 0 ? (
-                              getFieldsForSection(section.id).map(field => (
-                                <FormFieldItem
-                                  key={field.id}
-                                  field={field}
-                                  onDelete={handleDeleteField}
-                                  onToggleRequired={handleToggleRequired}
-                                  onEditLogic={handleEditLogic}
-                                  onEdit={handleEditField} // Pass the new prop
-                                />
-                              ))
-                            ) : (
-                              <p className="text-muted-foreground text-sm text-center py-4">No fields in this section yet.</p>
-                            )}
-                          </ul>
-                        </SortableContext>
-                      </DndContext>
-                    </AccordionContent>
-                  </AccordionItem>
-                ))}
-              </Accordion>
-            ) : (
-              <p className="text-muted-foreground text-sm">No sections defined yet. Add one to get started.</p>
-            )}
+          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd} onDragStart={onDragStart}>
+            <div className="space-y-6">
+              <h3 className="text-lg font-medium">Form Sections</h3>
+              {loading ? (
+                <Skeleton className="h-24 w-full" />
+              ) : sections.length > 0 ? (
+                <Accordion type="multiple" className="w-full">
+                  {sections.map(section => (
+                    <AccordionItem key={section.id} value={section.id}>
+                      <DroppableContainer id={section.id} className="rounded-md border"> {/* Make AccordionTrigger droppable */}
+                        <AccordionTrigger className="flex justify-between items-center w-full pr-4">
+                          <span className="font-semibold">{section.name}</span>
+                          <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); handleDeleteSection(section.id); }}>
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </AccordionTrigger>
+                        <AccordionContent>
+                          <SortableContext items={getFieldsForSection(section.id).map(f => f.id)} strategy={verticalListSortingStrategy}>
+                            <ul className="space-y-2 p-2 min-h-[50px]"> {/* Added min-h for droppable area */}
+                              {getFieldsForSection(section.id).length > 0 ? (
+                                getFieldsForSection(section.id).map(field => (
+                                  <FormFieldItem
+                                    key={field.id}
+                                    field={field}
+                                    onDelete={handleDeleteField}
+                                    onToggleRequired={handleToggleRequired}
+                                    onEditLogic={handleEditLogic}
+                                    onEdit={handleEditField}
+                                  />
+                                ))
+                              ) : (
+                                <p className="text-muted-foreground text-sm text-center py-4">Drag fields here or add new ones below.</p>
+                              )}
+                            </ul>
+                          </SortableContext>
+                        </AccordionContent>
+                      </DroppableContainer>
+                    </AccordionItem>
+                  ))}
+                </Accordion>
+              ) : (
+                <p className="text-muted-foreground text-sm">No sections defined yet. Add one to get started.</p>
+              )}
 
-            {uncategorizedFields.length > 0 && (
-              <div className="mt-6 border-t pt-6">
-                <h3 className="text-lg font-medium mb-4">Uncategorized Fields</h3>
-                <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+              {uncategorizedFields.length > 0 && (
+                <DroppableContainer id="uncategorized-fields-droppable-area" className="mt-6 border-t pt-6 rounded-md border">
+                  <h3 className="text-lg font-medium mb-4 px-2">Uncategorized Fields</h3>
                   <SortableContext items={uncategorizedFields.map(f => f.id)} strategy={verticalListSortingStrategy}>
-                    <ul className="space-y-2">
+                    <ul className="space-y-2 p-2 min-h-[50px]"> {/* Added min-h for droppable area */}
                       {uncategorizedFields.map(field => (
                         <FormFieldItem
                           key={field.id}
@@ -330,16 +425,29 @@ const FormBuilderPage = () => {
                           onDelete={handleDeleteField}
                           onToggleRequired={handleToggleRequired}
                           onEditLogic={handleEditLogic}
-                          onEdit={handleEditField} // Pass the new prop
+                          onEdit={handleEditField}
                         />
                       ))}
                     </ul>
                   </SortableContext>
-                </DndContext>
-              </div>
-            )}
-          </div>
+                </DroppableContainer>
+              )}
+            </div>
 
+            <DragOverlay>
+              {activeDragItem ? (
+                <FormFieldItem
+                  field={activeDragItem}
+                  onDelete={() => {}} // No-op for overlay
+                  onToggleRequired={() => {}} // No-op for overlay
+                  onEditLogic={() => {}} // No-op for overlay
+                  onEdit={() => {}} // No-op for overlay
+                />
+              ) : null}
+            </DragOverlay>
+          </DndContext> {/* Correct closing of DndContext */}
+
+          {/* Forms for adding new sections/fields (outside DndContext but inside CardContent) */}
           <form onSubmit={handleAddSection} className="mt-8 pt-8 border-t">
             <h3 className="text-lg font-medium">Add New Section</h3>
             <div className="flex gap-2 mt-4">
@@ -394,7 +502,7 @@ const FormBuilderPage = () => {
                 )}
               </div>
               <Select
-                value={newFieldSectionId || 'none'} // Use 'none' for null
+                value={newFieldSectionId || 'none'}
                 onValueChange={(value) => setNewFieldSectionId(value === 'none' ? null : value)}
                 disabled={isSubmitting}
               >
@@ -402,7 +510,7 @@ const FormBuilderPage = () => {
                   <SelectValue placeholder="Assign to Section (Optional)" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="none">Uncategorized</SelectItem> {/* Changed value to 'none' */}
+                  <SelectItem value="none">Uncategorized</SelectItem>
                   {sections.map(section => (
                     <SelectItem key={section.id} value={section.id}>{section.name}</SelectItem>
                   ))}
