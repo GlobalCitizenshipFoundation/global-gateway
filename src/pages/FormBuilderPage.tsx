@@ -393,12 +393,16 @@ const FormBuilderPage = () => {
                   />
                 )}
               </div>
-              <Select value={newFieldSectionId || ''} onValueChange={setNewFieldSectionId} disabled={isSubmitting}>
+              <Select
+                value={newFieldSectionId || 'none'} // Use 'none' for null
+                onValueChange={(value) => setNewFieldSectionId(value === 'none' ? null : value)}
+                disabled={isSubmitting}
+              >
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Assign to Section (Optional)" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Uncategorized</SelectItem>
+                  <SelectItem value="none">Uncategorized</SelectItem> {/* Changed value to 'none' */}
                   {sections.map(section => (
                     <SelectItem key={section.id} value={section.id}>{section.name}</SelectItem>
                   ))}
