@@ -248,7 +248,7 @@ export const useFormBuilderActions = ({
       .eq('id', id);
 
     if (error) {
-      showError(`Failed to update form details: ${error.message}`);
+      // Do not show error here, as auto-save handles it
       return false;
     } else {
       return true;
