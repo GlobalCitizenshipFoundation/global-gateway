@@ -54,4 +54,5 @@ export type FormField = {
   is_required: boolean;
   order: number;
   display_rules: DisplayRule[] | null; // New: Conditional display logic
+  help_text: string | null; // New: Additional guidance for the field
 };

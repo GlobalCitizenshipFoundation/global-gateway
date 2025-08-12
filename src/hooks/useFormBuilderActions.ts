@@ -87,11 +87,11 @@ export const useFormBuilderActions = ({
     }
   };
 
-  const handleAddField = async (label: string, type: FormField['field_type'], options: string, sectionId: string | null, currentFields: FormField[]) => {
+  const handleAddField = async (label: string, type: FormField['field_type'], options: string, sectionId: string | null, helpText: string | null, currentFields: FormField[]) => {
     if (!label.trim() || !programId) return null;
 
     const targetSectionFields = currentFields.filter(f => f.section_id === sectionId);
-    const nextOrder = targetSectionFields.length > 0 ? Math.max(...targetSectionFields.map(f => f.order)) + 1 : 1;
+    const nextOrder = targetSectionFields.length > 0 ? Math.max(...targetSectionFields.map(s => s.order)) + 1 : 1;
 
     const { data, error } = await supabase
       .from('form_fields')
@@ -102,6 +102,7 @@ export const useFormBuilderActions = ({
         order: nextOrder,
         section_id: sectionId,
         options: (type === 'select' || type === 'radio' || type === 'checkbox') ? options.split(',').map(opt => opt.trim()) : null,
+        help_text: helpText || null, // New: help_text
       })
       .select()
       .single();
@@ -152,7 +153,7 @@ export const useFormBuilderActions = ({
     }
   };
 
-  const handleSaveEditedField = async (fieldId: string, values: { label: string; field_type: FormField['field_type']; options?: string; is_required: boolean; }) => {
+  const handleSaveEditedField = async (fieldId: string, values: { label: string; field_type: FormField['field_type']; options?: string; is_required: boolean; help_text?: string | null; }) => {
     const updatedOptions = (values.field_type === 'select' || values.field_type === 'radio' || values.field_type === 'checkbox')
       ? values.options?.split(',').map(opt => opt.trim()) || null
       : null;
@@ -160,7 +161,7 @@ export const useFormBuilderActions = ({
     setFields(prevFields =>
       prevFields.map(f =>
         f.id === fieldId
-          ? { ...f, label: values.label, field_type: values.field_type, options: updatedOptions, is_required: values.is_required }
+          ? { ...f, label: values.label, field_type: values.field_type, options: updatedOptions, is_required: values.is_required, help_text: values.help_text || null }
           : f
       )
     );
@@ -172,6 +173,7 @@ export const useFormBuilderActions = ({
         field_type: values.field_type,
         options: updatedOptions,
         is_required: values.is_required,
+        help_text: values.help_text || null,
       })
       .eq('id', fieldId);
 

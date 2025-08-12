@@ -32,6 +32,7 @@ const editFormFieldSchema = z.object({
   field_type: z.enum(['text', 'textarea', 'select', 'radio', 'checkbox', 'email', 'date', 'phone', 'number', 'richtext']),
   options: z.string().optional(), // Comma-separated for select/radio/checkbox
   is_required: z.boolean(),
+  help_text: z.string().nullable().optional(), // New: help_text
 });
 
 type EditFormFieldValues = z.infer<typeof editFormFieldSchema>;
@@ -56,6 +57,7 @@ const EditFormFieldDialog = ({
       field_type: "text",
       options: "",
       is_required: false,
+      help_text: "", // New: default value
     },
   });
 
@@ -66,6 +68,7 @@ const EditFormFieldDialog = ({
         field_type: fieldToEdit.field_type,
         options: Array.isArray(fieldToEdit.options) ? fieldToEdit.options.join(', ') : '',
         is_required: fieldToEdit.is_required,
+        help_text: fieldToEdit.help_text || '', // New: set from existing field
       });
     }
   }, [fieldToEdit, form]);
@@ -149,6 +152,27 @@ const EditFormFieldDialog = ({
                 )}
               />
             )}
+            <FormFieldComponent
+              control={form.control}
+              name="help_text"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Help Text (Optional)</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder="e.g., 'Please provide your full legal name as it appears on your ID.'"
+                      className="resize-y min-h-[80px]"
+                      {...field}
+                      value={field.value || ''} // Ensure it's a controlled component
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    This text will appear below the field label to guide applicants.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             <FormFieldComponent
               control={form.control}
               name="is_required"

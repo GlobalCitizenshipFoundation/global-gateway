@@ -127,9 +127,13 @@ const PipelineViewPage = () => {
 
     const allFormFields = allSubmissionResponses.map(res => res.form_fields).filter((f): f is FormField => f !== null);
 
-    return allSubmissionResponses.filter(res => 
-      res.form_fields && shouldFieldBeDisplayed(res.form_fields, currentResponsesMap, allFormFields) // Use utility function
-    );
+    return allSubmissionResponses.map(res => {
+      const field = res.form_fields;
+      if (!field) return null;
+
+      const wasDisplayed = shouldFieldBeDisplayed(field, currentResponsesMap, allFormFields);
+      return { ...res, wasDisplayed };
+    }).filter(Boolean) as (ResponseWithField & { wasDisplayed: boolean })[];
   }, [allSubmissionResponses]);
 
   const handleApplicantClick = async (applicant: Applicant) => {
@@ -155,9 +159,9 @@ const PipelineViewPage = () => {
     setSelectedSubmission(formattedSubmissionData);
     setCurrentStageInSheet(formattedSubmissionData.stage_id);
 
-    // Fetch responses with full form_fields data including display_rules
+    // Fetch responses with full form_fields data including display_rules and help_text
     const { data: responsesData, error: responsesError } = await supabase
-      .from('application_responses').select(`value, form_fields ( id, label, field_type, options, is_required, order, display_rules )`).eq('application_id', applicant.id);
+      .from('application_responses').select(`value, form_fields ( id, label, field_type, options, is_required, order, display_rules, help_text )`).eq('application_id', applicant.id);
     
     if (responsesError) {
       showError("Could not load application responses.");
@@ -262,7 +266,15 @@ const PipelineViewPage = () => {
                   {displayedSubmissionResponses.length > 0 ? (
                     displayedSubmissionResponses.map((res, index) => (
                       <div key={index}>
-                        <dt className="font-medium text-sm">{res.form_fields?.label || 'Untitled Question'}</dt>
+                        <dt className="font-medium text-sm">
+                          {res.form_fields?.label || 'Untitled Question'}
+                          {!res.wasDisplayed && (
+                            <span className="ml-2 text-xs text-muted-foreground italic">(Hidden by logic)</span>
+                          )}
+                        </dt>
+                        {res.form_fields?.help_text && ( // New: Display help text
+                          <dd className="text-xs text-muted-foreground mt-1">{res.form_fields.help_text}</dd>
+                        )}
                         <dd className="text-muted-foreground whitespace-pre-wrap mt-1">{formatResponseValue(res.value, res.form_fields?.field_type)}</dd> {/* Use utility function */}
                       </div>
                     ))

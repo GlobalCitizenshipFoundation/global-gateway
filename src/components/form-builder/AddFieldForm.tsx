@@ -3,6 +3,8 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { FormField, FormSection } from "@/types";
 import { Plus } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 
 interface AddFieldFormProps {
   newFieldLabel: string;
@@ -13,6 +15,8 @@ interface AddFieldFormProps {
   setNewFieldOptions: (options: string) => void;
   newFieldSectionId: string | null;
   setNewFieldSectionId: (sectionId: string | null) => void;
+  newFieldHelpText: string; // New: help_text
+  setNewFieldHelpText: (text: string) => void; // New: set help_text
   isSubmitting: boolean;
   handleAddField: (e: React.FormEvent) => void;
   sections: FormSection[];
@@ -27,6 +31,8 @@ export const AddFieldForm = ({
   setNewFieldOptions,
   newFieldSectionId,
   setNewFieldSectionId,
+  newFieldHelpText, // New
+  setNewFieldHelpText, // New
   isSubmitting,
   handleAddField,
   sections,
@@ -68,6 +74,17 @@ export const AddFieldForm = ({
               className="flex-grow"
             />
           )}
+        </div>
+        <div>
+          <Label htmlFor="new-field-help-text" className="sr-only">Help Text</Label>
+          <Textarea
+            id="new-field-help-text"
+            placeholder="Optional: Add help text for this field (e.g., 'Max 500 words')"
+            value={newFieldHelpText}
+            onChange={e => setNewFieldHelpText(e.target.value)}
+            disabled={isSubmitting}
+            className="resize-y min-h-[60px]"
+          />
         </div>
         <Select
           value={newFieldSectionId || 'none'}

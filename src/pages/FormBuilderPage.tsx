@@ -54,6 +54,7 @@ const FormBuilderPage = () => {
   const [newFieldLabel, setNewFieldLabel] = useState('');
   const [newFieldType, setNewFieldType] = useState<FormField['field_type']>('text');
   const [newFieldOptions, setNewFieldOptions] = useState('');
+  const [newFieldHelpText, setNewFieldHelpText] = useState(''); // New state for help text
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // State for ConditionalLogicBuilder
@@ -82,11 +83,12 @@ const FormBuilderPage = () => {
   const handleAddField = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    const newField = await performAddField(newFieldLabel, newFieldType, newFieldOptions, newFieldSectionId, fields);
+    const newField = await performAddField(newFieldLabel, newFieldType, newFieldOptions, newFieldSectionId, newFieldHelpText, fields);
     if (newField) {
       setNewFieldLabel('');
       setNewFieldOptions('');
       setNewFieldType('text');
+      setNewFieldHelpText(''); // Reset help text
     }
     setIsSubmitting(false);
   };
@@ -113,7 +115,7 @@ const FormBuilderPage = () => {
     setIsEditFieldDialogOpen(true);
   };
 
-  const handleSaveEditedField = async (fieldId: string, values: { label: string; field_type: FormField['field_type']; options?: string; is_required: boolean; }) => {
+  const handleSaveEditedField = async (fieldId: string, values: { label: string; field_type: FormField['field_type']; options?: string; is_required: boolean; help_text?: string | null; }) => {
     await performSaveEditedField(fieldId, values);
     setIsEditFieldDialogOpen(false);
     setFieldToEditDetails(null);
@@ -185,6 +187,8 @@ const FormBuilderPage = () => {
             setNewFieldOptions={setNewFieldOptions}
             newFieldSectionId={newFieldSectionId}
             setNewFieldSectionId={setNewFieldSectionId}
+            newFieldHelpText={newFieldHelpText} // New
+            setNewFieldHelpText={setNewFieldHelpText} // New
             isSubmitting={isSubmitting}
             handleAddField={handleAddField}
             sections={sections}

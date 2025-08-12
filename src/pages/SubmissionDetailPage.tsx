@@ -80,10 +80,10 @@ const SubmissionDetailPage = () => {
       setSubmission(formattedSubmissionData);
       setSelectedStage(formattedSubmissionData.stage_id);
 
-      // Fetch responses with full form_fields data including display_rules
+      // Fetch responses with full form_fields data including display_rules and help_text
       const { data: responsesData, error: responsesError } = await supabase
         .from('application_responses')
-        .select(`value, form_fields ( id, label, field_type, options, is_required, order, display_rules )`)
+        .select(`value, form_fields ( id, label, field_type, options, is_required, order, display_rules, help_text )`) // Added help_text
         .eq('application_id', submissionId);
       
       if (responsesError) {
@@ -126,9 +126,16 @@ const SubmissionDetailPage = () => {
 
     const allFormFields = allResponses.map(res => res.form_fields).filter((f): f is FormField => f !== null);
 
-    return allResponses.filter(res => 
-      res.form_fields && shouldFieldBeDisplayed(res.form_fields, currentResponsesMap, allFormFields) // Use utility function
-    );
+    // Determine which fields were *actually* displayed at the time of submission
+    // This is a simplification; ideally, we'd store the display state at submission time.
+    // For now, we re-evaluate based on current logic and submitted responses.
+    return allResponses.map(res => {
+      const field = res.form_fields;
+      if (!field) return null;
+
+      const wasDisplayed = shouldFieldBeDisplayed(field, currentResponsesMap, allFormFields);
+      return { ...res, wasDisplayed };
+    }).filter(Boolean) as (ResponseWithField & { wasDisplayed: boolean })[];
   }, [allResponses]);
 
   const handleStageUpdate = async () => {
@@ -215,7 +222,15 @@ const SubmissionDetailPage = () => {
                 {displayedResponses.length > 0 ? (
                   displayedResponses.map((res, index) => (
                     <div key={index}>
-                      <dt className="font-medium text-sm">{res.form_fields?.label || 'Untitled Question'}</dt>
+                      <dt className="font-medium text-sm">
+                        {res.form_fields?.label || 'Untitled Question'}
+                        {!res.wasDisplayed && (
+                          <span className="ml-2 text-xs text-muted-foreground italic">(Hidden by logic)</span>
+                        )}
+                      </dt>
+                      {res.form_fields?.help_text && ( // New: Display help text
+                        <dd className="text-xs text-muted-foreground mt-1">{res.form_fields.help_text}</dd>
+                      )}
                       <dd className="text-muted-foreground whitespace-pre-wrap mt-1">{formatResponseValue(res.value, res.form_fields?.field_type)}</dd> {/* Use utility function */}
                     </div>
                   ))

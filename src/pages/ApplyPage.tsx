@@ -161,23 +161,6 @@ const ApplyPage = () => {
 
     if (appError || !appData) {
       showError(`Submission failed: ${appError.message}`);
-      setSubmitting(false);
-      return;
-    }
-
-    const responseRecords: { application_id: string; field_id: string; value: string; }[] = [];
-
-    for (const field of displayedFormFields) { // Only process displayed fields
-      responseRecords.push({
-        application_id: appData.id,
-        field_id: field.id,
-        value: responses[field.id] || '',
-      });
-    }
-
-    const { error: responsesError } = await supabase.from('application_responses').insert(responseRecords);
-    if (responsesError) {
-      showError(`Failed to save form responses: ${responsesError.message}`);
       await supabase.from('applications').delete().eq('id', appData.id);
     } else {
       showSuccess("Application submitted successfully!");
@@ -187,12 +170,13 @@ const ApplyPage = () => {
   };
 
   const getFieldsForSection = (sectionId: string | null) => {
-    return displayedFormFields.filter(field => field.section_id === sectionId);
+    return displayedFormFields.filter(field => field.section_id === sectionId).sort((a, b) => a.order - b.order);
   };
 
   const renderFormField = (field: FormField) => (
     <div key={field.id} className="grid gap-2">
       <Label htmlFor={field.id}>{field.label}{field.is_required && <span className="text-destructive ml-1">*</span>}</Label>
+      {field.help_text && <p className="text-sm text-muted-foreground">{field.help_text}</p>} {/* New: Display help text */}
       {field.field_type === 'textarea' ? (
         <Textarea id={field.id} value={responses[field.id] || ''} onChange={e => handleResponseChange(field.id, e.target.value)} required={field.is_required} disabled={submitting} className="min-h-[120px] resize-y" />
       ) : field.field_type === 'select' ? (
@@ -296,6 +280,24 @@ const ApplyPage = () => {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="grid gap-6">
+            {/* Display pre-filled user information */}
+            <Card className="mb-6">
+              <CardHeader>
+                <CardTitle className="text-xl">Your Information</CardTitle>
+                <CardDescription>This information is pre-filled from your account.</CardDescription>
+              </CardHeader>
+              <CardContent className="grid gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="applicant-full-name">Full Name</Label>
+                  <Input id="applicant-full-name" value={profileFullName} disabled />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="applicant-email">Email</Label>
+                  <Input id="applicant-email" type="email" value={profileEmail} disabled />
+                </div>
+              </CardContent>
+            </Card>
+
             {formSections.map(section => {
               const fieldsInSection = getFieldsForSection(section.id);
               if (fieldsInSection.length === 0) return null; // Don't render empty sections
