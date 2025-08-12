@@ -96,126 +96,75 @@ const CreateProgramPage = () => {
     setIsSubmitting(true);
 
     let newFormId: string;
+    let formDescriptionForProgram: string | null = null;
 
-    if (values.formTemplateId) {
-      // Create new form by copying from template
-      const template = templates.find(t => t.id === values.formTemplateId);
-      if (!template) {
-        showError("Selected template not found.");
-        setIsSubmitting(false);
-        return;
+    try {
+      if (values.formTemplateId) {
+        const template = templates.find(t => t.id === values.formTemplateId);
+        if (!template) {
+          showError("Selected template not found.");
+          setIsSubmitting(false);
+          return;
+        }
+        formDescriptionForProgram = template.description;
+
+        // Call the Edge Function to copy the template
+        const { data, error: invokeError } = await supabase.functions.invoke('copy-form-template', {
+          body: JSON.stringify({
+            templateFormId: values.formTemplateId,
+            newFormName: `${values.title} Application Form`,
+            newFormDescription: template.description,
+            userId: user.id,
+            isTemplate: false,
+          }),
+        });
+
+        if (invokeError) {
+          throw new Error(`Edge function error: ${invokeError.message}`);
+        }
+        if (data.error) {
+          throw new Error(`Failed to create form from template: ${data.error}`);
+        }
+        newFormId = data.newFormId;
+
+      } else {
+        // Create a new blank form directly via Supabase client
+        const { data: newFormData, error: formError } = await supabase.from("forms").insert({
+          user_id: user.id,
+          name: `${values.title} Application Form`,
+          is_template: false,
+          status: 'draft',
+          description: null, // Blank form has no description initially
+        }).select('id').single();
+
+        if (formError || !newFormData) {
+          throw new Error(`Failed to create blank application form: ${formError?.message}`);
+        }
+        newFormId = newFormData.id;
       }
 
-      // 1. Create the new form entry
-      const { data: newFormData, error: newFormError } = await supabase.from("forms").insert({
+      // Then create the program, linking it to the new form
+      const { data: programData, error: programError } = await supabase.from("programs").insert({
         user_id: user.id,
-        name: `${values.title} Application Form`,
-        is_template: false,
+        title: values.title,
+        description: values.description,
+        deadline: values.deadline.toISOString(),
         status: 'draft',
-        description: template.description, // Copy description from template
+        form_id: newFormId, // Link the new form
       }).select('id').single();
 
-      if (newFormError || !newFormData) {
-        showError(`Failed to create application form from template: ${newFormError?.message}`);
-        setIsSubmitting(false);
-        return;
+      if (programError || !programData) {
+        // If program creation fails, attempt to delete the newly created form
+        await supabase.from('forms').delete().eq('id', newFormId);
+        throw new Error(`Failed to create program: ${programError?.message}`);
+      } else {
+        showSuccess("Program and its application form created successfully! Now, let's design your form.");
+        navigate(`/creator/forms/${newFormId}/edit`); // Redirect to form builder
       }
-      newFormId = newFormData.id;
-
-      // 2. Fetch sections and fields from the template
-      const { data: templateSections, error: sectionsError } = await supabase
-        .from('form_sections')
-        .select('*')
-        .eq('form_id', values.formTemplateId)
-        .order('order', { ascending: true });
-
-      const { data: templateFields, error: fieldsError } = await supabase
-        .from('form_fields')
-        .select('*')
-        .eq('form_id', values.formTemplateId)
-        .order('order', { ascending: true });
-
-      if (sectionsError || fieldsError) {
-        showError(`Failed to load template content: ${sectionsError?.message || fieldsError?.message}`);
-        await supabase.from('forms').delete().eq('id', newFormId); // Rollback
-        setIsSubmitting(false);
-        return;
-      }
-
-      const oldSectionIdMap = new Map<string, string>();
-      const newSectionsToInsert = templateSections.map(section => {
-        const newSectionId = crypto.randomUUID();
-        oldSectionIdMap.set(section.id, newSectionId);
-        return {
-          id: newSectionId,
-          form_id: newFormId,
-          name: section.name,
-          order: section.order,
-        };
-      });
-
-      const newFieldsToInsert = templateFields.map(field => ({
-        id: crypto.randomUUID(),
-        form_id: newFormId,
-        section_id: field.section_id ? oldSectionIdMap.get(field.section_id) : null,
-        label: field.label,
-        field_type: field.field_type,
-        options: field.options,
-        is_required: field.is_required,
-        order: field.order,
-        display_rules: field.display_rules,
-        help_text: field.help_text,
-        description: field.description,
-        tooltip: field.tooltip,
-      }));
-
-      // 3. Insert new sections and fields
-      const { error: insertSectionsError } = await supabase.from('form_sections').insert(newSectionsToInsert);
-      const { error: insertFieldsError } = await supabase.from('form_fields').insert(newFieldsToInsert);
-
-      if (insertSectionsError || insertFieldsError) {
-        showError(`Failed to copy template content: ${insertSectionsError?.message || insertFieldsError?.message}`);
-        await supabase.from('forms').delete().eq('id', newFormId); // Rollback
-        setIsSubmitting(false);
-        return;
-      }
-
-    } else {
-      // Create a new blank form
-      const { data: newFormData, error: formError } = await supabase.from("forms").insert({
-        user_id: user.id,
-        name: `${values.title} Application Form`,
-        is_template: false,
-        status: 'draft',
-        description: null, // Blank form has no description initially
-      }).select('id').single();
-
-      if (formError || !newFormData) {
-        showError(`Failed to create blank application form: ${formError?.message}`);
-        setIsSubmitting(false);
-        return;
-      }
-      newFormId = newFormData.id;
-    }
-
-    // 4. Then create the program, linking it to the new form
-    const { data: programData, error: programError } = await supabase.from("programs").insert({
-      user_id: user.id,
-      title: values.title,
-      description: values.description,
-      deadline: values.deadline.toISOString(),
-      status: 'draft',
-      form_id: newFormId, // Link the new form
-    }).select('id').single();
-
-    if (programError || !programData) {
-      showError(`Failed to create program: ${programError?.message}`);
-      // Optionally, delete the created form if program creation fails
-      await supabase.from('forms').delete().eq('id', newFormId);
+    } catch (error: any) {
+      showError(error.message);
+    } finally {
       setIsSubmitting(false);
-    } else {
-      showSuccess("Program and its application form created successfully! Now, let's design your form.");
-      navigate(`/creator/forms/${newFormId}/edit`); // Redirect to form builder
     }
   }
 

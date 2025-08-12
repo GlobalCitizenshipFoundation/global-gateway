@@ -3,6 +3,7 @@ import { FormField } from "@/types";
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { useDroppable } from "@dnd-kit/core";
 import { cn } from "@/lib/utils";
+import { ListX } from "lucide-react"; // Import ListX for empty state
 
 interface UncategorizedFieldsListProps {
   uncategorizedFields: FormField[];
@@ -10,6 +11,7 @@ interface UncategorizedFieldsListProps {
   handleToggleRequired: (fieldId: string, isRequired: boolean) => Promise<void>;
   onEditLogic: (field: FormField) => void;
   onEditField: (field: FormField) => void;
+  fieldTypeIcons: Record<FormField['field_type'], React.ElementType>; // New prop
 }
 
 // Helper component for droppable areas
@@ -24,8 +26,17 @@ export const UncategorizedFieldsList = ({
   handleToggleRequired,
   onEditLogic,
   onEditField,
+  fieldTypeIcons,
 }: UncategorizedFieldsListProps) => {
-  if (uncategorizedFields.length === 0) return null;
+  if (uncategorizedFields.length === 0) {
+    return (
+      <div className="mt-6 border-t pt-6 rounded-md border p-4 text-muted-foreground text-sm text-center flex flex-col items-center">
+        <ListX className="h-10 w-10 mb-2" />
+        <p>No uncategorized fields.</p>
+        <p>Fields without a section will appear here.</p>
+      </div>
+    );
+  }
 
   return (
     <DroppableContainer id="uncategorized-fields-droppable-area" className="mt-6 border-t pt-6 rounded-md border">
@@ -40,6 +51,7 @@ export const UncategorizedFieldsList = ({
               onToggleRequired={handleToggleRequired}
               onEditLogic={onEditLogic}
               onEdit={onEditField}
+              fieldTypeIcons={fieldTypeIcons}
             />
           ))}
         </ul>

@@ -3,11 +3,11 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { FormFieldItem } from "@/components/FormFieldItem";
 import { FormField, FormSection } from "@/types";
-import { GripVertical, Trash2 } from "lucide-react"; // Import GripVertical
+import { GripVertical, Trash2, LayoutList } from "lucide-react"; // Import LayoutList for empty state
 import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { useDroppable } from "@dnd-kit/core";
 import { cn } from "@/lib/utils";
-import { CSS } from '@dnd-kit/utilities'; // Import CSS for transform
+import { CSS } from '@dnd-kit/utilities';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -31,6 +31,7 @@ interface FormSectionsListProps {
   handleToggleRequired: (fieldId: string, isRequired: boolean) => Promise<void>;
   onEditLogic: (field: FormField) => void;
   onEditField: (field: FormField) => void;
+  fieldTypeIcons: Record<FormField['field_type'], React.ElementType>; // New prop
 }
 
 // Helper component for droppable areas
@@ -40,20 +41,19 @@ const DroppableContainer = ({ id, children, className }: { id: string; children:
 };
 
 // Sortable Accordion Item for Sections
-const SortableAccordionItem = ({ section, children, confirmDeleteSection }: { section: FormSection; children: React.ReactNode; confirmDeleteSection: (section: FormSection) => void; }) => {
+const SortableAccordionItem = ({ section, children, confirmDeleteSection, isDragging }: { section: FormSection; children: React.ReactNode; confirmDeleteSection: (section: FormSection) => void; isDragging: boolean; }) => {
   const {
     attributes,
     listeners,
     setNodeRef,
     transform,
     transition,
-    isDragging,
   } = useSortable({ id: section.id, data: { type: "Section", section } });
 
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    zIndex: isDragging ? 10 : 0, // Bring dragged item to front
+    zIndex: isDragging ? 10 : 0,
   };
 
   return (
@@ -64,7 +64,7 @@ const SortableAccordionItem = ({ section, children, confirmDeleteSection }: { se
       style={style}
       className={cn("rounded-md border mb-2", isDragging && "opacity-50")}
     >
-      <div className="flex items-center justify-between w-full pr-4">
+      <div className="flex items-center justify-between w-full pr-4 cursor-grab"> {/* Added cursor-grab */}
         <Button variant="ghost" size="icon" className="cursor-grab" {...attributes} {...listeners}>
           <GripVertical className="h-5 w-5 text-muted-foreground" />
         </Button>
@@ -90,6 +90,7 @@ export const FormSectionsList = ({
   handleToggleRequired,
   onEditLogic,
   onEditField,
+  fieldTypeIcons,
 }: FormSectionsListProps) => {
   const [sectionToDelete, setSectionToDelete] = useState<FormSection | null>(null);
   const [isSectionDeleteDialogOpen, setIsSectionDeleteDialogOpen] = useState(false);
@@ -116,7 +117,7 @@ export const FormSectionsList = ({
         <Accordion type="multiple" className="w-full">
           <SortableContext items={sections.map(s => s.id)} strategy={verticalListSortingStrategy}>
             {sections.map(section => (
-              <SortableAccordionItem key={section.id} section={section} confirmDeleteSection={confirmDeleteSection}>
+              <SortableAccordionItem key={section.id} section={section} confirmDeleteSection={confirmDeleteSection} isDragging={false}> {/* isDragging prop added */}
                 <DroppableContainer id={section.id} className="rounded-b-md">
                   <AccordionContent>
                     <SortableContext items={getFieldsForSection(section.id).map(f => f.id)} strategy={verticalListSortingStrategy}>
@@ -130,10 +131,14 @@ export const FormSectionsList = ({
                               onToggleRequired={handleToggleRequired}
                               onEditLogic={onEditLogic}
                               onEdit={onEditField}
+                              fieldTypeIcons={fieldTypeIcons}
                             />
                           ))
                         ) : (
-                          <p className="text-muted-foreground text-sm text-center py-4">Drag fields here or add new ones below.</p>
+                          <div className="text-muted-foreground text-sm text-center py-4 flex flex-col items-center">
+                            <LayoutList className="h-8 w-8 mb-2" />
+                            <p>Drag fields here or add new ones below.</p>
+                          </div>
                         )}
                       </ul>
                     </SortableContext>
@@ -144,7 +149,11 @@ export const FormSectionsList = ({
           </SortableContext>
         </Accordion>
       ) : (
-        <p className="text-muted-foreground text-sm">No sections defined yet. Add one to get started.</p>
+        <div className="text-muted-foreground text-sm text-center py-8 flex flex-col items-center border rounded-md">
+          <LayoutList className="h-12 w-12 mb-4" />
+          <p>No sections defined yet.</p>
+          <p>Add a new section below to organize your form fields.</p>
+        </div>
       )}
 
       <AlertDialog open={isSectionDeleteDialogOpen} onOpenChange={setIsSectionDeleteDialogOpen}>

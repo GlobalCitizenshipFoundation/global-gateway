@@ -39,7 +39,7 @@ type ResponseWithField = {
 const PipelineViewPage = () => {
   const { programId } = useParams<{ programId: string }>();
   const [programTitle, setProgramTitle] = useState("");
-  const [programFormId, setProgramFormId] = useState<string | null>(null); // New state for form_id
+  const [programFormId, setProgramFormId] = useState<string | null>(null);
   const [stages, setStages] = useState<ProgramStage[]>([]);
   const [applications, setApplications] = useState<Applicant[]>([]);
   const [activeApplicant, setActiveApplicant] = useState<Applicant | null>(null);
@@ -48,7 +48,7 @@ const PipelineViewPage = () => {
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [selectedSubmission, setSelectedSubmission] = useState<SubmissionDetail | null>(null);
   const [allSubmissionResponses, setAllSubmissionResponses] = useState<ResponseWithField[]>([]);
-  const [allFormFieldsForLogic, setAllFormFieldsForLogic] = useState<FormField[]>([]); // Store all fields for logic evaluation
+  const [allFormFieldsForLogic, setAllFormFieldsForLogic] = useState<FormField[]>([]);
   const [sheetLoading, setSheetLoading] = useState(false);
   const [currentStageInSheet, setCurrentStageInSheet] = useState('');
 
@@ -57,7 +57,7 @@ const PipelineViewPage = () => {
       if (!programId) return;
       setLoading(true);
 
-      const programPromise = supabase.from("programs").select("title, form_id").eq("id", programId).single(); // Fetch form_id
+      const programPromise = supabase.from("programs").select("title, form_id").eq("id", programId).single();
       const stagesPromise = supabase.from("program_stages").select("id, name, order").eq("program_id", programId).order("order", { ascending: true });
       const applicationsPromise = supabase.from("applications").select("id, full_name, stage_id").eq("program_id", programId);
 
@@ -71,7 +71,7 @@ const PipelineViewPage = () => {
         showError("Failed to load pipeline data.");
       } else {
         setProgramTitle(programData.title);
-        setProgramFormId(programData.form_id); // Set form_id
+        setProgramFormId(programData.form_id);
         setStages(stagesData as ProgramStage[]);
         setApplications(applicationsData as Applicant[]);
 
@@ -302,7 +302,7 @@ const PipelineViewPage = () => {
                             <span className="ml-2 text-xs text-muted-foreground italic">(Hidden by logic)</span>
                           )}
                         </dt>
-                        {res.form_fields?.description && ( // Display description
+                        {res.form_fields?.description && (
                           <dd className="text-sm text-muted-foreground mt-1">{res.form_fields.description}</dd>
                         )}
                         {res.form_fields?.help_text && (

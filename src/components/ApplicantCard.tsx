@@ -1,5 +1,7 @@
+import React from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
+import { CSS } from '@dnd-kit/utilities'; // Import CSS for transform
 
 export type Applicant = {
   id: string;
@@ -12,7 +14,7 @@ interface ApplicantCardProps {
   onClick: () => void;
 }
 
-export const ApplicantCard = ({ applicant, onClick }: ApplicantCardProps) => {
+export const ApplicantCard = React.memo(({ applicant, onClick }: ApplicantCardProps) => {
   const {
     attributes,
     listeners,
@@ -24,13 +26,13 @@ export const ApplicantCard = ({ applicant, onClick }: ApplicantCardProps) => {
 
   const style = {
     transition,
-    transform: transform ? `translate3d(${transform.x}px, ${transform.y}px, 0)` : undefined,
+    transform: CSS.Transform.toString(transform),
   };
 
   return (
     <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
       <Card
-        className={`mb-2 ${isDragging ? "opacity-50" : "opacity-100"} cursor-pointer hover:ring-2 hover:ring-ring`}
+        className={`mb-2 ${isDragging ? "opacity-50 shadow-lg" : "opacity-100"} cursor-grab hover:ring-2 hover:ring-ring`} // Added shadow-lg and cursor-grab
         onClick={onClick}
       >
         <CardHeader className="p-3">
@@ -39,4 +41,4 @@ export const ApplicantCard = ({ applicant, onClick }: ApplicantCardProps) => {
       </Card>
     </div>
   );
-};
+});

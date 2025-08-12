@@ -16,7 +16,7 @@ import { useApplicationForm } from "@/hooks/useApplicationForm";
 import { ApplicantInfoCard } from "@/components/application/ApplicantInfoCard";
 import ApplicationFormSections from "@/components/application/ApplicationFormSections";
 import { useState, useEffect } from "react";
-import DOMPurify from 'dompurify'; // Import DOMPurify
+import DOMPurify from 'dompurify';
 
 // Explicitly define the type for dynamic form values
 type DynamicFormValues = Record<string, string | string[] | number | undefined | null>;
