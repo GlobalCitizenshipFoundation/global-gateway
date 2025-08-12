@@ -12,6 +12,7 @@ import {
   PaginationPrevious,
   PaginationEllipsis,
 } from "@/components/ui/pagination";
+import { Label } from "@/components/ui/label"; // Import Label
 
 import { useFormsData } from "@/hooks/useFormsData";
 import { useFormManagementActions } from "@/hooks/useFormManagementActions";
@@ -181,46 +182,58 @@ const FormManagementPage = () => {
             onChange={(e) => setSearchTerm(e.target.value)}
             className="col-span-full lg:col-span-1"
           />
-          <Select value={statusFilter} onValueChange={(value: "all" | "draft" | "published") => setStatusFilter(value)}>
-            <SelectTrigger>
-              <SelectValue placeholder="Filter by Status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Statuses</SelectItem>
-              <SelectItem value="published">Published</SelectItem>
-              <SelectItem value="draft">Draft</SelectItem>
-            </SelectContent>
-          </Select>
-          <Select value={typeFilter} onValueChange={(value: "all" | "template" | "program_form") => setTypeFilter(value)}>
-            <SelectTrigger>
-              <SelectValue placeholder="Filter by Type" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Types</SelectItem>
-              <SelectItem value="program_form">Program Forms</SelectItem>
-              <SelectItem value="template">Templates</SelectItem>
-            </SelectContent>
-          </Select>
+          <div className="grid gap-2">
+            <Label htmlFor="status-filter">Filter by Status</Label>
+            <Select value={statusFilter} onValueChange={(value: "all" | "draft" | "published") => setStatusFilter(value)}>
+              <SelectTrigger id="status-filter">
+                <SelectValue placeholder="All Statuses" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Statuses</SelectItem>
+                <SelectItem value="published">Published</SelectItem>
+                <SelectItem value="draft">Draft</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="type-filter">Filter by Type</Label>
+            <Select value={typeFilter} onValueChange={(value: "all" | "template" | "program_form") => setTypeFilter(value)}>
+              <SelectTrigger id="type-filter">
+                <SelectValue placeholder="All Types" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Types</SelectItem>
+                <SelectItem value="program_form">Forms</SelectItem>
+                <SelectItem value="template">Templates</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
           <div className="flex gap-2">
-            <Select value={sortBy} onValueChange={(value: "name" | "updated_at" | "created_at") => setSortBy(value)}>
-              <SelectTrigger>
-                <SelectValue placeholder="Sort by" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="name">Form Name</SelectItem>
-                <SelectItem value="updated_at">Updated Date</SelectItem>
-                <SelectItem value="created_at">Created Date</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={sortOrder} onValueChange={(value: "asc" | "desc") => setSortOrder(value)}>
-              <SelectTrigger className="w-[100px]">
-                <SelectValue placeholder="Order" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="asc">Asc</SelectItem>
-                <SelectItem value="desc">Desc</SelectItem>
-              </SelectContent>
-            </Select>
+            <div className="grid gap-2 flex-grow">
+              <Label htmlFor="sort-by">Sort by</Label>
+              <Select value={sortBy} onValueChange={(value: "name" | "updated_at" | "created_at") => setSortBy(value)}>
+                <SelectTrigger id="sort-by">
+                  <SelectValue placeholder="Sort by" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="name">Form Name</SelectItem>
+                  <SelectItem value="updated_at">Updated Date</SelectItem>
+                  <SelectItem value="created_at">Created Date</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid gap-2 w-[100px]">
+              <Label htmlFor="sort-order">Order</Label>
+              <Select value={sortOrder} onValueChange={(value: "asc" | "desc") => setSortOrder(value)}>
+                <SelectTrigger id="sort-order">
+                  <SelectValue placeholder="Order" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="asc">Asc</SelectItem>
+                  <SelectItem value="desc">Desc</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </div>
 
