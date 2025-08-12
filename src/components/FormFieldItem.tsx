@@ -1,7 +1,7 @@
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { FormField } from '@/types';
-import { GripVertical, Trash2, Eye } from 'lucide-react'; // Import Eye icon
+import { GripVertical, Trash2, Eye, Pencil } from 'lucide-react'; // Import Pencil icon
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
 import { Switch } from './ui/switch';
@@ -12,10 +12,11 @@ interface FormFieldItemProps {
   field: FormField;
   onDelete: (fieldId: string) => void;
   onToggleRequired: (fieldId: string, isRequired: boolean) => void;
-  onEditLogic: (field: FormField) => void; // New prop for editing logic
+  onEditLogic: (field: FormField) => void;
+  onEdit: (field: FormField) => void; // New prop for editing field details
 }
 
-export const FormFieldItem = ({ field, onDelete, onToggleRequired, onEditLogic }: FormFieldItemProps) => {
+export const FormFieldItem = ({ field, onDelete, onToggleRequired, onEditLogic, onEdit }: FormFieldItemProps) => {
   const {
     attributes,
     listeners,
@@ -67,6 +68,9 @@ export const FormFieldItem = ({ field, onDelete, onToggleRequired, onEditLogic }
         </div>
         <Button variant="outline" size="sm" onClick={() => onEditLogic(field)}>
           {hasLogic ? 'Edit Logic' : 'Add Logic'}
+        </Button>
+        <Button variant="outline" size="sm" onClick={() => onEdit(field)}> {/* New Edit button */}
+          <Pencil className="mr-2 h-4 w-4" /> Edit
         </Button>
         <Button variant="ghost" size="icon" onClick={() => onDelete(field.id)}>
             <Trash2 className="h-4 w-4 text-destructive" />

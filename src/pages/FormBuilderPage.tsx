@@ -13,7 +13,8 @@ import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, us
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { FormFieldItem } from "@/components/FormFieldItem";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import ConditionalLogicBuilder from "@/components/ConditionalLogicBuilder"; // Import the new component
+import ConditionalLogicBuilder from "@/components/ConditionalLogicBuilder";
+import EditFormFieldDialog from "@/components/EditFormFieldDialog"; // Import the new component
 
 const FormBuilderPage = () => {
   const { programId } = useParams<{ programId: string }>();
@@ -31,6 +32,10 @@ const FormBuilderPage = () => {
   // State for ConditionalLogicBuilder
   const [isLogicBuilderOpen, setIsLogicBuilderOpen] = useState(false);
   const [fieldToEditLogic, setFieldToEditLogic] = useState<FormField | null>(null);
+
+  // State for EditFormFieldDialog
+  const [isEditFieldDialogOpen, setIsEditFieldDialogOpen] = useState(false);
+  const [fieldToEditDetails, setFieldToEditDetails] = useState<FormField | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -187,6 +192,44 @@ const FormBuilderPage = () => {
     }
   };
 
+  const handleEditField = (field: FormField) => {
+    setFieldToEditDetails(field);
+    setIsEditFieldDialogOpen(true);
+  };
+
+  const handleSaveEditedField = async (fieldId: string, values: { label: string; field_type: FormField['field_type']; options?: string; is_required: boolean; }) => {
+    const updatedOptions = (values.field_type === 'select' || values.field_type === 'radio' || values.field_type === 'checkbox')
+      ? values.options?.split(',').map(opt => opt.trim()) || null
+      : null;
+
+    setFields(prevFields =>
+      prevFields.map(f =>
+        f.id === fieldId
+          ? { ...f, label: values.label, field_type: values.field_type, options: updatedOptions, is_required: values.is_required }
+          : f
+      )
+    );
+
+    const { error } = await supabase
+      .from('form_fields')
+      .update({
+        label: values.label,
+        field_type: values.field_type,
+        options: updatedOptions,
+        is_required: values.is_required,
+      })
+      .eq('id', fieldId);
+
+    if (error) {
+      showError(`Failed to update field: ${error.message}`);
+      // Optionally revert local state if save fails
+    } else {
+      showSuccess("Field updated successfully!");
+    }
+    setIsEditFieldDialogOpen(false);
+    setFieldToEditDetails(null);
+  };
+
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
@@ -256,7 +299,8 @@ const FormBuilderPage = () => {
                                   field={field}
                                   onDelete={handleDeleteField}
                                   onToggleRequired={handleToggleRequired}
-                                  onEditLogic={handleEditLogic} // Pass the new prop
+                                  onEditLogic={handleEditLogic}
+                                  onEdit={handleEditField} // Pass the new prop
                                 />
                               ))
                             ) : (
@@ -285,7 +329,8 @@ const FormBuilderPage = () => {
                           field={field}
                           onDelete={handleDeleteField}
                           onToggleRequired={handleToggleRequired}
-                          onEditLogic={handleEditLogic} // Pass the new prop
+                          onEditLogic={handleEditLogic}
+                          onEdit={handleEditField} // Pass the new prop
                         />
                       ))}
                     </ul>
@@ -375,6 +420,13 @@ const FormBuilderPage = () => {
         fieldToEdit={fieldToEditLogic}
         allFields={fields}
         onSave={handleSaveLogic}
+      />
+
+      <EditFormFieldDialog
+        isOpen={isEditFieldDialogOpen}
+        onClose={() => setIsEditFieldDialogOpen(false)}
+        fieldToEdit={fieldToEditDetails}
+        onSave={handleSaveEditedField}
       />
     </div>
   );
