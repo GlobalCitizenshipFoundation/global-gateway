@@ -33,7 +33,7 @@ export type FormField = {
   id: string;
   program_id: string;
   label: string;
-  field_type: 'text' | 'textarea' | 'select' | 'radio' | 'checkbox' | 'file' | 'email' | 'date' | 'phone' | 'number';
+  field_type: 'text' | 'textarea' | 'select' | 'radio' | 'checkbox' | 'file' | 'email' | 'date' | 'phone' | 'number' | 'richtext';
   options: string[] | null;
   is_required: boolean;
   order: number;

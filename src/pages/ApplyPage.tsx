@@ -24,6 +24,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
+import RichTextEditor from "@/components/RichTextEditor"; // Import the new component
 
 const ApplyPage = () => {
   const { programId } = useParams<{ programId: string }>();
@@ -219,6 +220,13 @@ const ApplyPage = () => {
                   <Input id={field.id} type="tel" value={responses[field.id] || ''} onChange={e => handleResponseChange(field.id, e.target.value)} required={field.is_required} disabled={submitting} />
                 ) : field.field_type === 'number' ? (
                   <Input id={field.id} type="number" value={responses[field.id] || ''} onChange={e => handleResponseChange(field.id, e.target.value)} required={field.is_required} disabled={submitting} />
+                ) : field.field_type === 'richtext' ? (
+                  <RichTextEditor
+                    value={responses[field.id] || ''}
+                    onChange={value => handleResponseChange(field.id, value)}
+                    readOnly={submitting}
+                    className="min-h-[120px]"
+                  />
                 ) : (
                   <Input id={field.id} value={responses[field.id] || ''} onChange={e => handleResponseChange(field.id, e.target.value)} required={field.is_required} disabled={submitting} />
                 )}

@@ -148,6 +148,10 @@ const SubmissionDetailPage = () => {
         return response.value; // Fallback for invalid date string
       }
     }
+    // For richtext, display the raw HTML string.
+    // If you want to render it as rich text, you would use dangerouslySetInnerHTML,
+    // but that requires careful sanitization to prevent XSS attacks.
+    // For now, displaying as plain text is safer and simpler.
     return response.value;
   };
 
