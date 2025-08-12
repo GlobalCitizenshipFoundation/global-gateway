@@ -161,7 +161,10 @@ const CreatorDashboardPage = () => {
                   <TableCell className="text-center hidden md:table-cell">
                     {getSubmissionCount(program.id)}
                   </TableCell>
-                  <TableCell className="text-right">
+                  <TableCell className="text-right space-x-2">
+                    <Button asChild variant="outline" size="sm">
+                      <Link to={`/creator/program/${program.id}/edit`}>Edit</Link>
+                    </Button>
                     <Button asChild variant="outline" size="sm">
                       <Link to={`/creator/program/${program.id}/submissions`}>View Submissions</Link>
                     </Button>

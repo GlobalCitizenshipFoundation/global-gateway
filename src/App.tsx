@@ -12,6 +12,7 @@ import DashboardPage from "./pages/DashboardPage";
 import ProfilePage from "./pages/ProfilePage";
 import CreatorDashboardPage from "./pages/CreatorDashboardPage";
 import CreateProgramPage from "./pages/CreateProgramPage";
+import EditProgramPage from "./pages/EditProgramPage";
 import SubmissionsListPage from "./pages/SubmissionsListPage";
 import SubmissionDetailPage from "./pages/SubmissionDetailPage";
 import { SessionContextProvider } from "./contexts/SessionContext";
@@ -38,6 +39,7 @@ const App = () => (
                 <Route path="/profile" element={<ProfilePage />} />
                 <Route path="/creator/dashboard" element={<CreatorDashboardPage />} />
                 <Route path="/creator/new-program" element={<CreateProgramPage />} />
+                <Route path="/creator/program/:programId/edit" element={<EditProgramPage />} />
                 <Route path="/creator/program/:programId/submissions" element={<SubmissionsListPage />} />
                 <Route path="/creator/program/:programId/submission/:submissionId" element={<SubmissionDetailPage />} />
               </Route>
