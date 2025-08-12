@@ -22,19 +22,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/contexts/SessionContext";
 import { Skeleton } from "@/components/ui/skeleton";
 
-const getStatusVariant = (status: Program['status']) => {
-  switch (status) {
-    case 'Open':
-      return 'default';
-    case 'Closed':
-      return 'destructive';
-    case 'Reviewing':
-      return 'secondary';
-    default:
-      return 'outline';
-  }
-};
-
 const CreatorDashboardPage = () => {
   const { user } = useSession();
   const [programs, setPrograms] = useState<Program[]>([]);
@@ -146,7 +133,6 @@ const CreatorDashboardPage = () => {
             <TableHeader>
               <TableRow>
                 <TableHead>Program</TableHead>
-                <TableHead className="text-center">Status</TableHead>
                 <TableHead className="text-center hidden md:table-cell">Submissions</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
@@ -155,13 +141,13 @@ const CreatorDashboardPage = () => {
               {programs.length > 0 ? programs.map((program) => (
                 <TableRow key={program.id}>
                   <TableCell className="font-medium">{program.title}</TableCell>
-                  <TableCell className="text-center">
-                    <Badge variant={getStatusVariant(program.status)}>{program.status}</Badge>
-                  </TableCell>
                   <TableCell className="text-center hidden md:table-cell">
                     {getSubmissionCount(program.id)}
                   </TableCell>
                   <TableCell className="text-right space-x-2">
+                    <Button asChild variant="outline" size="sm">
+                      <Link to={`/creator/program/${program.id}/workflow`}>Workflow</Link>
+                    </Button>
                     <Button asChild variant="outline" size="sm">
                       <Link to={`/creator/program/${program.id}/edit`}>Edit</Link>
                     </Button>

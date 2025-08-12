@@ -17,6 +17,7 @@ import SubmissionsListPage from "./pages/SubmissionsListPage";
 import SubmissionDetailPage from "./pages/SubmissionDetailPage";
 import { SessionContextProvider } from "./contexts/SessionContext";
 import ProtectedRoute from "./components/ProtectedRoute";
+import ManageWorkflowPage from "./pages/ManageWorkflowPage";
 
 const queryClient = new QueryClient();
 
@@ -40,6 +41,7 @@ const App = () => (
                 <Route path="/creator/dashboard" element={<CreatorDashboardPage />} />
                 <Route path="/creator/new-program" element={<CreateProgramPage />} />
                 <Route path="/creator/program/:programId/edit" element={<EditProgramPage />} />
+                <Route path="/creator/program/:programId/workflow" element={<ManageWorkflowPage />} />
                 <Route path="/creator/program/:programId/submissions" element={<SubmissionsListPage />} />
                 <Route path="/creator/program/:programId/submission/:submissionId" element={<SubmissionDetailPage />} />
               </Route>

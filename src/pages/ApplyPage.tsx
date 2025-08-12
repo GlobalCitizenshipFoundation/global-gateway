@@ -73,13 +73,29 @@ const ApplyPage = () => {
     if (!user || !program) return;
 
     setSubmitting(true);
+
+    // Get the first stage of the program's workflow
+    const { data: firstStage, error: stageError } = await supabase
+      .from('program_stages')
+      .select('id')
+      .eq('program_id', program.id)
+      .order('order', { ascending: true })
+      .limit(1)
+      .single();
+
+    if (stageError || !firstStage) {
+      showError(`Could not find starting stage for this program. ${stageError?.message || ''}`);
+      setSubmitting(false);
+      return;
+    }
+
     const { error } = await supabase.from('applications').insert({
       program_id: program.id,
       user_id: user.id,
       full_name: fullName,
       email: email,
       personal_statement: personalStatement,
-      status: 'Submitted',
+      stage_id: firstStage.id,
     });
 
     if (error) {
@@ -168,10 +184,9 @@ const ApplyPage = () => {
                   disabled={submitting}
                 />
               </div>
-              <Button type="submit" className="w-full" disabled={submitting || program.status !== 'Open'}>
+              <Button type="submit" className="w-full" disabled={submitting}>
                 {submitting ? 'Submitting...' : 'Submit Application'}
               </Button>
-              {program.status !== 'Open' && <p className="text-center text-sm text-destructive">This program is not open for applications.</p>}
             </div>
           </form>
         </CardContent>

@@ -25,22 +25,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 type DbApplication = {
   id: string;
   submitted_date: string;
-  status: 'Submitted' | 'In Review' | 'Accepted' | 'Rejected';
   full_name: string;
   email: string;
-};
-
-const getStatusVariant = (status: DbApplication['status']) => {
-  switch (status) {
-    case 'Accepted':
-      return 'default';
-    case 'Rejected':
-      return 'destructive';
-    case 'In Review':
-      return 'secondary';
-    default:
-      return 'outline';
-  }
+  program_stages: { name: string } | null;
 };
 
 const SubmissionsListPage = () => {
@@ -73,14 +60,18 @@ const SubmissionsListPage = () => {
       // Fetch submissions for the program
       const { data: submissionsData, error: submissionsError } = await supabase
         .from('applications')
-        .select('id, full_name, email, submitted_date, status')
+        .select('id, full_name, email, submitted_date, program_stages ( name )')
         .eq('program_id', programId)
         .order('submitted_date', { ascending: false });
 
       if (submissionsError) {
         setError(submissionsError.message);
-      } else {
-        setSubmissions(submissionsData as DbApplication[]);
+      } else if (submissionsData) {
+        const formattedSubmissions = submissionsData.map(s => ({
+          ...s,
+          program_stages: Array.isArray(s.program_stages) ? s.program_stages[0] : s.program_stages,
+        }));
+        setSubmissions(formattedSubmissions as DbApplication[]);
       }
 
       setLoading(false);
@@ -149,7 +140,7 @@ const SubmissionsListPage = () => {
               <TableRow>
                 <TableHead>Submitter</TableHead>
                 <TableHead className="hidden md:table-cell">Submitted</TableHead>
-                <TableHead>Status</TableHead>
+                <TableHead>Stage</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -164,7 +155,7 @@ const SubmissionsListPage = () => {
                     {new Date(app.submitted_date).toLocaleDateString()}
                   </TableCell>
                   <TableCell>
-                    <Badge variant={getStatusVariant(app.status)}>{app.status}</Badge>
+                    <Badge variant="secondary">{app.program_stages?.name || 'N/A'}</Badge>
                   </TableCell>
                   <TableCell className="text-right">
                     <Button asChild variant="outline" size="sm">

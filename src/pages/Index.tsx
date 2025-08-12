@@ -2,20 +2,12 @@ import { useState, useMemo, useEffect } from "react";
 import ProgramCard from "@/components/ProgramCard";
 import { Program } from "@/types";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardHeader, CardContent, CardFooter } from "@/components/ui/card";
 
 const Index = () => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
   const [programs, setPrograms] = useState<Program[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -49,17 +41,13 @@ const Index = () => {
   const filteredPrograms = useMemo(() => {
     return programs.filter((program) => {
       const lowerCaseSearch = searchTerm.toLowerCase();
-      const matchesSearch =
+      return (
         program.title.toLowerCase().includes(lowerCaseSearch) ||
         (program.description &&
-          program.description.toLowerCase().includes(lowerCaseSearch));
-
-      const matchesStatus =
-        statusFilter === "all" || program.status.toLowerCase() === statusFilter;
-
-      return matchesSearch && matchesStatus;
+          program.description.toLowerCase().includes(lowerCaseSearch))
+      );
     });
-  }, [searchTerm, statusFilter, programs]);
+  }, [searchTerm, programs]);
 
   return (
     <div className="container mx-auto p-4 md:p-8">
@@ -68,7 +56,7 @@ const Index = () => {
           Opportunities Portal
         </h1>
         <p className="text-lg text-muted-foreground mt-3 max-w-2xl mx-auto">
-          Browse and apply for available grants, scholarships, and awards.
+          Browse and apply for available grants, scholarships, and other award-based initiatives.
         </p>
       </header>
 
@@ -79,17 +67,6 @@ const Index = () => {
           onChange={(e) => setSearchTerm(e.target.value)}
           className="flex-grow"
         />
-        <Select onValueChange={setStatusFilter} defaultValue="all">
-          <SelectTrigger className="w-full md:w-[180px]">
-            <SelectValue placeholder="Filter by status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Statuses</SelectItem>
-            <SelectItem value="open">Open</SelectItem>
-            <SelectItem value="reviewing">Reviewing</SelectItem>
-            <SelectItem value="closed">Closed</SelectItem>
-          </SelectContent>
-        </Select>
       </div>
 
       <section>

@@ -4,6 +4,27 @@ export type Program = {
   title: string;
   description: string | null;
   deadline: Date;
-  status: 'Open' | 'Closed' | 'Reviewing';
   created_at: string;
+};
+
+export type ProgramStage = {
+  id: string;
+  program_id: string;
+  name: string;
+  order: number;
+  created_at: string;
+};
+
+export type Application = {
+  id: string;
+  submitted_date: string;
+  program_id: string;
+  user_id: string;
+  stage_id: string;
+  programs: {
+    title: string;
+  } | null;
+  program_stages: {
+    name: string;
+  } | null;
 };

@@ -19,29 +19,7 @@ import { useEffect, useState } from "react";
 import { useSession } from "@/contexts/SessionContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
-
-type UserApplication = {
-  id: string;
-  submitted_date: string;
-  status: 'Submitted' | 'In Review' | 'Accepted' | 'Rejected';
-  program_id: string;
-  programs: {
-    title: string;
-  } | null;
-};
-
-const getStatusVariant = (status: UserApplication['status']) => {
-  switch (status) {
-    case 'Accepted':
-      return 'default';
-    case 'Rejected':
-      return 'destructive';
-    case 'In Review':
-      return 'secondary';
-    default:
-      return 'outline';
-  }
-};
+import { Application as UserApplication } from "@/types";
 
 const DashboardPage = () => {
   const { user } = useSession();
@@ -60,11 +38,10 @@ const DashboardPage = () => {
         .select(`
           id,
           submitted_date,
-          status,
           program_id,
-          programs (
-            title
-          )
+          stage_id,
+          programs ( title ),
+          program_stages ( name )
         `)
         .eq('user_id', user.id)
         .order('submitted_date', { ascending: false });
@@ -73,10 +50,10 @@ const DashboardPage = () => {
         setError(error.message);
         console.error("Error fetching applications:", error);
       } else if (data) {
-        // Supabase might return the related record as an array, so we normalize it.
         const formattedData = data.map(app => ({
           ...app,
           programs: Array.isArray(app.programs) ? app.programs[0] : app.programs,
+          program_stages: Array.isArray(app.program_stages) ? app.program_stages[0] : app.program_stages,
         }));
         setApplications(formattedData as UserApplication[]);
       }
@@ -144,7 +121,7 @@ const DashboardPage = () => {
                     {new Date(app.submitted_date).toLocaleDateString()}
                   </TableCell>
                   <TableCell>
-                    <Badge variant={getStatusVariant(app.status)}>{app.status}</Badge>
+                    <Badge variant="secondary">{app.program_stages?.name || 'N/A'}</Badge>
                   </TableCell>
                 </TableRow>
               )) : (
