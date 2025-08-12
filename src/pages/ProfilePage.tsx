@@ -184,6 +184,11 @@ const ProfilePage = () => {
                 <Input value={user?.created_at ? new Date(user.created_at).toLocaleDateString() : 'N/A'} disabled />
               </div>
 
+              <div className="grid gap-2">
+                <Label>Last Login Date</Label>
+                <Input value={user?.last_sign_in_at ? new Date(user.last_sign_in_at).toLocaleString() : 'N/A'} disabled />
+              </div>
+
               <div className="flex justify-between items-center pt-4 border-t">
                 <Button type="submit" disabled={isSubmitting}>
                   {isSubmitting ? "Saving Changes..." : "Save Changes"}
