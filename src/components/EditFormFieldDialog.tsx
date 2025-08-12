@@ -33,6 +33,8 @@ const editFormFieldSchema = z.object({
   options: z.string().optional(), // Comma-separated for select/radio/checkbox
   is_required: z.boolean(),
   help_text: z.string().nullable().optional(), // New: help_text
+  description: z.string().nullable().optional(), // New: description
+  tooltip: z.string().nullable().optional(), // New: tooltip
 });
 
 type EditFormFieldValues = z.infer<typeof editFormFieldSchema>;
@@ -57,7 +59,9 @@ const EditFormFieldDialog = ({
       field_type: "text",
       options: "",
       is_required: false,
-      help_text: "", // New: default value
+      help_text: "",
+      description: "", // New: default value
+      tooltip: "", // New: default value
     },
   });
 
@@ -68,7 +72,9 @@ const EditFormFieldDialog = ({
         field_type: fieldToEdit.field_type,
         options: Array.isArray(fieldToEdit.options) ? fieldToEdit.options.join(', ') : '',
         is_required: fieldToEdit.is_required,
-        help_text: fieldToEdit.help_text || '', // New: set from existing field
+        help_text: fieldToEdit.help_text || '',
+        description: fieldToEdit.description || '', // New: set from existing field
+        tooltip: fieldToEdit.tooltip || '', // New: set from existing field
       });
     }
   }, [fieldToEdit, form]);
@@ -154,6 +160,27 @@ const EditFormFieldDialog = ({
             )}
             <FormFieldComponent
               control={form.control}
+              name="description"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Description (Optional)</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder="e.g., 'This section asks about your academic background.'"
+                      className="resize-y min-h-[80px]"
+                      {...field}
+                      value={field.value || ''}
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    A brief description displayed above the field on the application form.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormFieldComponent
+              control={form.control}
               name="help_text"
               render={({ field }) => (
                 <FormItem>
@@ -168,6 +195,26 @@ const EditFormFieldDialog = ({
                   </FormControl>
                   <FormDescription>
                     This text will appear below the field label to guide applicants.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormFieldComponent
+              control={form.control}
+              name="tooltip"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Tooltip (Optional)</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="e.g., 'What is a tooltip?'"
+                      {...field}
+                      value={field.value || ''}
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    A short text that appears when the user hovers over an info icon next to the field.
                   </FormDescription>
                   <FormMessage />
                 </FormItem>

@@ -128,7 +128,7 @@ const ApplyPage = () => {
               />
 
               <Button type="submit" className="w-full" disabled={submitting || formFields.length === 0}>
-                {submitting ? 'Submitting...' : 'Submit Application'}
+                {submitting ? 'Submitting...' : (program.submission_button_text || 'Submit Application')}
               </Button>
               {formFields.length === 0 && (<p className="text-sm text-center text-muted-foreground">This program does not have any application fields yet.</p>)}
             </form>

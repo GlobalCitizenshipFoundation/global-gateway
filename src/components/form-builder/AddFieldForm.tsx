@@ -15,8 +15,12 @@ interface AddFieldFormProps {
   setNewFieldOptions: (options: string) => void;
   newFieldSectionId: string | null;
   setNewFieldSectionId: (sectionId: string | null) => void;
-  newFieldHelpText: string; // New: help_text
-  setNewFieldHelpText: (text: string) => void; // New: set help_text
+  newFieldHelpText: string;
+  setNewFieldHelpText: (text: string) => void;
+  newFieldDescription: string; // New
+  setNewFieldDescription: (text: string) => void; // New
+  newFieldTooltip: string; // New
+  setNewFieldTooltip: (text: string) => void; // New
   isSubmitting: boolean;
   handleAddField: (e: React.FormEvent) => void;
   sections: FormSection[];
@@ -31,8 +35,12 @@ export const AddFieldForm = ({
   setNewFieldOptions,
   newFieldSectionId,
   setNewFieldSectionId,
-  newFieldHelpText, // New
-  setNewFieldHelpText, // New
+  newFieldHelpText,
+  setNewFieldHelpText,
+  newFieldDescription, // New
+  setNewFieldDescription, // New
+  newFieldTooltip, // New
+  setNewFieldTooltip, // New
   isSubmitting,
   handleAddField,
   sections,
@@ -76,6 +84,17 @@ export const AddFieldForm = ({
           )}
         </div>
         <div>
+          <Label htmlFor="new-field-description" className="sr-only">Description</Label>
+          <Textarea
+            id="new-field-description"
+            placeholder="Optional: Add a description for this field (e.g., 'This section asks about your academic background.')"
+            value={newFieldDescription}
+            onChange={e => setNewFieldDescription(e.target.value)}
+            disabled={isSubmitting}
+            className="resize-y min-h-[60px]"
+          />
+        </div>
+        <div>
           <Label htmlFor="new-field-help-text" className="sr-only">Help Text</Label>
           <Textarea
             id="new-field-help-text"
@@ -84,6 +103,16 @@ export const AddFieldForm = ({
             onChange={e => setNewFieldHelpText(e.target.value)}
             disabled={isSubmitting}
             className="resize-y min-h-[60px]"
+          />
+        </div>
+        <div>
+          <Label htmlFor="new-field-tooltip" className="sr-only">Tooltip</Label>
+          <Input
+            id="new-field-tooltip"
+            placeholder="Optional: Add a tooltip for this field (e.g., 'What is a tooltip?')"
+            value={newFieldTooltip}
+            onChange={e => setNewFieldTooltip(e.target.value)}
+            disabled={isSubmitting}
           />
         </div>
         <Select

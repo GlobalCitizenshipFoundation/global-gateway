@@ -5,6 +5,9 @@ export type Program = {
   description: string | null;
   deadline: Date;
   created_at: string;
+  status: 'draft' | 'published'; // New: Program status
+  submission_button_text: string | null; // New: Custom text for submission button
+  allow_pdf_download: boolean; // New: Option to allow PDF download of submission
 };
 
 export type ProgramStage = {
@@ -55,4 +58,6 @@ export type FormField = {
   order: number;
   display_rules: DisplayRule[] | null; // New: Conditional display logic
   help_text: string | null; // New: Additional guidance for the field
+  description: string | null; // New: Description for the field
+  tooltip: string | null; // New: Tooltip for the field
 };

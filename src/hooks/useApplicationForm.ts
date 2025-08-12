@@ -97,7 +97,7 @@ export const useApplicationForm = () => {
       setProfileFullName(profileData?.full_name || '');
       setProfileEmail(user.email || '');
 
-      const { data: programData, error: programError } = await supabase.from('programs').select('id, title, description, deadline').eq('id', programId).single();
+      const { data: programData, error: programError } = await supabase.from('programs').select('id, title, description, deadline, status, submission_button_text, allow_pdf_download').eq('id', programId).single(); // Updated select
       if (programError) {
         showError("Error fetching program details.");
         setProgram(null);

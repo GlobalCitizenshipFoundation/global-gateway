@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { FormField } from '@/types';
-import { GripVertical, Trash2, Eye, Pencil } from 'lucide-react';
+import { GripVertical, Trash2, Eye, Pencil, Info } from 'lucide-react'; // Import Info icon
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
 import { Switch } from './ui/switch';
@@ -49,6 +49,7 @@ export const FormFieldItem = ({ field, onDelete, onToggleRequired, onEditLogic, 
   };
 
   const hasLogic = field.display_rules && field.display_rules.length > 0;
+  const hasTooltip = field.tooltip && field.tooltip.trim() !== ''; // Check for tooltip
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
   return (
@@ -71,6 +72,16 @@ export const FormFieldItem = ({ field, onDelete, onToggleRequired, onEditLogic, 
                 </TooltipTrigger>
                 <TooltipContent>
                   This field has conditional display logic.
+                </TooltipContent>
+              </Tooltip>
+            )}
+            {hasTooltip && ( // Display tooltip icon if tooltip exists
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Info className="h-4 w-4 ml-2 inline-block text-gray-500" />
+                </TooltipTrigger>
+                <TooltipContent>
+                  {field.tooltip}
                 </TooltipContent>
               </Tooltip>
             )}

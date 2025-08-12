@@ -9,6 +9,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  FormDescription,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -33,6 +34,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { showError, showSuccess } from "@/utils/toast";
 import { useEffect, useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Checkbox } from "@/components/ui/checkbox";
 
 const programFormSchema = z.object({
   title: z.string().min(5, {
@@ -44,6 +46,8 @@ const programFormSchema = z.object({
   deadline: z.date({
     required_error: "A deadline date is required.",
   }),
+  submission_button_text: z.string().optional().nullable(), // New
+  allow_pdf_download: z.boolean().optional(), // New
 });
 
 type ProgramFormValues = z.infer<typeof programFormSchema>;
@@ -64,7 +68,7 @@ const EditProgramPage = () => {
       setLoading(true);
       const { data, error } = await supabase
         .from('programs')
-        .select('title, description, deadline') // Optimized select
+        .select('title, description, deadline, submission_button_text, allow_pdf_download') // Optimized select
         .eq('id', programId)
         .single();
 
@@ -76,6 +80,8 @@ const EditProgramPage = () => {
           title: data.title,
           description: data.description || '',
           deadline: new Date(data.deadline),
+          submission_button_text: data.submission_button_text || '', // New
+          allow_pdf_download: data.allow_pdf_download || false, // New
         });
       }
       setLoading(false);
@@ -91,6 +97,8 @@ const EditProgramPage = () => {
         title: values.title,
         description: values.description,
         deadline: values.deadline.toISOString(),
+        submission_button_text: values.submission_button_text || null, // New
+        allow_pdf_download: values.allow_pdf_download || false, // New
       })
       .eq('id', programId!);
 
@@ -203,6 +211,44 @@ const EditProgramPage = () => {
                       </PopoverContent>
                     </Popover>
                     <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormFieldComponent
+                control={form.control}
+                name="submission_button_text"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Submission Button Text</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g., 'Submit My Application'" {...field} value={field.value || ''} />
+                    </FormControl>
+                    <FormDescription>
+                      Customize the text on the final submission button for this program.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormFieldComponent
+                control={form.control}
+                name="allow_pdf_download"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel>
+                        Allow PDF Download
+                      </FormLabel>
+                      <FormDescription>
+                        If checked, applicants will have an option to download their submitted application as a PDF.
+                      </FormDescription>
+                    </div>
                   </FormItem>
                 )}
               />

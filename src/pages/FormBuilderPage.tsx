@@ -59,6 +59,8 @@ const FormBuilderPage = () => {
   const [newFieldType, setNewFieldType] = useState<FormField['field_type']>('text');
   const [newFieldOptions, setNewFieldOptions] = useState('');
   const [newFieldHelpText, setNewFieldHelpText] = useState('');
+  const [newFieldDescription, setNewFieldDescription] = useState(''); // New
+  const [newFieldTooltip, setNewFieldTooltip] = useState(''); // New
   const [isAddingField, setIsAddingField] = useState(false);
 
   // State for ConditionalLogicBuilder
@@ -87,12 +89,14 @@ const FormBuilderPage = () => {
   const handleAddField = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsAddingField(true);
-    const newField = await performAddField(newFieldLabel, newFieldType, newFieldOptions, newFieldSectionId, newFieldHelpText);
+    const newField = await performAddField(newFieldLabel, newFieldType, newFieldOptions, newFieldSectionId, newFieldHelpText, newFieldDescription, newFieldTooltip);
     if (newField) {
       setNewFieldLabel('');
       setNewFieldOptions('');
       setNewFieldType('text');
       setNewFieldHelpText('');
+      setNewFieldDescription(''); // Reset new field description
+      setNewFieldTooltip(''); // Reset new field tooltip
     }
     setIsAddingField(false);
   };
@@ -119,7 +123,7 @@ const FormBuilderPage = () => {
     setIsEditFieldDialogOpen(true);
   };
 
-  const handleSaveEditedField = async (fieldId: string, values: { label: string; field_type: FormField['field_type']; options?: string; is_required: boolean; help_text?: string | null; }) => {
+  const handleSaveEditedField = async (fieldId: string, values: { label: string; field_type: FormField['field_type']; options?: string; is_required: boolean; help_text?: string | null; description?: string | null; tooltip?: string | null; }) => {
     await performSaveEditedField(fieldId, values);
     setIsEditFieldDialogOpen(false);
     setFieldToEditDetails(null);
@@ -193,6 +197,10 @@ const FormBuilderPage = () => {
             setNewFieldSectionId={setNewFieldSectionId}
             newFieldHelpText={newFieldHelpText}
             setNewFieldHelpText={setNewFieldHelpText}
+            newFieldDescription={newFieldDescription} // New
+            setNewFieldDescription={setNewFieldDescription} // New
+            newFieldTooltip={newFieldTooltip} // New
+            setNewFieldTooltip={setNewFieldTooltip} // New
             isSubmitting={isAddingField}
             handleAddField={handleAddField}
             sections={sections}

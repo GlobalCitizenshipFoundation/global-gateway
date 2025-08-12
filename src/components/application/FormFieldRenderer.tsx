@@ -14,14 +14,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, Info } from "lucide-react"; // Import Info icon
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import RichTextEditor from "@/components/RichTextEditor";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import React from "react";
-import { Checkbox } from "@/components/ui/checkbox"; // Ensure Checkbox is imported
+import { Checkbox } from "@/components/ui/checkbox";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"; // Import Tooltip components
 
 interface FormFieldRendererProps {
   field: FormField;
@@ -33,6 +34,7 @@ type DynamicFormValues = Record<string, string | string[] | number | undefined |
 
 const FormFieldRenderer = ({ field, submitting }: FormFieldRendererProps) => {
   const { control } = useFormContext<DynamicFormValues>();
+  const hasTooltip = field.tooltip && field.tooltip.trim() !== '';
 
   return (
     <FormFieldComponent
@@ -41,10 +43,23 @@ const FormFieldRenderer = ({ field, submitting }: FormFieldRendererProps) => {
       name={field.id as keyof DynamicFormValues}
       render={({ field: formHookField }) => (
         <FormItem className="grid gap-2">
-          <FormLabel htmlFor={field.id}>
-            {field.label}
-            {field.is_required && <span className="text-destructive ml-1">*</span>}
-          </FormLabel>
+          <div className="flex items-center gap-2">
+            <FormLabel htmlFor={field.id}>
+              {field.label}
+              {field.is_required && <span className="text-destructive ml-1">*</span>}
+            </FormLabel>
+            {hasTooltip && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                </TooltipTrigger>
+                <TooltipContent>
+                  {field.tooltip}
+                </TooltipContent>
+              </Tooltip>
+            )}
+          </div>
+          {field.description && <FormDescription className="text-sm text-muted-foreground">{field.description}</FormDescription>}
           {field.help_text && <FormDescription>{field.help_text}</FormDescription>}
           {field.field_type === 'textarea' ? (
             <FormControl>
