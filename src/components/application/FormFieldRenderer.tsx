@@ -21,7 +21,7 @@ import RichTextEditor from "@/components/RichTextEditor";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import React from "react";
-import CheckboxGroup from "./CheckboxGroup"; // New import
+import { Checkbox } from "@/components/ui/checkbox"; // Ensure Checkbox is imported
 
 interface FormFieldRendererProps {
   field: FormField;
@@ -93,14 +93,36 @@ const FormFieldRenderer = ({ field, submitting }: FormFieldRendererProps) => {
               </RadioGroup>
             </FormControl>
           ) : field.field_type === 'checkbox' ? (
-            <FormControl>
-              <CheckboxGroup
-                options={field.options as string[] || []}
-                value={Array.isArray(formHookField.value) ? formHookField.value : []}
-                onValueChange={formHookField.onChange}
-                disabled={submitting}
-              />
-            </FormControl>
+            <div className="space-y-2">
+              {(field.options as string[] || []).map((option, index) => (
+                <FormFieldComponent
+                  key={option} // Use option as key for individual checkboxes
+                  control={control}
+                  name={field.id as keyof DynamicFormValues} // Still the same array name
+                  render={({ field: checkboxField }) => (
+                    <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                      <FormControl>
+                        <Checkbox
+                          checked={Array.isArray(checkboxField.value) && checkboxField.value.includes(option)}
+                          onCheckedChange={(checked) => {
+                            const currentValues = Array.isArray(checkboxField.value) ? checkboxField.value : [];
+                            return checked
+                              ? checkboxField.onChange([...currentValues, option])
+                              : checkboxField.onChange(
+                                  currentValues.filter(
+                                    (value) => value !== option
+                                  )
+                                );
+                          }}
+                          disabled={submitting}
+                        />
+                      </FormControl>
+                      <Label htmlFor={`${field.id}-${index}`}>{option}</Label>
+                    </FormItem>
+                  )}
+                />
+              ))}
+            </div>
           ) : field.field_type === 'email' ? (
             <FormControl>
               <Input
