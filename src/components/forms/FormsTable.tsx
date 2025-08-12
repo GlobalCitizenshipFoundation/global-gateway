@@ -45,7 +45,7 @@ export const FormsTable = ({ forms, onUpdateStatus, onSaveAsTemplate, onDelete }
       if (uniqueUserIds.size > 0) {
         const { data, error } = await supabase
           .from('profiles')
-          .select('id, full_name')
+          .select('id, first_name, last_name') // Fetch first and last name
           .in('id', Array.from(uniqueUserIds));
 
         if (error) {
@@ -53,7 +53,8 @@ export const FormsTable = ({ forms, onUpdateStatus, onSaveAsTemplate, onDelete }
         } else if (data) {
           const newNames = new Map(userNames);
           data.forEach(profile => {
-            newNames.set(profile.id, profile.full_name || 'Unknown User');
+            const fullName = [profile.first_name, profile.last_name].filter(Boolean).join(' ').trim();
+            newNames.set(profile.id, fullName || 'Unknown User');
           });
           setUserNames(newNames);
         }
@@ -68,8 +69,9 @@ export const FormsTable = ({ forms, onUpdateStatus, onSaveAsTemplate, onDelete }
         <TableRow>
           <TableHead>Form Name</TableHead>
           <TableHead className="hidden md:table-cell">Type</TableHead>
-          <TableHead className="hidden lg:table-cell">Status</TableHead>
-          <TableHead className="hidden xl:table-cell">Last Modified</TableHead>
+          <TableHead className="hidden lg:table-cell">Publication Status</TableHead>
+          <TableHead className="hidden xl:table-cell">Form Updated Date</TableHead>
+          <TableHead className="hidden xl:table-cell">Created Date</TableHead> {/* New Column */}
           <TableHead className="text-right">Actions</TableHead>
         </TableRow>
       </TableHeader>
@@ -86,12 +88,15 @@ export const FormsTable = ({ forms, onUpdateStatus, onSaveAsTemplate, onDelete }
               </Badge>
             </TableCell>
             <TableCell className="hidden xl:table-cell">
-              {form.last_edited_at ? new Date(form.last_edited_at).toLocaleString() : new Date(form.created_at).toLocaleString()}
+              {form.last_edited_at ? new Date(form.last_edited_at).toLocaleString() : new Date(form.updated_at).toLocaleString()}
               {form.last_edited_by_user_id && (
                 <div className="text-xs text-muted-foreground">
                   By: {userNames.get(form.last_edited_by_user_id) || 'Loading...'}
                 </div>
               )}
+            </TableCell>
+            <TableCell className="hidden xl:table-cell"> {/* New Cell */}
+              {new Date(form.created_at).toLocaleDateString()}
             </TableCell>
             <TableCell className="text-right">
               <DropdownMenu>
