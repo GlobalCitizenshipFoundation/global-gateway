@@ -2,10 +2,11 @@ import { Button } from "@/components/ui/button";
 import { Award } from "lucide-react";
 import { Link } from "react-router-dom";
 import UserNav from "./UserNav";
+import { useSession } from "@/contexts/SessionContext";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const Header = () => {
-  // We'll replace this with real auth state later
-  const isLoggedIn = true;
+  const { session, isLoading } = useSession();
 
   return (
     <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
@@ -15,7 +16,9 @@ const Header = () => {
           <span className="text-xl font-bold">ApplyHub</span>
         </Link>
         <nav className="flex items-center gap-2">
-          {isLoggedIn ? (
+          {isLoading ? (
+            <Skeleton className="h-10 w-24" />
+          ) : session ? (
             <UserNav />
           ) : (
             <>
@@ -23,7 +26,7 @@ const Header = () => {
                 <Link to="/login">Log In</Link>
               </Button>
               <Button asChild>
-                <Link to="/signup">Sign Up</Link>
+                <Link to="/login">Sign Up</Link>
               </Button>
             </>
           )}
