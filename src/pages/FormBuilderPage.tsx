@@ -4,19 +4,22 @@ import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { FormField } from "@/types";
 import { showError, showSuccess } from "@/utils/toast";
-import { ArrowLeft, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, Plus } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
+import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
+import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import { FormFieldItem } from "@/components/FormFieldItem";
 
 const FormBuilderPage = () => {
   const { programId } = useParams<{ programId: string }>();
   const [programTitle, setProgramTitle] = useState('');
   const [fields, setFields] = useState<FormField[]>([]);
   const [newFieldLabel, setNewFieldLabel] = useState('');
-  const [newFieldType, setNewFieldType] = useState<'text' | 'textarea'>('text');
+  const [newFieldType, setNewFieldType] = useState<'text' | 'textarea' | 'select'>('text');
+  const [newFieldOptions, setNewFieldOptions] = useState('');
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -62,6 +65,7 @@ const FormBuilderPage = () => {
         label: newFieldLabel,
         field_type: newFieldType,
         order: nextOrder,
+        options: newFieldType === 'select' ? newFieldOptions.split(',').map(opt => opt.trim()) : null,
       })
       .select()
       .single();
@@ -71,6 +75,8 @@ const FormBuilderPage = () => {
     } else if (data) {
       setFields([...fields, data as FormField]);
       setNewFieldLabel('');
+      setNewFieldOptions('');
+      setNewFieldType('text');
       showSuccess("Field added successfully.");
     }
     setIsSubmitting(false);
@@ -86,13 +92,46 @@ const FormBuilderPage = () => {
     }
   };
 
+  const handleToggleRequired = async (fieldId: string, isRequired: boolean) => {
+    setFields(fields => fields.map(f => f.id === fieldId ? { ...f, is_required: isRequired } : f));
+    const { error } = await supabase.from('form_fields').update({ is_required: isRequired }).eq('id', fieldId);
+    if (error) {
+      showError(`Failed to update field: ${error.message}`);
+      setFields(fields => fields.map(f => f.id === fieldId ? { ...f, is_required: !isRequired } : f));
+    }
+  };
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
+
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+      const oldIndex = fields.findIndex((f) => f.id === active.id);
+      const newIndex = fields.findIndex((f) => f.id === over.id);
+      const newFields = arrayMove(fields, oldIndex, newIndex);
+      setFields(newFields);
+
+      const updates = newFields.map((field, index) => 
+        supabase.from('form_fields').update({ order: index + 1 }).eq('id', field.id)
+      );
+      
+      const results = await Promise.all(updates);
+      if (results.some(res => res.error)) {
+        showError("Failed to save new order. Please refresh.");
+      }
+    }
+  };
+
   return (
     <div className="container py-12">
       <Link to="/creator/dashboard" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-4">
         <ArrowLeft className="h-4 w-4" />
         Back to Programs
       </Link>
-      <Card className="mx-auto max-w-2xl">
+      <Card className="mx-auto max-w-3xl">
         <CardHeader>
           <CardTitle>Form Builder</CardTitle>
           <CardDescription>
@@ -105,43 +144,55 @@ const FormBuilderPage = () => {
             {loading ? (
               <Skeleton className="h-24 w-full" />
             ) : fields.length > 0 ? (
-              <ul className="space-y-2">
-                {fields.map(field => (
-                  <li key={field.id} className="flex items-center justify-between p-3 bg-secondary rounded-md">
-                    <div>
-                      <span className="font-medium">{field.label}</span>
-                      <Badge variant="outline" className="ml-2 capitalize">{field.field_type}</Badge>
-                    </div>
-                    <Button variant="ghost" size="icon" onClick={() => handleDeleteField(field.id)}>
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
-                  </li>
-                ))}
-              </ul>
+              <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                <SortableContext items={fields.map(f => f.id)} strategy={verticalListSortingStrategy}>
+                  <ul className="space-y-2">
+                    {fields.map(field => (
+                      <FormFieldItem
+                        key={field.id}
+                        field={field}
+                        onDelete={handleDeleteField}
+                        onToggleRequired={handleToggleRequired}
+                      />
+                    ))}
+                  </ul>
+                </SortableContext>
+              </DndContext>
             ) : (
               <p className="text-muted-foreground text-sm">No fields defined yet. Add one to get started.</p>
             )}
           </div>
           <form onSubmit={handleAddField} className="mt-8 pt-8 border-t">
             <h3 className="text-lg font-medium">Add New Field</h3>
-            <div className="flex flex-col sm:flex-row gap-2 mt-4">
+            <div className="grid gap-2 mt-4">
               <Input
                 placeholder="e.g., 'Your Personal Statement'"
                 value={newFieldLabel}
                 onChange={e => setNewFieldLabel(e.target.value)}
                 disabled={isSubmitting}
-                className="flex-grow"
               />
-              <Select value={newFieldType} onValueChange={(value) => setNewFieldType(value as 'text' | 'textarea')}>
-                <SelectTrigger className="w-full sm:w-[140px]">
-                  <SelectValue placeholder="Field type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="text">Text</SelectItem>
-                  <SelectItem value="textarea">Textarea</SelectItem>
-                </SelectContent>
-              </Select>
-              <Button type="submit" disabled={isSubmitting || !newFieldLabel.trim()} className="w-full sm:w-auto">
+              <div className="flex flex-col sm:flex-row gap-2">
+                <Select value={newFieldType} onValueChange={(value) => setNewFieldType(value as 'text' | 'textarea' | 'select')}>
+                  <SelectTrigger className="w-full sm:w-[140px]">
+                    <SelectValue placeholder="Field type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="text">Text</SelectItem>
+                    <SelectItem value="textarea">Textarea</SelectItem>
+                    <SelectItem value="select">Dropdown</SelectItem>
+                  </SelectContent>
+                </Select>
+                {newFieldType === 'select' && (
+                  <Input
+                    placeholder="Comma-separated options, e.g., Yes, No"
+                    value={newFieldOptions}
+                    onChange={e => setNewFieldOptions(e.target.value)}
+                    disabled={isSubmitting}
+                    className="flex-grow"
+                  />
+                )}
+              </div>
+              <Button type="submit" disabled={isSubmitting || !newFieldLabel.trim()} className="w-full sm:w-auto self-end">
                 <Plus className="mr-2 h-4 w-4" />
                 Add Field
               </Button>

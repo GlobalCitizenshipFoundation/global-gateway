@@ -16,6 +16,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/contexts/SessionContext";
 import { showError, showSuccess } from "@/utils/toast";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const ApplyPage = () => {
   const { programId } = useParams<{ programId: string }>();
@@ -181,7 +182,10 @@ const ApplyPage = () => {
           <form onSubmit={handleSubmit} className="grid gap-6">
             {formFields.map(field => (
               <div key={field.id} className="grid gap-2">
-                <Label htmlFor={field.id}>{field.label}</Label>
+                <Label htmlFor={field.id}>
+                  {field.label}
+                  {field.is_required && <span className="text-destructive ml-1">*</span>}
+                </Label>
                 {field.field_type === 'textarea' ? (
                   <Textarea
                     id={field.id}
@@ -191,6 +195,22 @@ const ApplyPage = () => {
                     disabled={submitting}
                     className="min-h-[120px] resize-y"
                   />
+                ) : field.field_type === 'select' ? (
+                  <Select
+                    value={responses[field.id] || ''}
+                    onValueChange={value => handleResponseChange(field.id, value)}
+                    required={field.is_required}
+                    disabled={submitting}
+                  >
+                    <SelectTrigger id={field.id}>
+                      <SelectValue placeholder={`Select an option`} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {(field.options as string[] || []).map((option, index) => (
+                        <SelectItem key={index} value={option}>{option}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 ) : (
                   <Input
                     id={field.id}
