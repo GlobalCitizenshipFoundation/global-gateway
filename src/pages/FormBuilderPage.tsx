@@ -1,10 +1,10 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { FormField, DisplayRule } from "@/types";
+import { FormField, DisplayRule, FormSection } from "@/types"; // Import FormSection
 import { ArrowLeft } from "lucide-react";
 import { useState, useEffect } from "react";
-import { Link, useParams, useSearchParams } from "react-router-dom"; // Import useSearchParams
-import { DndContext, DragOverlay, closestCenter } from '@dnd-kit/core';
+import { Link, useParams, useSearchParams } from "react-router-dom";
+import { DndContext, DragOverlay, closestCenter, DragEndEvent, DragStartEvent } from '@dnd-kit/core'; // Import DragStartEvent
 import { FormFieldItem } from "@/components/FormFieldItem";
 import ConditionalLogicBuilder from "@/components/ConditionalLogicBuilder";
 import EditFormFieldDialog from "@/components/EditFormFieldDialog";
@@ -23,11 +23,12 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { useSession } from "@/contexts/SessionContext"; // Import useSession
+import { useSession } from "@/contexts/SessionContext";
+import { useFormSectionDragAndDrop } from "@/hooks/useFormSectionDragAndDrop"; // Import new hook
 
 const FormBuilderPage = () => {
   const { formId } = useParams<{ formId: string }>();
-  const [searchParams, setSearchParams] = useSearchParams(); // For saveAsTemplate param
+  const [searchParams, setSearchParams] = useSearchParams();
   const [formName, setFormName] = useState('');
   const [formStatus, setFormStatus] = useState<'draft' | 'published'>('draft');
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
@@ -36,7 +37,7 @@ const FormBuilderPage = () => {
   const [newTemplateName, setNewTemplateName] = useState('');
   const [isSavingTemplate, setIsSavingTemplate] = useState(false);
 
-  const { user } = useSession(); // Get user from session
+  const { user } = useSession();
 
   const {
     sections,
@@ -69,21 +70,46 @@ const FormBuilderPage = () => {
     fetchFormDetails();
   }, [formId]);
 
-  // Automatically open save as template dialog if param is present
   useEffect(() => {
     if (searchParams.get('saveAsTemplate') === 'true' && formName) {
       setNewTemplateName(`${formName} Template`);
       setIsSaveAsTemplateDialogOpen(true);
-      setSearchParams({}, { replace: true }); // Clear the param
+      setSearchParams({}, { replace: true });
     }
   }, [searchParams, formName, setSearchParams]);
 
   const {
-    sensors,
-    onDragStart,
-    onDragEnd,
-    activeDragItem,
+    sensors: fieldSensors,
+    onDragStart: onFieldDragStart,
+    onDragEnd: onFieldDragEnd,
+    activeDragItem: activeFieldDragItem,
   } = useFormFieldDragAndDrop({ fields, setFields, sections, fetchData });
+
+  const {
+    sensors: sectionSensors,
+    onDragStart: onSectionDragStart,
+    onDragEnd: onSectionDragEnd,
+    activeDragItem: activeSectionDragItem,
+  } = useFormSectionDragAndDrop({ sections, setSections, fetchData });
+
+  // Combine sensors for both types of draggable items
+  const combinedSensors = [...fieldSensors, ...sectionSensors];
+
+  const handleDragStart = (event: DragStartEvent) => {
+    if (event.active.data.current?.type === "FormField") {
+      onFieldDragStart(event);
+    } else if (event.active.data.current?.type === "Section") {
+      onSectionDragStart(event);
+    }
+  };
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    if (event.active.data.current?.type === "FormField") {
+      onFieldDragEnd(event);
+    } else if (event.active.data.current?.type === "Section") {
+      onSectionDragEnd(event);
+    }
+  };
 
   const {
     handleAddSection: performAddSection,
@@ -96,11 +122,9 @@ const FormBuilderPage = () => {
     handleUpdateFormStatus: performUpdateFormStatus,
   } = useFormBuilderActions({ formId, setSections, setFields, fetchData });
 
-  // States for Add Section Form
   const [newSectionName, setNewSectionName] = useState('');
   const [isAddingSection, setIsAddingSection] = useState(false);
 
-  // States for Add Field Form
   const [newFieldLabel, setNewFieldLabel] = useState('');
   const [newFieldType, setNewFieldType] = useState<FormField['field_type']>('text');
   const [newFieldOptions, setNewFieldOptions] = useState('');
@@ -109,11 +133,9 @@ const FormBuilderPage = () => {
   const [newFieldTooltip, setNewFieldTooltip] = useState('');
   const [isAddingField, setIsAddingField] = useState(false);
 
-  // State for ConditionalLogicBuilder
   const [isLogicBuilderOpen, setIsLogicBuilderOpen] = useState(false);
   const [fieldToEditLogic, setFieldToEditLogic] = useState<FormField | null>(null);
 
-  // State for EditFormFieldDialog
   const [isEditFieldDialogOpen, setIsEditFieldDialogOpen] = useState(false);
   const [fieldToEditDetails, setFieldToEditDetails] = useState<FormField | null>(null);
 
@@ -123,7 +145,7 @@ const FormBuilderPage = () => {
     const newSection = await performAddSection(newSectionName);
     if (newSection) {
       setNewSectionName('');
-      setNewFieldSectionId(newSection.id); // Automatically select the new section
+      setNewFieldSectionId(newSection.id);
     }
     setIsAddingSection(false);
   };
@@ -190,7 +212,7 @@ const FormBuilderPage = () => {
       showError("Template name cannot be empty.");
       return;
     }
-    if (!user) { // Use user from useSession
+    if (!user) {
       showError("You must be logged in to save a template.");
       return;
     }
@@ -198,12 +220,11 @@ const FormBuilderPage = () => {
     setIsSavingTemplate(true);
 
     try {
-      // 1. Create the new template form entry
       const { data: newTemplateFormData, error: newTemplateFormError } = await supabase.from("forms").insert({
-        user_id: user.id, // Use user.id
+        user_id: user.id,
         name: newTemplateName,
         is_template: true,
-        status: 'published', // Templates are always published
+        status: 'published',
       }).select('id').single();
 
       if (newTemplateFormError || !newTemplateFormData) {
@@ -211,7 +232,6 @@ const FormBuilderPage = () => {
         return;
       }
 
-      // 2. Fetch sections and fields from the current form
       const { data: currentSections, error: sectionsError } = await supabase
         .from('form_sections')
         .select('*')
@@ -226,7 +246,7 @@ const FormBuilderPage = () => {
 
       if (sectionsError || fieldsError) {
         showError(`Failed to load current form content: ${sectionsError?.message || fieldsError?.message}`);
-        await supabase.from('forms').delete().eq('id', newTemplateFormData.id); // Rollback
+        await supabase.from('forms').delete().eq('id', newTemplateFormData.id);
         return;
       }
 
@@ -257,13 +277,12 @@ const FormBuilderPage = () => {
         tooltip: field.tooltip,
       }));
 
-      // 3. Insert new sections and fields
       const { error: insertSectionsError } = await supabase.from('form_sections').insert(newSectionsToInsert);
       const { error: insertFieldsError } = await supabase.from('form_fields').insert(newFieldsToInsert);
 
       if (insertSectionsError || insertFieldsError) {
         showError(`Failed to copy form content to template: ${insertSectionsError?.message || insertFieldsError?.message}`);
-        await supabase.from('forms').delete().eq('id', newTemplateFormData.id); // Rollback
+        await supabase.from('forms').delete().eq('id', newTemplateFormData.id);
         return;
       }
 
@@ -311,7 +330,7 @@ const FormBuilderPage = () => {
           </div>
         </CardHeader>
         <CardContent>
-          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd} onDragStart={onDragStart}>
+          <DndContext sensors={combinedSensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd} onDragStart={handleDragStart}>
             <FormSectionsList
               sections={sections}
               fields={fields}
@@ -333,14 +352,18 @@ const FormBuilderPage = () => {
             />
 
             <DragOverlay>
-              {activeDragItem ? (
+              {activeFieldDragItem ? (
                 <FormFieldItem
-                  field={activeDragItem}
+                  field={activeFieldDragItem}
                   onDelete={() => {}}
                   onToggleRequired={() => {}}
                   onEditLogic={() => {}}
                   onEdit={() => {}}
                 />
+              ) : activeSectionDragItem ? (
+                <div className="p-4 bg-secondary rounded-md shadow-lg cursor-grabbing">
+                  <span className="font-semibold">{activeSectionDragItem.name}</span>
+                </div>
               ) : null}
             </DragOverlay>
           </DndContext>

@@ -3,10 +3,11 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { FormFieldItem } from "@/components/FormFieldItem";
 import { FormField, FormSection } from "@/types";
-import { Trash2 } from "lucide-react";
-import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import { GripVertical, Trash2 } from "lucide-react"; // Import GripVertical
+import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { useDroppable } from "@dnd-kit/core";
 import { cn } from "@/lib/utils";
+import { CSS } from '@dnd-kit/utilities'; // Import CSS for transform
 import {
   AlertDialog,
   AlertDialogAction,
@@ -36,6 +37,47 @@ interface FormSectionsListProps {
 const DroppableContainer = ({ id, children, className }: { id: string; children: React.ReactNode; className?: string; }) => {
   const { setNodeRef, isOver } = useDroppable({ id });
   return <div ref={setNodeRef} className={cn(className, isOver && "ring-2 ring-blue-500 ring-offset-2")}>{children}</div>;
+};
+
+// Sortable Accordion Item for Sections
+const SortableAccordionItem = ({ section, children, confirmDeleteSection }: { section: FormSection; children: React.ReactNode; confirmDeleteSection: (section: FormSection) => void; }) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: section.id, data: { type: "Section", section } });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    zIndex: isDragging ? 10 : 0, // Bring dragged item to front
+  };
+
+  return (
+    <AccordionItem
+      key={section.id}
+      value={section.id}
+      ref={setNodeRef}
+      style={style}
+      className={cn("rounded-md border mb-2", isDragging && "opacity-50")}
+    >
+      <div className="flex items-center justify-between w-full pr-4">
+        <Button variant="ghost" size="icon" className="cursor-grab" {...attributes} {...listeners}>
+          <GripVertical className="h-5 w-5 text-muted-foreground" />
+        </Button>
+        <AccordionTrigger className="flex-grow flex justify-between items-center pr-4">
+          <span className="font-semibold">{section.name}</span>
+        </AccordionTrigger>
+        <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); confirmDeleteSection(section); }}>
+          <Trash2 className="h-4 w-4 text-destructive" />
+        </Button>
+      </div>
+      {children}
+    </AccordionItem>
+  );
 };
 
 export const FormSectionsList = ({
@@ -72,38 +114,34 @@ export const FormSectionsList = ({
         <Skeleton className="h-24 w-full" />
       ) : sections.length > 0 ? (
         <Accordion type="multiple" className="w-full">
-          {sections.map(section => (
-            <AccordionItem key={section.id} value={section.id}>
-              <DroppableContainer id={section.id} className="rounded-md border">
-                <AccordionTrigger className="flex justify-between items-center w-full pr-4">
-                  <span className="font-semibold">{section.name}</span>
-                  <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); confirmDeleteSection(section); }}>
-                    <Trash2 className="h-4 w-4 text-destructive" />
-                  </Button>
-                </AccordionTrigger>
-                <AccordionContent>
-                  <SortableContext items={getFieldsForSection(section.id).map(f => f.id)} strategy={verticalListSortingStrategy}>
-                    <ul className="space-y-2 p-2 min-h-[50px]">
-                      {getFieldsForSection(section.id).length > 0 ? (
-                        getFieldsForSection(section.id).map(field => (
-                          <FormFieldItem
-                            key={field.id}
-                            field={field}
-                            onDelete={handleDeleteField}
-                            onToggleRequired={handleToggleRequired}
-                            onEditLogic={onEditLogic}
-                            onEdit={onEditField}
-                          />
-                        ))
-                      ) : (
-                        <p className="text-muted-foreground text-sm text-center py-4">Drag fields here or add new ones below.</p>
-                      )}
-                    </ul>
-                  </SortableContext>
-                </AccordionContent>
-              </DroppableContainer>
-            </AccordionItem>
-          ))}
+          <SortableContext items={sections.map(s => s.id)} strategy={verticalListSortingStrategy}>
+            {sections.map(section => (
+              <SortableAccordionItem key={section.id} section={section} confirmDeleteSection={confirmDeleteSection}>
+                <DroppableContainer id={section.id} className="rounded-b-md">
+                  <AccordionContent>
+                    <SortableContext items={getFieldsForSection(section.id).map(f => f.id)} strategy={verticalListSortingStrategy}>
+                      <ul className="space-y-2 p-2 min-h-[50px]">
+                        {getFieldsForSection(section.id).length > 0 ? (
+                          getFieldsForSection(section.id).map(field => (
+                            <FormFieldItem
+                              key={field.id}
+                              field={field}
+                              onDelete={handleDeleteField}
+                              onToggleRequired={handleToggleRequired}
+                              onEditLogic={onEditLogic}
+                              onEdit={onEditField}
+                            />
+                          ))
+                        ) : (
+                          <p className="text-muted-foreground text-sm text-center py-4">Drag fields here or add new ones below.</p>
+                        )}
+                      </ul>
+                    </SortableContext>
+                  </AccordionContent>
+                </DroppableContainer>
+              </SortableAccordionItem>
+            ))}
+          </SortableContext>
         </Accordion>
       ) : (
         <p className="text-muted-foreground text-sm">No sections defined yet. Add one to get started.</p>
