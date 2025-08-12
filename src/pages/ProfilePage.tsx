@@ -28,6 +28,7 @@ const ProfilePage = () => {
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isRequestingDeletion, setIsRequestingDeletion] = useState(false);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -92,14 +93,46 @@ const ProfilePage = () => {
     setIsSubmitting(false);
   };
 
-  const handleRequestAccountDeletion = () => {
-    // In a real application, this would trigger a backend process
-    // to handle data deletion, potentially after a verification step.
-    // For this example, we'll just show a confirmation.
-    showSuccess("Your account deletion request has been sent. We will contact you shortly.");
+  const handleRequestAccountDeletion = async () => {
+    if (!user) {
+      showError("You must be logged in to request account deletion.");
+      return;
+    }
+    setIsRequestingDeletion(true);
+
+    // Check if a request already exists
+    const { data: existingRequest, error: checkError } = await supabase
+      .from('account_deletion_requests')
+      .select('id')
+      .eq('user_id', user.id)
+      .in('status', ['pending', 'in_progress'])
+      .single();
+
+    if (checkError && checkError.code !== 'PGRST116') { // PGRST116 means no rows found, which is good
+      showError("Could not check for existing deletion requests: " + checkError.message);
+      setIsRequestingDeletion(false);
+      return;
+    }
+
+    if (existingRequest) {
+      showError("You already have a pending account deletion request.");
+      setIsRequestingDeletion(false);
+      setIsDeleteDialogOpen(false);
+      return;
+    }
+
+    // Insert a new request
+    const { error } = await supabase
+      .from('account_deletion_requests')
+      .insert({ user_id: user.id });
+
+    if (error) {
+      showError("Failed to submit deletion request: " + error.message);
+    } else {
+      showSuccess("Your account deletion request has been sent. We will process it shortly.");
+    }
+    setIsRequestingDeletion(false);
     setIsDeleteDialogOpen(false);
-    // You might want to log the user out or redirect them after this.
-    // For now, we'll just close the dialog.
   };
 
   const getFullName = () => {
@@ -210,6 +243,7 @@ const ProfilePage = () => {
         isOpen={isDeleteDialogOpen}
         onClose={() => setIsDeleteDialogOpen(false)}
         onConfirm={handleRequestAccountDeletion}
+        isSubmitting={isRequestingDeletion}
       />
     </div>
   );
