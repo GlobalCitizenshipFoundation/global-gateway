@@ -37,6 +37,7 @@ import { useSession } from "@/contexts/SessionContext";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MoreHorizontal } from "lucide-react";
 import { showError, showSuccess } from "@/utils/toast";
+import { Badge } from "@/components/ui/badge";
 
 const CreatorDashboardPage = () => {
   const { user } = useSession();
@@ -44,7 +45,7 @@ const CreatorDashboardPage = () => {
   const [applications, setApplications] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedProgram, setSelectedProgram] = useState<Program | null>(null);
 
   useEffect(() => {
@@ -56,7 +57,7 @@ const CreatorDashboardPage = () => {
 
       const { data: programsData, error: programsError } = await supabase
         .from('programs')
-        .select('id, title, deadline') // Optimized select
+        .select('id, title, deadline, status, created_at, updated_at') // Fetch new fields
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
@@ -112,7 +113,25 @@ const CreatorDashboardPage = () => {
       setPrograms(programs.filter(p => p.id !== selectedProgram.id));
     }
     setSelectedProgram(null);
-    setIsDialogOpen(false);
+    setIsDeleteDialogOpen(false);
+  };
+
+  const handleUpdateProgramStatus = async (programId: string, newStatus: 'draft' | 'published') => {
+    const originalPrograms = [...programs];
+    // Optimistic update
+    setPrograms(prev => prev.map(p => p.id === programId ? { ...p, status: newStatus, updated_at: new Date().toISOString() } : p));
+
+    const { error } = await supabase
+      .from('programs')
+      .update({ status: newStatus, updated_at: new Date().toISOString() })
+      .eq('id', programId);
+
+    if (error) {
+      showError(`Failed to update program status: ${error.message}. Reverting.`);
+      setPrograms(originalPrograms); // Revert on error
+    } else {
+      showSuccess(`Program status updated to "${newStatus}".`);
+    }
   };
 
   if (loading) {
@@ -166,6 +185,9 @@ const CreatorDashboardPage = () => {
                 <TableRow>
                   <TableHead>Program</TableHead>
                   <TableHead className="text-center hidden md:table-cell">Submissions</TableHead>
+                  <TableHead className="hidden lg:table-cell">Status</TableHead>
+                  <TableHead className="hidden xl:table-cell">Created</TableHead>
+                  <TableHead className="hidden xl:table-cell">Last Modified</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -175,6 +197,17 @@ const CreatorDashboardPage = () => {
                     <TableCell className="font-medium">{program.title}</TableCell>
                     <TableCell className="text-center hidden md:table-cell">
                       {submissionCounts.get(program.id) || 0}
+                    </TableCell>
+                    <TableCell className="hidden lg:table-cell">
+                      <Badge variant={program.status === 'published' ? 'default' : 'secondary'}>
+                        {program.status.charAt(0).toUpperCase() + program.status.slice(1)}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="hidden xl:table-cell">
+                      {new Date(program.created_at).toLocaleDateString()}
+                    </TableCell>
+                    <TableCell className="hidden xl:table-cell">
+                      {new Date(program.updated_at).toLocaleDateString()}
                     </TableCell>
                     <TableCell className="text-right">
                       <DropdownMenu>
@@ -204,11 +237,22 @@ const CreatorDashboardPage = () => {
                             <Link to={`/creator/program/${program.id}/form`}>Manage Form</Link>
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
+                          <DropdownMenuLabel>Status</DropdownMenuLabel>
+                          {program.status === 'draft' ? (
+                            <DropdownMenuItem onClick={() => handleUpdateProgramStatus(program.id, 'published')}>
+                              Publish
+                            </DropdownMenuItem>
+                          ) : (
+                            <DropdownMenuItem onClick={() => handleUpdateProgramStatus(program.id, 'draft')}>
+                              Unpublish (Set to Draft)
+                            </DropdownMenuItem>
+                          )}
+                          <DropdownMenuSeparator />
                           <DropdownMenuItem
                             className="text-destructive focus:text-destructive"
                             onClick={() => {
                               setSelectedProgram(program);
-                              setIsDialogOpen(true);
+                              setIsDeleteDialogOpen(true);
                             }}
                           >
                             Delete Program
@@ -219,7 +263,7 @@ const CreatorDashboardPage = () => {
                   </TableRow>
                 )) : (
                   <TableRow>
-                    <TableCell colSpan={3} className="text-center h-24">
+                    <TableCell colSpan={6} className="text-center h-24">
                       You haven't created any programs yet.
                     </TableCell>
                   </TableRow>
@@ -229,7 +273,7 @@ const CreatorDashboardPage = () => {
           </CardContent>
         </Card>
       </div>
-      <AlertDialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>

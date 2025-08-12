@@ -8,6 +8,7 @@ export type Program = {
   status: 'draft' | 'published'; // New: Program status
   submission_button_text: string | null; // New: Custom text for submission button
   allow_pdf_download: boolean; // New: Option to allow PDF download of submission
+  updated_at: string; // New: Last updated timestamp
 };
 
 export type ProgramStage = {

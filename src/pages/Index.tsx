@@ -19,7 +19,8 @@ const Index = () => {
 
       const { data, error } = await supabase
         .from("programs")
-        .select("id, title, description, deadline") // Optimized select
+        .select("id, title, description, deadline, status, created_at, updated_at") // Fetch all fields needed for Program type
+        .eq('status', 'published') // Only show published programs
         .order("created_at", { ascending: false });
 
       if (error) {

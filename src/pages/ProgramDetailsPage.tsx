@@ -26,7 +26,7 @@ const ProgramDetailsPage = () => {
 
       const { data, error } = await supabase
         .from("programs")
-        .select("id, title, description, deadline")
+        .select("id, title, description, deadline, status, created_at, updated_at, submission_button_text, allow_pdf_download") // Fetch all fields needed for Program type
         .eq("id", programId)
         .single();
 
@@ -34,7 +34,12 @@ const ProgramDetailsPage = () => {
         setError(error.message);
         showError("Failed to load program details: " + error.message);
       } else if (data) {
-        setProgram({ ...data, deadline: new Date(data.deadline) } as Program);
+        if (data.status !== 'published') {
+          setError("This program is not published and cannot be viewed.");
+          setProgram(null); // Explicitly set program to null if not published
+        } else {
+          setProgram({ ...data, deadline: new Date(data.deadline) } as Program);
+        }
       }
       setLoading(false);
     };

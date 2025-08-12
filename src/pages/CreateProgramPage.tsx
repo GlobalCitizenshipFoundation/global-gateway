@@ -73,6 +73,7 @@ const CreateProgramPage = () => {
       title: values.title,
       description: values.description,
       deadline: values.deadline.toISOString(),
+      status: 'draft', // Default to draft
     }).select('id').single();
 
     if (error || !programData) {
