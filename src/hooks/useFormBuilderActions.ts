@@ -189,7 +189,7 @@ export const useFormBuilderActions = ({
     }
   };
 
-  const handleSaveEditedField = async (fieldId: string, values: { label: string; field_type: FormField['field_type']; options?: string; is_required: boolean; help_text?: string | null; description?: string | null; tooltip?: string | null; }) => {
+  const handleSaveEditedField = async (fieldId: string, values: { label: string; field_type: FormField['field_type']; options?: string; is_required: boolean; help_text?: string | null; description?: string | null; tooltip?: string | null; section_id?: string | null; }) => {
     const updatedOptions = (values.field_type === 'select' || values.field_type === 'radio' || values.field_type === 'checkbox')
       ? values.options?.split(',').map(opt => opt.trim()) || null
       : null;
@@ -198,7 +198,7 @@ export const useFormBuilderActions = ({
     setFields(prevFields =>
       prevFields.map(f =>
         f.id === fieldId
-          ? { ...f, label: values.label, field_type: values.field_type, options: updatedOptions, is_required: values.is_required, help_text: values.help_text || null, description: values.description || null, tooltip: values.tooltip || null }
+          ? { ...f, label: values.label, field_type: values.field_type, options: updatedOptions, is_required: values.is_required, help_text: values.help_text || null, description: values.description || null, tooltip: values.tooltip || null, section_id: values.section_id === 'none' ? null : values.section_id }
           : f
       )
     );
@@ -213,6 +213,7 @@ export const useFormBuilderActions = ({
         help_text: values.help_text || null,
         description: values.description || null,
         tooltip: values.tooltip || null,
+        section_id: values.section_id === 'none' ? null : values.section_id, // Handle 'none' for uncategorized
       })
       .eq('id', fieldId);
 
@@ -221,6 +222,7 @@ export const useFormBuilderActions = ({
       fetchData(); // Re-fetch to revert if optimistic update fails
     } else {
       showSuccess("Field updated successfully!");
+      fetchData(); // Re-fetch to ensure correct order and section display after update
     }
   };
 
@@ -262,6 +264,6 @@ export const useFormBuilderActions = ({
     handleSaveLogic,
     handleSaveEditedField,
     handleUpdateFormStatus,
-    handleUpdateFormDetails, // Export new function
+    handleUpdateFormDetails,
   };
 };

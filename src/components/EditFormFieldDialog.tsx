@@ -18,23 +18,24 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-  FormDescription, // Added FormDescription here
+  FormDescription,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import { FormField } from "@/types";
+import { FormField, FormSection } from "@/types";
 
 const editFormFieldSchema = z.object({
   label: z.string().min(1, { message: "Label cannot be empty." }),
   field_type: z.enum(['text', 'textarea', 'select', 'radio', 'checkbox', 'email', 'date', 'phone', 'number', 'richtext']),
   options: z.string().optional(), // Comma-separated for select/radio/checkbox
   is_required: z.boolean(),
-  help_text: z.string().nullable().optional(), // New: help_text
-  description: z.string().nullable().optional(), // New: description
-  tooltip: z.string().nullable().optional(), // New: tooltip
+  help_text: z.string().nullable().optional(),
+  description: z.string().nullable().optional(),
+  tooltip: z.string().nullable().optional(),
+  section_id: z.string().nullable().optional(), // New: section_id
 });
 
 type EditFormFieldValues = z.infer<typeof editFormFieldSchema>;
@@ -44,6 +45,7 @@ interface EditFormFieldDialogProps {
   onClose: () => void;
   fieldToEdit: FormField | null;
   onSave: (fieldId: string, values: EditFormFieldValues) => void;
+  sections: FormSection[]; // New: Pass sections for dropdown
 }
 
 const EditFormFieldDialog = ({
@@ -51,6 +53,7 @@ const EditFormFieldDialog = ({
   onClose,
   fieldToEdit,
   onSave,
+  sections,
 }: EditFormFieldDialogProps) => {
   const form = useForm<EditFormFieldValues>({
     resolver: zodResolver(editFormFieldSchema),
@@ -60,8 +63,9 @@ const EditFormFieldDialog = ({
       options: "",
       is_required: false,
       help_text: "",
-      description: "", // New: default value
-      tooltip: "", // New: default value
+      description: "",
+      tooltip: "",
+      section_id: null, // New: default value
     },
   });
 
@@ -73,8 +77,9 @@ const EditFormFieldDialog = ({
         options: Array.isArray(fieldToEdit.options) ? fieldToEdit.options.join(', ') : '',
         is_required: fieldToEdit.is_required,
         help_text: fieldToEdit.help_text || '',
-        description: fieldToEdit.description || '', // New: set from existing field
-        tooltip: fieldToEdit.tooltip || '', // New: set from existing field
+        description: fieldToEdit.description || '',
+        tooltip: fieldToEdit.tooltip || '',
+        section_id: fieldToEdit.section_id || null, // New: set from existing field
       });
     }
   }, [fieldToEdit, form]);
@@ -89,7 +94,7 @@ const EditFormFieldDialog = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-2xl overflow-y-auto max-h-[90vh]"> {/* Increased max-width and added scroll */}
         <DialogHeader>
           <DialogTitle>Edit Form Field</DialogTitle>
           <DialogDescription>
@@ -190,7 +195,7 @@ const EditFormFieldDialog = ({
                       placeholder="e.g., 'Please provide your full legal name as it appears on your ID.'"
                       className="resize-y min-h-[80px]"
                       {...field}
-                      value={field.value || ''} // Ensure it's a controlled component
+                      value={field.value || ''}
                     />
                   </FormControl>
                   <FormDescription>
@@ -215,6 +220,32 @@ const EditFormFieldDialog = ({
                   </FormControl>
                   <FormDescription>
                     A short text that appears when the user hovers over an info icon next to the field.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormFieldComponent
+              control={form.control}
+              name="section_id"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Assign to Section (Optional)</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value || 'none'}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a section" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="none">Uncategorized</SelectItem>
+                      {sections.map(section => (
+                        <SelectItem key={section.id} value={section.id}>{section.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormDescription>
+                    Move this field to a different section or keep it uncategorized.
                   </FormDescription>
                   <FormMessage />
                 </FormItem>

@@ -30,7 +30,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Form as FormType } => "@/types";
+import { Form as FormType } from "@/types"; // Corrected import
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/contexts/SessionContext";
@@ -56,6 +56,12 @@ const FormManagementPage = () => {
   const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
   const [newFormName, setNewFormName] = useState('');
   const [isCreatingForm, setIsCreatingForm] = useState(false);
+
+  const [isSaveAsTemplateDialogOpen, setIsSaveAsTemplateDialogOpen] = useState(false);
+  const [templateFormToCopy, setTemplateFormToCopy] = useState<FormType | null>(null);
+  const [newTemplateName, setNewTemplateName] = useState('');
+  const [isSavingTemplate, setIsSavingTemplate] = useState(false);
+
 
   useEffect(() => {
     const fetchData = async () => {
@@ -138,6 +144,7 @@ const FormManagementPage = () => {
       showError(`Failed to create blank form: ${formError?.message}`);
     } else {
       showSuccess("Blank form created successfully! Redirecting to form builder.");
+      // Add the new form to the local state immediately
       setForms(prev => [...prev, { ...newFormData, user_id: user.id, name: "New Blank Form", is_template: false, status: 'draft', description: null, created_at: new Date().toISOString(), updated_at: new Date().toISOString() }]);
       window.location.href = `/creator/forms/${newFormData.id}/edit`; // Full refresh to ensure form builder loads correctly
     }
@@ -232,11 +239,137 @@ const FormManagementPage = () => {
     }
 
     showSuccess("Form created from template successfully! Redirecting to form builder.");
+    // Add the new form to the local state immediately
     setForms(prev => [...prev, { ...newFormData, user_id: user.id, name: newFormName, is_template: false, status: 'draft', description: template.description, created_at: new Date().toISOString(), updated_at: new Date().toISOString() }]);
     setIsCreateFromTemplateDialogOpen(false);
     window.location.href = `/creator/forms/${newFormData.id}/edit`; // Full refresh
     setIsCreatingForm(false);
   };
+
+  const handleSaveAsTemplate = async () => {
+    if (!templateFormToCopy || !newTemplateName.trim()) {
+      showError("Template name cannot be empty.");
+      return;
+    }
+    if (!user) {
+      showError("You must be logged in to save a template.");
+      return;
+    }
+
+    setIsSavingTemplate(true);
+
+    try {
+      const { data: newTemplateFormData, error: newTemplateFormError } = await supabase.from("forms").insert({
+        user_id: user.id,
+        name: newTemplateName,
+        is_template: true,
+        status: 'published', // Templates are published by default
+        description: templateFormToCopy.description, // Copy description
+      }).select('id').single();
+
+      if (newTemplateFormError || !newTemplateFormData) {
+        showError(`Failed to create template form: ${newTemplateFormError?.message}`);
+        return;
+      }
+
+      const { data: currentSections, error: sectionsError } = await supabase
+        .from('form_sections')
+        .select('*')
+        .eq('form_id', templateFormToCopy.id)
+        .order('order', { ascending: true });
+
+      const { data: currentFields, error: fieldsError } = await supabase
+        .from('form_fields')
+        .select('*')
+        .eq('form_id', templateFormToCopy.id)
+        .order('order', { ascending: true });
+
+      if (sectionsError || fieldsError) {
+        showError(`Failed to load current form content: ${sectionsError?.message || fieldsError?.message}`);
+        await supabase.from('forms').delete().eq('id', newTemplateFormData.id);
+        return;
+      }
+
+      const oldSectionIdMap = new Map<string, string>();
+      const newSectionsToInsert = currentSections.map(section => {
+        const newSectionId = crypto.randomUUID();
+        oldSectionIdMap.set(section.id, newSectionId);
+        return {
+          id: newSectionId,
+          form_id: newTemplateFormData.id,
+          name: section.name,
+          order: section.order,
+        };
+      });
+
+      const newFieldsToInsert = currentFields.map(field => ({
+        id: crypto.randomUUID(),
+        form_id: newTemplateFormData.id,
+        section_id: field.section_id ? oldSectionIdMap.get(field.section_id) : null,
+        label: field.label,
+        field_type: field.field_type,
+        options: field.options,
+        is_required: field.is_required,
+        order: field.order,
+        display_rules: field.display_rules,
+        help_text: field.help_text,
+        description: field.description,
+        tooltip: field.tooltip,
+      }));
+
+      const { error: insertSectionsError } = await supabase.from('form_sections').insert(newSectionsToInsert);
+      const { error: insertFieldsError } = await supabase.from('form_fields').insert(newFieldsToInsert);
+
+      if (insertSectionsError || insertFieldsError) {
+        showError(`Failed to copy form content to template: ${insertSectionsError?.message || insertFieldsError?.message}`);
+        await supabase.from('forms').delete().eq('id', newTemplateFormData.id);
+        return;
+      }
+
+      showSuccess("Form saved as template successfully!");
+      setForms(prev => [...prev, { ...newTemplateFormData, user_id: user.id, name: newTemplateName, is_template: true, status: 'published', description: templateFormToCopy.description, created_at: new Date().toISOString(), updated_at: new Date().toISOString() }]);
+      setTemplates(prev => [...prev, { ...newTemplateFormData, user_id: user.id, name: newTemplateName, is_template: true, status: 'published', description: templateFormToCopy.description, created_at: new Date().toISOString(), updated_at: new Date().toISOString() }]);
+      setIsSaveAsTemplateDialogOpen(false);
+      setNewTemplateName('');
+      setTemplateFormToCopy(null);
+    } catch (err: any) {
+      showError("An unexpected error occurred: " + err.message);
+    } finally {
+      setIsSavingTemplate(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="container py-12">
+        <div className="flex justify-between items-center mb-8">
+          <div>
+            <Skeleton className="h-9 w-64 mb-2" />
+            <Skeleton className="h-5 w-80" />
+          </div>
+          <Skeleton className="h-10 w-40" />
+        </div>
+        <Card>
+          <CardContent className="p-6">
+            <div className="space-y-4">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="flex justify-between items-center">
+                  <Skeleton className="h-5 w-1/3" />
+                  <Skeleton className="h-5 w-24" />
+                  <Skeleton className="h-5 w-16" />
+                  <Skeleton className="h-9 w-32" />
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (error) {
+    return <div className="container py-12 text-center text-destructive">Error: {error}</div>;
+  }
 
   return (
     <>
@@ -313,9 +446,9 @@ const FormManagementPage = () => {
                           <DropdownMenuSeparator />
                           {!form.is_template && ( // Only show "Save as Template" for non-template forms
                             <DropdownMenuItem onClick={() => {
-                              setSelectedForm(form);
-                              // This will be handled by FormBuilderPage's save as template logic
-                              window.location.href = `/creator/forms/${form.id}/edit?saveAsTemplate=true`;
+                              setTemplateFormToCopy(form);
+                              setNewTemplateName(`${form.name} Template`);
+                              setIsSaveAsTemplateDialogOpen(true);
                             }}>
                               Save as Template
                             </DropdownMenuItem>
@@ -403,6 +536,35 @@ const FormManagementPage = () => {
             <Button variant="outline" onClick={() => setIsCreateFromTemplateDialogOpen(false)}>Cancel</Button>
             <Button onClick={handleCreateFormFromTemplate} disabled={!selectedTemplateId || !newFormName.trim() || isCreatingForm}>
               {isCreatingForm ? 'Creating...' : 'Create Form'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Save as Template Dialog */}
+      <Dialog open={isSaveAsTemplateDialogOpen} onOpenChange={setIsSaveAsTemplateDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Save Form as Template</DialogTitle>
+            <DialogDescription>
+              Give your new template a name. All sections and fields from this form will be copied.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="template-name">Template Name</Label>
+              <Input
+                id="template-name"
+                placeholder="e.g., Standard Application Template"
+                value={newTemplateName}
+                onChange={(e) => setNewTemplateName(e.target.value)}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsSaveAsTemplateDialogOpen(false)}>Cancel</Button>
+            <Button onClick={handleSaveAsTemplate} disabled={!newTemplateName.trim() || isSavingTemplate}>
+              {isSavingTemplate ? 'Saving...' : 'Save as Template'}
             </Button>
           </DialogFooter>
         </DialogContent>

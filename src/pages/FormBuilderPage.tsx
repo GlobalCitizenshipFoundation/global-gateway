@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { FormField, DisplayRule, FormSection } from "@/types";
 import { ArrowLeft } from "lucide-react";
 import { useState, useEffect } from "react";
-import { Link, useParams, useSearchParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom"; // Removed useSearchParams
 import { DndContext, DragOverlay, closestCenter, DragEndEvent, DragStartEvent } from '@dnd-kit/core';
 import { FormFieldItem } from "@/components/FormFieldItem";
 import ConditionalLogicBuilder from "@/components/ConditionalLogicBuilder";
@@ -29,16 +29,17 @@ import RichTextEditor from "@/components/RichTextEditor"; // Import RichTextEdit
 
 const FormBuilderPage = () => {
   const { formId } = useParams<{ formId: string }>();
-  const [searchParams, setSearchParams] = useSearchParams();
+  // Removed searchParams and setSearchParams
   const [formName, setFormName] = useState('');
-  const [formDescription, setFormDescription] = useState(''); // New state for form description
+  const [formDescription, setFormDescription] = useState('');
   const [formStatus, setFormStatus] = useState<'draft' | 'published'>('draft');
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
-  const [isUpdatingFormDetails, setIsUpdatingFormDetails] = useState(false); // New state for saving form details
+  const [isUpdatingFormDetails, setIsUpdatingFormDetails] = useState(false);
 
-  const [isSaveAsTemplateDialogOpen, setIsSaveAsTemplateDialogOpen] = useState(false);
-  const [newTemplateName, setNewTemplateName] = useState('');
-  const [isSavingTemplate, setIsSavingTemplate] = useState(false);
+  // Removed save as template states
+  // const [isSaveAsTemplateDialogOpen, setIsSaveAsTemplateDialogOpen] = useState(false);
+  // const [newTemplateName, setNewTemplateName] = useState('');
+  // const [isSavingTemplate, setIsSavingTemplate] = useState(false);
 
   const { user } = useSession();
 
@@ -52,9 +53,9 @@ const FormBuilderPage = () => {
     setNewFieldSectionId,
     fetchData,
     getFieldsForSection,
-    formName: fetchedFormName, // Get formName from hook
-    formDescription: fetchedFormDescription, // Get formDescription from hook
-    formStatus: fetchedFormStatus, // Get formStatus from hook
+    formName: fetchedFormName,
+    formDescription: fetchedFormDescription,
+    formStatus: fetchedFormStatus,
   } = useFormBuilderData(formId);
 
   // Sync local states with fetched data
@@ -64,13 +65,14 @@ const FormBuilderPage = () => {
     setFormStatus(fetchedFormStatus);
   }, [fetchedFormName, fetchedFormDescription, fetchedFormStatus]);
 
-  useEffect(() => {
-    if (searchParams.get('saveAsTemplate') === 'true' && formName) {
-      setNewTemplateName(`${formName} Template`);
-      setIsSaveAsTemplateDialogOpen(true);
-      setSearchParams({}, { replace: true });
-    }
-  }, [searchParams, formName, setSearchParams]);
+  // Removed useEffect for saveAsTemplate query param
+  // useEffect(() => {
+  //   if (searchParams.get('saveAsTemplate') === 'true' && formName) {
+  //     setNewTemplateName(`${formName} Template`);
+  //     setIsSaveAsTemplateDialogOpen(true);
+  //     setSearchParams({}, { replace: true });
+  //   }
+  // }, [searchParams, formName, setSearchParams]);
 
   const {
     sensors: fieldSensors,
@@ -113,7 +115,7 @@ const FormBuilderPage = () => {
     handleSaveLogic: performSaveLogic,
     handleSaveEditedField: performSaveEditedField,
     handleUpdateFormStatus: performUpdateFormStatus,
-    handleUpdateFormDetails: performUpdateFormDetails, // New: import form details update
+    handleUpdateFormDetails: performUpdateFormDetails,
   } = useFormBuilderActions({ formId, setSections, setFields, fetchData });
 
   const [newSectionName, setNewSectionName] = useState('');
@@ -185,7 +187,7 @@ const FormBuilderPage = () => {
     setIsEditFieldDialogOpen(true);
   };
 
-  const handleSaveEditedField = async (fieldId: string, values: { label: string; field_type: FormField['field_type']; options?: string; is_required: boolean; help_text?: string | null; description?: string | null; tooltip?: string | null; }) => {
+  const handleSaveEditedField = async (fieldId: string, values: { label: string; field_type: FormField['field_type']; options?: string; is_required: boolean; help_text?: string | null; description?: string | null; tooltip?: string | null; section_id?: string | null; }) => {
     await performSaveEditedField(fieldId, values);
     setIsEditFieldDialogOpen(false);
     setFieldToEditDetails(null);
@@ -212,95 +214,7 @@ const FormBuilderPage = () => {
     setIsUpdatingFormDetails(false);
   };
 
-  const handleSaveAsTemplate = async () => {
-    if (!formId || !newTemplateName.trim()) {
-      showError("Template name cannot be empty.");
-      return;
-    }
-    if (!user) {
-      showError("You must be logged in to save a template.");
-      return;
-    }
-
-    setIsSavingTemplate(true);
-
-    try {
-      const { data: newTemplateFormData, error: newTemplateFormError } = await supabase.from("forms").insert({
-        user_id: user.id,
-        name: newTemplateName,
-        is_template: true,
-        status: 'published',
-        description: formDescription, // Copy description to template
-      }).select('id').single();
-
-      if (newTemplateFormError || !newTemplateFormData) {
-        showError(`Failed to create template form: ${newTemplateFormError?.message}`);
-        return;
-      }
-
-      const { data: currentSections, error: sectionsError } = await supabase
-        .from('form_sections')
-        .select('*')
-        .eq('form_id', formId)
-        .order('order', { ascending: true });
-
-      const { data: currentFields, error: fieldsError } = await supabase
-        .from('form_fields')
-        .select('*')
-        .eq('form_id', formId)
-        .order('order', { ascending: true });
-
-      if (sectionsError || fieldsError) {
-        showError(`Failed to load current form content: ${sectionsError?.message || fieldsError?.message}`);
-        await supabase.from('forms').delete().eq('id', newTemplateFormData.id);
-        return;
-      }
-
-      const oldSectionIdMap = new Map<string, string>();
-      const newSectionsToInsert = currentSections.map(section => {
-        const newSectionId = crypto.randomUUID();
-        oldSectionIdMap.set(section.id, newSectionId);
-        return {
-          id: newSectionId,
-          form_id: newTemplateFormData.id,
-          name: section.name,
-          order: section.order,
-        };
-      });
-
-      const newFieldsToInsert = currentFields.map(field => ({
-        id: crypto.randomUUID(),
-        form_id: newTemplateFormData.id,
-        section_id: field.section_id ? oldSectionIdMap.get(field.section_id) : null,
-        label: field.label,
-        field_type: field.field_type,
-        options: field.options,
-        is_required: field.is_required,
-        order: field.order,
-        display_rules: field.display_rules,
-        help_text: field.help_text,
-        description: field.description,
-        tooltip: field.tooltip,
-      }));
-
-      const { error: insertSectionsError } = await supabase.from('form_sections').insert(newSectionsToInsert);
-      const { error: insertFieldsError } = await supabase.from('form_fields').insert(newFieldsToInsert);
-
-      if (insertSectionsError || insertFieldsError) {
-        showError(`Failed to copy form content to template: ${insertSectionsError?.message || insertFieldsError?.message}`);
-        await supabase.from('forms').delete().eq('id', newTemplateFormData.id);
-        return;
-      }
-
-      showSuccess("Form saved as template successfully!");
-      setIsSaveAsTemplateDialogOpen(false);
-      setNewTemplateName('');
-    } catch (err: any) {
-      showError("An unexpected error occurred: " + err.message);
-    } finally {
-      setIsSavingTemplate(false);
-    }
-  };
+  // Removed handleSaveAsTemplate function
 
   const uncategorizedFields = getFieldsForSection(null);
 
@@ -329,9 +243,10 @@ const FormBuilderPage = () => {
                   {isUpdatingStatus ? 'Unpublishing...' : 'Unpublish Form'}
                 </Button>
               )}
-              <Button variant="outline" onClick={() => setIsSaveAsTemplateDialogOpen(true)} disabled={isSavingTemplate}>
+              {/* Removed Save as Template button */}
+              {/* <Button variant="outline" onClick={() => setIsSaveAsTemplateDialogOpen(true)} disabled={isSavingTemplate}>
                 Save as Template
-              </Button>
+              </Button> */}
             </div>
           </div>
         </CardHeader>
@@ -444,10 +359,11 @@ const FormBuilderPage = () => {
         onClose={() => setIsEditFieldDialogOpen(false)}
         fieldToEdit={fieldToEditDetails}
         onSave={handleSaveEditedField}
+        sections={sections} // Pass sections to the dialog
       />
 
-      {/* Save as Template Dialog */}
-      <Dialog open={isSaveAsTemplateDialogOpen} onOpenChange={setIsSaveAsTemplateDialogOpen}>
+      {/* Removed Save as Template Dialog */}
+      {/* <Dialog open={isSaveAsTemplateDialogOpen} onOpenChange={setIsSaveAsTemplateDialogOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>Save Form as Template</DialogTitle>
@@ -473,7 +389,7 @@ const FormBuilderPage = () => {
             </Button>
           </DialogFooter>
         </DialogContent>
-      </Dialog>
+      </Dialog> */}
     </div>
   );
 };
