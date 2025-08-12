@@ -9,7 +9,7 @@ export type Program = {
   submission_button_text: string | null;
   allow_pdf_download: boolean;
   updated_at: string;
-  form_id: string | null; // New: Link to Form
+  form_id: string | null; // Link to Form
 };
 
 export type Form = {
