@@ -10,7 +10,7 @@ import {
   PaginationLink,
   PaginationNext,
   PaginationPrevious,
-  PaginationEllipsis,
+  // PaginationEllipsis, // No longer needed directly here
 } from "@/components/ui/pagination";
 import { Label } from "@/components/ui/label";
 
@@ -23,6 +23,7 @@ import { SaveAsTemplateDialog } from "@/components/forms/SaveAsTemplateDialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useMemo, useState } from "react";
 import { Form as FormType } from "@/types";
+import { generatePagination } from "@/lib/pagination"; // Import the new utility
 
 const FormManagementPage = () => {
   const { forms, setForms, templates, setTemplates, loading, error } = useFormsData();
@@ -114,6 +115,7 @@ const FormManagementPage = () => {
   }, [forms, searchTerm, statusFilter, typeFilter]);
 
   const totalPages = Math.ceil(totalFilteredForms / itemsPerPage);
+  const paginationItems = generatePagination(currentPage, totalPages);
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
@@ -283,14 +285,18 @@ const FormManagementPage = () => {
                     className={currentPage === 1 ? "pointer-events-none opacity-50" : undefined}
                   />
                 </PaginationItem>
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                  <PaginationItem key={page}>
-                    <PaginationLink
-                      onClick={() => handlePageChange(page)}
-                      isActive={page === currentPage}
-                    >
-                      {page}
-                    </PaginationLink>
+                {paginationItems.map((item, index) => (
+                  <PaginationItem key={index}>
+                    {item === '...' ? (
+                      <span className="px-4 py-2 text-sm text-muted-foreground">...</span>
+                    ) : (
+                      <PaginationLink
+                        onClick={() => handlePageChange(item as number)}
+                        isActive={item === currentPage}
+                      >
+                        {item}
+                      </PaginationLink>
+                    )}
                   </PaginationItem>
                 ))}
                 <PaginationItem>
