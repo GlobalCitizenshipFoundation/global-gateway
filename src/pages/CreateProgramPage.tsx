@@ -9,7 +9,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-  FormDescription, // Import FormDescription
+  FormDescription,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -37,7 +37,7 @@ import { useEffect, useState } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Form as FormType } from "@/types";
 import { Label } from "@/components/ui/label";
-import { DropdownMenuSeparator } from "@/components/ui/dropdown-menu"; // Import DropdownMenuSeparator
+import { DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 
 const programFormSchema = z.object({
   title: z.string().min(5, {
@@ -49,7 +49,7 @@ const programFormSchema = z.object({
   deadline: z.date({
     required_error: "A deadline date is required.",
   }),
-  formTemplateId: z.string().nullable().optional(), // New field for template selection
+  formTemplateId: z.string().nullable().optional(),
 });
 
 type ProgramFormValues = z.infer<typeof programFormSchema>;
@@ -65,7 +65,7 @@ const CreateProgramPage = () => {
     defaultValues: {
       title: "",
       description: "",
-      formTemplateId: null, // Default to no template selected
+      formTemplateId: null,
     },
   });
 
@@ -109,9 +109,10 @@ const CreateProgramPage = () => {
       // 1. Create the new form entry
       const { data: newFormData, error: newFormError } = await supabase.from("forms").insert({
         user_id: user.id,
-        name: `${values.title} Application Form`, // Name based on program title
+        name: `${values.title} Application Form`,
         is_template: false,
         status: 'draft',
+        description: template.description, // Copy description from template
       }).select('id').single();
 
       if (newFormError || !newFormData) {
@@ -186,6 +187,7 @@ const CreateProgramPage = () => {
         name: `${values.title} Application Form`,
         is_template: false,
         status: 'draft',
+        description: null, // Blank form has no description initially
       }).select('id').single();
 
       if (formError || !newFormData) {

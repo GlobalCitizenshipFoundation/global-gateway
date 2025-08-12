@@ -239,6 +239,20 @@ export const useFormBuilderActions = ({
     }
   };
 
+  const handleUpdateFormDetails = async (id: string, name: string, description: string | null) => {
+    const { error } = await supabase
+      .from('forms')
+      .update({ name: name, description: description, updated_at: new Date().toISOString() })
+      .eq('id', id);
+
+    if (error) {
+      showError(`Failed to update form details: ${error.message}`);
+      return false;
+    } else {
+      return true;
+    }
+  };
+
   return {
     handleAddSection,
     handleDeleteSection,
@@ -247,6 +261,7 @@ export const useFormBuilderActions = ({
     handleToggleRequired,
     handleSaveLogic,
     handleSaveEditedField,
-    handleUpdateFormStatus, // Export new function
+    handleUpdateFormStatus,
+    handleUpdateFormDetails, // Export new function
   };
 };

@@ -15,7 +15,8 @@ import { Form } from "@/components/ui/form";
 import { useApplicationForm } from "@/hooks/useApplicationForm";
 import { ApplicantInfoCard } from "@/components/application/ApplicantInfoCard";
 import ApplicationFormSections from "@/components/application/ApplicationFormSections";
-import { useState, useEffect } from "react"; // Import useEffect
+import { useState, useEffect } from "react";
+import DOMPurify from 'dompurify'; // Import DOMPurify
 
 // Explicitly define the type for dynamic form values
 type DynamicFormValues = Record<string, string | string[] | number | undefined | null>;
@@ -32,7 +33,7 @@ const ApplyPage = () => {
     displayedFormFields,
     user,
     programId,
-    applicationForm, // New: the actual form object
+    applicationForm,
   } = useApplicationForm();
 
   const [submitting, setSubmitting] = useState(false);
@@ -123,11 +124,18 @@ const ApplyPage = () => {
     return null; // Or a loading spinner while redirecting
   }
 
+  const sanitizedDescription = applicationForm.description ? DOMPurify.sanitize(applicationForm.description, { USE_PROFILES: { html: true } }) : null;
+
   return (
     <div className="container py-12">
       <Card className="mx-auto max-w-2xl">
         <CardHeader>
           <CardTitle className="text-2xl">Apply for: {program.title}</CardTitle>
+          {applicationForm.description && (
+            <CardDescription>
+              <div dangerouslySetInnerHTML={{ __html: sanitizedDescription || '' }} className="prose max-w-none" />
+            </CardDescription>
+          )}
           <CardDescription>Your name and email are automatically included. Please fill out the custom fields below.</CardDescription>
         </CardHeader>
         <CardContent>

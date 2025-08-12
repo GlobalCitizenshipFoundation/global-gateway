@@ -9,6 +9,7 @@ export const useFormBuilderData = (initialFormId?: string) => { // Accept initia
   const currentFormId = initialFormId || paramFormId; // Use prop or URL param
 
   const [formName, setFormName] = useState('');
+  const [formDescription, setFormDescription] = useState<string | null>(null); // New state for description
   const [formStatus, setFormStatus] = useState<'draft' | 'published'>('draft');
   const [sections, setSections] = useState<FormSection[]>([]);
   const [fields, setFields] = useState<FormField[]>([]);
@@ -25,16 +26,18 @@ export const useFormBuilderData = (initialFormId?: string) => { // Accept initia
     // Fetch form details
     const { data: formData, error: formError } = await supabase
       .from('forms')
-      .select('name, status')
+      .select('name, status, description') // Fetch description
       .eq('id', currentFormId)
       .single();
     
     if (formError) {
       showError("Could not fetch form details.");
       setFormName('');
+      setFormDescription(null); // Reset description on error
       setFormStatus('draft');
     } else {
       setFormName(formData.name);
+      setFormDescription(formData.description); // Set description
       setFormStatus(formData.status);
     }
 
@@ -83,6 +86,7 @@ export const useFormBuilderData = (initialFormId?: string) => { // Accept initia
   return {
     formId: currentFormId, // Return the resolved formId
     formName,
+    formDescription, // Return formDescription
     formStatus,
     sections,
     setSections,

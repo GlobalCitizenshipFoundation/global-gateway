@@ -1,10 +1,10 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { FormField, DisplayRule, FormSection } from "@/types"; // Import FormSection
+import { FormField, DisplayRule, FormSection } from "@/types";
 import { ArrowLeft } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
-import { DndContext, DragOverlay, closestCenter, DragEndEvent, DragStartEvent } from '@dnd-kit/core'; // Import DragStartEvent
+import { DndContext, DragOverlay, closestCenter, DragEndEvent, DragStartEvent } from '@dnd-kit/core';
 import { FormFieldItem } from "@/components/FormFieldItem";
 import ConditionalLogicBuilder from "@/components/ConditionalLogicBuilder";
 import EditFormFieldDialog from "@/components/EditFormFieldDialog";
@@ -24,14 +24,17 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { useSession } from "@/contexts/SessionContext";
-import { useFormSectionDragAndDrop } from "@/hooks/useFormSectionDragAndDrop"; // Import new hook
+import { useFormSectionDragAndDrop } from "@/hooks/useFormSectionDragAndDrop";
+import RichTextEditor from "@/components/RichTextEditor"; // Import RichTextEditor
 
 const FormBuilderPage = () => {
   const { formId } = useParams<{ formId: string }>();
   const [searchParams, setSearchParams] = useSearchParams();
   const [formName, setFormName] = useState('');
+  const [formDescription, setFormDescription] = useState(''); // New state for form description
   const [formStatus, setFormStatus] = useState<'draft' | 'published'>('draft');
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+  const [isUpdatingFormDetails, setIsUpdatingFormDetails] = useState(false); // New state for saving form details
 
   const [isSaveAsTemplateDialogOpen, setIsSaveAsTemplateDialogOpen] = useState(false);
   const [newTemplateName, setNewTemplateName] = useState('');
@@ -49,26 +52,17 @@ const FormBuilderPage = () => {
     setNewFieldSectionId,
     fetchData,
     getFieldsForSection,
+    formName: fetchedFormName, // Get formName from hook
+    formDescription: fetchedFormDescription, // Get formDescription from hook
+    formStatus: fetchedFormStatus, // Get formStatus from hook
   } = useFormBuilderData(formId);
 
+  // Sync local states with fetched data
   useEffect(() => {
-    const fetchFormDetails = async () => {
-      if (!formId) return;
-      const { data, error } = await supabase
-        .from('forms')
-        .select('name, status')
-        .eq('id', formId)
-        .single();
-
-      if (error) {
-        showError("Failed to load form details: " + error.message);
-      } else if (data) {
-        setFormName(data.name);
-        setFormStatus(data.status);
-      }
-    };
-    fetchFormDetails();
-  }, [formId]);
+    setFormName(fetchedFormName);
+    setFormDescription(fetchedFormDescription || '');
+    setFormStatus(fetchedFormStatus);
+  }, [fetchedFormName, fetchedFormDescription, fetchedFormStatus]);
 
   useEffect(() => {
     if (searchParams.get('saveAsTemplate') === 'true' && formName) {
@@ -92,7 +86,6 @@ const FormBuilderPage = () => {
     activeDragItem: activeSectionDragItem,
   } = useFormSectionDragAndDrop({ sections, setSections, fetchData });
 
-  // Combine sensors for both types of draggable items
   const combinedSensors = [...fieldSensors, ...sectionSensors];
 
   const handleDragStart = (event: DragStartEvent) => {
@@ -120,6 +113,7 @@ const FormBuilderPage = () => {
     handleSaveLogic: performSaveLogic,
     handleSaveEditedField: performSaveEditedField,
     handleUpdateFormStatus: performUpdateFormStatus,
+    handleUpdateFormDetails: performUpdateFormDetails, // New: import form details update
   } = useFormBuilderActions({ formId, setSections, setFields, fetchData });
 
   const [newSectionName, setNewSectionName] = useState('');
@@ -207,6 +201,17 @@ const FormBuilderPage = () => {
     setIsUpdatingStatus(false);
   };
 
+  const handleSaveFormDetails = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formId) return;
+    setIsUpdatingFormDetails(true);
+    const success = await performUpdateFormDetails(formId, formName, formDescription);
+    if (success) {
+      showSuccess("Form details updated successfully!");
+    }
+    setIsUpdatingFormDetails(false);
+  };
+
   const handleSaveAsTemplate = async () => {
     if (!formId || !newTemplateName.trim()) {
       showError("Template name cannot be empty.");
@@ -225,6 +230,7 @@ const FormBuilderPage = () => {
         name: newTemplateName,
         is_template: true,
         status: 'published',
+        description: formDescription, // Copy description to template
       }).select('id').single();
 
       if (newTemplateFormError || !newTemplateFormData) {
@@ -330,6 +336,34 @@ const FormBuilderPage = () => {
           </div>
         </CardHeader>
         <CardContent>
+          <form onSubmit={handleSaveFormDetails} className="space-y-4 mb-8 p-4 border rounded-md bg-muted/20">
+            <h3 className="text-lg font-medium">Form Details</h3>
+            <div className="grid gap-2">
+              <Label htmlFor="form-name">Form Name</Label>
+              <Input
+                id="form-name"
+                value={formName}
+                onChange={(e) => setFormName(e.target.value)}
+                disabled={isUpdatingFormDetails}
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="form-description">Form Description (Optional)</Label>
+              <RichTextEditor
+                value={formDescription}
+                onChange={setFormDescription}
+                readOnly={isUpdatingFormDetails}
+                className="min-h-[150px]"
+              />
+              <p className="text-sm text-muted-foreground">This description will appear at the top of the application form.</p>
+            </div>
+            <div className="flex justify-end">
+              <Button type="submit" disabled={isUpdatingFormDetails}>
+                {isUpdatingFormDetails ? 'Saving...' : 'Save Details'}
+              </Button>
+            </div>
+          </form>
+
           <DndContext sensors={combinedSensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd} onDragStart={handleDragStart}>
             <FormSectionsList
               sections={sections}

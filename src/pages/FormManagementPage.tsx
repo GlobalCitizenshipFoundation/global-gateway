@@ -30,7 +30,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Form as FormType } from "@/types";
+import { Form as FormType } => "@/types";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/contexts/SessionContext";
@@ -41,7 +41,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label"; // Import Label
+import { Label } from "@/components/ui/label";
 
 const FormManagementPage = () => {
   const { user } = useSession();
@@ -127,11 +127,11 @@ const FormManagementPage = () => {
     }
     setIsCreatingForm(true);
     const { data: newFormData, error: formError } = await supabase.from("forms").insert({
-      user_id: user.id, // Include user_id
+      user_id: user.id,
       name: "New Blank Form",
       is_template: false,
       status: 'draft',
-      description: null, // Include description
+      description: null, // Blank form has no description initially
     }).select('id').single();
 
     if (formError || !newFormData) {
@@ -160,11 +160,11 @@ const FormManagementPage = () => {
 
     // 1. Create the new form entry
     const { data: newFormData, error: newFormError } = await supabase.from("forms").insert({
-      user_id: user.id, // Include user_id
+      user_id: user.id,
       name: newFormName,
-      is_template: false, // New form is not a template by default
+      is_template: false,
       status: 'draft',
-      description: null, // Include description
+      description: template.description, // Copy description from template
     }).select('id').single();
 
     if (newFormError || !newFormData) {
@@ -232,7 +232,7 @@ const FormManagementPage = () => {
     }
 
     showSuccess("Form created from template successfully! Redirecting to form builder.");
-    setForms(prev => [...prev, { ...newFormData, user_id: user.id, name: newFormName, is_template: false, status: 'draft', description: null, created_at: new Date().toISOString(), updated_at: new Date().toISOString() }]);
+    setForms(prev => [...prev, { ...newFormData, user_id: user.id, name: newFormName, is_template: false, status: 'draft', description: template.description, created_at: new Date().toISOString(), updated_at: new Date().toISOString() }]);
     setIsCreateFromTemplateDialogOpen(false);
     window.location.href = `/creator/forms/${newFormData.id}/edit`; // Full refresh
     setIsCreatingForm(false);
