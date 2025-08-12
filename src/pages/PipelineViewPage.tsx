@@ -20,7 +20,7 @@ import { showError, showSuccess } from "@/utils/toast";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { shouldFieldBeDisplayed, formatResponseValue } from "@/utils/formFieldUtils"; // Import utility functions
+import { shouldFieldBeDisplayed, formatResponseValue } from "@/utils/formFieldUtils"; // Updated import
 
 type SubmissionDetail = {
   id: string;

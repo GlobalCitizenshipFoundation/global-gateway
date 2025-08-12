@@ -25,7 +25,7 @@ import { CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import RichTextEditor from "@/components/RichTextEditor";
-import { shouldFieldBeDisplayed } from "@/utils/formFieldUtils"; // Import the utility function
+import { shouldFieldBeDisplayed } from "@/utils/formFieldUtils"; // Updated import
 
 const ApplyPage = () => {
   const { programId } = useParams<{ programId: string }>();
