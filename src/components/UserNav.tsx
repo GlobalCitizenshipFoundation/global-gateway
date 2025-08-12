@@ -42,7 +42,8 @@ const UserNav = () => {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+        {/* Removed asChild from Button, so Button renders its own <button> element */}
+        <Button variant="ghost" className="relative h-8 w-8 rounded-full p-0">
           <Avatar className="h-8 w-8">
             <AvatarImage src={avatarUrl} alt={fullName || 'User'} />
             <AvatarFallback>
