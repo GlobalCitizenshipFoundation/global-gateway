@@ -19,6 +19,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { cn } from '@/lib/utils'; // Import cn for conditional classNames
 
 interface FormFieldItemProps {
   field: FormField;
@@ -42,6 +43,7 @@ export const FormFieldItem = React.memo(({ field, onDelete, onToggleRequired, on
     setNodeRef,
     transform,
     transition,
+    isDragging, // Get isDragging state from useSortable
   } = useSortable({ id: field.id, data: { type: "FormField", field } }); // Added data for drag context
 
   const style = {
@@ -59,7 +61,10 @@ export const FormFieldItem = React.memo(({ field, onDelete, onToggleRequired, on
     <li
       ref={setNodeRef}
       style={style}
-      className="flex items-center justify-between p-3 bg-secondary rounded-md gap-4 cursor-grab" // Added cursor-grab
+      className={cn(
+        "flex items-center justify-between p-3 bg-secondary rounded-md gap-4 cursor-grab",
+        isDragging && "opacity-0" // Apply opacity-0 when dragging
+      )}
     >
       <div className="flex items-center gap-2 flex-grow">
         <Button variant="ghost" size="icon" className="cursor-grab" {...attributes} {...listeners}>

@@ -41,13 +41,14 @@ const DroppableContainer = ({ id, children, className }: { id: string; children:
 };
 
 // Sortable Accordion Item for Sections
-const SortableAccordionItem = ({ section, children, confirmDeleteSection, isDragging }: { section: FormSection; children: React.ReactNode; confirmDeleteSection: (section: FormSection) => void; isDragging: boolean; }) => {
+const SortableAccordionItem = ({ section, children, confirmDeleteSection }: { section: FormSection; children: React.ReactNode; confirmDeleteSection: (section: FormSection) => void; }) => {
   const {
     attributes,
     listeners,
     setNodeRef,
     transform,
     transition,
+    isDragging, // Get isDragging state from useSortable
   } = useSortable({ id: section.id, data: { type: "Section", section } });
 
   const style = {
@@ -62,7 +63,7 @@ const SortableAccordionItem = ({ section, children, confirmDeleteSection, isDrag
       value={section.id}
       ref={setNodeRef}
       style={style}
-      className={cn("rounded-md border mb-2", isDragging && "opacity-50")}
+      className={cn("rounded-md border mb-2", isDragging && "opacity-0")} // Apply opacity-0 when dragging
     >
       <AccordionTrigger className="flex justify-between items-center pr-4 cursor-grab">
         <div className="flex items-center gap-2">
@@ -117,7 +118,7 @@ export const FormSectionsList = ({
         <Accordion type="multiple" className="w-full">
           <SortableContext items={sections.map(s => s.id)} strategy={verticalListSortingStrategy}>
             {sections.map(section => (
-              <SortableAccordionItem key={section.id} section={section} confirmDeleteSection={confirmDeleteSection} isDragging={false}> {/* isDragging prop added */}
+              <SortableAccordionItem key={section.id} section={section} confirmDeleteSection={confirmDeleteSection}>
                 <DroppableContainer id={section.id} className="rounded-b-md">
                   <AccordionContent>
                     <SortableContext items={getFieldsForSection(section.id).map(f => f.id)} strategy={verticalListSortingStrategy}>
