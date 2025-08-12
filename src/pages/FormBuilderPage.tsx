@@ -1,46 +1,51 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
-import { FormField, FormSection, DisplayRule } from "@/types";
+import { FormField, DisplayRule } from "@/types";
 import { showError, showSuccess } from "@/utils/toast";
-import { ArrowLeft, Plus, Trash2 } from "lucide-react";
-import { useEffect, useState, useCallback } from "react";
-import { Link, useParams } from "react-router-dom";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent, useDroppable, DragOverlay } from '@dnd-kit/core';
-import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import { ArrowLeft } from "lucide-react";
+import { useState } from "react";
+import { Link } from "react-router-dom";
+import { DndContext, DragOverlay, closestCenter } from '@dnd-kit/core';
 import { FormFieldItem } from "@/components/FormFieldItem";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import ConditionalLogicBuilder from "@/components/ConditionalLogicBuilder";
 import EditFormFieldDialog from "@/components/EditFormFieldDialog";
 
-// Helper component for droppable areas
-interface DroppableContainerProps {
-  id: string;
-  children: React.ReactNode;
-  className?: string;
-}
-
-const DroppableContainer = ({ id, children, className }: DroppableContainerProps) => {
-  const { setNodeRef } = useDroppable({ id });
-  return <div ref={setNodeRef} className={className}>{children}</div>;
-};
+// Import new modular components and hooks
+import { useFormBuilderData } from "@/hooks/useFormBuilderData";
+import { useFormFieldDragAndDrop } from "@/hooks/useFormFieldDragAndDrop";
+import { AddSectionForm } from "@/components/form-builder/AddSectionForm";
+import { AddFieldForm } from "@/components/form-builder/AddFieldForm";
+import { FormSectionsList } from "@/components/form-builder/FormSectionsList";
+import { UncategorizedFieldsList } from "@/components/form-builder/UncategorizedFieldsList";
 
 const FormBuilderPage = () => {
-  const { programId } = useParams<{ programId: string }>();
-  const [programTitle, setProgramTitle] = useState('');
-  const [sections, setSections] = useState<FormSection[]>([]);
-  const [fields, setFields] = useState<FormField[]>([]);
+  const {
+    programId,
+    programTitle,
+    sections,
+    setSections,
+    fields,
+    setFields,
+    loading,
+    newFieldSectionId,
+    setNewFieldSectionId,
+    fetchData,
+    getFieldsForSection,
+  } = useFormBuilderData();
+
+  const {
+    sensors,
+    onDragStart,
+    onDragEnd,
+    activeDragItem,
+  } = useFormFieldDragAndDrop({ fields, setFields, sections, fetchData });
+
   const [newSectionName, setNewSectionName] = useState('');
   const [newFieldLabel, setNewFieldLabel] = useState('');
   const [newFieldType, setNewFieldType] = useState<FormField['field_type']>('text');
   const [newFieldOptions, setNewFieldOptions] = useState('');
-  const [newFieldSectionId, setNewFieldSectionId] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [activeDragItem, setActiveDragItem] = useState<FormField | null>(null); // For DragOverlay
 
   // State for ConditionalLogicBuilder
   const [isLogicBuilderOpen, setIsLogicBuilderOpen] = useState(false);
@@ -49,58 +54,6 @@ const FormBuilderPage = () => {
   // State for EditFormFieldDialog
   const [isEditFieldDialogOpen, setIsEditFieldDialogOpen] = useState(false);
   const [fieldToEditDetails, setFieldToEditDetails] = useState<FormField | null>(null);
-
-  const fetchData = useCallback(async () => {
-    if (!programId) {
-      setLoading(false); // Ensure loading is false even if no programId
-      return;
-    }
-    setLoading(true);
-
-    let hasError = false;
-
-    const { data: programData, error: programError } = await supabase
-      .from('programs').select('title').eq('id', programId).single();
-    
-    if (programError) {
-      showError("Could not fetch program details.");
-      hasError = true;
-    } else {
-      setProgramTitle(programData.title);
-    }
-
-    const { data: sectionsData, error: sectionsError } = await supabase
-      .from('form_sections').select('*').eq('program_id', programId).order('order', { ascending: true });
-    
-    if (sectionsError) {
-      showError("Could not fetch form sections.");
-      hasError = true;
-    } else {
-      setSections(sectionsData || []);
-    }
-
-    const { data: fieldsData, error: fieldsError } = await supabase
-      .from('form_fields').select('*').eq('program_id', programId).order('order', { ascending: true });
-
-    if (fieldsError) {
-      showError("Could not fetch form fields.");
-      hasError = true;
-    } else {
-      setFields(fieldsData as FormField[]);
-    }
-    setLoading(false);
-  }, [programId]); // Only programId as dependency
-
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
-
-  // Separate useEffect for initial newFieldSectionId
-  useEffect(() => {
-    if (sections.length > 0 && newFieldSectionId === null) {
-      setNewFieldSectionId(sections[0].id);
-    }
-  }, [sections, newFieldSectionId]);
 
   const handleAddSection = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -252,132 +205,6 @@ const FormBuilderPage = () => {
     setFieldToEditDetails(null);
   };
 
-  const onDragStart = (event: any) => {
-    if (event.active.data.current?.field) {
-      setActiveDragItem(event.active.data.current.field);
-    }
-  };
-
-  const onDragEnd = async (event: DragEndEvent) => {
-    setActiveDragItem(null);
-    const { active, over } = event;
-
-    if (!over) return;
-
-    const activeFieldId = active.id as string;
-    const overId = over.id as string;
-
-    const activeField = fields.find(f => f.id === activeFieldId);
-    if (!activeField) return;
-
-    const sourceSectionId = activeField.section_id;
-    let targetSectionId: string | null = null;
-
-    // Determine target section ID
-    if (sections.some(s => s.id === overId)) {
-      targetSectionId = overId; // Dropped directly onto a section header
-    } else if (overId === 'uncategorized-fields-droppable-area') {
-      targetSectionId = null; // Dropped onto the uncategorized droppable area
-    } else if (over.data.current?.field) {
-      targetSectionId = over.data.current.field.section_id; // Dropped onto another field
-    } else {
-      return; // No valid drop target found
-    }
-
-    // If no effective change in section or order, do nothing.
-    // This check is more robust after determining targetSectionId
-    if (sourceSectionId === targetSectionId) {
-      const currentSectionFields = fields.filter(f => f.section_id === sourceSectionId).sort((a, b) => a.order - b.order);
-      const oldIndex = currentSectionFields.findIndex(f => f.id === activeFieldId);
-      const newIndex = currentSectionFields.findIndex(f => f.id === overId);
-
-      if (oldIndex === -1 || newIndex === -1 || oldIndex === newIndex) {
-        return; // No actual reorder happened
-      }
-    }
-
-    const originalFields = [...fields]; // Store for potential revert
-    let updatedFields: FormField[] = [];
-    let updatesToSend: { id: string; order: number; section_id: string | null; }[] = [];
-
-    // Create a mutable copy of fields for local manipulation
-    let tempFields = [...fields];
-
-    // Remove the active field from its current position in tempFields
-    tempFields = tempFields.filter(f => f.id !== activeFieldId);
-
-    // Find the index where the active field should be inserted in the target section
-    let insertIndex = -1;
-    if (over.data.current?.field) {
-      insertIndex = tempFields.filter(f => f.section_id === targetSectionId).findIndex(f => f.id === overId);
-    }
-    
-    // Prepare the field to be moved/reordered
-    const fieldToMove = { ...activeField, section_id: targetSectionId };
-
-    // Insert the field into its new position in the temporary array
-    if (insertIndex !== -1) {
-      const fieldsInTargetSection = tempFields.filter(f => f.section_id === targetSectionId).sort((a, b) => a.order - b.order);
-      fieldsInTargetSection.splice(insertIndex, 0, fieldToMove);
-      tempFields = tempFields.filter(f => f.section_id !== targetSectionId);
-      tempFields.push(...fieldsInTargetSection);
-    } else {
-      // If no specific overId or dropped into an empty section, add to the end of the target section
-      tempFields.push(fieldToMove);
-    }
-
-    // Recalculate orders for all fields in all affected sections
-    const allContainerIds = new Set([...sections.map(s => s.id), null]); // null for uncategorized
-    
-    allContainerIds.forEach(containerId => {
-      const currentContainerFields = tempFields
-        .filter(f => f.section_id === containerId)
-        .sort((a, b) => a.order - b.order); // Sort by current order to get correct index
-
-      const updatedContainerFields = currentContainerFields.map((f, idx) => ({ ...f, order: idx + 1 }));
-
-      updatedFields = updatedFields.filter(f => f.section_id !== containerId); // Remove old versions
-      updatedFields.push(...updatedContainerFields); // Add new versions
-    });
-
-    // Sort the final array by order to ensure correct display
-    updatedFields.sort((a, b) => a.order - b.order);
-
-    // Prepare batch update for Supabase
-    updatesToSend = updatedFields.filter(f => {
-      const originalField = originalFields.find(orig => orig.id === f.id);
-      return originalField && (originalField.order !== f.order || originalField.section_id !== f.section_id);
-    }).map(f => ({
-      id: f.id,
-      order: f.order,
-      section_id: f.section_id,
-    }));
-
-    if (updatesToSend.length > 0) {
-      // Optimistic update
-      setFields(updatedFields);
-
-      const { error } = await supabase.from('form_fields').upsert(updatesToSend);
-      if (error) {
-        showError(`Failed to save changes: ${error.message}. Reverting.`);
-        setFields(originalFields); // Revert on error
-      } else {
-        showSuccess("Field(s) updated successfully.");
-        // Re-fetch data to ensure full consistency after successful DB update
-        fetchData();
-      }
-    }
-  };
-
-  const sensors = useSensors(
-    useSensor(PointerSensor),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
-  );
-
-  const getFieldsForSection = (sectionId: string | null) => {
-    return fields.filter(field => field.section_id === sectionId).sort((a, b) => a.order - b.order);
-  };
-
   const uncategorizedFields = getFieldsForSection(null);
 
   return (
@@ -395,69 +222,25 @@ const FormBuilderPage = () => {
         </CardHeader>
         <CardContent>
           <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd} onDragStart={onDragStart}>
-            <div className="space-y-6">
-              <h3 className="text-lg font-medium">Form Sections</h3>
-              {loading ? (
-                <Skeleton className="h-24 w-full" />
-              ) : sections.length > 0 ? (
-                <Accordion type="multiple" className="w-full">
-                  {sections.map(section => (
-                    <AccordionItem key={section.id} value={section.id}>
-                      <DroppableContainer id={section.id} className="rounded-md border">
-                        <AccordionTrigger className="flex justify-between items-center w-full pr-4">
-                          <span className="font-semibold">{section.name}</span>
-                          <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); handleDeleteSection(section.id); }}>
-                            <Trash2 className="h-4 w-4 text-destructive" />
-                          </Button>
-                        </AccordionTrigger>
-                        <AccordionContent>
-                          <SortableContext items={getFieldsForSection(section.id).map(f => f.id)} strategy={verticalListSortingStrategy}>
-                            <ul className="space-y-2 p-2 min-h-[50px]">
-                              {getFieldsForSection(section.id).length > 0 ? (
-                                getFieldsForSection(section.id).map(field => (
-                                  <FormFieldItem
-                                    key={field.id}
-                                    field={field}
-                                    onDelete={handleDeleteField}
-                                    onToggleRequired={handleToggleRequired}
-                                    onEditLogic={handleEditLogic}
-                                    onEdit={handleEditField}
-                                  />
-                                ))
-                              ) : (
-                                <p className="text-muted-foreground text-sm text-center py-4">Drag fields here or add new ones below.</p>
-                              )}
-                            </ul>
-                          </SortableContext>
-                        </AccordionContent>
-                      </DroppableContainer>
-                    </AccordionItem>
-                  ))}
-                </Accordion>
-              ) : (
-                <p className="text-muted-foreground text-sm">No sections defined yet. Add one to get started.</p>
-              )}
+            <FormSectionsList
+              sections={sections}
+              fields={fields}
+              loading={loading}
+              getFieldsForSection={getFieldsForSection}
+              handleDeleteSection={handleDeleteSection}
+              handleDeleteField={handleDeleteField}
+              handleToggleRequired={handleToggleRequired}
+              onEditLogic={handleEditLogic}
+              onEditField={handleEditField}
+            />
 
-              {uncategorizedFields.length > 0 && (
-                <DroppableContainer id="uncategorized-fields-droppable-area" className="mt-6 border-t pt-6 rounded-md border">
-                  <h3 className="text-lg font-medium mb-4 px-2">Uncategorized Fields</h3>
-                  <SortableContext items={uncategorizedFields.map(f => f.id)} strategy={verticalListSortingStrategy}>
-                    <ul className="space-y-2 p-2 min-h-[50px]">
-                      {uncategorizedFields.map(field => (
-                        <FormFieldItem
-                          key={field.id}
-                          field={field}
-                          onDelete={handleDeleteField}
-                          onToggleRequired={handleToggleRequired}
-                          onEditLogic={handleEditLogic}
-                          onEdit={handleEditField}
-                        />
-                      ))}
-                    </ul>
-                  </SortableContext>
-                </DroppableContainer>
-              )}
-            </div>
+            <UncategorizedFieldsList
+              uncategorizedFields={uncategorizedFields}
+              handleDeleteField={handleDeleteField}
+              handleToggleRequired={handleToggleRequired}
+              onEditLogic={handleEditLogic}
+              onEditField={handleEditField}
+            />
 
             <DragOverlay>
               {activeDragItem ? (
@@ -472,80 +255,26 @@ const FormBuilderPage = () => {
             </DragOverlay>
           </DndContext>
 
-          <form onSubmit={handleAddSection} className="mt-8 pt-8 border-t">
-            <h3 className="text-lg font-medium">Add New Section</h3>
-            <div className="flex gap-2 mt-4">
-              <Input
-                placeholder="e.g., 'Personal Information'"
-                value={newSectionName}
-                onChange={e => setNewSectionName(e.target.value)}
-                disabled={isSubmitting}
-              />
-              <Button type="submit" disabled={isSubmitting || !newSectionName.trim()}>
-                <Plus className="mr-2 h-4 w-4" />
-                Add Section
-              </Button>
-            </div>
-          </form>
+          <AddSectionForm
+            newSectionName={newSectionName}
+            setNewSectionName={setNewSectionName}
+            isSubmitting={isSubmitting}
+            handleAddSection={handleAddSection}
+          />
 
-          <form onSubmit={handleAddField} className="mt-8 pt-8 border-t">
-            <h3 className="text-lg font-medium">Add New Field</h3>
-            <div className="grid gap-2 mt-4">
-              <Input
-                placeholder="e.g., 'Your Personal Statement'"
-                value={newFieldLabel}
-                onChange={e => setNewFieldLabel(e.target.value)}
-                disabled={isSubmitting}
-              />
-              <div className="flex flex-col sm:flex-row gap-2">
-                <Select value={newFieldType} onValueChange={(value) => setNewFieldType(value as FormField['field_type'])}>
-                  <SelectTrigger className="w-full sm:w-[140px]">
-                    <SelectValue placeholder="Field type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="text">Text</SelectItem>
-                    <SelectItem value="textarea">Textarea</SelectItem>
-                    <SelectItem value="select">Dropdown</SelectItem>
-                    <SelectItem value="radio">Radio Group</SelectItem>
-                    <SelectItem value="checkbox">Checkboxes</SelectItem>
-                    <SelectItem value="email">Email Address</SelectItem>
-                    <SelectItem value="date">Date Picker</SelectItem>
-                    <SelectItem value="phone">Phone Number</SelectItem>
-                    <SelectItem value="number">Number</SelectItem>
-                    <SelectItem value="richtext">Rich Text</SelectItem>
-                  </SelectContent>
-                </Select>
-                {(newFieldType === 'select' || newFieldType === 'radio' || newFieldType === 'checkbox') && (
-                  <Input
-                    placeholder="Comma-separated options, e.g., Yes, No"
-                    value={newFieldOptions}
-                    onChange={e => setNewFieldOptions(e.target.value)}
-                    disabled={isSubmitting}
-                    className="flex-grow"
-                  />
-                )}
-              </div>
-              <Select
-                value={newFieldSectionId || 'none'}
-                onValueChange={(value) => setNewFieldSectionId(value === 'none' ? null : value)}
-                disabled={isSubmitting}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Assign to Section (Optional)" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">Uncategorized</SelectItem>
-                  {sections.map(section => (
-                    <SelectItem key={section.id} value={section.id}>{section.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Button type="submit" disabled={isSubmitting || !newFieldLabel.trim()} className="w-full sm:w-auto self-end">
-                <Plus className="mr-2 h-4 w-4" />
-                Add Field
-              </Button>
-            </div>
-          </form>
+          <AddFieldForm
+            newFieldLabel={newFieldLabel}
+            setNewFieldLabel={setNewFieldLabel}
+            newFieldType={newFieldType}
+            setNewFieldType={setNewFieldType}
+            newFieldOptions={newFieldOptions}
+            setNewFieldOptions={setNewFieldOptions}
+            newFieldSectionId={newFieldSectionId}
+            setNewFieldSectionId={setNewFieldSectionId}
+            isSubmitting={isSubmitting}
+            handleAddField={handleAddField}
+            sections={sections}
+          />
         </CardContent>
       </Card>
 
