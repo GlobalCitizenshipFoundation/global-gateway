@@ -19,6 +19,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { Input } from './ui/input'; // Import Input for inline editing
 
 interface FormFieldItemProps {
   field: FormField;
@@ -26,9 +27,10 @@ interface FormFieldItemProps {
   onToggleRequired: (fieldId: string, isRequired: boolean) => void;
   onEditLogic: (field: FormField) => void;
   onEdit: (field: FormField) => void;
+  onUpdateLabel: (fieldId: string, newLabel: string) => void; // New prop for inline label update
 }
 
-export const FormFieldItem = ({ field, onDelete, onToggleRequired, onEditLogic, onEdit }: FormFieldItemProps) => {
+export const FormFieldItem = ({ field, onDelete, onToggleRequired, onEditLogic, onEdit, onUpdateLabel }: FormFieldItemProps) => {
   // Defensive check: If field is null or undefined, return null to prevent errors
   if (!field) {
     console.error("FormFieldItem received a null or undefined field prop.");
@@ -52,6 +54,30 @@ export const FormFieldItem = ({ field, onDelete, onToggleRequired, onEditLogic, 
   const hasTooltip = field.tooltip && field.tooltip.trim() !== ''; // Check for tooltip
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
+  const [isEditingLabel, setIsEditingLabel] = useState(false);
+  const [editedLabel, setEditedLabel] = useState(field.label);
+
+  const handleLabelDoubleClick = () => {
+    setIsEditingLabel(true);
+  };
+
+  const handleLabelChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setEditedLabel(e.target.value);
+  };
+
+  const handleLabelBlur = () => {
+    if (editedLabel.trim() !== field.label) {
+      onUpdateLabel(field.id, editedLabel.trim());
+    }
+    setIsEditingLabel(false);
+  };
+
+  const handleLabelKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.currentTarget.blur(); // Trigger blur to save
+    }
+  };
+
   return (
     <li
       ref={setNodeRef}
@@ -63,7 +89,20 @@ export const FormFieldItem = ({ field, onDelete, onToggleRequired, onEditLogic, 
             <GripVertical className="h-5 w-5 text-muted-foreground" />
         </Button>
         <div className="flex-grow">
-            <span className="font-medium">{field.label}</span>
+            {isEditingLabel ? (
+                <Input
+                    value={editedLabel}
+                    onChange={handleLabelChange}
+                    onBlur={handleLabelBlur}
+                    onKeyDown={handleLabelKeyDown}
+                    autoFocus
+                    className="h-8 text-base"
+                />
+            ) : (
+                <span className="font-medium cursor-pointer" onDoubleClick={handleLabelDoubleClick}>
+                    {field.label}
+                </span>
+            )}
             <Badge variant="outline" className="ml-2 capitalize">{field.field_type}</Badge>
             {hasLogic && (
               <Tooltip>

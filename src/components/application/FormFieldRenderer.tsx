@@ -70,6 +70,7 @@ const FormFieldRenderer = ({ field, submitting }: FormFieldRendererProps) => {
                 required={field.is_required}
                 disabled={submitting}
                 className="min-h-[120px] resize-y"
+                placeholder={field.placeholder || undefined} // Use placeholder
               />
             </FormControl>
           ) : field.field_type === 'select' ? (
@@ -81,7 +82,7 @@ const FormFieldRenderer = ({ field, submitting }: FormFieldRendererProps) => {
                 disabled={submitting}
               >
                 <SelectTrigger id={field.id}>
-                  <SelectValue placeholder={`Select an option`} />
+                  <SelectValue placeholder={field.placeholder || `Select an option`} /> {/* Use placeholder */}
                 </SelectTrigger>
                 <SelectContent>
                   {(field.options as string[] || []).map((option, index) => (
@@ -147,6 +148,7 @@ const FormFieldRenderer = ({ field, submitting }: FormFieldRendererProps) => {
                 value={String(formHookField.value || '')}
                 required={field.is_required}
                 disabled={submitting}
+                placeholder={field.placeholder || undefined} // Use placeholder
               />
             </FormControl>
           ) : field.field_type === 'date' ? (
@@ -188,6 +190,7 @@ const FormFieldRenderer = ({ field, submitting }: FormFieldRendererProps) => {
                 value={String(formHookField.value || '')}
                 required={field.is_required}
                 disabled={submitting}
+                placeholder={field.placeholder || undefined} // Use placeholder
               />
             </FormControl>
           ) : field.field_type === 'number' ? (
@@ -199,6 +202,7 @@ const FormFieldRenderer = ({ field, submitting }: FormFieldRendererProps) => {
                 value={formHookField.value === undefined ? '' : formHookField.value}
                 required={field.is_required}
                 disabled={submitting}
+                placeholder={field.placeholder || undefined} // Use placeholder
               />
             </FormControl>
           ) : field.field_type === 'richtext' ? (
@@ -218,6 +222,7 @@ const FormFieldRenderer = ({ field, submitting }: FormFieldRendererProps) => {
                 value={String(formHookField.value || '')}
                 required={field.is_required}
                 disabled={submitting}
+                placeholder={field.placeholder || undefined} // Use placeholder
               />
             </FormControl>
           )}

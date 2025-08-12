@@ -5,6 +5,7 @@ import { FormField, FormSection } from "@/types";
 import { Plus } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { FormDescription } from "@/components/ui/form"; // Import FormDescription
 
 interface AddFieldFormProps {
   newFieldLabel: string;
@@ -17,10 +18,12 @@ interface AddFieldFormProps {
   setNewFieldSectionId: (sectionId: string | null) => void;
   newFieldHelpText: string;
   setNewFieldHelpText: (text: string) => void;
-  newFieldDescription: string; // New
-  setNewFieldDescription: (text: string) => void; // New
-  newFieldTooltip: string; // New
-  setNewFieldTooltip: (text: string) => void; // New
+  newFieldDescription: string;
+  setNewFieldDescription: (text: string) => void;
+  newFieldTooltip: string;
+  setNewFieldTooltip: (text: string) => void;
+  newFieldPlaceholder: string; // New
+  setNewFieldPlaceholder: (text: string) => void; // New
   isSubmitting: boolean;
   handleAddField: (e: React.FormEvent) => void;
   sections: FormSection[];
@@ -37,14 +40,18 @@ export const AddFieldForm = ({
   setNewFieldSectionId,
   newFieldHelpText,
   setNewFieldHelpText,
-  newFieldDescription, // New
-  setNewFieldDescription, // New
-  newFieldTooltip, // New
-  setNewFieldTooltip, // New
+  newFieldDescription,
+  setNewFieldDescription,
+  newFieldTooltip,
+  setNewFieldTooltip,
+  newFieldPlaceholder, // New
+  setNewFieldPlaceholder, // New
   isSubmitting,
   handleAddField,
   sections,
 }: AddFieldFormProps) => {
+  const showPlaceholder = ['text', 'textarea', 'email', 'phone', 'number'].includes(newFieldType);
+
   return (
     <form onSubmit={handleAddField} className="mt-8 pt-8 border-t">
       <h3 className="text-lg font-medium">Add New Field</h3>
@@ -115,6 +122,21 @@ export const AddFieldForm = ({
             disabled={isSubmitting}
           />
         </div>
+        {showPlaceholder && ( // Conditionally render placeholder
+          <div>
+            <Label htmlFor="new-field-placeholder" className="sr-only">Placeholder Text</Label>
+            <Input
+              id="new-field-placeholder"
+              placeholder="Optional: Add placeholder text (e.g., 'Enter your email address')"
+              value={newFieldPlaceholder}
+              onChange={e => setNewFieldPlaceholder(e.target.value)}
+              disabled={isSubmitting}
+            />
+            <FormDescription>
+              This text will appear inside the input field when it's empty.
+            </FormDescription>
+          </div>
+        )}
         <Select
           value={newFieldSectionId || 'none'}
           onValueChange={(value) => setNewFieldSectionId(value === 'none' ? null : value)}

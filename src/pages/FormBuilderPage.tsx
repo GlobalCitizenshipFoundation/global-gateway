@@ -14,7 +14,7 @@ import { useFormBuilderData } from "@/hooks/useFormBuilderData";
 import { useFormFieldDragAndDrop } from "@/hooks/useFormFieldDragAndDrop";
 import { useFormBuilderActions } from "@/hooks/useFormBuilderActions";
 import { AddSectionForm } from "@/components/form-builder/AddSectionForm";
-import { AddFieldForm } from "@/components/form-builder/AddFieldForm"; // Corrected import statement
+import { AddFieldForm } from "@/components/form-builder/AddFieldForm";
 import { FormSectionsList } from "@/components/form-builder/FormSectionsList";
 import { UncategorizedFieldsList } from "@/components/form-builder/UncategorizedFieldsList";
 import { supabase } from "@/integrations/supabase/client";
@@ -23,10 +23,11 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { useSession } from "@/contexts/SessionContext";
+import { useSession } from "@/contexts/SessionContext"; // Corrected import statement
 import { useFormSectionDragAndDrop } from "@/hooks/useFormSectionDragAndDrop";
 import RichTextEditor from "@/components/RichTextEditor";
 import { SaveAsTemplateDialog } from "@/components/forms/SaveAsTemplateDialog";
+import FormPreviewDialog from "@/components/form-builder/FormPreviewDialog";
 
 const AUTO_SAVE_DEBOUNCE_TIME = 2000; // 2 seconds
 
@@ -48,6 +49,8 @@ const FormBuilderPage = () => {
   const [isSaveAsTemplateDialogOpen, setIsSaveAsTemplateDialogOpen] = useState(false);
   const [newTemplateName, setNewTemplateName] = useState('');
   const [isSavingTemplate, setIsSavingTemplate] = useState(false);
+
+  const [isFormPreviewOpen, setIsFormPreviewOpen] = useState(false); // New state for preview dialog
 
   const {
     sections,
@@ -144,6 +147,7 @@ const FormBuilderPage = () => {
     handleToggleRequired: performToggleRequired,
     handleSaveLogic: performSaveLogic,
     handleSaveEditedField: performSaveEditedField,
+    handleUpdateFieldLabel: performUpdateFieldLabel, // Destructure new function
     handleUpdateFormStatus: performUpdateFormStatus,
     handleUpdateFormDetails: performUpdateFormDetails,
   } = useFormBuilderActions({ formId, setSections, setFields, fetchData });
@@ -157,6 +161,7 @@ const FormBuilderPage = () => {
   const [newFieldHelpText, setNewFieldHelpText] = useState('');
   const [newFieldDescription, setNewFieldDescription] = useState('');
   const [newFieldTooltip, setNewFieldTooltip] = useState('');
+  const [newFieldPlaceholder, setNewFieldPlaceholder] = useState(''); // New state for placeholder
   const [isAddingField, setIsAddingField] = useState(false);
 
   const [isLogicBuilderOpen, setIsLogicBuilderOpen] = useState(false);
@@ -233,7 +238,7 @@ const FormBuilderPage = () => {
   const handleAddField = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsAddingField(true);
-    const newField = await performAddField(newFieldLabel, newFieldType, newFieldOptions, newFieldSectionId, newFieldHelpText, newFieldDescription, newFieldTooltip);
+    const newField = await performAddField(newFieldLabel, newFieldType, newFieldOptions, newFieldSectionId, newFieldHelpText, newFieldDescription, newFieldTooltip, newFieldPlaceholder); // Pass newFieldPlaceholder
     if (newField) {
       setNewFieldLabel('');
       setNewFieldOptions('');
@@ -241,6 +246,7 @@ const FormBuilderPage = () => {
       setNewFieldHelpText('');
       setNewFieldDescription('');
       setNewFieldTooltip('');
+      setNewFieldPlaceholder(''); // Reset placeholder
       setHasUnsavedChanges(true); // Mark as unsaved
     }
     setIsAddingField(false);
@@ -271,7 +277,7 @@ const FormBuilderPage = () => {
     setIsEditFieldDialogOpen(true);
   };
 
-  const handleSaveEditedField = async (fieldId: string, values: { label: string; field_type: FormField['field_type']; options?: string; is_required: boolean; help_text?: string | null; description?: string | null; tooltip?: string | null; section_id?: string | null; }) => {
+  const handleSaveEditedField = async (fieldId: string, values: { label: string; field_type: FormField['field_type']; options?: string; is_required: boolean; help_text?: string | null; description?: string | null; tooltip?: string | null; placeholder?: string | null; section_id?: string | null; }) => {
     await performSaveEditedField(fieldId, values);
     setIsEditFieldDialogOpen(false);
     setFieldToEditDetails(null);
@@ -392,6 +398,7 @@ const FormBuilderPage = () => {
         help_text: field.help_text,
         description: field.description,
         tooltip: field.tooltip,
+        placeholder: field.placeholder, // New: placeholder
         last_edited_by_user_id: user.id, // Set editor
         last_edited_at: new Date().toISOString(), // Set timestamp
       }));
@@ -480,6 +487,7 @@ const FormBuilderPage = () => {
               handleToggleRequired={handleToggleRequired}
               onEditLogic={handleEditLogic}
               onEditField={handleEditField}
+              onUpdateLabel={performUpdateFieldLabel} // Pass the new function
             />
 
             <UncategorizedFieldsList
@@ -488,6 +496,7 @@ const FormBuilderPage = () => {
               handleToggleRequired={handleToggleRequired}
               onEditLogic={handleEditLogic}
               onEditField={handleEditField}
+              onUpdateLabel={performUpdateFieldLabel} // Pass the new function
             />
 
             <DragOverlay>
@@ -498,6 +507,7 @@ const FormBuilderPage = () => {
                   onToggleRequired={() => {}}
                   onEditLogic={() => {}}
                   onEdit={() => {}}
+                  onUpdateLabel={() => {}} // Dummy for overlay
                 />
               ) : activeSectionDragItem ? (
                 <div className="p-4 bg-secondary rounded-md shadow-lg cursor-grabbing">
@@ -541,6 +551,8 @@ const FormBuilderPage = () => {
                 setNewFieldDescription={setNewFieldDescription}
                 newFieldTooltip={newFieldTooltip}
                 setNewFieldTooltip={setNewFieldTooltip}
+                newFieldPlaceholder={newFieldPlaceholder} // Pass newFieldPlaceholder
+                setNewFieldPlaceholder={setNewFieldPlaceholder} // Pass setter
                 isSubmitting={isAddingField}
                 handleAddField={handleAddField}
                 sections={sections}
@@ -553,6 +565,9 @@ const FormBuilderPage = () => {
               {isAutoSaving ? "Saving Draft..." : "Save Draft"}
             </Button>
             <div className="flex gap-2">
+              <Button variant="outline" onClick={() => setIsFormPreviewOpen(true)}>
+                Preview Form
+              </Button>
               {formStatus === 'draft' ? (
                 <Button onClick={() => handlePublishUnpublish('published')} disabled={isUpdatingStatus}>
                   {isUpdatingStatus ? 'Publishing...' : 'Publish Form'}
@@ -605,6 +620,15 @@ const FormBuilderPage = () => {
         setNewTemplateName={setNewTemplateName}
         isSaving={isSavingTemplate}
         onSave={handleSaveAsTemplate}
+      />
+
+      <FormPreviewDialog
+        isOpen={isFormPreviewOpen}
+        onClose={() => setIsFormPreviewOpen(false)}
+        formName={formName}
+        formDescription={formDescription}
+        formSections={sections}
+        formFields={fields}
       />
     </div>
   );

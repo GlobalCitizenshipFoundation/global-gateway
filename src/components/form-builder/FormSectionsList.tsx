@@ -31,6 +31,7 @@ interface FormSectionsListProps {
   handleToggleRequired: (fieldId: string, isRequired: boolean) => Promise<void>;
   onEditLogic: (field: FormField) => void;
   onEditField: (field: FormField) => void;
+  onUpdateLabel: (fieldId: string, newLabel: string) => void; // New prop
 }
 
 // Helper component for droppable areas
@@ -90,6 +91,7 @@ export const FormSectionsList = ({
   handleToggleRequired,
   onEditLogic,
   onEditField,
+  onUpdateLabel, // Destructure new prop
 }: FormSectionsListProps) => {
   const [sectionToDelete, setSectionToDelete] = useState<FormSection | null>(null);
   const [isSectionDeleteDialogOpen, setIsSectionDeleteDialogOpen] = useState(false);
@@ -130,6 +132,7 @@ export const FormSectionsList = ({
                               onToggleRequired={handleToggleRequired}
                               onEditLogic={onEditLogic}
                               onEdit={onEditField}
+                              onUpdateLabel={onUpdateLabel} // Pass the new prop
                             />
                           ))
                         ) : (

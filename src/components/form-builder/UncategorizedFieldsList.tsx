@@ -10,6 +10,7 @@ interface UncategorizedFieldsListProps {
   handleToggleRequired: (fieldId: string, isRequired: boolean) => Promise<void>;
   onEditLogic: (field: FormField) => void;
   onEditField: (field: FormField) => void;
+  onUpdateLabel: (fieldId: string, newLabel: string) => void; // New prop
 }
 
 // Helper component for droppable areas
@@ -24,6 +25,7 @@ export const UncategorizedFieldsList = ({
   handleToggleRequired,
   onEditLogic,
   onEditField,
+  onUpdateLabel, // Destructure new prop
 }: UncategorizedFieldsListProps) => {
   if (uncategorizedFields.length === 0) return null;
 
@@ -40,6 +42,7 @@ export const UncategorizedFieldsList = ({
               onToggleRequired={handleToggleRequired}
               onEditLogic={onEditLogic}
               onEdit={onEditField}
+              onUpdateLabel={onUpdateLabel} // Pass the new prop
             />
           ))}
         </ul>

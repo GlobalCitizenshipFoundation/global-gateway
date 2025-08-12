@@ -79,6 +79,7 @@ export type FormField = {
   help_text: string | null;
   description: string | null;
   tooltip: string | null;
+  placeholder: string | null; // New: Placeholder text for input fields
   last_edited_by_user_id: string | null; // New
   last_edited_at: string | null; // New
 };

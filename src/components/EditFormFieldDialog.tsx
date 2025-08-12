@@ -35,7 +35,8 @@ const editFormFieldSchema = z.object({
   help_text: z.string().nullable().optional(),
   description: z.string().nullable().optional(),
   tooltip: z.string().nullable().optional(),
-  section_id: z.string().nullable().optional(), // New: section_id
+  placeholder: z.string().nullable().optional(), // New: Placeholder
+  section_id: z.string().nullable().optional(),
 });
 
 type EditFormFieldValues = z.infer<typeof editFormFieldSchema>;
@@ -65,7 +66,8 @@ const EditFormFieldDialog = ({
       help_text: "",
       description: "",
       tooltip: "",
-      section_id: null, // New: default value
+      placeholder: "", // New: default value
+      section_id: null,
     },
   });
 
@@ -79,7 +81,8 @@ const EditFormFieldDialog = ({
         help_text: fieldToEdit.help_text || '',
         description: fieldToEdit.description || '',
         tooltip: fieldToEdit.tooltip || '',
-        section_id: fieldToEdit.section_id || null, // New: set from existing field
+        placeholder: fieldToEdit.placeholder || '', // New: set from existing field
+        section_id: fieldToEdit.section_id || null,
       });
     }
   }, [fieldToEdit, form]);
@@ -91,6 +94,7 @@ const EditFormFieldDialog = ({
   };
 
   const selectedFieldType = form.watch("field_type");
+  const showPlaceholder = ['text', 'textarea', 'email', 'phone', 'number'].includes(selectedFieldType);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -225,6 +229,28 @@ const EditFormFieldDialog = ({
                 </FormItem>
               )}
             />
+            {showPlaceholder && ( // Conditionally render placeholder
+              <FormFieldComponent
+                control={form.control}
+                name="placeholder"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Placeholder Text (Optional)</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="e.g., Enter your email address"
+                        {...field}
+                        value={field.value || ''}
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      This text will appear inside the input field when it's empty.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
             <FormFieldComponent
               control={form.control}
               name="section_id"
