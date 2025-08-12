@@ -1,4 +1,4 @@
-import AvatarWithInitials from "@/components/AvatarWithInitials"; // Import the new component
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -14,6 +14,16 @@ import { useSession } from "@/contexts/SessionContext";
 import { supabase } from "@/integrations/supabase/client";
 import { showError, showSuccess } from "@/utils/toast";
 
+// Move getInitials outside the component to prevent re-creation on every render
+const getInitials = (name: string) => {
+  if (!name) return 'U';
+  const parts = name.split(' ').filter(Boolean);
+  if (parts.length === 1) {
+    return parts[0].substring(0, 2).toUpperCase();
+  }
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+};
+
 const UserNav = () => {
   const { user } = useSession();
   const navigate = useNavigate();
@@ -28,19 +38,19 @@ const UserNav = () => {
     }
   };
 
-  // Derive full name from user_metadata, which will be updated by ProfilePage
-  const firstName = user?.user_metadata?.first_name;
-  const middleName = user?.user_metadata?.middle_name;
-  const lastName = user?.user_metadata?.last_name;
+  const fullName = user?.user_metadata?.full_name;
   const avatarUrl = user?.user_metadata?.avatar_url;
-
-  const fullName = [firstName, middleName, lastName].filter(Boolean).join(' ').trim();
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <div className="relative h-8 w-8 rounded-full cursor-pointer">
-          <AvatarWithInitials name={fullName} src={avatarUrl} className="h-8 w-8" />
+          <Avatar className="h-8 w-8">
+            <AvatarImage src={avatarUrl} alt={fullName || 'User'} />
+            <AvatarFallback>
+              {fullName ? getInitials(fullName) : 'U'}
+            </AvatarFallback>
+          </Avatar>
         </div>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-56" align="end" forceMount>
@@ -71,7 +81,7 @@ const UserNav = () => {
             <Link to="/creator/forms">Manage Forms</Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
-            <Link to="/creator/workflow-templates">Manage Workflows</Link> {/* New link */}
+            <Link to="/creator/workflow-templates">Manage Workflows</Link>
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
