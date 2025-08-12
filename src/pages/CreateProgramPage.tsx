@@ -14,12 +14,12 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+  Card, // Added import
+  CardContent, // Added import
+  CardDescription, // Added import
+  CardHeader, // Added import
+  CardTitle, // Added import
+} from "@/components/ui/card"; // Added import
 import {
   Popover,
   PopoverContent,
@@ -134,7 +134,7 @@ const CreateProgramPage = () => {
 
       const { data: templateFields, error: fieldsError } = await supabase
         .from('form_fields')
-        .select('*')
+        .select('id, form_id, section_id, label, field_type, options, is_required, order, display_rules, description, tooltip, placeholder, last_edited_by_user_id, last_edited_at') // Explicitly select columns
         .eq('form_id', values.formTemplateId)
         .order('order', { ascending: true });
 
@@ -154,6 +154,8 @@ const CreateProgramPage = () => {
           form_id: newFormId,
           name: section.name,
           order: section.order,
+          description: section.description, // Copy section description
+          tooltip: section.tooltip, // Copy section tooltip
           last_edited_by_user_id: user.id, // Set editor
           last_edited_at: now, // Set timestamp
         };
@@ -169,7 +171,6 @@ const CreateProgramPage = () => {
         is_required: field.is_required,
         order: field.order,
         display_rules: field.display_rules,
-        help_text: field.help_text,
         description: field.description,
         tooltip: field.tooltip,
         placeholder: field.placeholder,

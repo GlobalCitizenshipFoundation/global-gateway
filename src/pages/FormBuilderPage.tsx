@@ -32,12 +32,14 @@ const FormBuilderPage = () => {
     loading,
     getFieldsForSection,
     newSectionName, setNewSectionName,
+    newSectionDescription, setNewSectionDescription, // New
+    newSectionTooltip, setNewSectionTooltip, // New
     isAddingSection, setIsAddingSection,
     newFieldLabel, setNewFieldLabel,
     newFieldType, setNewFieldType,
     newFieldOptions, setNewFieldOptions,
     newFieldSectionId, setNewFieldSectionId,
-    newFieldHelpText, setNewFieldHelpText,
+    // Removed newFieldHelpText
     newFieldDescription, setNewFieldDescription,
     newFieldTooltip, setNewFieldTooltip,
     newFieldPlaceholder, setNewFieldPlaceholder,
@@ -157,6 +159,10 @@ const FormBuilderPage = () => {
               <AddSectionForm
                 newSectionName={newSectionName}
                 setNewSectionName={setNewSectionName}
+                newSectionDescription={newSectionDescription} // New
+                setNewSectionDescription={setNewSectionDescription} // New
+                newSectionTooltip={newSectionTooltip} // New
+                setNewSectionTooltip={setNewSectionTooltip} // New
                 isSubmitting={isAddingSection}
                 handleAddSection={handlers.handleAddSection}
               />
@@ -170,8 +176,7 @@ const FormBuilderPage = () => {
                 setNewFieldOptions={setNewFieldOptions}
                 newFieldSectionId={newFieldSectionId}
                 setNewFieldSectionId={setNewFieldSectionId}
-                newFieldHelpText={newFieldHelpText}
-                setNewFieldHelpText={setNewFieldHelpText}
+                // Removed newFieldHelpText
                 newFieldDescription={newFieldDescription}
                 setNewFieldDescription={setNewFieldDescription}
                 newFieldTooltip={newFieldTooltip}

@@ -16,8 +16,7 @@ interface AddFieldFormProps {
   setNewFieldOptions: (options: string) => void;
   newFieldSectionId: string | null;
   setNewFieldSectionId: (sectionId: string | null) => void;
-  newFieldHelpText: string;
-  setNewFieldHelpText: (text: string) => void;
+  // Removed newFieldHelpText
   newFieldDescription: string;
   setNewFieldDescription: (text: string) => void;
   newFieldTooltip: string;
@@ -38,8 +37,7 @@ export const AddFieldForm = ({
   setNewFieldOptions,
   newFieldSectionId,
   setNewFieldSectionId,
-  newFieldHelpText,
-  setNewFieldHelpText,
+  // Removed newFieldHelpText
   newFieldDescription,
   setNewFieldDescription,
   newFieldTooltip,
@@ -98,16 +96,6 @@ export const AddFieldForm = ({
             readOnly={isSubmitting}
             className="min-h-[60px]"
             placeholder="Optional: Add a description for this field (e.g., 'This section asks about your academic background.')"
-          />
-        </div>
-        <div>
-          <Label htmlFor="new-field-help-text" className="sr-only">Help Text</Label>
-          <RichTextEditor
-            value={newFieldHelpText}
-            onChange={setNewFieldHelpText}
-            readOnly={isSubmitting}
-            className="min-h-[60px]"
-            placeholder="Optional: Add help text for this field (e.g., 'Max 500 words')"
           />
         </div>
         <div>

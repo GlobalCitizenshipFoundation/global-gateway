@@ -7,6 +7,7 @@ import { FormField, FormSection } from '@/types';
 import { formatResponseValue, shouldFieldBeDisplayed } from '@/utils/formFieldUtils';
 import { showError, showSuccess } from '@/utils/toast';
 import { Separator } from '@/components/ui/separator';
+import DOMPurify from 'dompurify'; // Import DOMPurify
 
 interface ApplicationPdfViewerProps {
   applicationId: string;
@@ -131,18 +132,23 @@ const ApplicationPdfViewer = ({
           );
           if (fieldsInSection.length === 0) return null;
 
+          const sanitizedSectionDescription = section.description ? DOMPurify.sanitize(section.description, { USE_PROFILES: { html: true } }) : null;
+
           return (
             <div key={section.id} style={{ marginBottom: '20px' }}>
               <h3 style={{ fontSize: '14pt', fontWeight: 'bold', marginBottom: '10px', borderBottom: '1px solid #ddd', paddingBottom: '5px' }}>{section.name}</h3>
+              {sanitizedSectionDescription && (
+                <div style={{ fontSize: '10pt', color: '#666', marginBottom: '10px' }} dangerouslySetInnerHTML={{ __html: sanitizedSectionDescription }} />
+              )}
               <dl style={{ margin: 0, padding: 0 }}>
                 {fieldsInSection.map(field => {
                   const response = displayedResponses.find(res => res.form_fields?.id === field.id);
                   if (!response) return null;
+                  const sanitizedFieldDescription = field.description ? DOMPurify.sanitize(field.description, { USE_PROFILES: { html: true } }) : null;
                   return (
                     <div key={field.id} style={{ marginBottom: '15px' }}>
                       <dt style={{ fontWeight: 'bold', fontSize: '11pt', marginBottom: '3px' }}>{field.label}</dt>
-                      {field.description && <dd style={{ fontSize: '9pt', color: '#666', marginBottom: '3px' }}>{field.description}</dd>}
-                      {field.help_text && <dd style={{ fontSize: '9pt', color: '#666', marginBottom: '3px' }}>{field.help_text}</dd>}
+                      {sanitizedFieldDescription && <dd style={{ fontSize: '9pt', color: '#666', marginBottom: '3px' }}><div dangerouslySetInnerHTML={{ __html: sanitizedFieldDescription }} /></dd>}
                       <dd style={{ fontSize: '10pt', color: '#333', whiteSpace: 'pre-wrap' }}>
                         {formatResponseValue(response.value, field.field_type)}
                       </dd>
@@ -161,11 +167,11 @@ const ApplicationPdfViewer = ({
               {uncategorizedFields.map(field => {
                 const response = displayedResponses.find(res => res.form_fields?.id === field.id);
                 if (!response) return null;
+                const sanitizedFieldDescription = field.description ? DOMPurify.sanitize(field.description, { USE_PROFILES: { html: true } }) : null;
                 return (
                   <div key={field.id} style={{ marginBottom: '15px' }}>
                     <dt style={{ fontWeight: 'bold', fontSize: '11pt', marginBottom: '3px' }}>{field.label}</dt>
-                    {field.description && <dd style={{ fontSize: '9pt', color: '#666', marginBottom: '3px' }}>{field.description}</dd>}
-                    {field.help_text && <dd style={{ fontSize: '9pt', color: '#666', marginBottom: '3px' }}>{field.help_text}</dd>}
+                    {sanitizedFieldDescription && <dd style={{ fontSize: '9pt', color: '#666', marginBottom: '3px' }}><div dangerouslySetInnerHTML={{ __html: sanitizedFieldDescription }} /></dd>}
                     <dd style={{ fontSize: '10pt', color: '#333', whiteSpace: 'pre-wrap' }}>
                       {formatResponseValue(response.value, field.field_type)}
                     </dd>

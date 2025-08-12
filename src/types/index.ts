@@ -57,6 +57,8 @@ export type FormSection = {
   created_at: string;
   last_edited_by_user_id: string | null; // New
   last_edited_at: string | null; // New
+  description: string | null; // New: Optional description for the section
+  tooltip: string | null; // New: Optional tooltip for the section
 };
 
 export type DisplayRule = {
@@ -76,7 +78,6 @@ export type FormField = {
   is_required: boolean;
   order: number;
   display_rules: DisplayRule[] | null;
-  help_text: string | null;
   description: string | null;
   tooltip: string | null;
   placeholder: string | null; // New: Placeholder text for input fields

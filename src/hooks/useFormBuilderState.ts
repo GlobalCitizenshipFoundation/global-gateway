@@ -39,11 +39,13 @@ export const useFormBuilderState = (initialFormId?: string) => {
 
   // New section/field input states
   const [newSectionName, setNewSectionName] = useState('');
+  const [newSectionDescription, setNewSectionDescription] = useState(''); // New: Section description
+  const [newSectionTooltip, setNewSectionTooltip] = useState(''); // New: Section tooltip
   const [isAddingSection, setIsAddingSection] = useState(false);
   const [newFieldLabel, setNewFieldLabel] = useState('');
   const [newFieldType, setNewFieldType] = useState<FormField['field_type']>('text');
   const [newFieldOptions, setNewFieldOptions] = useState('');
-  const [newFieldHelpText, setNewFieldHelpText] = useState('');
+  // Removed newFieldHelpText
   const [newFieldDescription, setNewFieldDescription] = useState('');
   const [newFieldTooltip, setNewFieldTooltip] = useState('');
   const [newFieldPlaceholder, setNewFieldPlaceholder] = useState('');
@@ -81,7 +83,7 @@ export const useFormBuilderState = (initialFormId?: string) => {
 
     const { data: sectionsData, error: sectionsError } = await supabase
       .from('form_sections')
-      .select('*')
+      .select('*, description, tooltip') // Select new columns
       .eq('form_id', currentFormId)
       .order('order', { ascending: true });
     
@@ -93,7 +95,7 @@ export const useFormBuilderState = (initialFormId?: string) => {
 
     const { data: fieldsData, error: fieldsError } = await supabase
       .from('form_fields')
-      .select('*')
+      .select('id, form_id, section_id, label, field_type, options, is_required, order, display_rules, description, tooltip, placeholder, last_edited_by_user_id, last_edited_at') // Explicitly select columns
       .eq('form_id', currentFormId)
       .order('order', { ascending: true });
 
@@ -174,11 +176,12 @@ export const useFormBuilderState = (initialFormId?: string) => {
     isSavingTemplate, setIsSavingTemplate,
     isFormPreviewOpen, setIsFormPreviewOpen,
     newSectionName, setNewSectionName,
+    newSectionDescription, setNewSectionDescription, // New
+    newSectionTooltip, setNewSectionTooltip, // New
     isAddingSection, setIsAddingSection,
     newFieldLabel, setNewFieldLabel,
     newFieldType, setNewFieldType,
     newFieldOptions, setNewFieldOptions,
-    newFieldHelpText, setNewFieldHelpText,
     newFieldDescription, setNewFieldDescription,
     newFieldTooltip, setNewFieldTooltip,
     newFieldPlaceholder, setNewFieldPlaceholder,

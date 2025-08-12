@@ -132,7 +132,7 @@ export const useFormManagementActions = ({ setForms, setTemplates, templates }: 
 
     const { data: templateFields, error: fieldsError } = await supabase
       .from('form_fields')
-      .select('*')
+      .select('id, form_id, section_id, label, field_type, options, is_required, order, display_rules, description, tooltip, placeholder, last_edited_by_user_id, last_edited_at') // Explicitly select columns
       .eq('form_id', selectedTemplateId)
       .order('order', { ascending: true });
 
@@ -152,6 +152,8 @@ export const useFormManagementActions = ({ setForms, setTemplates, templates }: 
         form_id: newFormData.id,
         name: section.name,
         order: section.order,
+        description: section.description, // Copy section description
+        tooltip: section.tooltip, // Copy section tooltip
         last_edited_by_user_id: user.id,
         last_edited_at: now,
       };
@@ -167,7 +169,6 @@ export const useFormManagementActions = ({ setForms, setTemplates, templates }: 
       is_required: field.is_required,
       order: field.order,
       display_rules: field.display_rules,
-      help_text: field.help_text,
       description: field.description,
       tooltip: field.tooltip,
       placeholder: field.placeholder,
@@ -229,7 +230,7 @@ export const useFormManagementActions = ({ setForms, setTemplates, templates }: 
 
       const { data: currentFields, error: fieldsError } = await supabase
         .from('form_fields')
-        .select('*')
+        .select('id, form_id, section_id, label, field_type, options, is_required, order, display_rules, description, tooltip, placeholder, last_edited_by_user_id, last_edited_at') // Explicitly select columns
         .eq('form_id', templateFormToCopy.id)
         .order('order', { ascending: true });
 
@@ -248,6 +249,8 @@ export const useFormManagementActions = ({ setForms, setTemplates, templates }: 
           form_id: newTemplateFormData.id,
           name: section.name,
           order: section.order,
+          description: section.description, // Copy section description
+          tooltip: section.tooltip, // Copy section tooltip
           last_edited_by_user_id: user.id,
           last_edited_at: now,
         };
@@ -263,7 +266,6 @@ export const useFormManagementActions = ({ setForms, setTemplates, templates }: 
         is_required: field.is_required,
         order: field.order,
         display_rules: field.display_rules,
-        help_text: field.help_text,
         description: field.description,
         tooltip: field.tooltip,
         placeholder: field.placeholder,

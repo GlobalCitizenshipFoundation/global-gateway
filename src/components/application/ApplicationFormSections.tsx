@@ -2,6 +2,9 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { FormField, FormSection } from "@/types";
 import FormFieldRenderer from "./FormFieldRenderer"; // Ensure this import is correct
 import { useFormContext } from "react-hook-form";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"; // Import Tooltip components
+import { Info } from "lucide-react"; // Import Info icon
+import DOMPurify from 'dompurify'; // Import DOMPurify
 
 interface ApplicationFormSectionsProps {
   formSections: FormSection[];
@@ -26,10 +29,30 @@ const ApplicationFormSections = ({
         const fieldsInSection = getFieldsForSection(section.id);
         if (fieldsInSection.length === 0) return null;
 
+        const hasTooltip = section.tooltip && section.tooltip.trim() !== '';
+        const sanitizedDescription = section.description ? DOMPurify.sanitize(section.description, { USE_PROFILES: { html: true } }) : null;
+
         return (
           <Card key={section.id} className="mb-6">
             <CardHeader>
-              <CardTitle className="text-xl">{section.name}</CardTitle>
+              <div className="flex items-center gap-2">
+                <CardTitle className="text-xl">{section.name}</CardTitle>
+                {hasTooltip && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent className="max-w-xs bg-gray-800 text-white p-2 rounded-md text-sm">
+                      {section.tooltip}
+                    </TooltipContent>
+                  </Tooltip>
+                )}
+              </div>
+              {sanitizedDescription && (
+                <CardDescription>
+                  <div dangerouslySetInnerHTML={{ __html: sanitizedDescription }} className="prose max-w-none" />
+                </CardDescription>
+              )}
             </CardHeader>
             <CardContent className="grid gap-6">
               {fieldsInSection.map(field => (

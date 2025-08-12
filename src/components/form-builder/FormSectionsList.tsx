@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { FormFieldItem } from "@/components/FormFieldItem";
 import { FormField, FormSection } from "@/types";
-import { GripVertical, Trash2 } from "lucide-react";
+import { GripVertical, Trash2, Info } from "lucide-react"; // Import Info icon
 import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { useDroppable } from "@dnd-kit/core";
 import { cn } from "@/lib/utils";
@@ -20,6 +20,8 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useState } from "react";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"; // Import Tooltip components
+import DOMPurify from 'dompurify'; // Import DOMPurify
 
 interface FormSectionsListProps {
   sections: FormSection[];
@@ -58,6 +60,9 @@ const SortableAccordionItem = ({ section, children, confirmDeleteSection }: { se
     zIndex: isDragging ? 10 : 0, // Bring dragged item to front
   };
 
+  const hasTooltip = section.tooltip && section.tooltip.trim() !== '';
+  const sanitizedDescription = section.description ? DOMPurify.sanitize(section.description, { USE_PROFILES: { html: true } }) : null;
+
   return (
     <AccordionItem
       key={section.id}
@@ -71,13 +76,30 @@ const SortableAccordionItem = ({ section, children, confirmDeleteSection }: { se
           <GripVertical className="h-5 w-5 text-muted-foreground" />
         </Button>
         <AccordionTrigger className="flex-grow flex justify-between items-center pr-4">
-          <span className="font-semibold">{section.name}</span>
+          <div className="flex items-center gap-2">
+            <span className="font-semibold">{section.name}</span>
+            {hasTooltip && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Info className="h-4 w-4 text-gray-500 cursor-help" />
+                </TooltipTrigger>
+                <TooltipContent className="max-w-xs bg-gray-800 text-white p-2 rounded-md text-sm">
+                  {section.tooltip}
+                </TooltipContent>
+              </Tooltip>
+            )}
+          </div>
         </AccordionTrigger>
         <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); confirmDeleteSection(section); }}>
           <Trash2 className="h-4 w-4 text-destructive" />
         </Button>
       </div>
-      {children}
+      <AccordionContent className="px-6 pb-4">
+        {sanitizedDescription && (
+          <div className="text-sm text-muted-foreground mb-4 prose max-w-none" dangerouslySetInnerHTML={{ __html: sanitizedDescription }} />
+        )}
+        {children}
+      </AccordionContent>
     </AccordionItem>
   );
 };
@@ -122,26 +144,24 @@ export const FormSectionsList = ({
             {sections.map(section => (
               <SortableAccordionItem key={section.id} section={section} confirmDeleteSection={confirmDeleteSection}>
                 <DroppableContainer id={section.id} className="rounded-b-md">
-                  <AccordionContent>
-                    <SortableContext items={getFieldsForSection(section.id).map(f => f.id)} strategy={verticalListSortingStrategy}>
-                      <ul className="space-y-2 p-2 min-h-[50px]">
-                        {getFieldsForSection(section.id).length > 0 ? (
-                          getFieldsForSection(section.id).map(field => (
-                            <FormFieldItem
-                              key={field.id}
-                              field={field}
-                              onDelete={handleDeleteField}
-                              onToggleRequired={handleToggleRequired}
-                              onUpdateLabel={onUpdateLabel}
-                              onSelectField={onSelectField}
-                            />
-                          ))
-                        ) : (
-                          <p className="text-muted-foreground text-sm text-center py-4">Drag fields here or add new ones below.</p>
-                        )}
-                      </ul>
-                    </SortableContext>
-                  </AccordionContent>
+                  <SortableContext items={getFieldsForSection(section.id).map(f => f.id)} strategy={verticalListSortingStrategy}>
+                    <ul className="space-y-2 p-2 min-h-[50px]">
+                      {getFieldsForSection(section.id).length > 0 ? (
+                        getFieldsForSection(section.id).map(field => (
+                          <FormFieldItem
+                            key={field.id}
+                            field={field}
+                            onDelete={handleDeleteField}
+                            onToggleRequired={handleToggleRequired}
+                            onUpdateLabel={onUpdateLabel}
+                            onSelectField={onSelectField}
+                          />
+                        ))
+                      ) : (
+                        <p className="text-muted-foreground text-sm text-center py-4">Drag fields here or add new ones below.</p>
+                      )}
+                    </ul>
+                  </SortableContext>
                 </DroppableContainer>
               </SortableAccordionItem>
             ))}

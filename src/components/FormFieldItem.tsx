@@ -108,7 +108,7 @@ export const FormFieldItem = ({ field, onDelete, onToggleRequired, onSelectField
                 <TooltipTrigger asChild>
                   <Eye className="h-4 w-4 ml-2 inline-block text-blue-500" />
                 </TooltipTrigger>
-                <TooltipContent>
+                <TooltipContent className="max-w-xs bg-gray-800 text-white p-2 rounded-md text-sm">
                   This field has conditional display logic.
                 </TooltipContent>
               </Tooltip>
@@ -118,7 +118,7 @@ export const FormFieldItem = ({ field, onDelete, onToggleRequired, onSelectField
                 <TooltipTrigger asChild>
                   <Info className="h-4 w-4 ml-2 inline-block text-gray-500" />
                 </TooltipTrigger>
-                <TooltipContent>
+                <TooltipContent className="max-w-xs bg-gray-800 text-white p-2 rounded-md text-sm">
                   {field.tooltip}
                 </TooltipContent>
               </Tooltip>

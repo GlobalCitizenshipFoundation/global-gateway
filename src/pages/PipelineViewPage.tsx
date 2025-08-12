@@ -21,6 +21,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFo
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { shouldFieldBeDisplayed, formatResponseValue } from "@/utils/formFieldUtils";
+import DOMPurify from 'dompurify'; // Import DOMPurify
 
 type SubmissionDetail = {
   id: string;
@@ -79,7 +80,7 @@ const PipelineViewPage = () => {
         if (programData.form_id) {
           const { data: allFieldsData, error: allFieldsError } = await supabase
             .from('form_fields')
-            .select('*')
+            .select('id, form_id, section_id, label, field_type, options, is_required, order, display_rules, description, tooltip, placeholder, last_edited_by_user_id, last_edited_at') // Explicitly select columns
             .eq('form_id', programData.form_id)
             .order('order', { ascending: true });
 
@@ -187,9 +188,9 @@ const PipelineViewPage = () => {
     setSelectedSubmission(formattedSubmissionData);
     setCurrentStageInSheet(formattedSubmissionData.stage_id);
 
-    // Fetch responses with full form_fields data including display_rules, help_text, description, tooltip
+    // Fetch responses with full form_fields data including display_rules, description, tooltip
     const { data: responsesData, error: responsesError } = await supabase
-      .from('application_responses').select(`value, form_fields ( id, label, field_type, options, is_required, order, display_rules, help_text, description, tooltip )`).eq('application_id', applicant.id);
+      .from('application_responses').select(`value, form_fields ( id, label, field_type, options, is_required, order, display_rules, description, tooltip, placeholder )`).eq('application_id', applicant.id); // Explicitly select columns
     
     if (responsesError) {
       showError("Could not load application responses.");
@@ -294,23 +295,26 @@ const PipelineViewPage = () => {
                 <h3 className="font-semibold text-lg mb-4">Application Responses</h3>
                 <dl className="space-y-4">
                   {displayedSubmissionResponses.length > 0 ? (
-                    displayedSubmissionResponses.map((res, index) => (
-                      <div key={index}>
-                        <dt className="font-medium text-sm">
-                          {res.form_fields?.label || 'Untitled Question'}
-                          {!res.wasDisplayed && (
-                            <span className="ml-2 text-xs text-muted-foreground italic">(Hidden by logic)</span>
+                    displayedSubmissionResponses.map((res, index) => {
+                      const sanitizedDescription = res.form_fields?.description ? DOMPurify.sanitize(res.form_fields.description, { USE_PROFILES: { html: true } }) : null;
+                      return (
+                        <div key={index}>
+                          <dt className="font-medium text-sm">
+                            {res.form_fields?.label || 'Untitled Question'}
+                            {!res.wasDisplayed && (
+                              <span className="ml-2 text-xs text-muted-foreground italic">(Hidden by logic)</span>
+                            )}
+                          </dt>
+                          {sanitizedDescription && ( // Display description
+                            <dd className="text-sm text-muted-foreground mt-1"><div dangerouslySetInnerHTML={{ __html: sanitizedDescription }} className="prose max-w-none" /></dd>
                           )}
-                        </dt>
-                        {res.form_fields?.description && ( // Display description
-                          <dd className="text-sm text-muted-foreground mt-1">{res.form_fields.description}</dd>
-                        )}
-                        {res.form_fields?.help_text && (
-                          <dd className="text-xs text-muted-foreground mt-1">{res.form_fields.help_text}</dd>
-                        )}
-                        <dd className="text-muted-foreground whitespace-pre-wrap mt-1">{formatResponseValue(res.value, res.form_fields?.field_type)}</dd>
-                      </div>
-                    ))
+                          {res.form_fields?.tooltip && (
+                            <dd className="text-xs text-muted-foreground mt-1">Tooltip: {res.form_fields.tooltip}</dd>
+                          )}
+                          <dd className="text-muted-foreground whitespace-pre-wrap mt-1">{formatResponseValue(res.value, res.form_fields?.field_type)}</dd>
+                        </div>
+                      );
+                    })
                   ) : (
                     <p className="text-muted-foreground text-sm">No responses to display for this application.</p>
                   )}

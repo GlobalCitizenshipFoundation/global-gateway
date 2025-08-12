@@ -43,12 +43,14 @@ export const useFormBuilderHandlers = ({
     setIsSavingTemplate,
     setIsFormPreviewOpen,
     newSectionName, setNewSectionName,
+    newSectionDescription, setNewSectionDescription, // New
+    newSectionTooltip, setNewSectionTooltip, // New
     isAddingSection, setIsAddingSection,
     newFieldLabel, setNewFieldLabel,
     newFieldType, setNewFieldType,
     newFieldOptions, setNewFieldOptions,
     newFieldSectionId, setNewFieldSectionId,
-    newFieldHelpText, setNewFieldHelpText,
+    // Removed newFieldHelpText
     newFieldDescription, setNewFieldDescription,
     newFieldTooltip, setNewFieldTooltip,
     newFieldPlaceholder, setNewFieldPlaceholder,
@@ -115,6 +117,8 @@ export const useFormBuilderHandlers = ({
         form_id: formId,
         name: newSectionName,
         order: nextOrder,
+        description: newSectionDescription || null, // New
+        tooltip: newSectionTooltip || null, // New
         last_edited_by_user_id: user.id,
         last_edited_at: now,
       })
@@ -127,6 +131,8 @@ export const useFormBuilderHandlers = ({
       showSuccess("Section added successfully.");
       setSections(prev => [...prev, data]);
       setNewSectionName('');
+      setNewSectionDescription(''); // Reset
+      setNewSectionTooltip(''); // Reset
       setNewFieldSectionId(data.id);
       setHasUnsavedChanges(true); // Mark as unsaved
       setFormLastEditedAt(now); // Update form's last edited timestamp
@@ -134,7 +140,7 @@ export const useFormBuilderHandlers = ({
       triggerAutoSave(); // Trigger auto-save for form details
     }
     setIsAddingSection(false);
-  }, [formId, newSectionName, user, setSections, setNewSectionName, setNewFieldSectionId, setHasUnsavedChanges, setFormLastEditedAt, setFormLastEditedByUserId, setIsAddingSection, triggerAutoSave]);
+  }, [formId, newSectionName, newSectionDescription, newSectionTooltip, user, setSections, setNewSectionName, setNewSectionDescription, setNewSectionTooltip, setNewFieldSectionId, setHasUnsavedChanges, setFormLastEditedAt, setFormLastEditedByUserId, setIsAddingSection, triggerAutoSave]);
 
   const handleDeleteSection = useCallback(async (sectionId: string) => {
     const originalSections = [...sections];
@@ -222,7 +228,7 @@ export const useFormBuilderHandlers = ({
         options: (newFieldType === 'select' || newFieldType === 'radio' || newFieldType === 'checkbox') ? newFieldOptions.split(',').map(opt => opt.trim()) : null,
         is_required: false,
         display_rules: null,
-        help_text: newFieldHelpText || null,
+        // Removed help_text
         description: newFieldDescription || null,
         tooltip: newFieldTooltip || null,
         placeholder: newFieldPlaceholder || null,
@@ -240,7 +246,7 @@ export const useFormBuilderHandlers = ({
       setNewFieldLabel('');
       setNewFieldOptions('');
       setNewFieldType('text');
-      setNewFieldHelpText('');
+      // Removed setNewFieldHelpText
       setNewFieldDescription('');
       setNewFieldTooltip('');
       setNewFieldPlaceholder('');
@@ -250,7 +256,7 @@ export const useFormBuilderHandlers = ({
       triggerAutoSave(); // Trigger auto-save for form details
     }
     setIsAddingField(false);
-  }, [formId, newFieldLabel, newFieldType, newFieldOptions, newFieldSectionId, newFieldHelpText, newFieldDescription, newFieldTooltip, newFieldPlaceholder, user, setFields, setNewFieldLabel, setNewFieldOptions, setNewFieldType, setNewFieldHelpText, setNewFieldDescription, setNewFieldTooltip, setNewFieldPlaceholder, setHasUnsavedChanges, setFormLastEditedAt, setFormLastEditedByUserId, setIsAddingField, triggerAutoSave]);
+  }, [formId, newFieldLabel, newFieldType, newFieldOptions, newFieldSectionId, newFieldDescription, newFieldTooltip, newFieldPlaceholder, user, setFields, setNewFieldLabel, setNewFieldOptions, setNewFieldType, setNewFieldDescription, setNewFieldTooltip, setNewFieldPlaceholder, setHasUnsavedChanges, setFormLastEditedAt, setFormLastEditedByUserId, setIsAddingField, triggerAutoSave]);
 
   const handleDeleteField = useCallback(async (fieldId: string) => {
     setFields(prev => prev.filter(f => f.id !== fieldId));
@@ -314,7 +320,7 @@ export const useFormBuilderHandlers = ({
     }
   }, [setFields, user, fetchData, setHasUnsavedChanges, setFormLastEditedAt, setFormLastEditedByUserId, triggerAutoSave]);
 
-  const handleSaveEditedField = useCallback(async (fieldId: string, values: { label: string; field_type: FormField['field_type']; options?: string; is_required: boolean; help_text?: string | null; description?: string | null; tooltip?: string | null; placeholder?: string | null; section_id?: string | null; }) => {
+  const handleSaveEditedField = useCallback(async (fieldId: string, values: { label: string; field_type: FormField['field_type']; options?: string; is_required: boolean; description?: string | null; tooltip?: string | null; placeholder?: string | null; section_id?: string | null; }) => {
     if (!user) return;
     const updatedOptions = (values.field_type === 'select' || values.field_type === 'radio' || values.field_type === 'checkbox')
       ? values.options?.split(',').map(opt => opt.trim()) || null
@@ -323,7 +329,7 @@ export const useFormBuilderHandlers = ({
     setFields(prevFields =>
       prevFields.map(f =>
         f.id === fieldId
-          ? { ...f, label: values.label, field_type: values.field_type, options: updatedOptions, is_required: values.is_required, help_text: values.help_text || null, description: values.description || null, tooltip: values.tooltip || null, placeholder: values.placeholder || null, section_id: values.section_id === 'none' ? null : values.section_id }
+          ? { ...f, label: values.label, field_type: values.field_type, options: updatedOptions, is_required: values.is_required, description: values.description || null, tooltip: values.tooltip || null, placeholder: values.placeholder || null, section_id: values.section_id === 'none' ? null : values.section_id }
           : f
       )
     );
@@ -337,7 +343,7 @@ export const useFormBuilderHandlers = ({
         field_type: values.field_type,
         options: updatedOptions,
         is_required: values.is_required,
-        help_text: values.help_text || null,
+        // Removed help_text
         description: values.description || null,
         tooltip: values.tooltip || null,
         placeholder: values.placeholder || null,
@@ -484,6 +490,8 @@ export const useFormBuilderHandlers = ({
           form_id: newTemplateFormData.id,
           name: section.name,
           order: section.order,
+          description: section.description, // Copy section description
+          tooltip: section.tooltip, // Copy section tooltip
           last_edited_by_user_id: user.id,
           last_edited_at: now,
         };
@@ -499,7 +507,7 @@ export const useFormBuilderHandlers = ({
         is_required: field.is_required,
         order: field.order,
         display_rules: field.display_rules,
-        help_text: field.help_text,
+        // Removed help_text
         description: field.description,
         tooltip: field.tooltip,
         placeholder: field.placeholder,

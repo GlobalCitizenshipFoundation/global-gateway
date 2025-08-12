@@ -136,7 +136,7 @@ export const useApplicationForm = () => {
 
       const { data: sectionsData, error: sectionsError } = await supabase
         .from('form_sections')
-        .select('*')
+        .select('*, description, tooltip') // Select new columns
         .eq('form_id', formId) // Use formId
         .order('order', { ascending: true });
 
@@ -146,7 +146,7 @@ export const useApplicationForm = () => {
         setFormSections(sectionsData || []);
       }
 
-      const { data: fieldsData, error: fieldsError } = await supabase.from('form_fields').select('*').eq('form_id', formId).order('order', { ascending: true }); // Use formId
+      const { data: fieldsData, error: fieldsError } = await supabase.from('form_fields').select('id, form_id, section_id, label, field_type, options, is_required, order, display_rules, description, tooltip, placeholder, last_edited_by_user_id, last_edited_at').eq('form_id', formId).order('order', { ascending: true }); // Use formId, explicitly select columns
       if (fieldsError) {
         showError("Could not load application form fields.");
       } else {

@@ -27,7 +27,7 @@ const editFormFieldSchema = z.object({
   field_type: z.enum(['text', 'textarea', 'select', 'radio', 'checkbox', 'email', 'date', 'phone', 'number', 'richtext']),
   options: z.string().optional(), // Comma-separated for select/radio/checkbox
   is_required: z.boolean(),
-  help_text: z.string().nullable().optional(),
+  // Removed help_text
   description: z.string().nullable().optional(),
   tooltip: z.string().nullable().optional(),
   placeholder: z.string().nullable().optional(),
@@ -60,7 +60,7 @@ export const FieldPropertiesPanel = ({
       field_type: "text",
       options: "",
       is_required: false,
-      help_text: "",
+      // Removed help_text
       description: "",
       tooltip: "",
       placeholder: "",
@@ -75,7 +75,7 @@ export const FieldPropertiesPanel = ({
         field_type: field.field_type,
         options: Array.isArray(field.options) ? field.options.join(', ') : '',
         is_required: field.is_required,
-        help_text: field.help_text || '',
+        // Removed help_text
         description: field.description || '',
         tooltip: field.tooltip || '',
         placeholder: field.placeholder || '',
@@ -177,26 +177,6 @@ export const FieldPropertiesPanel = ({
                 </FormControl>
                 <FormDescription>
                   A brief description displayed above the field on the application form.
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormFieldComponent
-            control={form.control}
-            name="help_text"
-            render={({ field: formHookField }) => (
-              <FormItem>
-                <FormLabel>Help Text (Optional)</FormLabel>
-                <FormControl>
-                  <RichTextEditor
-                    value={formHookField.value || ''}
-                    onChange={formHookField.onChange}
-                    className="min-h-[80px]"
-                  />
-                </FormControl>
-                <FormDescription>
-                  This text will appear below the field label to guide applicants.
                 </FormDescription>
                 <FormMessage />
               </FormItem>

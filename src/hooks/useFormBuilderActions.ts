@@ -18,7 +18,7 @@ export const useFormBuilderActions = ({
 }: UseFormBuilderActionsProps) => {
   const { user } = useSession(); // Get current user
 
-  const handleAddSection = async (name: string) => {
+  const handleAddSection = async (name: string, description: string | null, tooltip: string | null) => {
     if (!name.trim() || !formId || !user) return null; // Use formId and user
 
     // Fetch current sections to determine next order
@@ -40,6 +40,8 @@ export const useFormBuilderActions = ({
         form_id: formId, // Use formId
         name: name,
         order: nextOrder,
+        description: description, // New
+        tooltip: tooltip, // New
         last_edited_by_user_id: user.id, // Set editor
         last_edited_at: new Date().toISOString(), // Set timestamp
       })
@@ -76,11 +78,12 @@ export const useFormBuilderActions = ({
       return;
     }
 
+    const now = new Date().toISOString();
     const updatesForFields = fieldsToUpdate.map(field => ({
       id: field.id,
       section_id: null, // Set to null (uncategorized)
       last_edited_by_user_id: user?.id || null, // Set editor
-      last_edited_at: new Date().toISOString(), // Set timestamp
+      last_edited_at: now, // Set timestamp
     }));
 
     // Perform batch update for fields
@@ -107,7 +110,7 @@ export const useFormBuilderActions = ({
     }
   };
 
-  const handleAddField = async (label: string, type: FormField['field_type'], options: string, sectionId: string | null, helpText: string | null, description: string | null, tooltip: string | null, placeholder: string | null) => { // Added placeholder
+  const handleAddField = async (label: string, type: FormField['field_type'], options: string, sectionId: string | null, description: string | null, tooltip: string | null, placeholder: string | null) => { // Removed helpText
     if (!label.trim() || !formId || !user) return null; // Use formId and user
 
     // Fetch current fields for the target section to determine next order
@@ -135,7 +138,7 @@ export const useFormBuilderActions = ({
         options: (type === 'select' || type === 'radio' || type === 'checkbox') ? options.split(',').map(opt => opt.trim()) : null,
         is_required: false, // Default to not required when adding
         display_rules: null, // Default to no display rules
-        help_text: helpText || null,
+        // Removed help_text
         description: description || null,
         tooltip: tooltip || null,
         placeholder: placeholder || null, // New: placeholder
@@ -200,7 +203,7 @@ export const useFormBuilderActions = ({
     }
   };
 
-  const handleSaveEditedField = async (fieldId: string, values: { label: string; field_type: FormField['field_type']; options?: string; is_required: boolean; help_text?: string | null; description?: string | null; tooltip?: string | null; placeholder?: string | null; section_id?: string | null; }) => { // Added placeholder
+  const handleSaveEditedField = async (fieldId: string, values: { label: string; field_type: FormField['field_type']; options?: string; is_required: boolean; description?: string | null; tooltip?: string | null; placeholder?: string | null; section_id?: string | null; }) => { // Removed help_text
     if (!user) return;
     const updatedOptions = (values.field_type === 'select' || values.field_type === 'radio' || values.field_type === 'checkbox')
       ? values.options?.split(',').map(opt => opt.trim()) || null
@@ -210,7 +213,7 @@ export const useFormBuilderActions = ({
     setFields(prevFields =>
       prevFields.map(f =>
         f.id === fieldId
-          ? { ...f, label: values.label, field_type: values.field_type, options: updatedOptions, is_required: values.is_required, help_text: values.help_text || null, description: values.description || null, tooltip: values.tooltip || null, placeholder: values.placeholder || null, section_id: values.section_id === 'none' ? null : values.section_id } // Added placeholder
+          ? { ...f, label: values.label, field_type: values.field_type, options: updatedOptions, is_required: values.is_required, description: values.description || null, tooltip: values.tooltip || null, placeholder: values.placeholder || null, section_id: values.section_id === 'none' ? null : values.section_id } // Removed help_text
           : f
       )
     );
@@ -222,7 +225,7 @@ export const useFormBuilderActions = ({
         field_type: values.field_type,
         options: updatedOptions,
         is_required: values.is_required,
-        help_text: values.help_text || null,
+        // Removed help_text
         description: values.description || null,
         tooltip: values.tooltip || null,
         placeholder: values.placeholder || null, // Added placeholder

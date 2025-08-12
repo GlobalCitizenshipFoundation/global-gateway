@@ -23,6 +23,7 @@ import { Button } from "@/components/ui/button";
 import React from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"; // Import Tooltip components
+import DOMPurify from 'dompurify'; // Import DOMPurify
 
 interface FormFieldRendererProps {
   field: FormField;
@@ -35,6 +36,7 @@ type DynamicFormValues = Record<string, string | string[] | number | undefined |
 const FormFieldRenderer = ({ field, submitting }: FormFieldRendererProps) => {
   const { control } = useFormContext<DynamicFormValues>();
   const hasTooltip = field.tooltip && field.tooltip.trim() !== '';
+  const sanitizedDescription = field.description ? DOMPurify.sanitize(field.description, { USE_PROFILES: { html: true } }) : null;
 
   return (
     <FormFieldComponent
@@ -53,14 +55,13 @@ const FormFieldRenderer = ({ field, submitting }: FormFieldRendererProps) => {
                 <TooltipTrigger asChild>
                   <Info className="h-4 w-4 text-muted-foreground cursor-help" />
                 </TooltipTrigger>
-                <TooltipContent>
+                <TooltipContent className="max-w-xs bg-gray-800 text-white p-2 rounded-md text-sm">
                   {field.tooltip}
                 </TooltipContent>
               </Tooltip>
             )}
           </div>
-          {field.description && <FormDescription className="text-sm text-muted-foreground">{field.description}</FormDescription>}
-          {field.help_text && <FormDescription>{field.help_text}</FormDescription>}
+          {sanitizedDescription && <FormDescription className="text-sm text-muted-foreground"><div dangerouslySetInnerHTML={{ __html: sanitizedDescription }} className="prose max-w-none" /></FormDescription>}
           {field.field_type === 'textarea' ? (
             <FormControl>
               <Textarea
