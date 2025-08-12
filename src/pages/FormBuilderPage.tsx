@@ -1,12 +1,13 @@
 import { ArrowLeft } from "lucide-react";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { DndContext, DragOverlay, closestCenter, DragEndEvent, DragStartEvent } from '@dnd-kit/core';
+import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 
 // Import new modular components and hooks
 import { useFormBuilderState } from "@/hooks/useFormBuilderState";
 import { useFormBuilderHandlers } from "@/hooks/useFormBuilderHandlers";
-import { useFormBuilderActions } from "@/hooks/useFormBuilderActions"; // Keep actions for handlers to use
+import { useFormBuilderActions } from "@/hooks/useFormBuilderActions";
 import { useFormFieldDragAndDrop } from "@/hooks/useFormFieldDragAndDrop";
 import { useFormSectionDragAndDrop } from "@/hooks/useFormSectionDragAndDrop";
 
@@ -17,8 +18,8 @@ import { AddFieldForm } from "@/components/form-builder/AddFieldForm";
 import { FormSectionsList } from "@/components/form-builder/FormSectionsList";
 import { UncategorizedFieldsList } from "@/components/form-builder/UncategorizedFieldsList";
 import { FormFieldItem } from "@/components/FormFieldItem"; // For DragOverlay
-import ConditionalLogicBuilder from "@/components/ConditionalLogicBuilder";
-import EditFormFieldDialog from "@/components/EditFormFieldDialog";
+import { FieldPropertiesPanel } from "@/components/form-builder/FieldPropertiesPanel"; // New import
+import { FormField } from "@/types"; // Import FormField type
 
 const FormBuilderPage = () => {
   const { formId } = useParams<{ formId: string }>();
@@ -30,10 +31,6 @@ const FormBuilderPage = () => {
     fields,
     loading,
     getFieldsForSection,
-    isLogicBuilderOpen, setIsLogicBuilderOpen,
-    fieldToEditLogic, setFieldToEditLogic,
-    isEditFieldDialogOpen, setIsEditFieldDialogOpen,
-    fieldToEditDetails, setFieldToEditDetails,
     newSectionName, setNewSectionName,
     isAddingSection, setIsAddingSection,
     newFieldLabel, setNewFieldLabel,
@@ -46,10 +43,13 @@ const FormBuilderPage = () => {
     newFieldPlaceholder, setNewFieldPlaceholder,
     isAddingField, setIsAddingField,
     setHasUnsavedChanges,
-    fetchData, // Pass fetchData to handlers
-    setSections, // Pass setSections to handlers
-    setFields, // Pass setFields to handlers
+    fetchData,
+    setSections,
+    setFields,
   } = state;
+
+  // State for the currently selected field in the properties panel
+  const [selectedField, setSelectedField] = useState<FormField | null>(null);
 
   // Initialize actions (these are pure data operations)
   const formBuilderActions = useFormBuilderActions({
@@ -127,27 +127,79 @@ const FormBuilderPage = () => {
       <FormDetailsCard state={state} />
 
       <DndContext sensors={combinedSensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd} onDragStart={handleDragStart}>
-        <FormSectionsList
-          sections={sections}
-          fields={fields}
-          loading={loading}
-          getFieldsForSection={getFieldsForSection}
-          handleDeleteSection={handlers.handleDeleteSection}
-          handleDeleteField={handlers.handleDeleteField}
-          handleToggleRequired={handlers.handleToggleRequired}
-          onEditLogic={handlers.handleEditLogic}
-          onEditField={handlers.handleEditField}
-          onUpdateLabel={handlers.handleUpdateFieldLabel}
-        />
+        <ResizablePanelGroup direction="horizontal" className="min-h-[600px] border rounded-lg mt-8">
+          <ResizablePanel defaultSize={selectedField ? 65 : 100} minSize={30}>
+            <div className="p-6 h-full overflow-y-auto">
+              <FormSectionsList
+                sections={sections}
+                fields={fields}
+                loading={loading}
+                getFieldsForSection={getFieldsForSection}
+                handleDeleteSection={handlers.handleDeleteSection}
+                handleDeleteField={handlers.handleDeleteField}
+                handleToggleRequired={handlers.handleToggleRequired}
+                onEditLogic={(field) => setSelectedField(field)} // Set selected field to open panel
+                onEditField={(field) => setSelectedField(field)} // Set selected field to open panel
+                onUpdateLabel={handlers.handleUpdateFieldLabel}
+                onSelectField={setSelectedField} // Pass new prop
+              />
 
-        <UncategorizedFieldsList
-          uncategorizedFields={uncategorizedFields}
-          handleDeleteField={handlers.handleDeleteField}
-          handleToggleRequired={handlers.handleToggleRequired}
-          onEditLogic={handlers.handleEditLogic}
-          onEditField={handlers.handleEditField}
-          onUpdateLabel={handlers.handleUpdateFieldLabel}
-        />
+              <UncategorizedFieldsList
+                uncategorizedFields={uncategorizedFields}
+                handleDeleteField={handlers.handleDeleteField}
+                handleToggleRequired={handlers.handleToggleRequired}
+                onEditLogic={(field) => setSelectedField(field)} // Set selected field to open panel
+                onEditField={(field) => setSelectedField(field)} // Set selected field to open panel
+                onUpdateLabel={handlers.handleUpdateFieldLabel}
+                onSelectField={setSelectedField} // Pass new prop
+              />
+
+              <AddSectionForm
+                newSectionName={newSectionName}
+                setNewSectionName={setNewSectionName}
+                isSubmitting={isAddingSection}
+                handleAddSection={handlers.handleAddSection}
+              />
+
+              <AddFieldForm
+                newFieldLabel={newFieldLabel}
+                setNewFieldLabel={setNewFieldLabel}
+                newFieldType={newFieldType}
+                setNewFieldType={setNewFieldType}
+                newFieldOptions={newFieldOptions}
+                setNewFieldOptions={setNewFieldOptions}
+                newFieldSectionId={newFieldSectionId}
+                setNewFieldSectionId={setNewFieldSectionId}
+                newFieldHelpText={newFieldHelpText}
+                setNewFieldHelpText={setNewFieldHelpText}
+                newFieldDescription={newFieldDescription}
+                setNewFieldDescription={setNewFieldDescription}
+                newFieldTooltip={newFieldTooltip}
+                setNewFieldTooltip={setNewFieldTooltip}
+                newFieldPlaceholder={newFieldPlaceholder}
+                setNewFieldPlaceholder={setNewFieldPlaceholder}
+                isSubmitting={isAddingField}
+                handleAddField={handlers.handleAddField}
+                sections={sections}
+              />
+            </div>
+          </ResizablePanel>
+          {selectedField && (
+            <>
+              <ResizableHandle withHandle />
+              <ResizablePanel defaultSize={35} minSize={25}>
+                <FieldPropertiesPanel
+                  field={selectedField}
+                  sections={sections}
+                  allFields={fields} // Pass all fields for conditional logic
+                  onSave={handlers.handleSaveEditedField}
+                  onSaveLogic={handlers.handleSaveLogic}
+                  onClose={() => setSelectedField(null)}
+                />
+              </ResizablePanel>
+            </>
+          )}
+        </ResizablePanelGroup>
 
         <DragOverlay>
           {activeFieldDragItem ? (
@@ -155,9 +207,8 @@ const FormBuilderPage = () => {
               field={activeFieldDragItem}
               onDelete={() => {}}
               onToggleRequired={() => {}}
-              onEditLogic={() => {}}
-              onEdit={() => {}}
-              onUpdateLabel={() => {}} // Dummy for overlay
+              onUpdateLabel={() => {}}
+              onSelectField={() => {}} // Dummy for overlay
             />
           ) : activeSectionDragItem ? (
             <div className="p-4 bg-secondary rounded-md shadow-lg cursor-grabbing">
@@ -167,52 +218,7 @@ const FormBuilderPage = () => {
         </DragOverlay>
       </DndContext>
 
-      <AddSectionForm
-        newSectionName={newSectionName}
-        setNewSectionName={setNewSectionName}
-        isSubmitting={isAddingSection}
-        handleAddSection={handlers.handleAddSection}
-      />
-
-      <AddFieldForm
-        newFieldLabel={newFieldLabel}
-        setNewFieldLabel={setNewFieldLabel}
-        newFieldType={newFieldType}
-        setNewFieldType={setNewFieldType}
-        newFieldOptions={newFieldOptions}
-        setNewFieldOptions={setNewFieldOptions}
-        newFieldSectionId={newFieldSectionId}
-        setNewFieldSectionId={setNewFieldSectionId}
-        newFieldHelpText={newFieldHelpText}
-        setNewFieldHelpText={setNewFieldHelpText}
-        newFieldDescription={newFieldDescription}
-        setNewFieldDescription={setNewFieldDescription}
-        newFieldTooltip={newFieldTooltip}
-        setNewFieldTooltip={setNewFieldTooltip}
-        newFieldPlaceholder={newFieldPlaceholder}
-        setNewFieldPlaceholder={setNewFieldPlaceholder}
-        isSubmitting={isAddingField}
-        handleAddField={handlers.handleAddField}
-        sections={sections}
-      />
-
       <FormActions state={state} handlers={handlers} />
-
-      <ConditionalLogicBuilder
-        isOpen={isLogicBuilderOpen}
-        onClose={() => setIsLogicBuilderOpen(false)}
-        fieldToEdit={fieldToEditLogic}
-        allFields={fields}
-        onSave={handlers.handleSaveLogic}
-      />
-
-      <EditFormFieldDialog
-        isOpen={isEditFieldDialogOpen}
-        onClose={() => setIsEditFieldDialogOpen(false)}
-        fieldToEdit={fieldToEditDetails}
-        onSave={handlers.handleSaveEditedField}
-        sections={sections}
-      />
     </div>
   );
 };

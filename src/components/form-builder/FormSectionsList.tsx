@@ -3,11 +3,11 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { FormFieldItem } from "@/components/FormFieldItem";
 import { FormField, FormSection } from "@/types";
-import { GripVertical, Trash2 } from "lucide-react"; // Import GripVertical
+import { GripVertical, Trash2 } from "lucide-react";
 import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { useDroppable } from "@dnd-kit/core";
 import { cn } from "@/lib/utils";
-import { CSS } from '@dnd-kit/utilities'; // Import CSS for transform
+import { CSS } from '@dnd-kit/utilities';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -29,9 +29,10 @@ interface FormSectionsListProps {
   handleDeleteSection: (sectionId: string) => Promise<void>;
   handleDeleteField: (fieldId: string) => Promise<void>;
   handleToggleRequired: (fieldId: string, isRequired: boolean) => Promise<void>;
-  onEditLogic: (field: FormField) => void;
-  onEditField: (field: FormField) => void;
-  onUpdateLabel: (fieldId: string, newLabel: string) => void; // New prop
+  onEditLogic: (field: FormField) => void; // This prop is no longer directly used by FormFieldItem, but by parent
+  onEditField: (field: FormField) => void; // This prop is no longer directly used by FormFieldItem, but by parent
+  onUpdateLabel: (fieldId: string, newLabel: string) => void;
+  onSelectField: (field: FormField) => void;
 }
 
 // Helper component for droppable areas
@@ -89,9 +90,10 @@ export const FormSectionsList = ({
   handleDeleteSection,
   handleDeleteField,
   handleToggleRequired,
-  onEditLogic,
-  onEditField,
-  onUpdateLabel, // Destructure new prop
+  onEditLogic, // This prop is no longer directly used by FormFieldItem
+  onEditField, // This prop is no longer directly used by FormFieldItem
+  onUpdateLabel,
+  onSelectField,
 }: FormSectionsListProps) => {
   const [sectionToDelete, setSectionToDelete] = useState<FormSection | null>(null);
   const [isSectionDeleteDialogOpen, setIsSectionDeleteDialogOpen] = useState(false);
@@ -130,9 +132,8 @@ export const FormSectionsList = ({
                               field={field}
                               onDelete={handleDeleteField}
                               onToggleRequired={handleToggleRequired}
-                              onEditLogic={onEditLogic}
-                              onEdit={onEditField}
-                              onUpdateLabel={onUpdateLabel} // Pass the new prop
+                              onUpdateLabel={onUpdateLabel}
+                              onSelectField={onSelectField}
                             />
                           ))
                         ) : (

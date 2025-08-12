@@ -18,6 +18,7 @@ export const FormActions = ({ state, handlers }: FormActionsProps) => {
     formName,
     formDescription,
     formStatus,
+    isTemplate, // New: Destructure isTemplate
     hasUnsavedChanges,
     isAutoSaving,
     isUpdatingStatus,
@@ -27,8 +28,8 @@ export const FormActions = ({ state, handlers }: FormActionsProps) => {
     isFormPreviewOpen, setIsFormPreviewOpen,
     formLastEditedAt,
     formLastEditedByUserId,
-    sections, // Pass sections for preview
-    fields,   // Pass fields for preview
+    sections,
+    fields,
   } = state;
 
   const {
@@ -46,20 +47,22 @@ export const FormActions = ({ state, handlers }: FormActionsProps) => {
         </Button>
         <div className="flex gap-2">
           <Button variant="outline" onClick={handleOpenPreview}>
-            Preview Form
+            Preview {isTemplate ? "Template" : "Form"}
           </Button>
           {formStatus === 'draft' ? (
             <Button onClick={() => handlePublishUnpublish('published')} disabled={isUpdatingStatus}>
-              {isUpdatingStatus ? 'Publishing...' : 'Publish Form'}
+              {isUpdatingStatus ? `Publishing ${isTemplate ? "Template" : "Form"}...` : `Publish ${isTemplate ? "Template" : "Form"}`}
             </Button>
           ) : (
             <Button variant="outline" onClick={() => handlePublishUnpublish('draft')} disabled={isUpdatingStatus}>
-              {isUpdatingStatus ? 'Unpublishing...' : 'Unpublish Form'}
+              {isUpdatingStatus ? `Unpublishing ${isTemplate ? "Template" : "Form"}...` : `Unpublish ${isTemplate ? "Template" : "Form"}`}
             </Button>
           )}
-          <Button variant="outline" onClick={() => setIsSaveAsTemplateDialogOpen(true)} disabled={isSavingTemplate}>
-            Save as Template
-          </Button>
+          {!isTemplate && ( // Only show "Save as Template" if it's not already a template
+            <Button variant="outline" onClick={() => setIsSaveAsTemplateDialogOpen(true)} disabled={isSavingTemplate}>
+              Save as Template
+            </Button>
+          )}
         </div>
       </div>
 
@@ -70,13 +73,13 @@ export const FormActions = ({ state, handlers }: FormActionsProps) => {
           id: formId || '',
           name: formName,
           description: formDescription,
-          is_template: false,
+          is_template: false, // This dialog always creates a new non-template form
           status: formStatus,
           user_id: user?.id || '',
-          created_at: '', // Placeholder, will be overwritten by DB
-          updated_at: '', // Placeholder, will be overwritten by DB
-          last_edited_by_user_id: formLastEditedByUserId, // Include fetched value
-          last_edited_at: formLastEditedAt, // Include fetched value
+          created_at: '',
+          updated_at: '',
+          last_edited_by_user_id: formLastEditedByUserId,
+          last_edited_at: formLastEditedAt,
         }}
         newTemplateName={newTemplateName}
         setNewTemplateName={setNewTemplateName}

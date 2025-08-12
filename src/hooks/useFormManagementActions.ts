@@ -72,21 +72,22 @@ export const useFormManagementActions = ({ setForms, setTemplates, templates }: 
       return;
     }
     setIsCreatingForm(true);
+    const now = new Date().toISOString();
     const { data: newFormData, error: formError } = await supabase.from("forms").insert({
       user_id: user.id,
       name: "New Blank Form",
       is_template: false,
       status: 'draft',
       description: null,
-      last_edited_by_user_id: user.id, // Added
-      last_edited_at: new Date().toISOString(), // Added
+      last_edited_by_user_id: user.id,
+      last_edited_at: now,
     }).select('id').single();
 
     if (formError || !newFormData) {
       showError(`Failed to create blank form: ${formError?.message}`);
     } else {
       showSuccess("Blank form created successfully! Redirecting to form builder.");
-      setForms(prev => [...prev, { ...newFormData, user_id: user.id, name: "New Blank Form", is_template: false, status: 'draft', description: null, created_at: new Date().toISOString(), updated_at: new Date().toISOString(), last_edited_by_user_id: user.id, last_edited_at: new Date().toISOString() }]);
+      setForms(prev => [...prev, { ...newFormData, user_id: user.id, name: "New Blank Form", is_template: false, status: 'draft', description: null, created_at: now, updated_at: now, last_edited_by_user_id: user.id, last_edited_at: now }]);
       window.location.href = `/creator/forms/${newFormData.id}/edit`;
     }
     setIsCreatingForm(false);
@@ -106,14 +107,15 @@ export const useFormManagementActions = ({ setForms, setTemplates, templates }: 
       return;
     }
 
+    const now = new Date().toISOString();
     const { data: newFormData, error: newFormError } = await supabase.from("forms").insert({
       user_id: user.id,
       name: newFormName,
       is_template: false,
       status: 'draft',
       description: template.description,
-      last_edited_by_user_id: user.id, // Added
-      last_edited_at: new Date().toISOString(), // Added
+      last_edited_by_user_id: user.id,
+      last_edited_at: now,
     }).select('id').single();
 
     if (newFormError || !newFormData) {
@@ -150,6 +152,8 @@ export const useFormManagementActions = ({ setForms, setTemplates, templates }: 
         form_id: newFormData.id,
         name: section.name,
         order: section.order,
+        last_edited_by_user_id: user.id,
+        last_edited_at: now,
       };
     });
 
@@ -166,6 +170,9 @@ export const useFormManagementActions = ({ setForms, setTemplates, templates }: 
       help_text: field.help_text,
       description: field.description,
       tooltip: field.tooltip,
+      placeholder: field.placeholder,
+      last_edited_by_user_id: user.id,
+      last_edited_at: now,
     }));
 
     const { error: insertSectionsError } = await supabase.from('form_sections').insert(newSectionsToInsert);
@@ -179,7 +186,7 @@ export const useFormManagementActions = ({ setForms, setTemplates, templates }: 
     }
 
     showSuccess("Form created from template successfully! Redirecting to form builder.");
-    setForms(prev => [...prev, { ...newFormData, user_id: user!.id, name: newFormName, is_template: false, status: 'draft', description: template.description, created_at: new Date().toISOString(), updated_at: new Date().toISOString(), last_edited_by_user_id: user!.id, last_edited_at: new Date().toISOString() }]);
+    setForms(prev => [...prev, { ...newFormData, user_id: user!.id, name: newFormName, is_template: false, status: 'draft', description: template.description, created_at: now, updated_at: now, last_edited_by_user_id: user!.id, last_edited_at: now }]);
     setIsCreateFromTemplateDialogOpen(false);
     window.location.href = `/creator/forms/${newFormData.id}/edit`;
     setIsCreatingForm(false);
@@ -198,14 +205,15 @@ export const useFormManagementActions = ({ setForms, setTemplates, templates }: 
     setIsSavingTemplate(true);
 
     try {
+      const now = new Date().toISOString();
       const { data: newTemplateFormData, error: newTemplateFormError } = await supabase.from("forms").insert({
         user_id: user.id,
         name: newTemplateName,
         is_template: true,
         status: 'published',
         description: templateFormToCopy.description,
-        last_edited_by_user_id: user.id, // Added
-        last_edited_at: new Date().toISOString(), // Added
+        last_edited_by_user_id: user.id,
+        last_edited_at: now,
       }).select('id').single();
 
       if (newTemplateFormError || !newTemplateFormData) {
@@ -240,6 +248,8 @@ export const useFormManagementActions = ({ setForms, setTemplates, templates }: 
           form_id: newTemplateFormData.id,
           name: section.name,
           order: section.order,
+          last_edited_by_user_id: user.id,
+          last_edited_at: now,
         };
       });
 
@@ -256,6 +266,9 @@ export const useFormManagementActions = ({ setForms, setTemplates, templates }: 
         help_text: field.help_text,
         description: field.description,
         tooltip: field.tooltip,
+        placeholder: field.placeholder,
+        last_edited_by_user_id: user.id,
+        last_edited_at: now,
       }));
 
       const { error: insertSectionsError } = await supabase.from('form_sections').insert(newSectionsToInsert);
@@ -268,8 +281,6 @@ export const useFormManagementActions = ({ setForms, setTemplates, templates }: 
       }
 
       showSuccess("Form saved as template successfully!");
-      setForms(prev => [...prev, { ...newTemplateFormData, user_id: user!.id, name: newTemplateName, is_template: true, status: 'published', description: templateFormToCopy.description, created_at: new Date().toISOString(), updated_at: new Date().toISOString(), last_edited_by_user_id: user!.id, last_edited_at: new Date().toISOString() }]);
-      setTemplates(prev => [...prev, { ...newTemplateFormData, user_id: user!.id, name: newTemplateName, is_template: true, status: 'published', description: templateFormToCopy.description, created_at: new Date().toISOString(), updated_at: new Date().toISOString(), last_edited_by_user_id: user!.id, last_edited_at: new Date().toISOString() }]);
       setIsSaveAsTemplateDialogOpen(false);
       setNewTemplateName('');
       setTemplateFormToCopy(null);

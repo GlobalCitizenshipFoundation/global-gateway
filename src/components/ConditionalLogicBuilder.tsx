@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
@@ -15,11 +14,13 @@ import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 
 interface ConditionalLogicBuilderProps {
-  isOpen: boolean;
-  onClose: () => void;
   fieldToEdit: FormField | null;
   allFields: FormField[];
   onSave: (fieldId: string, rules: DisplayRule[]) => void;
+  // isOpen and onClose are no longer directly used for dialog control,
+  // but kept as dummy props to avoid breaking existing calls if any.
+  isOpen?: boolean; 
+  onClose?: () => void;
 }
 
 // Define allowed operators per field type
@@ -46,8 +47,6 @@ const operatorLabels: Record<DisplayRule['operator'], string> = {
 };
 
 const ConditionalLogicBuilder = ({
-  isOpen,
-  onClose,
   fieldToEdit,
   allFields,
   onSave,
@@ -100,7 +99,6 @@ const ConditionalLogicBuilder = ({
     }
 
     onSave(fieldToEdit.id, rules);
-    onClose();
   };
 
   const renderValueInput = (rule: DisplayRule, index: number, triggerField: FormField | undefined) => {
@@ -199,85 +197,72 @@ const ConditionalLogicBuilder = ({
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[600px]">
-        <DialogHeader>
-          <DialogTitle>Conditional Logic for "{fieldToEdit?.label}"</DialogTitle>
-          <DialogDescription>
-            Define rules for when this field should be displayed.
-          </DialogDescription>
-        </DialogHeader>
-        <div className="grid gap-4 py-4">
-          {rules.length === 0 && (
-            <p className="text-muted-foreground text-sm">No rules defined. Add a rule to get started.</p>
-          )}
-          {rules.map((rule, index) => {
-            const triggerField = allFields.find(f => f.id === rule.field_id);
-            const allowedOperators = triggerField ? fieldTypeOperators[triggerField.field_type] : [];
+    <div className="grid gap-4 py-4">
+      {rules.length === 0 && (
+        <p className="text-muted-foreground text-sm">No rules defined. Add a rule to get started.</p>
+      )}
+      {rules.map((rule, index) => {
+        const triggerField = allFields.find(f => f.id === rule.field_id);
+        const allowedOperators = triggerField ? fieldTypeOperators[triggerField.field_type] : [];
 
-            return (
-              <div key={index} className="flex flex-col sm:flex-row items-center gap-2 border p-3 rounded-md">
-                <div className="flex-grow grid grid-cols-1 sm:grid-cols-3 gap-2 w-full">
-                  <Select
-                    value={rule.field_id}
-                    onValueChange={(val) => {
-                      updateRule(index, 'field_id', val);
-                      // Reset value and operator when trigger field changes
-                      updateRule(index, 'value', null);
-                      updateRule(index, 'operator', 'equals'); // Default operator
-                    }}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a field" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {availableTriggerFields.map((f) => (
-                        <SelectItem key={f.id} value={f.id}>
-                          {f.label} ({f.field_type})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+        return (
+          <div key={index} className="flex flex-col sm:flex-row items-center gap-2 border p-3 rounded-md">
+            <div className="flex-grow grid grid-cols-1 sm:grid-cols-3 gap-2 w-full">
+              <Select
+                value={rule.field_id}
+                onValueChange={(val) => {
+                  updateRule(index, 'field_id', val);
+                  // Reset value and operator when trigger field changes
+                  updateRule(index, 'value', null);
+                  updateRule(index, 'operator', 'equals'); // Default operator
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a field" />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableTriggerFields.map((f) => (
+                    <SelectItem key={f.id} value={f.id}>
+                      {f.label} ({f.field_type})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
 
-                  <Select
-                    value={rule.operator}
-                    onValueChange={(val) => {
-                      updateRule(index, 'operator', val as DisplayRule['operator']);
-                      // Clear value if operator changes to is_empty/is_not_empty
-                      if (val === 'is_empty' || val === 'is_not_empty') {
-                        updateRule(index, 'value', null);
-                      }
-                    }}
-                    disabled={!triggerField} // Disable if no trigger field selected
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select operator" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {allowedOperators.map(op => (
-                        <SelectItem key={op} value={op}>{operatorLabels[op]}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+              <Select
+                value={rule.operator}
+                onValueChange={(val) => {
+                  updateRule(index, 'operator', val as DisplayRule['operator']);
+                  // Clear value if operator changes to is_empty/is_not_empty
+                  if (val === 'is_empty' || val === 'is_not_empty') {
+                    updateRule(index, 'value', null);
+                  }
+                }}
+                disabled={!triggerField} // Disable if no trigger field selected
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select operator" />
+                </SelectTrigger>
+                <SelectContent>
+                  {allowedOperators.map(op => (
+                    <SelectItem key={op} value={op}>{operatorLabels[op]}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
 
-                  {renderValueInput(rule, index, triggerField)}
-                </div>
-                <Button variant="ghost" size="icon" onClick={() => removeRule(index)}>
-                  <Trash2 className="h-4 w-4 text-destructive" />
-                </Button>
-              </div>
-            );
-          })}
-          <Button variant="outline" onClick={addRule} className="w-full">
-            <Plus className="mr-2 h-4 w-4" /> Add Rule
-          </Button>
-        </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose}>Cancel</Button>
-          <Button onClick={handleSave}>Save Logic</Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+              {renderValueInput(rule, index, triggerField)}
+            </div>
+            <Button variant="ghost" size="icon" onClick={() => removeRule(index)}>
+              <Trash2 className="h-4 w-4 text-destructive" />
+            </Button>
+          </div>
+        );
+      })}
+      <Button variant="outline" onClick={addRule} className="w-full">
+        <Plus className="mr-2 h-4 w-4" /> Add Rule
+      </Button>
+      <Button onClick={handleSave} className="w-full">Save Logic</Button>
+    </div>
   );
 };
 

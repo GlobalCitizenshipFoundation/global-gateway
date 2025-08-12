@@ -15,6 +15,7 @@ export const useFormBuilderState = (initialFormId?: string) => {
   const [formLastEditedAt, setFormLastEditedAt] = useState<string | null>(null);
   const [formLastEditedByUserId, setFormLastEditedByUserId] = useState<string | null>(null);
   const [lastEditedByUserName, setLastEditedByUserName] = useState<string | null>(null);
+  const [isTemplate, setIsTemplate] = useState(false); // New: is_template status
 
   // Form content state
   const [sections, setSections] = useState<FormSection[]>([]);
@@ -27,13 +28,10 @@ export const useFormBuilderState = (initialFormId?: string) => {
   const [lastSavedTimestamp, setLastSavedTimestamp] = useState<Date | null>(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
-  const [showSavedConfirmation, setShowSavedConfirmation] = useState(false); // New state for "Saved!" message
+  const [showSavedConfirmation, setShowSavedConfirmation] = useState(false);
 
-  // Dialog states
-  const [isLogicBuilderOpen, setIsLogicBuilderOpen] = useState(false);
-  const [fieldToEditLogic, setFieldToEditLogic] = useState<FormField | null>(null);
-  const [isEditFieldDialogOpen, setIsEditFieldDialogOpen] = useState(false);
-  const [fieldToEditDetails, setFieldToEditDetails] = useState<FormField | null>(null);
+  // UI interaction states
+  const [selectedField, setSelectedField] = useState<FormField | null>(null); // New: for properties panel
   const [isSaveAsTemplateDialogOpen, setIsSaveAsTemplateDialogOpen] = useState(false);
   const [newTemplateName, setNewTemplateName] = useState('');
   const [isSavingTemplate, setIsSavingTemplate] = useState(false);
@@ -60,7 +58,7 @@ export const useFormBuilderState = (initialFormId?: string) => {
 
     const { data: formData, error: formError } = await supabase
       .from('forms')
-      .select('name, status, description, last_edited_at, last_edited_by_user_id')
+      .select('name, status, description, last_edited_at, last_edited_by_user_id, is_template') // Fetch is_template
       .eq('id', currentFormId)
       .single();
     
@@ -71,12 +69,14 @@ export const useFormBuilderState = (initialFormId?: string) => {
       setFormStatus('draft');
       setFormLastEditedAt(null);
       setFormLastEditedByUserId(null);
+      setIsTemplate(false); // Reset is_template
     } else {
       setFormName(formData.name);
       setFormDescription(formData.description);
       setFormStatus(formData.status);
       setFormLastEditedAt(formData.last_edited_at);
       setFormLastEditedByUserId(formData.last_edited_by_user_id);
+      setIsTemplate(formData.is_template); // Set is_template
     }
 
     const { data: sectionsData, error: sectionsError } = await supabase
@@ -154,9 +154,10 @@ export const useFormBuilderState = (initialFormId?: string) => {
     formName, setFormName,
     formDescription, setFormDescription,
     formStatus, setFormStatus,
-    formLastEditedAt, setFormLastEditedAt, // Expose setter for handlers
-    formLastEditedByUserId, setFormLastEditedByUserId, // Expose setter for handlers
+    formLastEditedAt, setFormLastEditedAt,
+    formLastEditedByUserId, setFormLastEditedByUserId,
     lastEditedByUserName,
+    isTemplate, // New: Expose isTemplate
     sections, setSections,
     fields, setFields,
     loading, fetchData,
@@ -166,11 +167,8 @@ export const useFormBuilderState = (initialFormId?: string) => {
     lastSavedTimestamp, setLastSavedTimestamp,
     hasUnsavedChanges, setHasUnsavedChanges,
     isUpdatingStatus, setIsUpdatingStatus,
-    showSavedConfirmation, setShowSavedConfirmation, // New: Expose setter
-    isLogicBuilderOpen, setIsLogicBuilderOpen,
-    fieldToEditLogic, setFieldToEditLogic,
-    isEditFieldDialogOpen, setIsEditFieldDialogOpen,
-    fieldToEditDetails, setFieldToEditDetails,
+    showSavedConfirmation, setShowSavedConfirmation,
+    selectedField, setSelectedField, // New: Expose selectedField
     isSaveAsTemplateDialogOpen, setIsSaveAsTemplateDialogOpen,
     newTemplateName, setNewTemplateName,
     isSavingTemplate, setIsSavingTemplate,

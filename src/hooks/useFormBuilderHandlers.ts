@@ -3,7 +3,7 @@ import { useSession } from '@/contexts/SessionContext';
 import { supabase } from '@/integrations/supabase/client';
 import { showError, showSuccess } from '@/utils/toast';
 import { FormField, FormSection, DisplayRule } from '@/types';
-import { useFormBuilderState } from './useFormBuilderState'; // Import the state hook
+import { useFormBuilderState } from './useFormBuilderState';
 
 interface UseFormBuilderHandlersProps {
   state: ReturnType<typeof useFormBuilderState>;
@@ -35,13 +35,9 @@ export const useFormBuilderHandlers = ({
     setLastSavedTimestamp,
     setHasUnsavedChanges,
     setIsUpdatingStatus,
-    setShowSavedConfirmation, // New: Destructure setter
-    setFormLastEditedAt, // New: Destructure setter
-    setFormLastEditedByUserId, // New: Destructure setter
-    setIsLogicBuilderOpen,
-    setFieldToEditLogic,
-    setIsEditFieldDialogOpen,
-    setFieldToEditDetails,
+    setShowSavedConfirmation,
+    setFormLastEditedAt,
+    setFormLastEditedByUserId,
     setIsSaveAsTemplateDialogOpen,
     setNewTemplateName,
     setIsSavingTemplate,
@@ -291,10 +287,8 @@ export const useFormBuilderHandlers = ({
     }
   }, [setFields, user, setHasUnsavedChanges, setFormLastEditedAt, setFormLastEditedByUserId, triggerAutoSave]);
 
-  const handleEditLogic = useCallback((field: FormField) => {
-    setFieldToEditLogic(field);
-    setIsLogicBuilderOpen(true);
-  }, [setFieldToEditLogic, setIsLogicBuilderOpen]);
+  // handleEditLogic and handleEditField are now replaced by setSelectedField in FormBuilderPage
+  // The logic for saving is now handled by handleSaveEditedField and handleSaveLogic directly from FieldPropertiesPanel
 
   const handleSaveLogic = useCallback(async (fieldId: string, rules: DisplayRule[]) => {
     if (!user) return;
@@ -319,11 +313,6 @@ export const useFormBuilderHandlers = ({
       triggerAutoSave(); // Trigger auto-save for form details
     }
   }, [setFields, user, fetchData, setHasUnsavedChanges, setFormLastEditedAt, setFormLastEditedByUserId, triggerAutoSave]);
-
-  const handleEditField = useCallback((field: FormField) => {
-    setFieldToEditDetails(field);
-    setIsEditFieldDialogOpen(true);
-  }, [setFieldToEditDetails, setIsEditFieldDialogOpen]);
 
   const handleSaveEditedField = useCallback(async (fieldId: string, values: { label: string; field_type: FormField['field_type']; options?: string; is_required: boolean; help_text?: string | null; description?: string | null; tooltip?: string | null; placeholder?: string | null; section_id?: string | null; }) => {
     if (!user) return;
@@ -369,9 +358,7 @@ export const useFormBuilderHandlers = ({
       setFormLastEditedByUserId(user.id); // Update form's last edited user
       triggerAutoSave(); // Trigger auto-save for form details
     }
-    setIsEditFieldDialogOpen(false);
-    setFieldToEditDetails(null);
-  }, [setFields, user, fetchData, setHasUnsavedChanges, setFormLastEditedAt, setFormLastEditedByUserId, setIsEditFieldDialogOpen, setFieldToEditDetails, triggerAutoSave]);
+  }, [setFields, user, fetchData, setHasUnsavedChanges, setFormLastEditedAt, setFormLastEditedByUserId, triggerAutoSave]);
 
   const handleUpdateFieldLabel = useCallback(async (fieldId: string, newLabel: string) => {
     if (!user) return;
@@ -553,9 +540,7 @@ export const useFormBuilderHandlers = ({
     handleAddField,
     handleDeleteField,
     handleToggleRequired,
-    handleEditLogic,
     handleSaveLogic,
-    handleEditField,
     handleSaveEditedField,
     handleUpdateFieldLabel,
     handlePublishUnpublish,

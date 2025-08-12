@@ -25,12 +25,11 @@ interface FormFieldItemProps {
   field: FormField;
   onDelete: (fieldId: string) => void;
   onToggleRequired: (fieldId: string, isRequired: boolean) => void;
-  onEditLogic: (field: FormField) => void;
-  onEdit: (field: FormField) => void;
+  onSelectField: (field: FormField) => void; // New prop to select field for properties panel
   onUpdateLabel: (fieldId: string, newLabel: string) => void; // New prop for inline label update
 }
 
-export const FormFieldItem = ({ field, onDelete, onToggleRequired, onEditLogic, onEdit, onUpdateLabel }: FormFieldItemProps) => {
+export const FormFieldItem = ({ field, onDelete, onToggleRequired, onSelectField, onUpdateLabel }: FormFieldItemProps) => {
   // Defensive check: If field is null or undefined, return null to prevent errors
   if (!field) {
     console.error("FormFieldItem received a null or undefined field prop.");
@@ -43,7 +42,7 @@ export const FormFieldItem = ({ field, onDelete, onToggleRequired, onEditLogic, 
     setNodeRef,
     transform,
     transition,
-  } = useSortable({ id: field.id });
+  } = useSortable({ id: field.id, data: { type: "FormField", field } }); // Pass field data for drag overlay
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -135,10 +134,7 @@ export const FormFieldItem = ({ field, onDelete, onToggleRequired, onEditLogic, 
             />
             <Label htmlFor={`required-${field.id}`}>Required</Label>
         </div>
-        <Button variant="outline" size="sm" onClick={() => onEditLogic(field)}>
-          {hasLogic ? 'Edit Logic' : 'Add Logic'}
-        </Button>
-        <Button variant="outline" size="sm" onClick={() => onEdit(field)}>
+        <Button variant="outline" size="sm" onClick={() => onSelectField(field)}> {/* Changed to onSelectField */}
           <Pencil className="mr-2 h-4 w-4" /> Edit
         </Button>
         <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>

@@ -3,9 +3,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import RichTextEditor from "@/components/RichTextEditor";
-import { useFormBuilderState } from "@/hooks/useFormBuilderState"; // Import the state hook
-import { useFormBuilderHandlers } from "@/hooks/useFormBuilderHandlers"; // Import handlers hook
-import { useFormBuilderActions } from "@/hooks/useFormBuilderActions"; // Import actions hook
+import { useFormBuilderState } from "@/hooks/useFormBuilderState";
+import { useFormBuilderHandlers } from "@/hooks/useFormBuilderHandlers";
+import { useFormBuilderActions } from "@/hooks/useFormBuilderActions";
 import { useEffect } from "react";
 
 interface FormDetailsCardProps {
@@ -18,20 +18,20 @@ export const FormDetailsCard = ({ state }: FormDetailsCardProps) => {
     formName, setFormName,
     formDescription, setFormDescription,
     formStatus,
-    formLastEditedAt, // Use this for the "Last updated" timestamp
+    formLastEditedAt,
     lastEditedByUserName,
+    isTemplate, // New: Destructure isTemplate
     hasUnsavedChanges,
     isAutoSaving,
-    showSavedConfirmation, // New: for "Saved!" message
+    showSavedConfirmation,
     loading,
   } = state;
 
-  // We need to pass the actions to the handlers hook
   const { handleUpdateFormDetails, handleUpdateFormStatus } = useFormBuilderActions({
     formId: formId,
-    setSections: state.setSections, // Pass setters from state
-    setFields: state.setFields,     // Pass setters from state
-    fetchData: state.fetchData,     // Pass fetchData from state
+    setSections: state.setSections,
+    setFields: state.setFields,
+    fetchData: state.fetchData,
   });
 
   const { triggerAutoSave } = useFormBuilderHandlers({
@@ -40,13 +40,11 @@ export const FormDetailsCard = ({ state }: FormDetailsCardProps) => {
     performUpdateFormStatus: handleUpdateFormStatus,
   });
 
-  // Effect to trigger auto-save on relevant state changes
   useEffect(() => {
-    if (!loading) { // Only auto-save after initial load
+    if (!loading) {
       triggerAutoSave();
     }
-    // The cleanup for the timeout is handled within triggerAutoSave's useCallback and useRef
-  }, [formName, formDescription, state.sections, state.fields, loading, triggerAutoSave]); // Depend on sections and fields to trigger auto-save on their changes
+  }, [formName, formDescription, state.sections, state.fields, loading, triggerAutoSave]);
 
   const renderStatusMessage = () => {
     if (isAutoSaving) {
@@ -58,7 +56,7 @@ export const FormDetailsCard = ({ state }: FormDetailsCardProps) => {
     if (hasUnsavedChanges) {
       return <span className="text-orange-500">Unsaved changes</span>;
     }
-    return null; // No dynamic status to show
+    return null;
   };
 
   return (
@@ -66,9 +64,11 @@ export const FormDetailsCard = ({ state }: FormDetailsCardProps) => {
       <CardHeader>
         <div className="flex justify-between items-center">
           <div>
-            <CardTitle>Form Builder: {formName}</CardTitle>
+            <CardTitle>
+              {isTemplate ? "Template Builder" : "Form Builder"}: {formName}
+            </CardTitle>
             <div className="text-sm text-muted-foreground">
-              Design your application form. Current Status: <Badge variant={formStatus === 'published' ? 'default' : 'secondary'}>{formStatus.charAt(0).toUpperCase() + formStatus.slice(1)}</Badge>
+              Design your {isTemplate ? "template" : "application form"}. Current Status: <Badge variant={formStatus === 'published' ? 'default' : 'secondary'}>{formStatus.charAt(0).toUpperCase() + formStatus.slice(1)}</Badge>
             </div>
           </div>
           <div className="text-sm text-muted-foreground text-right">
@@ -84,9 +84,9 @@ export const FormDetailsCard = ({ state }: FormDetailsCardProps) => {
       </CardHeader>
       <CardContent>
         <div className="space-y-4 mb-8 p-4 border rounded-md bg-muted/20">
-          <h3 className="text-lg font-medium">Form Details</h3>
+          <h3 className="text-lg font-medium">{isTemplate ? "Template Details" : "Form Details"}</h3>
           <div className="grid gap-2">
-            <Label htmlFor="form-name">Form Name</Label>
+            <Label htmlFor="form-name">{isTemplate ? "Template Name" : "Form Name"}</Label>
             <Input
               id="form-name"
               value={formName}
@@ -94,13 +94,13 @@ export const FormDetailsCard = ({ state }: FormDetailsCardProps) => {
             />
           </div>
           <div className="grid gap-2">
-            <Label htmlFor="form-description">Form Description (Optional)</Label>
+            <Label htmlFor="form-description">{isTemplate ? "Template Description" : "Form Description"} (Optional)</Label>
             <RichTextEditor
               value={formDescription || ''}
               onChange={setFormDescription}
               className="min-h-[150px]"
             />
-            <p className="text-sm text-muted-foreground">This description will appear at the top of the application form.</p>
+            <p className="text-sm text-muted-foreground">This description will appear at the top of the {isTemplate ? "template" : "application form"}.</p>
           </div>
         </div>
       </CardContent>

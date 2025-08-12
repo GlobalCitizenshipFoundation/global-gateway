@@ -8,9 +8,10 @@ interface UncategorizedFieldsListProps {
   uncategorizedFields: FormField[];
   handleDeleteField: (fieldId: string) => Promise<void>;
   handleToggleRequired: (fieldId: string, isRequired: boolean) => Promise<void>;
-  onEditLogic: (field: FormField) => void;
-  onEditField: (field: FormField) => void;
-  onUpdateLabel: (fieldId: string, newLabel: string) => void; // New prop
+  onEditLogic: (field: FormField) => void; // This prop is no longer directly used by FormFieldItem, but by parent
+  onEditField: (field: FormField) => void; // This prop is no longer directly used by FormFieldItem, but by parent
+  onUpdateLabel: (fieldId: string, newLabel: string) => void;
+  onSelectField: (field: FormField) => void;
 }
 
 // Helper component for droppable areas
@@ -23,9 +24,10 @@ export const UncategorizedFieldsList = ({
   uncategorizedFields,
   handleDeleteField,
   handleToggleRequired,
-  onEditLogic,
-  onEditField,
-  onUpdateLabel, // Destructure new prop
+  onEditLogic, // This prop is no longer directly used by FormFieldItem
+  onEditField, // This prop is no longer directly used by FormFieldItem
+  onUpdateLabel,
+  onSelectField,
 }: UncategorizedFieldsListProps) => {
   if (uncategorizedFields.length === 0) return null;
 
@@ -40,9 +42,8 @@ export const UncategorizedFieldsList = ({
               field={field}
               onDelete={handleDeleteField}
               onToggleRequired={handleToggleRequired}
-              onEditLogic={onEditLogic}
-              onEdit={onEditField}
-              onUpdateLabel={onUpdateLabel} // Pass the new prop
+              onUpdateLabel={onUpdateLabel}
+              onSelectField={onSelectField}
             />
           ))}
         </ul>

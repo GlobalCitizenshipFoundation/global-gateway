@@ -96,6 +96,7 @@ const CreateProgramPage = () => {
     setIsSubmitting(true);
 
     let newFormId: string;
+    const now = new Date().toISOString(); // Capture current timestamp
 
     if (values.formTemplateId) {
       // Create new form by copying from template
@@ -113,6 +114,8 @@ const CreateProgramPage = () => {
         is_template: false,
         status: 'draft',
         description: template.description, // Copy description from template
+        last_edited_by_user_id: user.id, // Set editor
+        last_edited_at: now, // Set timestamp
       }).select('id').single();
 
       if (newFormError || !newFormData) {
@@ -151,6 +154,8 @@ const CreateProgramPage = () => {
           form_id: newFormId,
           name: section.name,
           order: section.order,
+          last_edited_by_user_id: user.id, // Set editor
+          last_edited_at: now, // Set timestamp
         };
       });
 
@@ -167,6 +172,9 @@ const CreateProgramPage = () => {
         help_text: field.help_text,
         description: field.description,
         tooltip: field.tooltip,
+        placeholder: field.placeholder,
+        last_edited_by_user_id: user.id, // Set editor
+        last_edited_at: now, // Set timestamp
       }));
 
       // 3. Insert new sections and fields
@@ -188,6 +196,8 @@ const CreateProgramPage = () => {
         is_template: false,
         status: 'draft',
         description: null, // Blank form has no description initially
+        last_edited_by_user_id: user.id, // Set editor
+        last_edited_at: now, // Set timestamp
       }).select('id').single();
 
       if (formError || !newFormData) {
