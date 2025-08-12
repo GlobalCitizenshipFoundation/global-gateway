@@ -62,7 +62,7 @@ const SubmissionDetailPage = () => {
       // Fetch submission
       const { data: submissionData, error: submissionError } = await supabase
         .from('applications')
-        .select(`*, programs(title), program_stages(name)`)
+        .select(`id, submitted_date, full_name, email, stage_id, programs(title), program_stages(name)`) // Optimized select
         .eq('id', submissionId)
         .single();
 
@@ -71,8 +71,14 @@ const SubmissionDetailPage = () => {
         setLoading(false);
         return;
       }
-      setSubmission(submissionData as SubmissionDetail);
-      setSelectedStage(submissionData.stage_id);
+      // Correctly unwrap nested objects from arrays if they are returned as such
+      const formattedSubmissionData: SubmissionDetail = {
+        ...submissionData,
+        programs: Array.isArray(submissionData.programs) ? submissionData.programs[0] : submissionData.programs,
+        program_stages: Array.isArray(submissionData.program_stages) ? submissionData.program_stages[0] : submissionData.program_stages,
+      };
+      setSubmission(formattedSubmissionData);
+      setSelectedStage(formattedSubmissionData.stage_id);
 
       // Fetch responses with full form_fields data including display_rules
       const { data: responsesData, error: responsesError } = await supabase
@@ -93,7 +99,7 @@ const SubmissionDetailPage = () => {
       // Fetch all possible stages for the program
       const { data: stagesData, error: stagesError } = await supabase
         .from('program_stages')
-        .select('*')
+        .select('id, name, order, program_id, created_at') // Optimized select to include all ProgramStage properties
         .eq('program_id', programId)
         .order('order', { ascending: true });
       
@@ -132,14 +138,20 @@ const SubmissionDetailPage = () => {
       .from('applications')
       .update({ stage_id: selectedStage })
       .eq('id', submission.id)
-      .select(`*, programs(title), program_stages(name)`)
+      .select(`id, submitted_date, full_name, email, stage_id, programs(title), program_stages(name)`) // Optimized select
       .single();
 
     if (error) {
       showError(`Failed to update stage: ${error.message}`);
     } else {
-      setSubmission(data as SubmissionDetail);
-      showSuccess(`Application moved to "${data.program_stages?.name}" stage.`);
+      // Correctly unwrap nested objects from arrays if they are returned as such
+      const updatedSubmissionData: SubmissionDetail = {
+        ...data,
+        programs: Array.isArray(data.programs) ? data.programs[0] : data.programs,
+        program_stages: Array.isArray(data.program_stages) ? data.program_stages[0] : data.program_stages,
+      };
+      setSubmission(updatedSubmissionData);
+      showSuccess(`Application moved to "${updatedSubmissionData.program_stages?.name}" stage.`);
     }
     setUpdating(false);
   };

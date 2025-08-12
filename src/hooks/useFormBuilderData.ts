@@ -20,7 +20,7 @@ export const useFormBuilderData = () => {
     setLoading(true);
 
     const { data: programData, error: programError } = await supabase
-      .from('programs').select('title').eq('id', programId).single();
+      .from('programs').select('title').eq('id', programId).single(); // Optimized select
     
     if (programError) {
       showError("Could not fetch program details.");

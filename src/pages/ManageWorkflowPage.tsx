@@ -24,7 +24,7 @@ const ManageWorkflowPage = () => {
 
       const { data: programData, error: programError } = await supabase
         .from('programs')
-        .select('title')
+        .select('title') // Optimized select
         .eq('id', programId)
         .single();
 

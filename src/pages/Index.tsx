@@ -19,7 +19,7 @@ const Index = () => {
 
       const { data, error } = await supabase
         .from("programs")
-        .select("*")
+        .select("id, title, description, deadline") // Optimized select
         .order("created_at", { ascending: false });
 
       if (error) {

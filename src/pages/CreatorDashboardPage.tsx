@@ -56,7 +56,7 @@ const CreatorDashboardPage = () => {
 
       const { data: programsData, error: programsError } = await supabase
         .from('programs')
-        .select('*')
+        .select('id, title, deadline') // Optimized select
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 

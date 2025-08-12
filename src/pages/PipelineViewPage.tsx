@@ -55,9 +55,9 @@ const PipelineViewPage = () => {
       if (!programId) return;
       setLoading(true);
 
-      const programPromise = supabase.from("programs").select("title").eq("id", programId).single();
-      const stagesPromise = supabase.from("program_stages").select("*").eq("program_id", programId).order("order", { ascending: true });
-      const applicationsPromise = supabase.from("applications").select("id, full_name, stage_id").eq("program_id", programId);
+      const programPromise = supabase.from("programs").select("title").eq("id", programId).single(); // Optimized select
+      const stagesPromise = supabase.from("program_stages").select("id, name, order").eq("program_id", programId).order("order", { ascending: true }); // Optimized select
+      const applicationsPromise = supabase.from("applications").select("id, full_name, stage_id").eq("program_id", programId); // Optimized select
 
       const [
         { data: programData, error: programError },
@@ -139,7 +139,7 @@ const PipelineViewPage = () => {
     setAllSubmissionResponses([]);
 
     const { data: submissionData, error: submissionError } = await supabase
-      .from('applications').select(`*, program_stages(name)`).eq('id', applicant.id).single();
+      .from('applications').select(`id, submitted_date, full_name, email, stage_id, program_stages(name)`).eq('id', applicant.id).single(); // Optimized select
 
     if (submissionError) {
       showError("Failed to load submission details.");
@@ -147,8 +147,13 @@ const PipelineViewPage = () => {
       setSheetLoading(false);
       return;
     }
-    setSelectedSubmission(submissionData as SubmissionDetail);
-    setCurrentStageInSheet(submissionData.stage_id);
+    // Correctly unwrap nested objects from arrays if they are returned as such
+    const formattedSubmissionData: SubmissionDetail = {
+      ...submissionData,
+      program_stages: Array.isArray(submissionData.program_stages) ? submissionData.program_stages[0] : submissionData.program_stages,
+    };
+    setSelectedSubmission(formattedSubmissionData);
+    setCurrentStageInSheet(formattedSubmissionData.stage_id);
 
     // Fetch responses with full form_fields data including display_rules
     const { data: responsesData, error: responsesError } = await supabase

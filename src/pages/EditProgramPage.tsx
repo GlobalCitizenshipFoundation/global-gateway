@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import {
   Form,
   FormControl,
-  FormField,
+  FormField as FormFieldComponent,
   FormItem,
   FormLabel,
   FormMessage,
@@ -64,7 +64,7 @@ const EditProgramPage = () => {
       setLoading(true);
       const { data, error } = await supabase
         .from('programs')
-        .select('*')
+        .select('title, description, deadline') // Optimized select
         .eq('id', programId)
         .single();
 
@@ -137,7 +137,7 @@ const EditProgramPage = () => {
         <CardContent>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-              <FormField
+              <FormFieldComponent
                 control={form.control}
                 name="title"
                 render={({ field }) => (
@@ -150,7 +150,7 @@ const EditProgramPage = () => {
                   </FormItem>
                 )}
               />
-              <FormField
+              <FormFieldComponent
                 control={form.control}
                 name="description"
                 render={({ field }) => (
@@ -167,7 +167,7 @@ const EditProgramPage = () => {
                   </FormItem>
                 )}
               />
-              <FormField
+              <FormFieldComponent
                 control={form.control}
                 name="deadline"
                 render={({ field }) => (

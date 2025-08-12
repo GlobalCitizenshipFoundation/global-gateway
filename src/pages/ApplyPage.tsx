@@ -50,7 +50,7 @@ const ApplyPage = () => {
       setProfileFullName(profileData?.full_name || '');
       setProfileEmail(user.email || '');
 
-      const { data: programData, error: programError } = await supabase.from('programs').select('*').eq('id', programId).single();
+      const { data: programData, error: programError } = await supabase.from('programs').select('id, title, description, deadline').eq('id', programId).single(); // Optimized select
       if (programError) {
         showError("Error fetching program details.");
         setProgram(null);
