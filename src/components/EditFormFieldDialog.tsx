@@ -29,7 +29,7 @@ import { FormField } from "@/types";
 
 const editFormFieldSchema = z.object({
   label: z.string().min(1, { message: "Label cannot be empty." }),
-  field_type: z.enum(['text', 'textarea', 'select', 'radio', 'checkbox', 'file', 'email', 'date', 'phone', 'number', 'richtext']),
+  field_type: z.enum(['text', 'textarea', 'select', 'radio', 'checkbox', 'email', 'date', 'phone', 'number', 'richtext']),
   options: z.string().optional(), // Comma-separated for select/radio/checkbox
   is_required: z.boolean(),
 });
@@ -125,7 +125,6 @@ const EditFormFieldDialog = ({
                       <SelectItem value="phone">Phone Number</SelectItem>
                       <SelectItem value="number">Number</SelectItem>
                       <SelectItem value="richtext">Rich Text</SelectItem>
-                      <SelectItem value="file">File Upload</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />

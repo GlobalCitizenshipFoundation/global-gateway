@@ -21,7 +21,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, Link as LinkIcon } from "lucide-react"; // Import LinkIcon
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import RichTextEditor from "@/components/RichTextEditor";
@@ -35,7 +35,6 @@ const ApplyPage = () => {
   const [formSections, setFormSections] = useState<FormSection[]>([]); // New state for sections
   const [formFields, setFormFields] = useState<FormField[]>([]);
   const [responses, setResponses] = useState<Record<string, string>>({});
-  const [fileUploads, setFileUploads] = useState<Record<string, File | null>>({});
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [profileFullName, setProfileFullName] = useState('');
@@ -78,18 +77,14 @@ const ApplyPage = () => {
       } else {
         setFormFields(fieldsData as FormField[]);
         const initialResponses: Record<string, string> = {};
-        const initialFileUploads: Record<string, File | null> = {};
         fieldsData.forEach(field => {
           if (field.field_type === 'checkbox') {
             initialResponses[field.id] = '[]';
-          } else if (field.field_type === 'file') {
-            initialFileUploads[field.id] = null;
           } else {
             initialResponses[field.id] = '';
           }
         });
         setResponses(initialResponses);
-        setFileUploads(initialFileUploads);
       }
 
       setLoading(false);
@@ -166,7 +161,6 @@ const ApplyPage = () => {
 
   const displayedFormFields = useMemo(() => {
     const newResponses: Record<string, string> = { ...responses };
-    const newFileUploads: Record<string, File | null> = { ...fileUploads };
 
     const filtered = formFields.filter(field => {
       const shouldDisplay = shouldFieldBeDisplayed(field, responses);
@@ -174,9 +168,6 @@ const ApplyPage = () => {
         // Clear response if field is hidden
         if (newResponses[field.id] !== undefined) {
           newResponses[field.id] = field.field_type === 'checkbox' ? '[]' : '';
-        }
-        if (newFileUploads[field.id] !== undefined) {
-          newFileUploads[field.id] = null;
         }
       }
       return shouldDisplay;
@@ -186,19 +177,12 @@ const ApplyPage = () => {
     if (JSON.stringify(newResponses) !== JSON.stringify(responses)) {
       setResponses(newResponses);
     }
-    if (JSON.stringify(newFileUploads) !== JSON.stringify(fileUploads)) {
-      setFileUploads(newFileUploads);
-    }
 
     return filtered;
-  }, [responses, formFields, fileUploads]); // Depend on responses to re-evaluate visibility
+  }, [responses, formFields]); // Depend on responses to re-evaluate visibility
 
   const handleResponseChange = (fieldId: string, value: string) => {
     setResponses(prev => ({ ...prev, [fieldId]: value }));
-  };
-
-  const handleFileChange = (fieldId: string, file: File | null) => {
-    setFileUploads(prev => ({ ...prev, [fieldId]: file }));
   };
 
   const handleCheckboxChange = (fieldId: string, option: string, checked: boolean) => {
@@ -217,13 +201,7 @@ const ApplyPage = () => {
     // Validate only currently displayed required fields
     for (const field of displayedFormFields) {
       if (field.is_required) {
-        if (field.field_type === 'file') {
-          if (!fileUploads[field.id]) {
-            showError(`Please upload a file for "${field.label}".`);
-            setSubmitting(false);
-            return;
-          }
-        } else if (!responses[field.id] || (field.field_type === 'checkbox' && JSON.parse(responses[field.id]).length === 0)) {
+        if (!responses[field.id] || (field.field_type === 'checkbox' && JSON.parse(responses[field.id]).length === 0)) {
           showError(`Please fill in the required field: "${field.label}".`);
           setSubmitting(false);
             return;
@@ -255,44 +233,11 @@ const ApplyPage = () => {
     const responseRecords: { application_id: string; field_id: string; value: string; }[] = [];
 
     for (const field of displayedFormFields) { // Only process displayed fields
-      if (field.field_type === 'file') {
-        const file = fileUploads[field.id];
-        if (file) {
-          const filePath = `${user.id}/${program.id}/${field.id}/${file.name}`;
-          const { data: uploadData, error: uploadError } = await supabase.storage
-            .from('application-files')
-            .upload(filePath, file, {
-              cacheControl: '3600',
-              upsert: false,
-            });
-
-          if (uploadError) {
-            showError(`Failed to upload file for "${field.label}": ${uploadError.message}`);
-            // Optionally delete the application if file upload fails
-            await supabase.from('applications').delete().eq('id', appData.id);
-            setSubmitting(false);
-            return;
-          }
-          const publicUrl = supabase.storage.from('application-files').getPublicUrl(filePath).data.publicUrl;
-          responseRecords.push({
-            application_id: appData.id,
-            field_id: field.id,
-            value: publicUrl,
-          });
-        } else if (field.is_required) {
-          // This case should ideally be caught by the initial validation, but as a fallback
-          showError(`Required file for "${field.label}" is missing.`);
-          await supabase.from('applications').delete().eq('id', appData.id);
-          setSubmitting(false);
-          return;
-        }
-      } else {
-        responseRecords.push({
-          application_id: appData.id,
-          field_id: field.id,
-          value: responses[field.id] || '',
-        });
-      }
+      responseRecords.push({
+        application_id: appData.id,
+        field_id: field.id,
+        value: responses[field.id] || '',
+      });
     }
 
     const { error: responsesError } = await supabase.from('application_responses').insert(responseRecords);
@@ -384,15 +329,7 @@ const ApplyPage = () => {
           readOnly={submitting}
           className="min-h-[120px]"
         />
-      ) : field.field_type === 'file' ? (
-        <Input
-          id={field.id}
-          type="file"
-          onChange={e => handleFileChange(field.id, e.target.files ? e.target.files[0] : null)}
-          required={field.is_required}
-          disabled={submitting}
-        />
-      ) : (
+      ) : ( // Default to text input for any other type
         <Input id={field.id} value={responses[field.id] || ''} onChange={e => handleResponseChange(field.id, e.target.value)} required={field.is_required} disabled={submitting} />
       )}
     </div>

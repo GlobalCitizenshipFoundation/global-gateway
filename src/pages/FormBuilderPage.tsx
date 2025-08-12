@@ -23,7 +23,7 @@ const FormBuilderPage = () => {
   const [fields, setFields] = useState<FormField[]>([]);
   const [newSectionName, setNewSectionName] = useState('');
   const [newFieldLabel, setNewFieldLabel] = useState('');
-  const [newFieldType, setNewFieldType] = useState<'text' | 'textarea' | 'select' | 'radio' | 'checkbox' | 'file' | 'email' | 'date' | 'phone' | 'number' | 'richtext'>('text');
+  const [newFieldType, setNewFieldType] = useState<FormField['field_type']>('text');
   const [newFieldOptions, setNewFieldOptions] = useState('');
   const [newFieldSectionId, setNewFieldSectionId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -366,7 +366,7 @@ const FormBuilderPage = () => {
                 disabled={isSubmitting}
               />
               <div className="flex flex-col sm:flex-row gap-2">
-                <Select value={newFieldType} onValueChange={(value) => setNewFieldType(value as any)}>
+                <Select value={newFieldType} onValueChange={(value) => setNewFieldType(value as FormField['field_type'])}>
                   <SelectTrigger className="w-full sm:w-[140px]">
                     <SelectValue placeholder="Field type" />
                   </SelectTrigger>
@@ -381,7 +381,6 @@ const FormBuilderPage = () => {
                     <SelectItem value="phone">Phone Number</SelectItem>
                     <SelectItem value="number">Number</SelectItem>
                     <SelectItem value="richtext">Rich Text</SelectItem>
-                    <SelectItem value="file">File Upload</SelectItem>
                   </SelectContent>
                 </Select>
                 {(newFieldType === 'select' || newFieldType === 'radio' || newFieldType === 'checkbox') && (

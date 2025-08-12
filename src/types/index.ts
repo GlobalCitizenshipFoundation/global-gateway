@@ -49,7 +49,7 @@ export type FormField = {
   program_id: string;
   section_id: string | null; // New: Link to FormSection
   label: string;
-  field_type: 'text' | 'textarea' | 'select' | 'radio' | 'checkbox' | 'file' | 'email' | 'date' | 'phone' | 'number' | 'richtext';
+  field_type: 'text' | 'textarea' | 'select' | 'radio' | 'checkbox' | 'email' | 'date' | 'phone' | 'number' | 'richtext';
   options: string[] | null;
   is_required: boolean;
   order: number;
