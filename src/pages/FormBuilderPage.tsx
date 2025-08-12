@@ -12,7 +12,7 @@ import EditFormFieldDialog from "@/components/EditFormFieldDialog";
 // Import new modular components and hooks
 import { useFormBuilderData } from "@/hooks/useFormBuilderData";
 import { useFormFieldDragAndDrop } from "@/hooks/useFormFieldDragAndDrop";
-import { useFormBuilderActions } from "@/hooks/useFormBuilderActions"; // New import
+import { useFormBuilderActions } from "@/hooks/useFormBuilderActions";
 import { AddSectionForm } from "@/components/form-builder/AddSectionForm";
 import { AddFieldForm } from "@/components/form-builder/AddFieldForm";
 import { FormSectionsList } from "@/components/form-builder/FormSectionsList";
@@ -23,9 +23,9 @@ const FormBuilderPage = () => {
     programId,
     programTitle,
     sections,
-    setSections,
+    setSections, // Passed to actions hook
     fields,
-    setFields,
+    setFields, // Passed to actions hook
     loading,
     newFieldSectionId,
     setNewFieldSectionId,
@@ -41,21 +41,25 @@ const FormBuilderPage = () => {
   } = useFormFieldDragAndDrop({ fields, setFields, sections, fetchData });
 
   const {
-    handleAddSection: performAddSection, // Renamed to avoid conflict
-    handleDeleteSection: performDeleteSection, // Renamed
-    handleAddField: performAddField, // Renamed
-    handleDeleteField: performDeleteField, // Renamed
-    handleToggleRequired: performToggleRequired, // Renamed
-    handleSaveLogic: performSaveLogic, // Renamed
-    handleSaveEditedField: performSaveEditedField, // Renamed
+    handleAddSection: performAddSection,
+    handleDeleteSection: performDeleteSection,
+    handleAddField: performAddField,
+    handleDeleteField: performDeleteField,
+    handleToggleRequired: performToggleRequired,
+    handleSaveLogic: performSaveLogic,
+    handleSaveEditedField: performSaveEditedField,
   } = useFormBuilderActions({ programId, setSections, setFields, fetchData });
 
+  // States for Add Section Form
   const [newSectionName, setNewSectionName] = useState('');
+  const [isAddingSection, setIsAddingSection] = useState(false);
+
+  // States for Add Field Form
   const [newFieldLabel, setNewFieldLabel] = useState('');
   const [newFieldType, setNewFieldType] = useState<FormField['field_type']>('text');
   const [newFieldOptions, setNewFieldOptions] = useState('');
-  const [newFieldHelpText, setNewFieldHelpText] = useState(''); // New state for help text
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [newFieldHelpText, setNewFieldHelpText] = useState('');
+  const [isAddingField, setIsAddingField] = useState(false);
 
   // State for ConditionalLogicBuilder
   const [isLogicBuilderOpen, setIsLogicBuilderOpen] = useState(false);
@@ -67,13 +71,13 @@ const FormBuilderPage = () => {
 
   const handleAddSection = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true);
-    const newSection = await performAddSection(newSectionName, sections);
+    setIsAddingSection(true);
+    const newSection = await performAddSection(newSectionName);
     if (newSection) {
       setNewSectionName('');
       setNewFieldSectionId(newSection.id); // Automatically select the new section
     }
-    setIsSubmitting(false);
+    setIsAddingSection(false);
   };
 
   const handleDeleteSection = async (sectionId: string) => {
@@ -82,15 +86,15 @@ const FormBuilderPage = () => {
 
   const handleAddField = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true);
-    const newField = await performAddField(newFieldLabel, newFieldType, newFieldOptions, newFieldSectionId, newFieldHelpText, fields);
+    setIsAddingField(true);
+    const newField = await performAddField(newFieldLabel, newFieldType, newFieldOptions, newFieldSectionId, newFieldHelpText);
     if (newField) {
       setNewFieldLabel('');
       setNewFieldOptions('');
       setNewFieldType('text');
-      setNewFieldHelpText(''); // Reset help text
+      setNewFieldHelpText('');
     }
-    setIsSubmitting(false);
+    setIsAddingField(false);
   };
 
   const handleDeleteField = async (fieldId: string) => {
@@ -174,7 +178,7 @@ const FormBuilderPage = () => {
           <AddSectionForm
             newSectionName={newSectionName}
             setNewSectionName={setNewSectionName}
-            isSubmitting={isSubmitting}
+            isSubmitting={isAddingSection}
             handleAddSection={handleAddSection}
           />
 
@@ -187,9 +191,9 @@ const FormBuilderPage = () => {
             setNewFieldOptions={setNewFieldOptions}
             newFieldSectionId={newFieldSectionId}
             setNewFieldSectionId={setNewFieldSectionId}
-            newFieldHelpText={newFieldHelpText} // New
-            setNewFieldHelpText={setNewFieldHelpText} // New
-            isSubmitting={isSubmitting}
+            newFieldHelpText={newFieldHelpText}
+            setNewFieldHelpText={setNewFieldHelpText}
+            isSubmitting={isAddingField}
             handleAddField={handleAddField}
             sections={sections}
           />
