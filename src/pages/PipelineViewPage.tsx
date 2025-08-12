@@ -15,12 +15,13 @@ import { ProgramStage } from "@/types";
 import { Applicant, ApplicantCard } from "@/components/ApplicantCard";
 import { KanbanColumn } from "@/components/KanbanColumn";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Download } from "lucide-react"; // Import Download icon
 import { showError, showSuccess } from "@/utils/toast";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { format } from "date-fns"; // Import format for date display
 
 type SubmissionDetail = {
   id: string;
@@ -33,7 +34,10 @@ type SubmissionDetail = {
 
 type Response = {
   value: string | null;
-  form_fields: { label: string } | null;
+  form_fields: {
+    label: string;
+    field_type: string; // Add field_type here
+  } | null;
 };
 
 const PipelineViewPage = () => {
@@ -135,7 +139,7 @@ const PipelineViewPage = () => {
     setCurrentStageInSheet(submissionData.stage_id);
 
     const { data: responsesData, error: responsesError } = await supabase
-      .from('application_responses').select(`value, form_fields ( label )`).eq('application_id', applicant.id);
+      .from('application_responses').select(`value, form_fields ( label, field_type )`).eq('application_id', applicant.id); // Fetch field_type
     
     if (responsesError) {
       showError("Could not load application responses.");
@@ -165,6 +169,40 @@ const PipelineViewPage = () => {
       setIsSheetOpen(false);
     }
     setSheetLoading(false);
+  };
+
+  const formatResponseValue = (response: Response) => {
+    if (!response.value) return 'No answer provided';
+    if (response.form_fields?.field_type === 'checkbox') {
+      try {
+        const values = JSON.parse(response.value);
+        return Array.isArray(values) ? values.join(', ') : response.value;
+      } catch (e) {
+        return response.value; // Fallback for malformed data
+      }
+    }
+    if (response.form_fields?.field_type === 'date') {
+      try {
+        return format(new Date(response.value), "PPP");
+      } catch (e) {
+        return response.value; // Fallback for invalid date string
+      }
+    }
+    if (response.form_fields?.field_type === 'file') {
+      const fileName = response.value.split('/').pop();
+      return (
+        <a href={response.value} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline flex items-center gap-1">
+          <Download className="h-4 w-4" /> {fileName || 'View File'}
+        </a>
+      );
+    }
+    if (response.form_fields?.field_type === 'richtext') {
+      // WARNING: Using dangerouslySetInnerHTML can expose your application to XSS attacks
+      // if the content is not sanitized. For a production application, consider
+      // using a library like DOMPurify to sanitize the HTML before rendering.
+      return <div dangerouslySetInnerHTML={{ __html: response.value }} className="prose max-w-none" />;
+    }
+    return response.value;
   };
 
   if (loading) {
@@ -240,7 +278,7 @@ const PipelineViewPage = () => {
                   {selectedSubmissionResponses.map((res, index) => (
                     <div key={index}>
                       <dt className="font-medium text-sm">{res.form_fields?.label || 'Untitled Question'}</dt>
-                      <dd className="text-muted-foreground whitespace-pre-wrap mt-1">{res.value || 'No answer provided'}</dd>
+                      <dd className="text-muted-foreground whitespace-pre-wrap mt-1">{formatResponseValue(res)}</dd>
                     </div>
                   ))}
                 </dl>
