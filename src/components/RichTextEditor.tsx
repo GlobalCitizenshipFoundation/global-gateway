@@ -28,17 +28,18 @@ const RichTextEditor = ({ value, onChange, readOnly = false, disabled = false, c
   ];
 
   return (
-    <ReactQuill
-      theme="snow"
-      value={value}
-      onChange={onChange}
-      modules={modules}
-      formats={formats}
-      readOnly={readOnly}
-      className={className}
-      placeholder="Enter your response here..."
-      bounds={'.app'} // This helps contain the toolbar within the app
-    />
+    <div className={`border rounded-md overflow-hidden focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 ${className}`}>
+      <ReactQuill
+        theme="snow"
+        value={value}
+        onChange={onChange}
+        modules={modules}
+        formats={formats}
+        readOnly={readOnly}
+        placeholder="Enter your response here..."
+        // Removed bounds={'.app'} for better compatibility
+      />
+    </div>
   );
 };
 
