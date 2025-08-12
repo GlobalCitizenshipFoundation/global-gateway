@@ -42,14 +42,15 @@ const UserNav = () => {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+        {/* Replaced Button with a div to ensure a single, simple child for DropdownMenuTrigger's asChild prop */}
+        <div className="relative h-8 w-8 rounded-full cursor-pointer">
           <Avatar className="h-8 w-8">
             <AvatarImage src={avatarUrl} alt={fullName || 'User'} />
             <AvatarFallback>
               {fullName ? getInitials(fullName) : 'U'}
             </AvatarFallback>
           </Avatar>
-        </Button>
+        </div>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-56" align="end" forceMount>
         <DropdownMenuLabel className="font-normal">
@@ -76,7 +77,7 @@ const UserNav = () => {
             <Link to="/creator/dashboard">Manage Programs</Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
-            <Link to="/creator/forms">Manage Forms</Link> {/* New link */}
+            <Link to="/creator/forms">Manage Forms</Link>
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
