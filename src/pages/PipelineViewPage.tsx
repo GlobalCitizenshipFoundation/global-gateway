@@ -37,6 +37,54 @@ type ResponseWithField = {
   form_fields: FormField | null; // Now includes full FormField type
 };
 
+// Component to handle async signed URL generation (re-used from SubmissionDetailPage)
+const FileDownloadLink = ({ filePath }: { filePath: string }) => {
+  const [signedUrl, setSignedUrl] = useState<string | null>(null);
+  const [loadingUrl, setLoadingUrl] = useState(true);
+  const [errorUrl, setErrorUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    const generateSignedUrl = async () => {
+      setLoadingUrl(true);
+      setErrorUrl(null);
+      const { data, error } = await supabase.storage
+        .from('application-files')
+        .createSignedUrl(filePath, 60 * 60); // URL valid for 1 hour
+
+      if (error) {
+        setErrorUrl("Failed to load file.");
+        console.error("Error generating signed URL:", error);
+      } else {
+        setSignedUrl(data.signedUrl);
+      }
+      setLoadingUrl(false);
+    };
+
+    if (filePath) {
+      generateSignedUrl();
+    }
+  }, [filePath]);
+
+  if (loadingUrl) {
+    return <span className="text-muted-foreground">Loading file...</span>;
+  }
+
+  if (errorUrl) {
+    return <span className="text-destructive">{errorUrl}</span>;
+  }
+
+  if (!signedUrl) {
+    return <span className="text-muted-foreground">File not available.</span>;
+  }
+
+  const fileName = filePath.split('/').pop();
+  return (
+    <a href={signedUrl} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline flex items-center gap-1">
+      <Download className="h-4 w-4" /> {fileName || 'View File'}
+    </a>
+  );
+};
+
 const PipelineViewPage = () => {
   const { programId } = useParams<{ programId: string }>();
   const [programTitle, setProgramTitle] = useState("");
@@ -269,12 +317,8 @@ const PipelineViewPage = () => {
       }
     }
     if (response.form_fields?.field_type === 'file') {
-      const fileName = response.value.split('/').pop();
-      return (
-        <a href={response.value} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline flex items-center gap-1">
-          <Download className="h-4 w-4" /> {fileName || 'View File'}
-        </a>
-      );
+      // Use the new FileDownloadLink component for async signed URL
+      return <FileDownloadLink filePath={response.value} />;
     }
     if (response.form_fields?.field_type === 'richtext') {
       // WARNING: Using dangerouslySetInnerHTML can expose your application to XSS attacks
