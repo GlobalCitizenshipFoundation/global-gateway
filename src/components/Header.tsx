@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import UserNav from "./UserNav";
 import { useSession } from "@/contexts/SessionContext";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ThemeToggle } from "./ThemeToggle"; // Import ThemeToggle
 
 const Header = () => {
   const { session, isLoading } = useSession();
@@ -16,6 +17,7 @@ const Header = () => {
           <span className="text-xl font-bold">ApplyHub</span>
         </Link>
         <nav className="flex items-center gap-2">
+          <ThemeToggle /> {/* Add ThemeToggle here */}
           {isLoading ? (
             <Skeleton className="h-10 w-24" />
           ) : session ? (

@@ -21,48 +21,56 @@ import ManageWorkflowPage from "./pages/ManageWorkflowPage";
 import PipelineViewPage from "./pages/PipelineViewPage";
 import FormBuilderPage from "./pages/FormBuilderPage";
 import ProgramDetailsPage from "./pages/ProgramDetailsPage";
-import FormManagementPage from "./pages/FormManagementPage"; // New import
+import FormManagementPage from "./pages/FormManagementPage";
+import { ThemeProvider } from "next-themes"; // Import ThemeProvider
 
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-        <SessionContextProvider>
-          <Layout>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/login" element={<LoginPage />} />
-              <Route path="/programs/:programId" element={<ProgramDetailsPage />} />
-              
-              {/* Protected Routes */}
-              <Route element={<ProtectedRoute />}>
-                <Route path="/apply/:programId" element={<ApplyPage />} />
-                <Route path="/dashboard" element={<DashboardPage />} />
-                <Route path="/profile" element={<ProfilePage />} />
-                <Route path="/creator/dashboard" element={<CreatorDashboardPage />} />
-                <Route path="/creator/new-program" element={<CreateProgramPage />} />
-                <Route path="/creator/program/:programId/edit" element={<EditProgramPage />} />
-                <Route path="/creator/program/:programId/workflow" element={<ManageWorkflowPage />} />
-                <Route path="/creator/program/:programId/submissions" element={<SubmissionsListPage />} />
-                <Route path="/creator/program/:programId/pipeline" element={<PipelineViewPage />} />
-                <Route path="/creator/program/:programId/submission/:submissionId" element={<SubmissionDetailPage />} />
+    <ThemeProvider
+      attribute="class"
+      defaultTheme="system"
+      enableSystem
+      disableTransitionOnChange
+    >
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+          <SessionContextProvider>
+            <Layout>
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/login" element={<LoginPage />} />
+                <Route path="/programs/:programId" element={<ProgramDetailsPage />} />
                 
-                {/* New Form Management Routes */}
-                <Route path="/creator/forms" element={<FormManagementPage />} />
-                <Route path="/creator/forms/:formId/edit" element={<FormBuilderPage />} />
-              </Route>
+                {/* Protected Routes */}
+                <Route element={<ProtectedRoute />}>
+                  <Route path="/apply/:programId" element={<ApplyPage />} />
+                  <Route path="/dashboard" element={<DashboardPage />} />
+                  <Route path="/profile" element={<ProfilePage />} />
+                  <Route path="/creator/dashboard" element={<CreatorDashboardPage />} />
+                  <Route path="/creator/new-program" element={<CreateProgramPage />} />
+                  <Route path="/creator/program/:programId/edit" element={<EditProgramPage />} />
+                  <Route path="/creator/program/:programId/workflow" element={<ManageWorkflowPage />} />
+                  <Route path="/creator/program/:programId/submissions" element={<SubmissionsListPage />} />
+                  <Route path="/creator/program/:programId/pipeline" element={<PipelineViewPage />} />
+                  <Route path="/creator/program/:programId/submission/:submissionId" element={<SubmissionDetailPage />} />
+                  
+                  {/* New Form Management Routes */}
+                  <Route path="/creator/forms" element={<FormManagementPage />} />
+                  <Route path="/creator/forms/:formId/edit" element={<FormBuilderPage />} />
+                </Route>
 
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </Layout>
-        </SessionContextProvider>
-      </BrowserRouter>
-    </TooltipProvider>
+                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </Layout>
+          </SessionContextProvider>
+        </BrowserRouter>
+      </TooltipProvider>
+    </ThemeProvider>
   </QueryClientProvider>
 );
 
