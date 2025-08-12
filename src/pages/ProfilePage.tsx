@@ -175,7 +175,7 @@ const ProfilePage = () => {
                 <Label htmlFor="email">Email</Label>
                 <Input id="email" type="email" value={email} disabled />
                 <p className="text-sm text-muted-foreground">
-                  To change your email, please update it through your Supabase account settings. This typically requires email confirmation.
+                  To change your email, please reach out to the admin support.
                 </p>
               </div>
 
