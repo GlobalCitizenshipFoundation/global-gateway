@@ -215,6 +215,10 @@ const ApplyPage = () => {
                       />
                     </PopoverContent>
                   </Popover>
+                ) : field.field_type === 'phone' ? (
+                  <Input id={field.id} type="tel" value={responses[field.id] || ''} onChange={e => handleResponseChange(field.id, e.target.value)} required={field.is_required} disabled={submitting} />
+                ) : field.field_type === 'number' ? (
+                  <Input id={field.id} type="number" value={responses[field.id] || ''} onChange={e => handleResponseChange(field.id, e.target.value)} required={field.is_required} disabled={submitting} />
                 ) : (
                   <Input id={field.id} value={responses[field.id] || ''} onChange={e => handleResponseChange(field.id, e.target.value)} required={field.is_required} disabled={submitting} />
                 )}
