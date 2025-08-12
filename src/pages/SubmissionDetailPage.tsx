@@ -148,10 +148,15 @@ const SubmissionDetailPage = () => {
         return response.value; // Fallback for invalid date string
       }
     }
-    // For richtext, display the raw HTML string.
-    // If you want to render it as rich text, you would use dangerouslySetInnerHTML,
-    // but that requires careful sanitization to prevent XSS attacks.
-    // For now, displaying as plain text is safer and simpler.
+    if (response.form_fields?.field_type === 'file') {
+      // Assuming the value is a public URL to the file
+      const fileName = response.value.split('/').pop(); // Extract file name from URL
+      return (
+        <a href={response.value} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
+          {fileName || 'View File'}
+        </a>
+      );
+    }
     return response.value;
   };
 
