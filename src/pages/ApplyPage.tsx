@@ -182,13 +182,24 @@ const ApplyPage = () => {
             {formFields.map(field => (
               <div key={field.id} className="grid gap-2">
                 <Label htmlFor={field.id}>{field.label}</Label>
-                <Input
-                  id={field.id}
-                  value={responses[field.id] || ''}
-                  onChange={e => handleResponseChange(field.id, e.target.value)}
-                  required={field.is_required}
-                  disabled={submitting}
-                />
+                {field.field_type === 'textarea' ? (
+                  <Textarea
+                    id={field.id}
+                    value={responses[field.id] || ''}
+                    onChange={e => handleResponseChange(field.id, e.target.value)}
+                    required={field.is_required}
+                    disabled={submitting}
+                    className="min-h-[120px] resize-y"
+                  />
+                ) : (
+                  <Input
+                    id={field.id}
+                    value={responses[field.id] || ''}
+                    onChange={e => handleResponseChange(field.id, e.target.value)}
+                    required={field.is_required}
+                    disabled={submitting}
+                  />
+                )}
               </div>
             ))}
             <Button type="submit" className="w-full" disabled={submitting || formFields.length === 0}>

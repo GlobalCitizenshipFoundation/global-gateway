@@ -8,12 +8,15 @@ import { ArrowLeft, Plus, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 
 const FormBuilderPage = () => {
   const { programId } = useParams<{ programId: string }>();
   const [programTitle, setProgramTitle] = useState('');
   const [fields, setFields] = useState<FormField[]>([]);
   const [newFieldLabel, setNewFieldLabel] = useState('');
+  const [newFieldType, setNewFieldType] = useState<'text' | 'textarea'>('text');
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -57,7 +60,7 @@ const FormBuilderPage = () => {
       .insert({
         program_id: programId,
         label: newFieldLabel,
-        field_type: 'text', // Default to text for now
+        field_type: newFieldType,
         order: nextOrder,
       })
       .select()
@@ -105,7 +108,10 @@ const FormBuilderPage = () => {
               <ul className="space-y-2">
                 {fields.map(field => (
                   <li key={field.id} className="flex items-center justify-between p-3 bg-secondary rounded-md">
-                    <span className="font-medium">{field.label}</span>
+                    <div>
+                      <span className="font-medium">{field.label}</span>
+                      <Badge variant="outline" className="ml-2 capitalize">{field.field_type}</Badge>
+                    </div>
                     <Button variant="ghost" size="icon" onClick={() => handleDeleteField(field.id)}>
                       <Trash2 className="h-4 w-4 text-destructive" />
                     </Button>
@@ -118,16 +124,26 @@ const FormBuilderPage = () => {
           </div>
           <form onSubmit={handleAddField} className="mt-8 pt-8 border-t">
             <h3 className="text-lg font-medium">Add New Field</h3>
-            <div className="flex gap-2 mt-4">
+            <div className="flex flex-col sm:flex-row gap-2 mt-4">
               <Input
-                placeholder="e.g., 'Your Full Name'"
+                placeholder="e.g., 'Your Personal Statement'"
                 value={newFieldLabel}
                 onChange={e => setNewFieldLabel(e.target.value)}
                 disabled={isSubmitting}
+                className="flex-grow"
               />
-              <Button type="submit" disabled={isSubmitting || !newFieldLabel.trim()}>
+              <Select value={newFieldType} onValueChange={(value) => setNewFieldType(value as 'text' | 'textarea')}>
+                <SelectTrigger className="w-full sm:w-[140px]">
+                  <SelectValue placeholder="Field type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="text">Text</SelectItem>
+                  <SelectItem value="textarea">Textarea</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button type="submit" disabled={isSubmitting || !newFieldLabel.trim()} className="w-full sm:w-auto">
                 <Plus className="mr-2 h-4 w-4" />
-                Add Text Field
+                Add Field
               </Button>
             </div>
           </form>
