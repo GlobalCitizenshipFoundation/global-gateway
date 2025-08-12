@@ -3,6 +3,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter }
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Clock } from "lucide-react";
+import { Link } from "react-router-dom";
 
 interface ProgramCardProps {
   program: Program;
@@ -38,8 +39,8 @@ const ProgramCard = ({ program }: ProgramCardProps) => {
         </div>
       </CardContent>
       <CardFooter>
-        <Button className="w-full" disabled={program.status !== 'Open'}>
-          Apply Now
+        <Button className="w-full" asChild disabled={program.status !== 'Open'}>
+          <Link to={`/apply/${program.id}`}>Apply Now</Link>
         </Button>
       </CardFooter>
     </Card>
