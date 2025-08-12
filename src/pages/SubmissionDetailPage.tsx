@@ -16,7 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Download } from "lucide-react"; // Import Download icon
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -149,13 +149,18 @@ const SubmissionDetailPage = () => {
       }
     }
     if (response.form_fields?.field_type === 'file') {
-      // Assuming the value is a public URL to the file
-      const fileName = response.value.split('/').pop(); // Extract file name from URL
+      const fileName = response.value.split('/').pop();
       return (
-        <a href={response.value} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
-          {fileName || 'View File'}
+        <a href={response.value} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline flex items-center gap-1">
+          <Download className="h-4 w-4" /> {fileName || 'View File'}
         </a>
       );
+    }
+    if (response.form_fields?.field_type === 'richtext') {
+      // WARNING: Using dangerouslySetInnerHTML can expose your application to XSS attacks
+      // if the content is not sanitized. For a production application, consider
+      // using a library like DOMPurify to sanitize the HTML before rendering.
+      return <div dangerouslySetInnerHTML={{ __html: response.value }} className="prose max-w-none" />;
     }
     return response.value;
   };
