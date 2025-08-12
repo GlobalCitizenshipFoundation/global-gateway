@@ -146,19 +146,19 @@ const CreatorDashboardPage = () => {
                   </TableCell>
                   <TableCell className="text-right space-x-2">
                     <Button asChild variant="outline" size="sm">
+                      <Link to={`/creator/program/${program.id}/pipeline`}>Pipeline</Link>
+                    </Button>
+                    <Button asChild variant="outline" size="sm">
                       <Link to={`/creator/program/${program.id}/workflow`}>Workflow</Link>
                     </Button>
                     <Button asChild variant="outline" size="sm">
-                      <Link to={`/creator/program/${program.id}/edit`}>Edit</Link>
-                    </Button>
-                    <Button asChild variant="outline" size="sm">
-                      <Link to={`/creator/program/${program.id}/submissions`}>View Submissions</Link>
+                      <Link to={`/creator/program/${program.id}/submissions`}>Submissions</Link>
                     </Button>
                   </TableCell>
                 </TableRow>
               )) : (
                 <TableRow>
-                  <TableCell colSpan={4} className="text-center h-24">
+                  <TableCell colSpan={3} className="text-center h-24">
                     You haven't created any programs yet.
                   </TableCell>
                 </TableRow>
@@ -169,6 +169,3 @@ const CreatorDashboardPage = () => {
       </Card>
     </div>
   );
-};
-
-export default CreatorDashboardPage;
