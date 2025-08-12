@@ -1,24 +1,17 @@
-import ProgramCard from "@/components/ProgramCard";
-import { mockPrograms } from "../data/mockData";
+// Update this page (the content is just a fallback if you fail to update the page)
+
+import { MadeWithDyad } from "@/components/made-with-dyad";
 
 const Index = () => {
   return (
-    <div className="container mx-auto p-4 md:p-8">
-      <header className="text-center mb-12">
-        <h1 className="text-4xl font-bold tracking-tight lg:text-5xl">
-          Opportunities Portal
-        </h1>
-        <p className="text-lg text-muted-foreground mt-3 max-w-2xl mx-auto">
-          Browse and apply for available grants, scholarships, and awards.
+    <div className="min-h-screen flex items-center justify-center bg-gray-100">
+      <div className="text-center">
+        <h1 className="text-4xl font-bold mb-4">Welcome to Your Blank App</h1>
+        <p className="text-xl text-gray-600">
+          Start building your amazing project here!
         </p>
-      </header>
-      <section>
-        <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-          {mockPrograms.map((program) => (
-            <ProgramCard key={program.id} program={program} />
-          ))}
-        </div>
-      </section>
+      </div>
+      <MadeWithDyad />
     </div>
   );
 };
