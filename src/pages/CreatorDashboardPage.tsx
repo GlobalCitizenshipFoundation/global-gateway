@@ -142,6 +142,9 @@ const CreatorDashboardPage = () => {
                   </TableCell>
                   <TableCell className="text-right space-x-2">
                     <Button asChild variant="outline" size="sm">
+                      <Link to={`/creator/program/${program.id}/form`}>Form</Link>
+                    </Button>
+                    <Button asChild variant="outline" size="sm">
                       <Link to={`/creator/program/${program.id}/pipeline`}>Pipeline</Link>
                     </Button>
                     <Button asChild variant="outline" size="sm">

@@ -19,6 +19,7 @@ import { SessionContextProvider } from "./contexts/SessionContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import ManageWorkflowPage from "./pages/ManageWorkflowPage";
 import PipelineViewPage from "./pages/PipelineViewPage";
+import FormBuilderPage from "./pages/FormBuilderPage";
 
 const queryClient = new QueryClient();
 
@@ -43,6 +44,7 @@ const App = () => (
                 <Route path="/creator/new-program" element={<CreateProgramPage />} />
                 <Route path="/creator/program/:programId/edit" element={<EditProgramPage />} />
                 <Route path="/creator/program/:programId/workflow" element={<ManageWorkflowPage />} />
+                <Route path="/creator/program/:programId/form" element={<FormBuilderPage />} />
                 <Route path="/creator/program/:programId/submissions" element={<SubmissionsListPage />} />
                 <Route path="/creator/program/:programId/pipeline" element={<PipelineViewPage />} />
                 <Route path="/creator/program/:programId/submission/:submissionId" element={<SubmissionDetailPage />} />

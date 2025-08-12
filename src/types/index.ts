@@ -28,3 +28,13 @@ export type Application = {
     name: string;
   } | null;
 };
+
+export type FormField = {
+  id: string;
+  program_id: string;
+  label: string;
+  field_type: 'text' | 'textarea' | 'select' | 'file';
+  options: string[] | null;
+  is_required: boolean;
+  order: number;
+};
