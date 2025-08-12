@@ -2,9 +2,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
-import { FormField } from "@/types";
+import { FormField, FormSection } from "@/types";
 import { showError, showSuccess } from "@/utils/toast";
-import { ArrowLeft, Plus } from "lucide-react";
+import { ArrowLeft, Plus, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -12,14 +12,18 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { FormFieldItem } from "@/components/FormFieldItem";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
 const FormBuilderPage = () => {
   const { programId } = useParams<{ programId: string }>();
   const [programTitle, setProgramTitle] = useState('');
+  const [sections, setSections] = useState<FormSection[]>([]);
   const [fields, setFields] = useState<FormField[]>([]);
+  const [newSectionName, setNewSectionName] = useState('');
   const [newFieldLabel, setNewFieldLabel] = useState('');
   const [newFieldType, setNewFieldType] = useState<'text' | 'textarea' | 'select' | 'radio' | 'checkbox' | 'file' | 'email' | 'date' | 'phone' | 'number' | 'richtext'>('text');
   const [newFieldOptions, setNewFieldOptions] = useState('');
+  const [newFieldSectionId, setNewFieldSectionId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -38,6 +42,19 @@ const FormBuilderPage = () => {
       }
       setProgramTitle(programData.title);
 
+      const { data: sectionsData, error: sectionsError } = await supabase
+        .from('form_sections').select('*').eq('program_id', programId).order('order', { ascending: true });
+      
+      if (sectionsError) {
+        showError("Could not fetch form sections.");
+      } else {
+        setSections(sectionsData || []);
+        // Set default section for new fields if sections exist
+        if (sectionsData && sectionsData.length > 0) {
+          setNewFieldSectionId(sectionsData[0].id);
+        }
+      }
+
       const { data: fieldsData, error: fieldsError } = await supabase
         .from('form_fields').select('*').eq('program_id', programId).order('order', { ascending: true });
 
@@ -50,6 +67,47 @@ const FormBuilderPage = () => {
     };
     fetchData();
   }, [programId]);
+
+  const handleAddSection = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newSectionName.trim() || !programId) return;
+
+    setIsSubmitting(true);
+    const nextOrder = sections.length > 0 ? Math.max(...sections.map(s => s.order)) + 1 : 1;
+
+    const { data, error } = await supabase
+      .from('form_sections')
+      .insert({
+        program_id: programId,
+        name: newSectionName,
+        order: nextOrder,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      showError(`Failed to add section: ${error.message}`);
+    } else if (data) {
+      setSections([...sections, data]);
+      setNewSectionName('');
+      showSuccess("Section added successfully.");
+      // Automatically select the new section for new fields
+      setNewFieldSectionId(data.id);
+    }
+    setIsSubmitting(false);
+  };
+
+  const handleDeleteSection = async (sectionId: string) => {
+    const { error } = await supabase.from('form_sections').delete().eq('id', sectionId);
+    if (error) {
+      showError(`Failed to delete section: ${error.message}`);
+    } else {
+      setSections(sections.filter(s => s.id !== sectionId));
+      // Also remove fields associated with this section
+      setFields(fields.filter(f => f.section_id !== sectionId));
+      showSuccess("Section deleted successfully.");
+    }
+  };
 
   const handleAddField = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -65,6 +123,7 @@ const FormBuilderPage = () => {
         label: newFieldLabel,
         field_type: newFieldType,
         order: nextOrder,
+        section_id: newFieldSectionId,
         options: (newFieldType === 'select' || newFieldType === 'radio' || newFieldType === 'checkbox') ? newFieldOptions.split(',').map(opt => opt.trim()) : null,
       })
       .select()
@@ -125,6 +184,12 @@ const FormBuilderPage = () => {
     }
   };
 
+  const getFieldsForSection = (sectionId: string | null) => {
+    return fields.filter(field => field.section_id === sectionId);
+  };
+
+  const uncategorizedFields = getFieldsForSection(null);
+
   return (
     <div className="container py-12">
       <Link to="/creator/dashboard" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-4">
@@ -139,29 +204,84 @@ const FormBuilderPage = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            <h3 className="text-lg font-medium">Application Fields</h3>
+          <div className="space-y-6">
+            <h3 className="text-lg font-medium">Form Sections</h3>
             {loading ? (
               <Skeleton className="h-24 w-full" />
-            ) : fields.length > 0 ? (
-              <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-                <SortableContext items={fields.map(f => f.id)} strategy={verticalListSortingStrategy}>
-                  <ul className="space-y-2">
-                    {fields.map(field => (
-                      <FormFieldItem
-                        key={field.id}
-                        field={field}
-                        onDelete={handleDeleteField}
-                        onToggleRequired={handleToggleRequired}
-                      />
-                    ))}
-                  </ul>
-                </SortableContext>
-              </DndContext>
+            ) : sections.length > 0 ? (
+              <Accordion type="multiple" className="w-full">
+                {sections.map(section => (
+                  <AccordionItem key={section.id} value={section.id}>
+                    <AccordionTrigger className="flex justify-between items-center w-full pr-4">
+                      <span className="font-semibold">{section.name}</span>
+                      <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); handleDeleteSection(section.id); }}>
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    </AccordionTrigger>
+                    <AccordionContent>
+                      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                        <SortableContext items={getFieldsForSection(section.id).map(f => f.id)} strategy={verticalListSortingStrategy}>
+                          <ul className="space-y-2 p-2">
+                            {getFieldsForSection(section.id).length > 0 ? (
+                              getFieldsForSection(section.id).map(field => (
+                                <FormFieldItem
+                                  key={field.id}
+                                  field={field}
+                                  onDelete={handleDeleteField}
+                                  onToggleRequired={handleToggleRequired}
+                                />
+                              ))
+                            ) : (
+                              <p className="text-muted-foreground text-sm text-center py-4">No fields in this section yet.</p>
+                            )}
+                          </ul>
+                        </SortableContext>
+                      </DndContext>
+                    </AccordionContent>
+                  </AccordionItem>
+                ))}
+              </Accordion>
             ) : (
-              <p className="text-muted-foreground text-sm">No fields defined yet. Add one to get started.</p>
+              <p className="text-muted-foreground text-sm">No sections defined yet. Add one to get started.</p>
+            )}
+
+            {uncategorizedFields.length > 0 && (
+              <div className="mt-6 border-t pt-6">
+                <h3 className="text-lg font-medium mb-4">Uncategorized Fields</h3>
+                <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                  <SortableContext items={uncategorizedFields.map(f => f.id)} strategy={verticalListSortingStrategy}>
+                    <ul className="space-y-2">
+                      {uncategorizedFields.map(field => (
+                        <FormFieldItem
+                          key={field.id}
+                          field={field}
+                          onDelete={handleDeleteField}
+                          onToggleRequired={handleToggleRequired}
+                        />
+                      ))}
+                    </ul>
+                  </SortableContext>
+                </DndContext>
+              </div>
             )}
           </div>
+
+          <form onSubmit={handleAddSection} className="mt-8 pt-8 border-t">
+            <h3 className="text-lg font-medium">Add New Section</h3>
+            <div className="flex gap-2 mt-4">
+              <Input
+                placeholder="e.g., 'Personal Information'"
+                value={newSectionName}
+                onChange={e => setNewSectionName(e.target.value)}
+                disabled={isSubmitting}
+              />
+              <Button type="submit" disabled={isSubmitting || !newSectionName.trim()}>
+                <Plus className="mr-2 h-4 w-4" />
+                Add Section
+              </Button>
+            </div>
+          </form>
+
           <form onSubmit={handleAddField} className="mt-8 pt-8 border-t">
             <h3 className="text-lg font-medium">Add New Field</h3>
             <div className="grid gap-2 mt-4">
@@ -200,6 +320,17 @@ const FormBuilderPage = () => {
                   />
                 )}
               </div>
+              <Select value={newFieldSectionId || ''} onValueChange={setNewFieldSectionId} disabled={isSubmitting}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Assign to Section (Optional)" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Uncategorized</SelectItem>
+                  {sections.map(section => (
+                    <SelectItem key={section.id} value={section.id}>{section.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               <Button type="submit" disabled={isSubmitting || !newFieldLabel.trim()} className="w-full sm:w-auto self-end">
                 <Plus className="mr-2 h-4 w-4" />
                 Add Field
