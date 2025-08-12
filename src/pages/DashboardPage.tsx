@@ -19,11 +19,14 @@ import { useEffect, useState } from "react";
 import { useSession } from "@/contexts/SessionContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Application as UserApplication } from "@/types";
+import { Application as UserApplication, FormField, FormSection } from "@/types"; // Import FormField and FormSection
+import ApplicationPdfViewer from "@/components/application/ApplicationPdfViewer"; // Import the new component
 
 const DashboardPage = () => {
   const { user } = useSession();
   const [applications, setApplications] = useState<UserApplication[]>([]);
+  const [allFormFields, setAllFormFields] = useState<FormField[]>([]); // State to hold all form fields for logic
+  const [allFormSections, setAllFormSections] = useState<FormSection[]>([]); // State to hold all form sections
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -39,8 +42,9 @@ const DashboardPage = () => {
           id,
           submitted_date,
           program_id,
+          user_id,
           stage_id,
-          programs ( title ),
+          programs ( title, form_id, allow_pdf_download ),
           program_stages ( name )
         `)
         .eq('user_id', user.id)
@@ -56,12 +60,60 @@ const DashboardPage = () => {
           program_stages: Array.isArray(app.program_stages) ? app.program_stages[0] : app.program_stages,
         }));
         setApplications(formattedData as UserApplication[]);
+
+        // Fetch all unique form_ids from the fetched programs
+        const uniqueFormIds = [...new Set(formattedData.map(app => app.programs?.form_id).filter(Boolean))];
+
+        if (uniqueFormIds.length > 0) {
+          // Fetch all form fields for all relevant forms
+          const { data: fieldsData, error: fieldsError } = await supabase
+            .from('form_fields')
+            .select('*')
+            .in('form_id', uniqueFormIds)
+            .order('order', { ascending: true });
+
+          if (fieldsError) {
+            console.error("Error fetching all form fields for PDF:", fieldsError);
+          } else {
+            setAllFormFields(fieldsData as FormField[]);
+          }
+
+          // Fetch all form sections for all relevant forms
+          const { data: sectionsData, error: sectionsError } = await supabase
+            .from('form_sections')
+            .select('*')
+            .in('form_id', uniqueFormIds)
+            .order('order', { ascending: true });
+
+          if (sectionsError) {
+            console.error("Error fetching all form sections for PDF:", sectionsError);
+          } else {
+            setAllFormSections(sectionsData as FormSection[]);
+          }
+        }
       }
       setLoading(false);
     };
 
     fetchApplications();
   }, [user]);
+
+  // Function to fetch responses for a specific application
+  const fetchApplicationResponses = async (applicationId: string) => {
+    const { data, error } = await supabase
+      .from('application_responses')
+      .select(`value, form_fields ( id, label, field_type, options, is_required, order, display_rules, help_text, description, tooltip )`)
+      .eq('application_id', applicationId);
+
+    if (error) {
+      console.error("Error fetching application responses for PDF:", error);
+      return [];
+    }
+    return data.map(res => ({
+      ...res,
+      form_fields: Array.isArray(res.form_fields) ? res.form_fields[0] : res.form_fields
+    }));
+  };
 
   if (loading) {
     return (
@@ -107,13 +159,14 @@ const DashboardPage = () => {
                 <TableHead>Program</TableHead>
                 <TableHead className="hidden md:table-cell">Submitted</TableHead>
                 <TableHead>Status</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {applications.length > 0 ? applications.map((app) => (
                 <TableRow key={app.id}>
                   <TableCell>
-                    <Link to={`/apply/${app.program_id}`} className="font-medium hover:underline">
+                    <Link to={`/programs/${app.program_id}`} className="font-medium hover:underline">
                       {app.programs?.title || 'Unknown Program'}
                     </Link>
                   </TableCell>
@@ -123,10 +176,25 @@ const DashboardPage = () => {
                   <TableCell>
                     <Badge variant="secondary">{app.program_stages?.name || 'N/A'}</Badge>
                   </TableCell>
+                  <TableCell className="text-right">
+                    {app.programs?.allow_pdf_download && (
+                      <ApplicationPdfViewer
+                        applicationId={app.id}
+                        programTitle={app.programs?.title || 'Application'}
+                        applicantFullName={user?.user_metadata?.full_name || user?.email || 'Applicant'}
+                        applicantEmail={user?.email || 'N/A'}
+                        submittedDate={app.submitted_date}
+                        currentStageName={app.program_stages?.name || 'N/A'}
+                        allResponses={[]} // Will be fetched inside the component
+                        allFormFields={allFormFields.filter(f => f.form_id === app.programs?.form_id)}
+                        formSections={allFormSections.filter(s => s.form_id === app.programs?.form_id)}
+                      />
+                    )}
+                  </TableCell>
                 </TableRow>
               )) : (
                 <TableRow>
-                  <TableCell colSpan={3} className="text-center h-24">
+                  <TableCell colSpan={4} className="text-center h-24">
                     You haven't submitted any applications yet.
                   </TableCell>
                 </TableRow>

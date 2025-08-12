@@ -19,6 +19,7 @@ import { FormSectionsList } from "@/components/form-builder/FormSectionsList";
 import { UncategorizedFieldsList } from "@/components/form-builder/UncategorizedFieldsList";
 import { supabase } from "@/integrations/supabase/client"; // Import supabase
 import { showError, showSuccess } from "@/utils/toast"; // Import toasts
+import { Badge } from "@/components/ui/badge"; // Import Badge
 
 const FormBuilderPage = () => {
   const { formId } = useParams<{ formId: string }>(); // Changed from programId

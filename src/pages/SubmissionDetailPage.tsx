@@ -21,8 +21,9 @@ import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 import { showError, showSuccess } from "@/utils/toast";
-import { ProgramStage, FormField } from "@/types";
+import { ProgramStage, FormField, FormSection } from "@/types"; // Import FormSection
 import { evaluateRule, shouldFieldBeDisplayed, formatResponseValue } from "@/utils/formFieldUtils";
+import ApplicationPdfViewer from "@/components/application/ApplicationPdfViewer"; // Import the new component
 
 type SubmissionDetail = {
   id: string;
@@ -33,6 +34,7 @@ type SubmissionDetail = {
   programs: {
     title: string;
     form_id: string | null; // Fetch form_id
+    allow_pdf_download: boolean; // Added for PDF download
   } | null;
   program_stages: {
     name: string;
@@ -49,6 +51,7 @@ const SubmissionDetailPage = () => {
   const [submission, setSubmission] = useState<SubmissionDetail | null>(null);
   const [allResponses, setAllResponses] = useState<ResponseWithField[]>([]);
   const [allFormFieldsForLogic, setAllFormFieldsForLogic] = useState<FormField[]>([]); // Store all fields for logic evaluation
+  const [allFormSections, setAllFormSections] = useState<FormSection[]>([]); // State to hold all form sections
   const [programStages, setProgramStages] = useState<ProgramStage[]>([]);
   const [selectedStage, setSelectedStage] = useState<string>('');
   const [loading, setLoading] = useState(true);
@@ -64,7 +67,7 @@ const SubmissionDetailPage = () => {
       // Fetch submission and program's form_id
       const { data: submissionData, error: submissionError } = await supabase
         .from('applications')
-        .select(`id, submitted_date, full_name, email, stage_id, programs(title, form_id), program_stages(name)`)
+        .select(`id, submitted_date, full_name, email, stage_id, programs(title, form_id, allow_pdf_download), program_stages(name)`)
         .eq('id', submissionId)
         .single();
 
@@ -95,6 +98,19 @@ const SubmissionDetailPage = () => {
           showError("Could not load all form fields for logic evaluation.");
         } else {
           setAllFormFieldsForLogic(allFieldsData as FormField[]);
+        }
+
+        // Fetch all form sections for the program's form
+        const { data: sectionsData, error: sectionsError } = await supabase
+          .from('form_sections')
+          .select('*')
+          .eq('form_id', formId)
+          .order('order', { ascending: true });
+
+        if (sectionsError) {
+          showError("Could not load form sections.");
+        } else {
+          setAllFormSections(sectionsData || []);
         }
       }
 
@@ -171,7 +187,7 @@ const SubmissionDetailPage = () => {
       .from('applications')
       .update({ stage_id: selectedStage })
       .eq('id', submission.id)
-      .select(`id, submitted_date, full_name, email, stage_id, programs(title, form_id), program_stages(name)`)
+      .select(`id, submitted_date, full_name, email, stage_id, programs(title, form_id, allow_pdf_download), program_stages(name)`)
       .single();
 
     if (error) {
@@ -270,6 +286,19 @@ const SubmissionDetailPage = () => {
           </div>
         </CardContent>
         <CardFooter className="flex justify-end items-center gap-4 bg-muted/50 p-4">
+          {submission.programs?.allow_pdf_download && (
+            <ApplicationPdfViewer
+              applicationId={submission.id}
+              programTitle={submission.programs?.title || 'Application'}
+              applicantFullName={submission.full_name}
+              applicantEmail={submission.email}
+              submittedDate={submission.submitted_date}
+              currentStageName={submission.program_stages?.name || 'N/A'}
+              allResponses={allResponses}
+              allFormFields={allFormFieldsForLogic}
+              formSections={allFormSections}
+            />
+          )}
           <div className="flex items-center gap-2">
             <span className="text-sm font-medium">Change Stage:</span>
             <Select value={selectedStage} onValueChange={setSelectedStage}>

@@ -39,6 +39,8 @@ export type Application = {
   stage_id: string;
   programs: {
     title: string;
+    allow_pdf_download: boolean; // Added for PDF download
+    form_id: string | null; // Added form_id here
   } | null;
   program_stages: {
     name: string;
