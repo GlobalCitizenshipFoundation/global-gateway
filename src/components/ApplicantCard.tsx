@@ -1,5 +1,4 @@
 import { useSortable } from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 
 export type Applicant = {
@@ -24,7 +23,7 @@ export const ApplicantCard = ({ applicant }: ApplicantCardProps) => {
 
   const style = {
     transition,
-    transform: CSS.Transform.toString(transform),
+    transform: transform ? `translate3d(${transform.x}px, ${transform.y}px, 0)` : undefined,
   };
 
   return (
