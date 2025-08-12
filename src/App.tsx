@@ -22,8 +22,9 @@ import PipelineViewPage from "./pages/PipelineViewPage";
 import FormBuilderPage from "./pages/FormBuilderPage";
 import ProgramDetailsPage from "./pages/ProgramDetailsPage";
 import FormManagementPage from "./pages/FormManagementPage";
-import WorkflowTemplatesPage from "./pages/WorkflowTemplatesPage"; // Import the new page
-import { ThemeProvider } from "next-themes"; // Import ThemeProvider
+import WorkflowTemplatesPage from "./pages/WorkflowTemplatesPage";
+import WorkflowBuilderPage from "./pages/WorkflowBuilderPage"; // Import the new page
+import { ThemeProvider } from "next-themes";
 
 const queryClient = new QueryClient();
 
@@ -59,12 +60,13 @@ const App = () => (
                   <Route path="/creator/program/:programId/pipeline" element={<PipelineViewPage />} />
                   <Route path="/creator/program/:programId/submission/:submissionId" element={<SubmissionDetailPage />} />
                   
-                  {/* New Form Management Routes */}
+                  {/* Form Management Routes */}
                   <Route path="/creator/forms" element={<FormManagementPage />} />
                   <Route path="/creator/forms/:formId/edit" element={<FormBuilderPage />} />
 
-                  {/* New Workflow Templates Route */}
+                  {/* Workflow Templates Routes */}
                   <Route path="/creator/workflow-templates" element={<WorkflowTemplatesPage />} />
+                  <Route path="/creator/workflow-templates/:templateId/edit" element={<WorkflowBuilderPage />} /> {/* New route */}
                 </Route>
 
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
