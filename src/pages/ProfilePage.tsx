@@ -179,20 +179,6 @@ const ProfilePage = () => {
                 </p>
               </div>
 
-              <div className="grid gap-2">
-                <Label className="font-medium text-sm">Account Creation Date</Label>
-                <p className="text-muted-foreground text-sm">
-                  {user?.created_at ? new Date(user.created_at).toLocaleDateString() : 'N/A'}
-                </p>
-              </div>
-
-              <div className="grid gap-2">
-                <Label className="font-medium text-sm">Last Login Date</Label>
-                <p className="text-muted-foreground text-sm">
-                  {user?.last_sign_in_at ? new Date(user.last_sign_in_at).toLocaleString() : 'N/A'}
-                </p>
-              </div>
-
               <div className="flex justify-between items-center pt-4 border-t">
                 <Button type="submit" disabled={isSubmitting}>
                   {isSubmitting ? "Saving Changes..." : "Save Changes"}
@@ -205,6 +191,21 @@ const ProfilePage = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* Moved outside the card for subtlety */}
+      {!loading && (
+        <div className="mx-auto max-w-xl mt-8 text-sm text-muted-foreground grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="flex flex-col">
+            <span className="font-medium">Account Creation Date:</span>
+            <span>{user?.created_at ? new Date(user.created_at).toLocaleDateString() : 'N/A'}</span>
+          </div>
+          <div className="flex flex-col">
+            <span className="font-medium">Last Login Date:</span>
+            <span>{user?.last_sign_in_at ? new Date(user.last_sign_in_at).toLocaleString() : 'N/A'}</span>
+          </div>
+        </div>
+      )}
+
       <AccountDeletionDialog
         isOpen={isDeleteDialogOpen}
         onClose={() => setIsDeleteDialogOpen(false)}
