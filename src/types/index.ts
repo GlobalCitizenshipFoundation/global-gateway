@@ -18,6 +18,7 @@ export type Form = {
   name: string;
   description: string | null;
   is_template: boolean;
+  status: 'draft' | 'published'; // New: Status for the form itself
   created_at: string;
   updated_at: string;
 };
