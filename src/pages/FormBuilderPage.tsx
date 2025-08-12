@@ -51,29 +51,32 @@ const FormBuilderPage = () => {
   const [fieldToEditDetails, setFieldToEditDetails] = useState<FormField | null>(null);
 
   const fetchData = useCallback(async () => {
-    if (!programId) return;
+    if (!programId) {
+      setLoading(false); // Ensure loading is false even if no programId
+      return;
+    }
     setLoading(true);
+
+    let hasError = false;
 
     const { data: programData, error: programError } = await supabase
       .from('programs').select('title').eq('id', programId).single();
     
     if (programError) {
       showError("Could not fetch program details.");
-      setLoading(false);
-      return;
+      hasError = true;
+    } else {
+      setProgramTitle(programData.title);
     }
-    setProgramTitle(programData.title);
 
     const { data: sectionsData, error: sectionsError } = await supabase
       .from('form_sections').select('*').eq('program_id', programId).order('order', { ascending: true });
     
     if (sectionsError) {
       showError("Could not fetch form sections.");
+      hasError = true;
     } else {
       setSections(sectionsData || []);
-      if (sectionsData && sectionsData.length > 0 && newFieldSectionId === null) {
-        setNewFieldSectionId(sectionsData[0].id);
-      }
     }
 
     const { data: fieldsData, error: fieldsError } = await supabase
@@ -81,15 +84,23 @@ const FormBuilderPage = () => {
 
     if (fieldsError) {
       showError("Could not fetch form fields.");
+      hasError = true;
     } else {
       setFields(fieldsData as FormField[]);
     }
     setLoading(false);
-  }, [programId, newFieldSectionId]); // Dependencies for useCallback
+  }, [programId]); // Only programId as dependency
 
   useEffect(() => {
     fetchData();
-  }, [fetchData]); // Depend on the memoized fetchData function
+  }, [fetchData]);
+
+  // Separate useEffect for initial newFieldSectionId
+  useEffect(() => {
+    if (sections.length > 0 && newFieldSectionId === null) {
+      setNewFieldSectionId(sections[0].id);
+    }
+  }, [sections, newFieldSectionId]);
 
   const handleAddSection = async (e: React.FormEvent) => {
     e.preventDefault();
