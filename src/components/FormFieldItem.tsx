@@ -29,6 +29,12 @@ interface FormFieldItemProps {
 }
 
 export const FormFieldItem = ({ field, onDelete, onToggleRequired, onEditLogic, onEdit }: FormFieldItemProps) => {
+  // Defensive check: If field is null or undefined, return null to prevent errors
+  if (!field) {
+    console.error("FormFieldItem received a null or undefined field prop.");
+    return null;
+  }
+
   const {
     attributes,
     listeners,

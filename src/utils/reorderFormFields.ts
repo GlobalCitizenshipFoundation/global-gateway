@@ -63,7 +63,7 @@ export const reorderFormFields = (
   // Recalculate orders for all fields in all affected sections (and uncategorized)
   const allContainerIds = new Set([...sections.map(s => s.id), null]); // null for uncategorized
 
-  let finalUpdatedFields: FormField[] = [];
+  let finalUpdatedFields: FormField[] = []; // Re-initialize to ensure it's clean
   allContainerIds.forEach(containerId => {
     const currentContainerFields = tempFields
       .filter(f => f.section_id === containerId)
@@ -71,8 +71,8 @@ export const reorderFormFields = (
 
     const updatedContainerFields = currentContainerFields.map((f, idx) => ({ ...f, order: idx + 1 }));
 
-    finalUpdatedFields = finalUpdatedFields.filter(f => f.section_id !== containerId); // Remove old versions
-    finalUpdatedFields.push(...updatedContainerFields); // Add new versions
+    // Instead of filtering and pushing, build the array directly
+    finalUpdatedFields = finalUpdatedFields.concat(updatedContainerFields);
   });
 
   // Sort the final array by order to ensure correct display (across all sections)
