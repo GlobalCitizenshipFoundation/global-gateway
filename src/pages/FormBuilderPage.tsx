@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
-import { FormField, FormSection } from "@/types";
+import { FormField, FormSection, DisplayRule } from "@/types"; // Import DisplayRule
 import { showError, showSuccess } from "@/utils/toast";
 import { ArrowLeft, Plus, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -13,6 +13,7 @@ import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, us
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { FormFieldItem } from "@/components/FormFieldItem";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import ConditionalLogicBuilder from "@/components/ConditionalLogicBuilder"; // Import the new component
 
 const FormBuilderPage = () => {
   const { programId } = useParams<{ programId: string }>();
@@ -26,6 +27,10 @@ const FormBuilderPage = () => {
   const [newFieldSectionId, setNewFieldSectionId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // State for ConditionalLogicBuilder
+  const [isLogicBuilderOpen, setIsLogicBuilderOpen] = useState(false);
+  const [fieldToEditLogic, setFieldToEditLogic] = useState<FormField | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -160,6 +165,28 @@ const FormBuilderPage = () => {
     }
   };
 
+  const handleEditLogic = (field: FormField) => {
+    setFieldToEditLogic(field);
+    setIsLogicBuilderOpen(true);
+  };
+
+  const handleSaveLogic = async (fieldId: string, rules: DisplayRule[]) => {
+    setFields(prevFields =>
+      prevFields.map(f => (f.id === fieldId ? { ...f, display_rules: rules } : f))
+    );
+    const { error } = await supabase
+      .from('form_fields')
+      .update({ display_rules: rules })
+      .eq('id', fieldId);
+
+    if (error) {
+      showError(`Failed to save display logic: ${error.message}`);
+      // Optionally revert local state if save fails
+    } else {
+      showSuccess("Display logic saved successfully!");
+    }
+  };
+
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
@@ -229,6 +256,7 @@ const FormBuilderPage = () => {
                                   field={field}
                                   onDelete={handleDeleteField}
                                   onToggleRequired={handleToggleRequired}
+                                  onEditLogic={handleEditLogic} // Pass the new prop
                                 />
                               ))
                             ) : (
@@ -257,6 +285,7 @@ const FormBuilderPage = () => {
                           field={field}
                           onDelete={handleDeleteField}
                           onToggleRequired={handleToggleRequired}
+                          onEditLogic={handleEditLogic} // Pass the new prop
                         />
                       ))}
                     </ul>
@@ -339,6 +368,14 @@ const FormBuilderPage = () => {
           </form>
         </CardContent>
       </Card>
+
+      <ConditionalLogicBuilder
+        isOpen={isLogicBuilderOpen}
+        onClose={() => setIsLogicBuilderOpen(false)}
+        fieldToEdit={fieldToEditLogic}
+        allFields={fields}
+        onSave={handleSaveLogic}
+      />
     </div>
   );
 };
