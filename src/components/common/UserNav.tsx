@@ -99,6 +99,9 @@ const UserNav = () => {
               <DropdownMenuItem asChild>
                 <Link to="/creator/emails">Manage Email Templates</Link>
               </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to="/creator/evaluation-templates">Manage Evaluation Templates</Link>
+              </DropdownMenuItem>
             </DropdownMenuGroup>
           </>
         )}

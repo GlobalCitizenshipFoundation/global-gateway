@@ -34,6 +34,7 @@ import WorkflowManagementPage from "./pages/workflow/WorkflowManagementPage";
 import WorkflowBuilderPage from "./pages/workflow/WorkflowBuilderPage";
 import ReviewerDashboardPage from "@/pages/reviewer/ReviewerDashboardPage";
 import EditApplicationPage from "./pages/applications/EditApplicationPage";
+import EvaluationTemplatesPage from "./pages/evaluation/EvaluationTemplatesPage";
 
 const queryClient = new QueryClient();
 
@@ -83,6 +84,8 @@ const App = () => (
                     <Route path="/creator/emails" element={<EmailManagementPage />} />
                     <Route path="/creator/emails/compose" element={<EmailComposerPage />} />
                     <Route path="/creator/emails/compose/:templateId" element={<EmailComposerPage />} />
+
+                    <Route path="/creator/evaluation-templates" element={<EvaluationTemplatesPage />} />
                   </Route>
 
                   <Route element={<AdminProtectedRoute />}>

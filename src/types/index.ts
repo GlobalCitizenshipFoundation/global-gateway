@@ -194,3 +194,12 @@ export type ApplicationAssignment = {
     program_stages: { name: string } | null;
   } | null;
 };
+
+export type EvaluationTemplate = {
+  id: string;
+  user_id: string | null;
+  name: string;
+  description: string | null;
+  created_at: string;
+  updated_at: string;
+};
