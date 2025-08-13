@@ -37,6 +37,9 @@ export const FormsTable = ({ forms, onUpdateStatus, onSaveAsTemplate, onDelete }
     const fetchUserNames = async () => {
       const uniqueUserIds = new Set<string>();
       forms.forEach(form => {
+        if (form.user_id && !userNames.has(form.user_id)) {
+          uniqueUserIds.add(form.user_id);
+        }
         if (form.last_edited_by_user_id && !userNames.has(form.last_edited_by_user_id)) {
           uniqueUserIds.add(form.last_edited_by_user_id);
         }
@@ -45,7 +48,7 @@ export const FormsTable = ({ forms, onUpdateStatus, onSaveAsTemplate, onDelete }
       if (uniqueUserIds.size > 0) {
         const { data, error } = await supabase
           .from('profiles')
-          .select('id, full_name')
+          .select('id, first_name, last_name')
           .in('id', Array.from(uniqueUserIds));
 
         if (error) {
@@ -53,14 +56,17 @@ export const FormsTable = ({ forms, onUpdateStatus, onSaveAsTemplate, onDelete }
         } else if (data) {
           const newNames = new Map(userNames);
           data.forEach(profile => {
-            newNames.set(profile.id, profile.full_name || 'Unknown User');
+            const fullName = [profile.first_name, profile.last_name].filter(Boolean).join(' ').trim();
+            newNames.set(profile.id, fullName || 'Unknown User');
           });
           setUserNames(newNames);
         }
       }
     };
-    fetchUserNames();
-  }, [forms, userNames]);
+    if (forms.length > 0) {
+      fetchUserNames();
+    }
+  }, [forms]);
 
   return (
     <Table>
@@ -68,9 +74,9 @@ export const FormsTable = ({ forms, onUpdateStatus, onSaveAsTemplate, onDelete }
         <TableRow>
           <TableHead>Form Name</TableHead>
           <TableHead className="hidden md:table-cell">Type</TableHead>
-          <TableHead className="hidden lg:table-cell">Status</TableHead>
+          <TableHead className="hidden lg:table-cell">Publishing Status</TableHead>
           <TableHead className="hidden xl:table-cell">Created</TableHead>
-          <TableHead className="hidden 2xl:table-cell">Last Modified</TableHead>
+          <TableHead className="hidden 2xl:table-cell">Last Updated</TableHead>
           <TableHead className="text-right">Actions</TableHead>
         </TableRow>
       </TableHeader>

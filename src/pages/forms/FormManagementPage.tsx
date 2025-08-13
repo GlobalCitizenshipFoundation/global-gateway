@@ -104,8 +104,8 @@ const FormManagementPage = () => {
       <div className="container py-12">
         <div className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-3xl font-bold">Manage Forms & Templates</h1>
-            <p className="text-muted-foreground">Oversee all your custom forms and templates.</p>
+            <h1 className="text-3xl font-bold">Manage Forms</h1>
+            <p className="text-muted-foreground">Oversee all forms and templates.</p>
           </div>
           <div className="flex gap-2">
             <Button onClick={handleCreateBlankForm} disabled={isCreatingForm}>
