@@ -97,17 +97,17 @@ const WorkflowBuilderPage = () => {
       const oldIndex = stages.findIndex(s => s.id === active.id);
       const newIndex = stages.findIndex(s => s.id === over.id);
       
-      // Reorder the array and immediately update the order_index property for each stage
       const newOrderedStages = arrayMove(stages, oldIndex, newIndex).map((stage, index) => ({
         ...stage,
         order_index: index + 1,
       }));
       
-      setStages(newOrderedStages); // Optimistic update with correct order_index
+      setStages(newOrderedStages);
 
       const updates = newOrderedStages.map((stage) => ({
         id: stage.id,
         order_index: stage.order_index,
+        workflow_template_id: workflowId!,
       }));
 
       handleUpdateStageOrder(updates);
@@ -117,7 +117,7 @@ const WorkflowBuilderPage = () => {
   const handleSaveStage = async (stageId: string, values: Partial<WorkflowStage>) => {
     const success = await handleUpdateStageDetails(stageId, values);
     if (success) {
-      fetchData(); // Re-fetch to get the latest data
+      fetchData();
       setSelectedStage(null);
     }
   };
