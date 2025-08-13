@@ -13,6 +13,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useSession } from "@/contexts/SessionContext";
 import { supabase } from "@/integrations/supabase/client";
 import { showError, showSuccess } from "@/utils/toast";
+import { Profile } from "@/types";
 
 // Move getInitials outside the component to prevent re-creation on every render
 const getInitials = (name: string) => {
@@ -40,6 +41,9 @@ const UserNav = () => {
 
   const fullName = user?.user_metadata?.full_name;
   const avatarUrl = user?.user_metadata?.avatar_url;
+
+  const creatorRoles: Profile['role'][] = ['creator', 'admin', 'super_admin'];
+  const adminRoles: Profile['role'][] = ['admin', 'super_admin'];
 
   return (
     <DropdownMenu>
@@ -71,20 +75,26 @@ const UserNav = () => {
             <Link to="/profile">Profile</Link>
           </DropdownMenuItem>
         </DropdownMenuGroup>
-        <DropdownMenuSeparator />
-        <DropdownMenuGroup>
-          <DropdownMenuLabel>Creator</DropdownMenuLabel>
-          <DropdownMenuItem asChild>
-            <Link to="/creator/dashboard">Manage Programs</Link>
-          </DropdownMenuItem>
-          <DropdownMenuItem asChild>
-            <Link to="/creator/forms">Manage Forms</Link>
-          </DropdownMenuItem>
-          <DropdownMenuItem asChild>
-            <Link to="/creator/workflow-templates">Manage Workflows</Link>
-          </DropdownMenuItem>
-        </DropdownMenuGroup>
-        {profile?.role === 'admin' && (
+        
+        {profile && creatorRoles.includes(profile.role) && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuGroup>
+              <DropdownMenuLabel>Creator</DropdownMenuLabel>
+              <DropdownMenuItem asChild>
+                <Link to="/creator/dashboard">Manage Programs</Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to="/creator/forms">Manage Forms</Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to="/creator/workflow-templates">Manage Workflows</Link>
+              </DropdownMenuItem>
+            </DropdownMenuGroup>
+          </>
+        )}
+
+        {profile && adminRoles.includes(profile.role) && (
           <>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
@@ -95,6 +105,7 @@ const UserNav = () => {
             </DropdownMenuGroup>
           </>
         )}
+
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleLogout}>
           Log out
