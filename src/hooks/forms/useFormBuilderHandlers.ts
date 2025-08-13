@@ -9,7 +9,7 @@ interface UseFormBuilderHandlersProps {
   state: ReturnType<typeof useFormBuilderState>;
   // The properties 'performUpdateFormDetails' and 'performUpdateFormStatus'
   // are no longer expected here as useFormBuilderHandlers now accesses
-  // them directly from useFormBuilderActions internally.
+  // them directly from useFormBuilderActions within this hook.
 }
 
 const AUTO_SAVE_DEBOUNCE_TIME = 2000; // 2 seconds
@@ -138,7 +138,7 @@ export const useFormBuilderHandlers = ({
     }
   }, [user, setHasUnsavedChanges, setFormLastEditedAt, setFormLastEditedByUserId, performDeleteSection, triggerAutoSave]);
 
-  const handleSaveEditedSection = useCallback(async (sectionId: string, values: { name: string; description: string | null; tooltip: string | null; }) => {
+  const handleSaveEditedSection = useCallback(async (sectionId: string, values: { name: string; description?: string | null; tooltip?: string | null; }) => {
     if (!user) return;
     const success = await performSaveEditedSection(sectionId, values);
     if (success) {

@@ -78,14 +78,14 @@ export const useFormBuilderActions = ({
     }
   };
 
-  const handleSaveEditedSection = async (sectionId: string, values: { name: string; description: string | null; tooltip: string | null; }) => {
+  const handleSaveEditedSection = async (sectionId: string, values: { name: string; description?: string | null; tooltip?: string | null; }) => {
     if (!user) return false;
     const now = new Date().toISOString();
 
     setSections((prevSections: FormSection[]) => // Explicitly type prevSections
       prevSections.map((s: FormSection) => // Explicitly type s
         s.id === sectionId
-          ? { ...s, name: values.name, description: values.description, tooltip: values.tooltip, last_edited_by_user_id: user.id, last_edited_at: now }
+          ? { ...s, name: values.name, description: values.description ?? null, tooltip: values.tooltip ?? null, last_edited_by_user_id: user.id, last_edited_at: now }
           : s
       )
     );
@@ -94,8 +94,8 @@ export const useFormBuilderActions = ({
       .from('form_sections')
       .update({
         name: values.name,
-        description: values.description,
-        tooltip: values.tooltip,
+        description: values.description ?? null,
+        tooltip: values.tooltip ?? null,
         last_edited_by_user_id: user.id,
         last_edited_at: now,
       })
