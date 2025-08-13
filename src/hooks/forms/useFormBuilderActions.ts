@@ -1,5 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
-import { FormField, FormSection, DisplayRule, Form as FormType } from '@/types'; // Import FormType
+import { FormField, FormSection, DisplayRule, Form as FormType } from '@/types';
 import { showError, showSuccess } from '@/utils/toast';
 import { useSession } from '@/contexts/auth/SessionContext';
 
@@ -185,7 +185,7 @@ export const useFormBuilderActions = ({
     setFields(prevFields =>
       prevFields.map(f =>
         f.id === fieldId
-          ? { ...f, label: values.label, field_type: values.field_type, options: updatedOptions, is_required: values.is_required, description: values.description || null, tooltip: values.tooltip || null, placeholder: values.placeholder || null, section_id: values.section_id === 'none' ? null : values.section_id }
+          ? { ...f, label: values.label, field_type: values.field_type, options: updatedOptions, is_required: values.is_required, description: values.description || null, tooltip: values.tooltip || null, placeholder: values.placeholder || null, section_id: values.section_id === 'none' ? null : values.section_id || null } // Ensure section_id is null if undefined
           : f
       )
     );
@@ -200,7 +200,7 @@ export const useFormBuilderActions = ({
         description: values.description || null,
         tooltip: values.tooltip || null,
         placeholder: values.placeholder || null,
-        section_id: values.section_id === 'none' ? null : values.section_id,
+        section_id: values.section_id === 'none' ? null : values.section_id || null, // Ensure section_id is null if undefined
         last_edited_by_user_id: user.id,
         last_edited_at: new Date().toISOString(),
       })

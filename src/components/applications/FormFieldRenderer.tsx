@@ -30,6 +30,7 @@ interface FormFieldRendererProps {
   submitting: boolean;
 }
 
+// Explicitly define the type for dynamic form values
 type DynamicFormValues = Record<string, string | string[] | number | undefined | null>;
 
 const FormFieldRenderer = ({ field, submitting }: FormFieldRendererProps) => {
@@ -199,7 +200,8 @@ const FormFieldRenderer = ({ field, submitting }: FormFieldRendererProps) => {
                 id={field.id}
                 type="number"
                 {...formHookField}
-                value={formHookField.value === undefined ? '' : formHookField.value}
+                // Ensure value is always string or undefined for number input
+                value={formHookField.value === undefined || formHookField.value === null ? '' : formHookField.value}
                 required={field.is_required}
                 disabled={submitting}
                 placeholder={field.placeholder || undefined}

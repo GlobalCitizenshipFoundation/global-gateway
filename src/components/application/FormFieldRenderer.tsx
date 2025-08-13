@@ -14,16 +14,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { CalendarIcon, Info } from "lucide-react"; // Import Info icon
+import { CalendarIcon, Info } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
-import RichTextEditor from "@/components/common/RichTextEditor"; // Updated import path
+import RichTextEditor from "@/components/common/RichTextEditor";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import React from "react";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"; // Import Tooltip components
-import DOMPurify from 'dompurify'; // Import DOMPurify
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import DOMPurify from 'dompurify';
 
 interface FormFieldRendererProps {
   field: FormField;
@@ -71,7 +71,7 @@ const FormFieldRenderer = ({ field, submitting }: FormFieldRendererProps) => {
                 required={field.is_required}
                 disabled={submitting}
                 className="min-h-[120px] resize-y"
-                placeholder={field.placeholder || undefined} // Use placeholder
+                placeholder={field.placeholder || undefined}
               />
             </FormControl>
           ) : field.field_type === 'select' ? (
@@ -83,7 +83,7 @@ const FormFieldRenderer = ({ field, submitting }: FormFieldRendererProps) => {
                 disabled={submitting}
               >
                 <SelectTrigger id={field.id}>
-                  <SelectValue placeholder={field.placeholder || `Select an option`} /> {/* Use placeholder */}
+                  <SelectValue placeholder={field.placeholder || `Select an option`} />
                 </SelectTrigger>
                 <SelectContent>
                   {(field.options as string[] || []).map((option, index) => (
@@ -113,9 +113,9 @@ const FormFieldRenderer = ({ field, submitting }: FormFieldRendererProps) => {
             <div className="space-y-2">
               {(field.options as string[] || []).map((option, index) => (
                 <FormFieldComponent
-                  key={option} // Use option as key for individual checkboxes
+                  key={option}
                   control={control}
-                  name={field.id as keyof DynamicFormValues} // Still the same array name
+                  name={field.id as keyof DynamicFormValues}
                   render={({ field: checkboxField }) => (
                     <FormItem className="flex flex-row items-start space-x-3 space-y-0">
                       <FormControl>
@@ -149,7 +149,7 @@ const FormFieldRenderer = ({ field, submitting }: FormFieldRendererProps) => {
                 value={String(formHookField.value || '')}
                 required={field.is_required}
                 disabled={submitting}
-                placeholder={field.placeholder || undefined} // Use placeholder
+                placeholder={field.placeholder || undefined}
               />
             </FormControl>
           ) : field.field_type === 'date' ? (
@@ -191,7 +191,7 @@ const FormFieldRenderer = ({ field, submitting }: FormFieldRendererProps) => {
                 value={String(formHookField.value || '')}
                 required={field.is_required}
                 disabled={submitting}
-                placeholder={field.placeholder || undefined} // Use placeholder
+                placeholder={field.placeholder || undefined}
               />
             </FormControl>
           ) : field.field_type === 'number' ? (
@@ -200,10 +200,11 @@ const FormFieldRenderer = ({ field, submitting }: FormFieldRendererProps) => {
                 id={field.id}
                 type="number"
                 {...formHookField}
-                value={formHookField.value === undefined ? '' : formHookField.value}
+                // Ensure value is always string or undefined for number input
+                value={formHookField.value === undefined || formHookField.value === null ? '' : formHookField.value}
                 required={field.is_required}
                 disabled={submitting}
-                placeholder={field.placeholder || undefined} // Use placeholder
+                placeholder={field.placeholder || undefined}
               />
             </FormControl>
           ) : field.field_type === 'richtext' ? (
@@ -215,7 +216,7 @@ const FormFieldRenderer = ({ field, submitting }: FormFieldRendererProps) => {
                 className="min-h-[120px]"
               />
             </FormControl>
-          ) : ( // Default to text input for any other type
+          ) : (
             <FormControl>
               <Input
                 id={field.id}
@@ -223,7 +224,7 @@ const FormFieldRenderer = ({ field, submitting }: FormFieldRendererProps) => {
                 value={String(formHookField.value || '')}
                 required={field.is_required}
                 disabled={submitting}
-                placeholder={field.placeholder || undefined} // Use placeholder
+                placeholder={field.placeholder || undefined}
               />
             </FormControl>
           )}

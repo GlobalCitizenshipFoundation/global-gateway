@@ -2,7 +2,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import RichTextEditor from "@/components/common/RichTextEditor"; // Updated import path
+import RichTextEditor from "@/components/common/RichTextEditor";
 import { useFormBuilderState } from "@/hooks/forms/useFormBuilderState";
 import { useFormBuilderHandlers } from "@/hooks/forms/useFormBuilderHandlers";
 import { useFormBuilderActions } from "@/hooks/forms/useFormBuilderActions";
@@ -27,17 +27,17 @@ export const FormDetailsCard = ({ state }: FormDetailsCardProps) => {
     loading,
   } = state;
 
-  const { handleUpdateFormDetails, handleUpdateFormStatus } = useFormBuilderActions({
+  // Initialize actions from the dedicated hook
+  const formBuilderActions = useFormBuilderActions({
     formId: formId,
     setSections: state.setSections,
     setFields: state.setFields,
     fetchData: state.fetchData,
   });
 
+  // useFormBuilderHandlers now directly imports and uses actions internally
   const { triggerAutoSave } = useFormBuilderHandlers({
     state,
-    performUpdateFormDetails: handleUpdateFormDetails,
-    performUpdateFormStatus: handleUpdateFormStatus,
   });
 
   useEffect(() => {

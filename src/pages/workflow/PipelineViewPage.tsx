@@ -305,7 +305,7 @@ const PipelineViewPage = () => {
                           {res.form_fields?.tooltip && (
                             <dd className="text-xs text-muted-foreground mt-1">Tooltip: {res.form_fields.tooltip}</dd>
                           )}
-                          <dd className="text-muted-foreground whitespace-pre-wrap mt-1">{formatResponseValue(res.value, res.form_fields?.field_type)}</dd>
+                          <dd className="text-muted-foreground whitespace-pre-wrap mt-1">{formatResponseValue(res.value, res.form_fields?.field_type || null)}</dd>
                         </div>
                       );
                     })

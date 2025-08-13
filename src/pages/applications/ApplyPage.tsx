@@ -60,13 +60,14 @@ const ApplyPage = () => {
       return;
     }
 
+    // Explicitly type appData to avoid 'never' inference
     const { data: appData, error: appError } = await supabase.from('applications').insert({
       program_id: program.id,
       user_id: user.id,
       full_name: profileFullName,
       email: profileEmail,
       stage_id: firstStage.id,
-    }).select('id').single();
+    }).select('id').single() as { data: { id: string } | null, error: any }; // Cast to expected type
 
     if (appError || !appData) {
       showError(`Submission failed: ${appData?.id ? 'Failed to save responses.' : appError.message}`);
