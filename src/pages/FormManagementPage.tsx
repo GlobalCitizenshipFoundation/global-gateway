@@ -9,6 +9,8 @@ import { DeleteFormDialog } from "@/components/forms/DeleteFormDialog";
 import { CreateFormFromTemplateDialog } from "@/components/forms/CreateFormFromTemplateDialog";
 import { SaveAsTemplateDialog } from "@/components/forms/SaveAsTemplateDialog";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useState } from "react";
+import { Form as FormType } from "@/types"; // Import FormType
 
 const FormManagementPage = () => {
   const { forms, setForms, templates, setTemplates, loading, error } = useFormsData();
@@ -18,6 +20,13 @@ const FormManagementPage = () => {
     isSaveAsTemplateDialogOpen, setIsSaveAsTemplateDialogOpen, templateFormToCopy, setTemplateFormToCopy, newTemplateName, setNewTemplateName, isSavingTemplate, handleSaveAsTemplate,
     handleUpdateFormStatus,
   } = useFormManagementActions({ setForms, setTemplates, templates });
+
+  // Function to open the dialog and reset states
+  const openCreateFromTemplateDialog = () => {
+    setSelectedTemplateId(null); // Reset selected template
+    setNewFormName(''); // Reset new form name
+    setIsCreateFromTemplateDialogOpen(true);
+  };
 
   if (loading) {
     return (
@@ -63,7 +72,7 @@ const FormManagementPage = () => {
             <Button onClick={handleCreateBlankForm} disabled={isCreatingForm}>
               <Plus className="mr-2 h-4 w-4" /> Create Blank Form
             </Button>
-            <Button variant="outline" onClick={() => setIsCreateFromTemplateDialogOpen(true)} disabled={templates.length === 0 || isCreatingForm}>
+            <Button variant="outline" onClick={openCreateFromTemplateDialog} disabled={templates.length === 0 || isCreatingForm}>
               Create from Template
             </Button>
           </div>
