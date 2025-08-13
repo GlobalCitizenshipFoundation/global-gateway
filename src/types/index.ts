@@ -49,6 +49,8 @@ export type Application = {
   } | null;
   program_stages: {
     name: string;
+    description: string | null;
+    step_type: ProgramStage['step_type'];
   } | null;
 };
 

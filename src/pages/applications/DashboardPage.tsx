@@ -21,6 +21,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Application as UserApplication, FormField, FormSection } from "@/types";
 import ApplicationPdfViewer from "@/components/applications/ApplicationPdfViewer";
+import { ApplicationStatusAlert } from "@/components/application/ApplicationStatusAlert";
 
 const DashboardPage = () => {
   const { user } = useSession();
@@ -45,7 +46,7 @@ const DashboardPage = () => {
           user_id,
           stage_id,
           programs ( title, form_id, allow_pdf_download ),
-          program_stages ( name )
+          program_stages ( name, description, step_type )
         `)
         .eq('user_id', user.id)
         .order('submitted_date', { ascending: false });
@@ -165,6 +166,9 @@ const DashboardPage = () => {
                     <Link to={`/programs/${app.program_id}`} className="font-medium hover:underline">
                       {app.programs?.title || 'Unknown Program'}
                     </Link>
+                    {app.program_stages?.step_type === 'status' && app.program_stages.description && (
+                      <ApplicationStatusAlert stage={app.program_stages} />
+                    )}
                   </TableCell>
                   <TableCell className="hidden md:table-cell">
                     {new Date(app.submitted_date).toLocaleDateString()}
