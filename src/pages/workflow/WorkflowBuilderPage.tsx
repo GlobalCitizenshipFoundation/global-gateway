@@ -39,7 +39,13 @@ const WorkflowBuilderPage = () => {
   useEffect(() => {
     const fetchDropdownData = async () => {
       if (!user) return;
-      const formsPromise = supabase.from('forms').select('*').eq('user_id', user.id).order('name', { ascending: true });
+      const formsPromise = supabase
+        .from('forms')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('is_template', false)
+        .eq('status', 'published')
+        .order('name', { ascending: true });
       const emailsPromise = supabase.from('email_templates').select('*').eq('user_id', user.id).eq('status', 'published').order('name', { ascending: true });
       
       const [{ data: formsData, error: formsError }, { data: emailsData, error: emailsError }] = await Promise.all([formsPromise, emailsPromise]);
