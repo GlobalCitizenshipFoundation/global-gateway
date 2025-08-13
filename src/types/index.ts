@@ -31,6 +31,7 @@ export type ProgramStage = {
   name: string;
   order: number;
   created_at: string;
+  email_template_id: string | null; // New: Link to an email template
 };
 
 export type Application = {
@@ -93,4 +94,18 @@ export type Profile = {
   avatar_url: string | null;
   updated_at: string;
   role: 'applicant' | 'creator' | 'admin'; // New: Role for the user
+};
+
+export type EmailTemplate = {
+  id: string;
+  user_id: string | null;
+  name: string;
+  subject: string;
+  body: string; // HTML content
+  is_default: boolean;
+  status: 'draft' | 'published';
+  created_at: string;
+  updated_at: string;
+  last_edited_by_user_id: string | null;
+  last_edited_at: string | null;
 };
