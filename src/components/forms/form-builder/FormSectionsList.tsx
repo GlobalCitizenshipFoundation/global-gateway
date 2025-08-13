@@ -17,18 +17,20 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useState } from "react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import DOMPurify from 'dompurify';
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface FormSectionsListProps {
   sections: FormSection[];
   fields: FormField[];
   loading: boolean;
   getFieldsForSection: (sectionId: string | null) => FormField[];
-  handleDeleteSection: (sectionId: string, currentSections: FormSection[], currentFields: FormField[]) => Promise<void>;
+  handleDeleteSection: (sectionId: string, fieldAction: 'delete_fields' | 'uncategorize_fields' | 'move_to_section', targetSectionId?: string | null) => Promise<void>;
   handleDeleteField: (fieldId: string) => Promise<void>;
   handleToggleRequired: (fieldId: string, isRequired: boolean) => Promise<void>;
   onEditLogic: (field: FormField) => void;
@@ -117,19 +119,27 @@ export const FormSectionsList = ({
 }: FormSectionsListProps) => {
   const [sectionToDelete, setSectionToDelete] = useState<FormSection | null>(null);
   const [isSectionDeleteDialogOpen, setIsSectionDeleteDialogOpen] = useState(false);
+  const [fieldAction, setFieldAction] = useState<'delete_fields' | 'uncategorize_fields' | 'move_to_section'>('uncategorize_fields');
+  const [targetSectionId, setTargetSectionId] = useState<string | null>(null);
 
   const confirmDeleteSection = (section: FormSection) => {
     setSectionToDelete(section);
+    setFieldAction('uncategorize_fields'); // Reset to default option
+    setTargetSectionId(null); // Reset target section
     setIsSectionDeleteDialogOpen(true);
   };
 
   const executeDeleteSection = async () => {
     if (sectionToDelete) {
-      await handleDeleteSection(sectionToDelete.id, sections, fields);
+      await handleDeleteSection(sectionToDelete.id, fieldAction, targetSectionId);
       setSectionToDelete(null);
       setIsSectionDeleteDialogOpen(false);
     }
   };
+
+  const fieldsInSectionToDelete = sectionToDelete ? getFieldsForSection(sectionToDelete.id) : [];
+  const hasFields = fieldsInSectionToDelete.length > 0;
+  const otherSections = sections.filter(s => s.id !== sectionToDelete?.id);
 
   return (
     <div className="space-y-6">
@@ -175,13 +185,54 @@ export const FormSectionsList = ({
             <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
             <AlertDialogDescription>
               This action cannot be undone. This will permanently delete the section
-              <span className="font-semibold"> "{sectionToDelete?.name}" </span>
-              and move all its associated fields to the "Uncategorized Fields" list.
+              <span className="font-semibold"> "{sectionToDelete?.name}"</span>.
+              {hasFields && (
+                <div className="mt-4">
+                  <p className="font-medium mb-2">This section contains {fieldsInSectionToDelete.length} field(s). What would you like to do with them?</p>
+                  <RadioGroup value={fieldAction} onValueChange={(value: 'delete_fields' | 'uncategorize_fields' | 'move_to_section') => setFieldAction(value)}>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="uncategorize_fields" id="uncategorize-fields" />
+                      <Label htmlFor="uncategorize-fields">Move fields to "Uncategorized"</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="delete_fields" id="delete-fields" />
+                      <Label htmlFor="delete-fields">Permanently delete fields</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="move_to_section" id="move-to-section" disabled={otherSections.length === 0} />
+                      <Label htmlFor="move-to-section">Move fields to another section</Label>
+                    </div>
+                  </RadioGroup>
+                  {fieldAction === 'move_to_section' && otherSections.length > 0 && (
+                    <div className="mt-4 grid gap-2">
+                      <Label htmlFor="target-section">Select Target Section</Label>
+                      <Select value={targetSectionId || ''} onValueChange={setTargetSectionId}>
+                        <SelectTrigger id="target-section">
+                          <SelectValue placeholder="Choose a section" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {otherSections.map(section => (
+                            <SelectItem key={section.id} value={section.id}>{section.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+                  {fieldAction === 'move_to_section' && otherSections.length === 0 && (
+                    <p className="text-sm text-muted-foreground mt-2">No other sections available to move fields to.</p>
+                  )}
+                </div>
+              )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => setSectionToDelete(null)}>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={executeDeleteSection}>Continue</AlertDialogAction>
+            <AlertDialogAction
+              onClick={executeDeleteSection}
+              disabled={fieldAction === 'move_to_section' && !targetSectionId}
+            >
+              Continue
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

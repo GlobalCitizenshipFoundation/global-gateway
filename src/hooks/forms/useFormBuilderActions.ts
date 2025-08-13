@@ -1,31 +1,30 @@
 import { supabase } from '@/integrations/supabase/client';
 import { FormField, FormSection, DisplayRule } from '@/types';
 import { showError, showSuccess } from '@/utils/toast';
-import { useSession } from '@/contexts/auth/SessionContext'; // Import useSession
+import { useSession } from '@/contexts/auth/SessionContext';
 
 interface UseFormBuilderActionsProps {
-  formId: string | undefined; // Changed from programId
+  formId: string | undefined;
   setSections: React.Dispatch<React.SetStateAction<FormSection[]>>;
   setFields: React.Dispatch<React.SetStateAction<FormField[]>>;
-  fetchData: () => Promise<void>; // To re-fetch data after certain operations
+  fetchData: () => Promise<void>;
 }
 
 export const useFormBuilderActions = ({
-  formId, // Changed from programId
+  formId,
   setSections,
   setFields,
   fetchData,
 }: UseFormBuilderActionsProps) => {
-  const { user } = useSession(); // Get current user
+  const { user } = useSession();
 
   const handleAddSection = async (name: string, description: string | null, tooltip: string | null) => {
-    if (!name.trim() || !formId || !user) return null; // Use formId and user
+    if (!name.trim() || !formId || !user) return null;
 
-    // Fetch current sections to determine next order
     const { data: currentSections, error: fetchError } = await supabase
       .from('form_sections')
       .select('order')
-      .eq('form_id', formId); // Use formId
+      .eq('form_id', formId);
 
     if (fetchError) {
       showError(`Failed to fetch sections for new order: ${fetchError.message}`);
@@ -37,13 +36,13 @@ export const useFormBuilderActions = ({
     const { data, error } = await supabase
       .from('form_sections')
       .insert({
-        form_id: formId, // Use formId
+        form_id: formId,
         name: name,
         order: nextOrder,
-        description: description, // New
-        tooltip: tooltip, // New
-        last_edited_by_user_id: user.id, // Set editor
-        last_edited_at: new Date().toISOString(), // Set timestamp
+        description: description,
+        tooltip: tooltip,
+        last_edited_by_user_id: user.id,
+        last_edited_at: new Date().toISOString(),
       })
       .select()
       .single();
@@ -53,71 +52,39 @@ export const useFormBuilderActions = ({
       return null;
     } else {
       showSuccess("Section added successfully.");
-      setSections(prev => [...prev, data]); // Update state directly
+      setSections(prev => [...prev, data]);
       return data;
     }
   };
 
-  const handleDeleteSection = async (sectionId: string, currentSections: FormSection[], currentFields: FormField[]) => {
-    // Optimistically update local state first
-    const originalSections = [...currentSections];
-    const originalFields = [...currentFields];
-    setSections(currentSections.filter(s => s.id !== sectionId));
-    setFields(currentFields.map(f => f.section_id === sectionId ? { ...f, section_id: null } : f)); // Move fields to uncategorized
-
-    // Fetch fields associated with this section to update their section_id to null
-    const { data: fieldsToUpdate, error: fetchFieldsError } = await supabase
-      .from('form_fields')
-      .select('id')
-      .eq('section_id', sectionId);
-
-    if (fetchFieldsError) {
-      showError(`Failed to fetch fields for section deletion: ${fetchFieldsError.message}. Reverting.`);
-      setSections(originalSections);
-      setFields(originalFields);
+  const handleDeleteSection = async (sectionId: string, fieldAction: 'delete_fields' | 'uncategorize_fields' | 'move_to_section', targetSectionId: string | null = null) => {
+    if (!user) {
+      showError("You must be logged in to delete a section.");
       return;
     }
 
-    const now = new Date().toISOString();
-    const updatesForFields = fieldsToUpdate.map(field => ({
-      id: field.id,
-      section_id: null, // Set to null (uncategorized)
-      last_edited_by_user_id: user?.id || null, // Set editor
-      last_edited_at: now, // Set timestamp
-    }));
-
-    // Perform batch update for fields
-    const { error: updateFieldsError } = await supabase
-      .from('form_fields')
-      .upsert(updatesForFields);
-
-    if (updateFieldsError) {
-      showError(`Failed to uncategorize fields: ${updateFieldsError.message}. Reverting.`);
-      setSections(originalSections);
-      setFields(originalFields);
-      return;
-    }
-
-    // Finally, delete the section
-    const { error: deleteSectionError } = await supabase.from('form_sections').delete().eq('id', sectionId);
-    if (deleteSectionError) {
-      showError(`Failed to delete section: ${deleteSectionError.message}. Reverting.`);
-      setSections(originalSections);
-      setFields(originalFields); // Revert fields too if section deletion fails
+    const { error } = await supabase.rpc('delete_form_section_with_field_handling', {
+      p_section_id: sectionId,
+      p_user_id: user.id,
+      p_field_action: fieldAction,
+      p_target_section_id: targetSectionId,
+    });
+  
+    if (error) {
+      showError(`Failed to delete section: ${error.message}`);
     } else {
-      showSuccess("Section and its fields uncategorized successfully.");
-      fetchData(); // Re-fetch to ensure full consistency after all operations
+      showSuccess("Section deleted and fields handled successfully.");
+      fetchData(); // Re-fetch to update the UI
     }
   };
 
-  const handleAddField = async (label: string, type: FormField['field_type'], options: string, sectionId: string | null, description: string | null, tooltip: string | null, placeholder: string | null) => { // Removed helpText
-    if (!label.trim() || !formId || !user) return null; // Use formId and user
+  const handleAddField = async (label: string, type: FormField['field_type'], options: string, sectionId: string | null, description: string | null, tooltip: string | null, placeholder: string | null) => {
+    if (!label.trim() || !formId || !user) return null;
 
-    // Fetch current fields for the target section to determine next order
     const { data: currentFieldsInTargetSection, error: fetchError } = await supabase
       .from('form_fields')
       .select('order')
-      .eq('form_id', formId) // Use formId
+      .eq('form_id', formId)
       .eq('section_id', sectionId);
 
     if (fetchError) {
@@ -130,20 +97,19 @@ export const useFormBuilderActions = ({
     const { data, error } = await supabase
       .from('form_fields')
       .insert({
-        form_id: formId, // Use formId
+        form_id: formId,
         label: label,
         field_type: type,
         order: nextOrder,
         section_id: sectionId,
         options: (type === 'select' || type === 'radio' || type === 'checkbox') ? options.split(',').map(opt => opt.trim()) : null,
-        is_required: false, // Default to not required when adding
-        display_rules: null, // Default to no display rules
-        // Removed help_text
+        is_required: false,
+        display_rules: null,
         description: description || null,
         tooltip: tooltip || null,
-        placeholder: placeholder || null, // New: placeholder
-        last_edited_by_user_id: user.id, // Set editor
-        last_edited_at: new Date().toISOString(), // Set timestamp
+        placeholder: placeholder || null,
+        last_edited_by_user_id: user.id,
+        last_edited_at: new Date().toISOString(),
       })
       .select()
       .single();
@@ -152,7 +118,7 @@ export const useFormBuilderActions = ({
       showError(`Failed to add field: ${error.message}`);
       return null;
     } else if (data) {
-      setFields(prev => [...prev, data as FormField]); // Update state directly
+      setFields(prev => [...prev, data as FormField]);
       showSuccess("Field added successfully.");
       return data as FormField;
     }
@@ -160,12 +126,11 @@ export const useFormBuilderActions = ({
   };
 
   const handleDeleteField = async (fieldId: string) => {
-    // Optimistic update
     setFields(prev => prev.filter(f => f.id !== fieldId));
     const { error } = await supabase.from('form_fields').delete().eq('id', fieldId);
     if (error) {
       showError(`Failed to delete field: ${error.message}. Reverting.`);
-      fetchData(); // Re-fetch to revert if optimistic update fails
+      fetchData();
     } else {
       showSuccess("Field deleted successfully.");
     }
@@ -173,12 +138,11 @@ export const useFormBuilderActions = ({
 
   const handleToggleRequired = async (fieldId: string, isRequired: boolean) => {
     if (!user) return;
-    // Optimistic update
     setFields(prev => prev.map(f => f.id === fieldId ? { ...f, is_required: isRequired } : f));
     const { error } = await supabase.from('form_fields').update({ is_required: isRequired, last_edited_by_user_id: user.id, last_edited_at: new Date().toISOString() }).eq('id', fieldId);
     if (error) {
       showError(`Failed to update field: ${error.message}. Reverting.`);
-      setFields(prev => prev.map(f => f.id === fieldId ? { ...f, is_required: !isRequired } : f)); // Revert
+      setFields(prev => prev.map(f => f.id === fieldId ? { ...f, is_required: !isRequired } : f));
     } else {
       showSuccess("Field requirement updated.");
     }
@@ -186,7 +150,6 @@ export const useFormBuilderActions = ({
 
   const handleSaveLogic = async (fieldId: string, rules: DisplayRule[]) => {
     if (!user) return;
-    // Optimistic update
     setFields(prevFields =>
       prevFields.map(f => (f.id === fieldId ? { ...f, display_rules: rules } : f))
     );
@@ -197,23 +160,22 @@ export const useFormBuilderActions = ({
 
     if (error) {
       showError(`Failed to save display logic: ${error.message}. Reverting.`);
-      fetchData(); // Re-fetch to revert if optimistic update fails
+      fetchData();
     } else {
       showSuccess("Display logic saved successfully!");
     }
   };
 
-  const handleSaveEditedField = async (fieldId: string, values: { label: string; field_type: FormField['field_type']; options?: string; is_required: boolean; description?: string | null; tooltip?: string | null; placeholder?: string | null; section_id?: string | null; }) => { // Removed help_text
+  const handleSaveEditedField = async (fieldId: string, values: { label: string; field_type: FormField['field_type']; options?: string; is_required: boolean; description?: string | null; tooltip?: string | null; placeholder?: string | null; section_id?: string | null; }) => {
     if (!user) return;
     const updatedOptions = (values.field_type === 'select' || values.field_type === 'radio' || values.field_type === 'checkbox')
       ? values.options?.split(',').map(opt => opt.trim()) || null
       : null;
 
-    // Optimistic update
     setFields(prevFields =>
       prevFields.map(f =>
         f.id === fieldId
-          ? { ...f, label: values.label, field_type: values.field_type, options: updatedOptions, is_required: values.is_required, description: values.description || null, tooltip: values.tooltip || null, placeholder: values.placeholder || null, section_id: values.section_id === 'none' ? null : values.section_id } // Removed help_text
+          ? { ...f, label: values.label, field_type: values.field_type, options: updatedOptions, is_required: values.is_required, description: values.description || null, tooltip: values.tooltip || null, placeholder: values.placeholder || null, section_id: values.section_id === 'none' ? null : values.section_id }
           : f
       )
     );
@@ -225,29 +187,26 @@ export const useFormBuilderActions = ({
         field_type: values.field_type,
         options: updatedOptions,
         is_required: values.is_required,
-        // Removed help_text
         description: values.description || null,
         tooltip: values.tooltip || null,
-        placeholder: values.placeholder || null, // Added placeholder
-        section_id: values.section_id === 'none' ? null : values.section_id, // Handle 'none' for uncategorized
-        last_edited_by_user_id: user.id, // Set editor
-        last_edited_at: new Date().toISOString(), // Set timestamp
+        placeholder: values.placeholder || null,
+        section_id: values.section_id === 'none' ? null : values.section_id,
+        last_edited_by_user_id: user.id,
+        last_edited_at: new Date().toISOString(),
       })
       .eq('id', fieldId);
 
     if (error) {
       showError(`Failed to update field: ${error.message}. Reverting.`);
-      fetchData(); // Re-fetch to revert if optimistic update fails
+      fetchData();
     } else {
       showSuccess("Field updated successfully!");
-      fetchData(); // Re-fetch to ensure correct order and section display after update
+      fetchData();
     }
   };
 
-  // New function for inline label update
   const handleUpdateFieldLabel = async (fieldId: string, newLabel: string) => {
     if (!user) return;
-    // Optimistic update
     setFields(prevFields =>
       prevFields.map(f => (f.id === fieldId ? { ...f, label: newLabel } : f))
     );
@@ -258,7 +217,7 @@ export const useFormBuilderActions = ({
 
     if (error) {
       showError(`Failed to update label: ${error.message}. Reverting.`);
-      fetchData(); // Re-fetch to revert if optimistic update fails
+      fetchData();
     } else {
       showSuccess("Field label updated.");
     }
@@ -288,7 +247,6 @@ export const useFormBuilderActions = ({
       .eq('id', id);
 
     if (error) {
-      // Do not show error here, as auto-save handles it
       return false;
     } else {
       return true;
@@ -303,7 +261,7 @@ export const useFormBuilderActions = ({
     handleToggleRequired,
     handleSaveLogic,
     handleSaveEditedField,
-    handleUpdateFieldLabel, // Export the new function
+    handleUpdateFieldLabel,
     handleUpdateFormStatus,
     handleUpdateFormDetails,
   };
