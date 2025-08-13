@@ -56,8 +56,8 @@ const FormFieldRenderer = ({ field, submitting }: FormFieldRendererProps) => {
                 <TooltipTrigger asChild>
                   <Info className="h-4 w-4 text-muted-foreground cursor-help" />
                 </TooltipTrigger>
-                <TooltipContent className="max-w-xs bg-gray-800 text-white p-2 rounded-md text-sm">
-                  {field.tooltip}
+                <TooltipContent>
+                  <p>{field.tooltip}</p>
                 </TooltipContent>
               </Tooltip>
             )}
