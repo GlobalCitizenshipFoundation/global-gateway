@@ -84,7 +84,7 @@ const EmailManagementPage = () => {
             <p className="text-muted-foreground">Create and manage email templates for your application.</p>
           </div>
           <Button asChild>
-            <Link to="/creator/emails/new">
+            <Link to="/creator/emails/compose"> {/* Link to the new composer page for new templates */}
               <Plus className="mr-2 h-4 w-4" /> Create New Template
             </Link>
           </Button>

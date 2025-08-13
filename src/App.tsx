@@ -21,6 +21,8 @@ import PipelineViewPage from "./pages/PipelineViewPage";
 import FormBuilderPage from "./pages/FormBuilderPage";
 import ProgramDetailsPage from "./pages/ProgramDetailsPage";
 import FormManagementPage from "./pages/FormManagementPage";
+import EmailManagementPage from "./pages/EmailManagementPage"; // Ensure this is imported
+import EmailComposerPage from "./pages/EmailComposerPage"; // Import the renamed composer page
 import { ThemeProvider } from "next-themes"; // Import ThemeProvider
 
 const queryClient = new QueryClient();
@@ -57,9 +59,14 @@ const App = () => (
                   <Route path="/creator/program/:programId/pipeline" element={<PipelineViewPage />} />
                   <Route path="/creator/program/:programId/submission/:submissionId" element={<SubmissionDetailPage />} />
                   
-                  {/* New Form Management Routes */}
+                  {/* Form Management Routes */}
                   <Route path="/creator/forms" element={<FormManagementPage />} />
                   <Route path="/creator/forms/:formId/edit" element={<FormBuilderPage />} />
+
+                  {/* Email Management Routes */}
+                  <Route path="/creator/emails" element={<EmailManagementPage />} />
+                  <Route path="/creator/emails/compose" element={<EmailComposerPage />} /> {/* New route for creating */}
+                  <Route path="/creator/emails/compose/:templateId" element={<EmailComposerPage />} /> {/* New route for editing */}
                 </Route>
 
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

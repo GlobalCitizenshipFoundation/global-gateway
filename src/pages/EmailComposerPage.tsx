@@ -8,10 +8,16 @@ import { useEmailTemplateManagementActions } from "@/hooks/useEmailTemplateManag
 import { useEmailTemplatesData } from "@/hooks/useEmailTemplatesData";
 import { EmailTemplate } from "@/types";
 import { showError } from "@/utils/toast";
+import { Button } from "@/components/ui/button"; // Import Button
+import { Input } from "@/components/ui/input"; // Import Input
+import { Label } from "@/components/ui/label"; // Import Label
+import { useSession } from "@/contexts/SessionContext"; // Import useSession
+import { sendEmail } from "@/utils/emailSender"; // Import sendEmail
 
-const CreateEditEmailTemplatePage = () => {
+const EmailComposerPage = () => {
   const { templateId } = useParams<{ templateId: string }>();
   const navigate = useNavigate();
+  const { user } = useSession(); // Get current user for test send
   const isNewTemplate = templateId === 'new';
 
   const { emailTemplates, loading: fetchLoading, error: fetchError, fetchEmailTemplates } = useEmailTemplatesData();
@@ -19,6 +25,11 @@ const CreateEditEmailTemplatePage = () => {
 
   const [currentTemplate, setCurrentTemplate] = useState<EmailTemplate | undefined>(undefined);
   const [pageLoading, setPageLoading] = useState(true);
+
+  // State for test email dialog
+  const [isTestEmailDialogOpen, setIsTestEmailDialogOpen] = useState(false);
+  const [testRecipientEmail, setTestRecipientEmail] = useState(user?.email || '');
+  const [isSendingTestEmail, setIsSendingTestEmail] = useState(false);
 
   useEffect(() => {
     if (!isNewTemplate && !fetchLoading) {
@@ -35,6 +46,12 @@ const CreateEditEmailTemplatePage = () => {
     }
   }, [templateId, isNewTemplate, emailTemplates, fetchLoading, navigate]);
 
+  useEffect(() => {
+    if (user?.email) {
+      setTestRecipientEmail(user.email);
+    }
+  }, [user]);
+
   const handleSubmit = async (values: any) => {
     let success = false;
     if (isNewTemplate) {
@@ -49,6 +66,31 @@ const CreateEditEmailTemplatePage = () => {
     if (success) {
       navigate("/creator/emails");
     }
+  };
+
+  const handleSendTestEmail = async () => {
+    if (!testRecipientEmail.trim()) {
+      showError("Please enter a recipient email address.");
+      return;
+    }
+    if (!currentTemplate) {
+      showError("No template loaded to send a test email.");
+      return;
+    }
+
+    setIsSendingTestEmail(true);
+    const success = await sendEmail({
+      to: testRecipientEmail,
+      subject: `TEST: ${currentTemplate.subject}`,
+      htmlBody: currentTemplate.body,
+    });
+    if (success) {
+      // Success message handled by sendEmail utility
+    } else {
+      // Error message handled by sendEmail utility
+    }
+    setIsSendingTestEmail(false);
+    setIsTestEmailDialogOpen(false);
   };
 
   if (pageLoading || fetchLoading) {
@@ -95,10 +137,51 @@ const CreateEditEmailTemplatePage = () => {
             isSubmitting={isSubmitting}
             isNewTemplate={isNewTemplate}
           />
+          {!isNewTemplate && (
+            <div className="mt-6 pt-6 border-t flex justify-end">
+              <Button variant="outline" onClick={() => setIsTestEmailDialogOpen(true)} disabled={isSubmitting}>
+                Send Test Email
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
+
+      {/* Test Email Dialog */}
+      {isTestEmailDialogOpen && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <Card className="w-full max-w-md p-6">
+            <CardHeader>
+              <CardTitle>Send Test Email</CardTitle>
+              <CardDescription>
+                Enter the recipient's email address to send a test version of this template.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="grid gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="test-recipient-email">Recipient Email</Label>
+                <Input
+                  id="test-recipient-email"
+                  type="email"
+                  value={testRecipientEmail}
+                  onChange={(e) => setTestRecipientEmail(e.target.value)}
+                  disabled={isSendingTestEmail}
+                />
+              </div>
+            </CardContent>
+            <div className="flex justify-end gap-2 mt-4">
+              <Button variant="outline" onClick={() => setIsTestEmailDialogOpen(false)} disabled={isSendingTestEmail}>
+                Cancel
+              </Button>
+              <Button onClick={handleSendTestEmail} disabled={isSendingTestEmail || !testRecipientEmail.trim()}>
+                {isSendingTestEmail ? 'Sending...' : 'Send Test'}
+              </Button>
+            </div>
+          </Card>
+        </div>
+      )}
     </div>
   );
 };
 
-export default CreateEditEmailTemplatePage;
+export default EmailComposerPage;

@@ -71,7 +71,10 @@ const UserNav = () => {
             <Link to="/creator/forms">Manage Forms</Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
-            <Link to="/creator/emails">Manage Email Templates</Link> {/* New link */}
+            <Link to="/creator/emails">Manage Email Templates</Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link to="/creator/emails/compose">New Email Template</Link> {/* New direct link to composer */}
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />

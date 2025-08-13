@@ -107,7 +107,7 @@ export const EmailTemplatesTable = ({ emailTemplates, onUpdateStatus, onDelete, 
                 <DropdownMenuContent align="end">
                   <DropdownMenuLabel>Actions</DropdownMenuLabel>
                   <DropdownMenuItem asChild>
-                    <Link to={`/creator/emails/${template.id}/edit`}>Edit Template</Link>
+                    <Link to={`/creator/emails/compose/${template.id}`}>Edit Template</Link> {/* Link to the new composer page for editing */}
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => onPreview(template)}>
                     Preview
