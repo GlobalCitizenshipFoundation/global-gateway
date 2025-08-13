@@ -177,6 +177,7 @@ const WorkflowBuilderPage = () => {
             <ResizablePanel defaultSize={35} minSize={25}>
               <WorkflowStagePropertiesPanel
                 stage={selectedStage}
+                allStages={stages}
                 forms={forms}
                 emailTemplates={emailTemplates}
                 onSave={handleSaveStage}

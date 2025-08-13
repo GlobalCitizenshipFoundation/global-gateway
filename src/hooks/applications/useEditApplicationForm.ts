@@ -55,7 +55,7 @@ export const useEditApplicationForm = () => {
       if (!applicationId || !user) { setLoading(false); return; }
       setLoading(true);
 
-      const { data: appData, error: appError } = await supabase.from('applications').select('*').eq('id', applicationId).single();
+      const { data: appData, error: appError } = await supabase.from('applications').select('id, program_id, stage_id').eq('id', applicationId).single();
       if (appError || !appData) { showError("Could not load application."); setLoading(false); return; }
       setApplication(appData as Application);
 
@@ -63,9 +63,35 @@ export const useEditApplicationForm = () => {
       if (programError || !programData) { showError("Could not load program details."); setLoading(false); return; }
       setProgram({ ...programData, deadline: new Date(programData.deadline) } as Program);
 
-      const formId = programData.form_id;
-      if (!formId) { showError("No application form found for this program."); setLoading(false); return; }
+      const { data: currentStageData, error: currentStageError } = await supabase.from('program_stages').select('step_type, description').eq('id', appData.stage_id).single();
+      if (currentStageError || !currentStageData || currentStageData.step_type !== 'resubmission') {
+        showError("This application is not in a valid resubmission stage.");
+        setLoading(false);
+        return;
+      }
 
+      let targetFormId: string | null = null;
+      try {
+        const config = JSON.parse(currentStageData.description || '{}');
+        const targetOrder = config.resubmission_for_stage_order;
+        if (typeof targetOrder !== 'number') throw new Error("Resubmission target order not found.");
+
+        const { data: targetStageData, error: targetStageError } = await supabase.from('program_stages').select('form_id').eq('program_id', appData.program_id).eq('order', targetOrder).single();
+        if (targetStageError || !targetStageData) throw new Error("Could not find the original form stage.");
+        targetFormId = targetStageData.form_id;
+      } catch (e: any) {
+        showError(e.message || "Error processing resubmission stage config.");
+        setLoading(false);
+        return;
+      }
+
+      if (!targetFormId) {
+        showError("The original form for resubmission could not be identified.");
+        setLoading(false);
+        return;
+      }
+
+      const formId = targetFormId;
       const { data: appFormData, error: appFormError } = await supabase.from('forms').select('*').eq('id', formId).single();
       if (appFormError) { showError("Could not load form details."); setLoading(false); return; }
       setApplicationForm(appFormData as FormType);

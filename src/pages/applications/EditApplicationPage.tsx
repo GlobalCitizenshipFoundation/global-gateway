@@ -58,24 +58,10 @@ const EditApplicationPage = () => {
       }
     }
 
-    const { data: stages, error: stagesError } = await supabase.from('program_stages').select('id, order').eq('program_id', program.id).order('order', { ascending: true });
-    if (stagesError || !stages) {
-      showError("Could not find workflow to advance stage.");
-      showSuccess("Application resubmitted successfully!");
-      navigate('/dashboard');
-      setSubmitting(false);
-      return;
-    }
-
-    const currentStageIndex = stages.findIndex(s => s.id === application.stage_id);
-    const nextStage = stages[currentStageIndex + 1];
-
-    if (nextStage) {
-      const { error: updateAppError } = await supabase.from('applications').update({ stage_id: nextStage.id, submitted_date: new Date().toISOString() }).eq('id', application.id);
-      if (updateAppError) showError(`Resubmission saved, but failed to advance stage: ${updateAppError.message}`);
-      else showSuccess("Application resubmitted and advanced successfully!");
+    const { error: updateAppError } = await supabase.from('applications').update({ submitted_date: new Date().toISOString() }).eq('id', application.id);
+    if (updateAppError) {
+      showError(`Failed to update submission timestamp: ${updateAppError.message}`);
     } else {
-      await supabase.from('applications').update({ submitted_date: new Date().toISOString() }).eq('id', application.id);
       showSuccess("Application resubmitted successfully!");
     }
 

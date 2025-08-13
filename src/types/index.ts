@@ -32,8 +32,10 @@ export type ProgramStage = {
   name: string;
   order: number;
   created_at: string;
-  description: string | null;
   step_type: 'form' | 'screening' | 'review' | 'resubmission' | 'decision' | 'email' | 'scheduling' | 'status';
+  description: string | null;
+  form_id: string | null;
+  email_template_id: string | null;
 };
 
 export type Application = {

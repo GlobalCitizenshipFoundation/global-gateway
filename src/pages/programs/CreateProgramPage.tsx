@@ -244,7 +244,7 @@ const CreateProgramPage = () => {
       if (values.workflowTemplateId) {
         const { data: stepsToCopy, error: stepsError } = await supabase
           .from('workflow_steps')
-          .select('name, order_index')
+          .select('name, order_index, step_type, description, form_id, email_template_id')
           .eq('workflow_template_id', values.workflowTemplateId)
           .order('order_index', { ascending: true });
 
@@ -255,6 +255,10 @@ const CreateProgramPage = () => {
             program_id: programData.id,
             name: step.name,
             order: step.order_index,
+            step_type: step.step_type,
+            description: step.description,
+            form_id: step.form_id,
+            email_template_id: step.email_template_id,
           }));
 
           const { error: insertStagesError } = await supabase

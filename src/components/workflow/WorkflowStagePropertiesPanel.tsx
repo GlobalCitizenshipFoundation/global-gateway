@@ -33,20 +33,25 @@ const editWorkflowStageSchema = z.object({
   status_message: z.string().optional(),
   status_tag: z.string().optional(),
   status_custom_tag: z.string().optional(),
+  resubmission_for_stage_order: z.number().nullable().optional(),
 }).refine(data => {
   if (data.step_type === 'status' && data.status_tag === 'Custom' && !data.status_custom_tag) {
     return false;
   }
+  if (data.step_type === 'resubmission' && (data.resubmission_for_stage_order === null || data.resubmission_for_stage_order === undefined)) {
+    return false;
+  }
   return true;
 }, {
-  message: "Custom tag text is required.",
-  path: ["status_custom_tag"],
+  message: "A target form stage must be selected for resubmission.",
+  path: ["resubmission_for_stage_order"],
 });
 
 type EditWorkflowStageValues = z.infer<typeof editWorkflowStageSchema>;
 
 interface WorkflowStagePropertiesPanelProps {
   stage: WorkflowStage;
+  allStages: WorkflowStage[];
   forms: FormType[];
   emailTemplates: EmailTemplate[];
   onSave: (stageId: string, values: Partial<WorkflowStage>) => void;
@@ -55,6 +60,7 @@ interface WorkflowStagePropertiesPanelProps {
 
 export const WorkflowStagePropertiesPanel = ({
   stage,
+  allStages,
   forms,
   emailTemplates,
   onSave,
@@ -71,19 +77,17 @@ export const WorkflowStagePropertiesPanel = ({
       let status_message: string | undefined = undefined;
       let status_tag: string | undefined = undefined;
       let status_custom_tag: string | undefined = undefined;
+      let resubmission_for_stage_order: number | undefined | null = undefined;
       let standard_description = stage.description || '';
 
       if (stage.step_type === 'decision' && stage.description) {
         try {
           const config = JSON.parse(stage.description);
           if (Array.isArray(config.outcomes)) {
-            decision_options = config.outcomes.map((o: any) => ({
-              name: o.name || '',
-              email_template_id: o.email_template_id || null
-            }));
+            decision_options = config.outcomes.map((o: any) => ({ name: o.name || '', email_template_id: o.email_template_id || null }));
             standard_description = '';
           }
-        } catch (e) { /* Not valid JSON, treat as standard description */ }
+        } catch (e) { /* Not valid JSON */ }
       } else if (stage.step_type === 'status' && stage.description) {
         try {
           const config = JSON.parse(stage.description);
@@ -95,6 +99,12 @@ export const WorkflowStagePropertiesPanel = ({
           status_tag = 'Info';
         }
         standard_description = '';
+      } else if (stage.step_type === 'resubmission' && stage.description) {
+        try {
+          const config = JSON.parse(stage.description);
+          resubmission_for_stage_order = config.resubmission_for_stage_order;
+          standard_description = '';
+        } catch (e) { /* Not valid JSON */ }
       }
 
       form.reset({
@@ -107,6 +117,7 @@ export const WorkflowStagePropertiesPanel = ({
         status_message: status_message || '',
         status_tag: status_tag || 'Info',
         status_custom_tag: status_custom_tag || '',
+        resubmission_for_stage_order: resubmission_for_stage_order,
       });
     }
   }, [stage, form]);
@@ -126,6 +137,8 @@ export const WorkflowStagePropertiesPanel = ({
         statusConfig.custom_tag = values.status_custom_tag || '';
       }
       descriptionPayload = JSON.stringify(statusConfig);
+    } else if (values.step_type === 'resubmission') {
+      descriptionPayload = JSON.stringify({ resubmission_for_stage_order: values.resubmission_for_stage_order });
     }
 
     const finalValues: Partial<WorkflowStage> = {
@@ -193,6 +206,38 @@ export const WorkflowStagePropertiesPanel = ({
               </FormItem>
             )}
           />
+
+          {selectedStageType === 'resubmission' && (
+            <FormFieldComponent
+              control={form.control}
+              name="resubmission_for_stage_order"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Form to Resubmit</FormLabel>
+                  <Select onValueChange={(val) => field.onChange(val ? parseInt(val) : null)} value={String(field.value || '')}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a previous form stage" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {allStages
+                        .filter(s => s.step_type === 'form' && s.order_index < stage.order_index)
+                        .map(formStage => (
+                          <SelectItem key={formStage.id} value={String(formStage.order_index)}>
+                            {formStage.name} (Stage {formStage.order_index})
+                          </SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
+                  <FormDescription>
+                    The applicant will be asked to edit and resubmit the form from this stage.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
 
           {selectedStageType === 'decision' && (
             <FormFieldComponent
@@ -269,7 +314,7 @@ export const WorkflowStagePropertiesPanel = ({
             </>
           )}
 
-          {selectedStageType !== 'decision' && selectedStageType !== 'status' && (
+          {selectedStageType !== 'decision' && selectedStageType !== 'status' && selectedStageType !== 'resubmission' && (
             <FormFieldComponent
               control={form.control}
               name="description"
@@ -285,7 +330,7 @@ export const WorkflowStagePropertiesPanel = ({
             />
           )}
 
-          {['form', 'review', 'resubmission'].includes(selectedStageType) && (
+          {['form', 'review'].includes(selectedStageType) && (
             <FormFieldComponent
               control={form.control}
               name="form_id"
