@@ -14,6 +14,7 @@ import { useSession } from "@/contexts/auth/SessionContext";
 import { supabase } from "@/integrations/supabase/client";
 import { showError, showSuccess } from "@/utils/toast";
 
+const REVIEWER_ROLES = ['reviewer', 'lead_reviewer', 'admin', 'super_admin'];
 const CREATOR_ROLES = ['creator', 'admin', 'super_admin'];
 const ADMIN_ROLES = ['admin', 'super_admin'];
 
@@ -37,6 +38,7 @@ const UserNav = () => {
   const avatarUrl = user?.user_metadata?.avatar_url;
 
   const fullName = [firstName, middleName, lastName].filter(Boolean).join(' ').trim();
+  const canAccessReviewerTools = profile && REVIEWER_ROLES.includes(profile.role);
   const canAccessCreatorTools = profile && CREATOR_ROLES.includes(profile.role);
   const canAccessAdminTools = profile && ADMIN_ROLES.includes(profile.role);
 
@@ -66,6 +68,18 @@ const UserNav = () => {
           </DropdownMenuItem>
         </DropdownMenuGroup>
         
+        {canAccessReviewerTools && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuGroup>
+              <DropdownMenuLabel>Reviewer</DropdownMenuLabel>
+              <DropdownMenuItem asChild>
+                <Link to="/reviewer/dashboard">Reviewer Dashboard</Link>
+              </DropdownMenuItem>
+            </DropdownMenuGroup>
+          </>
+        )}
+
         {canAccessCreatorTools && (
           <>
             <DropdownMenuSeparator />

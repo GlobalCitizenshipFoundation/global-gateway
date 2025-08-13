@@ -176,4 +176,12 @@ export type ApplicationAssignment = {
     avatar_url: string | null;
     email: string | null;
   } | null;
+  applications?: {
+    id: string;
+    full_name: string | null;
+    submitted_date: string;
+    program_id: string;
+    programs: { title: string } | null;
+    program_stages: { name: string } | null;
+  } | null;
 };

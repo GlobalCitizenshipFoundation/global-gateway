@@ -18,6 +18,7 @@ import { SessionContextProvider } from "./contexts/auth/SessionContext";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import CreatorProtectedRoute from "./components/auth/CreatorProtectedRoute";
 import AdminProtectedRoute from "./components/auth/AdminProtectedRoute";
+import ReviewerProtectedRoute from "./components/auth/ReviewerProtectedRoute";
 import ManageWorkflowPage from "./pages/workflow/ManageWorkflowPage";
 import PipelineViewPage from "./pages/workflow/PipelineViewPage";
 import FormBuilderPage from "./pages/forms/FormBuilderPage";
@@ -29,6 +30,7 @@ import UserManagementPage from "./pages/admin/UserManagementPage";
 import { ThemeProvider } from "next-themes";
 import WorkflowManagementPage from "./pages/workflow/WorkflowManagementPage";
 import WorkflowBuilderPage from "./pages/workflow/WorkflowBuilderPage";
+import ReviewerDashboardPage from "@/pages/reviewer/ReviewerDashboardPage";
 
 const queryClient = new QueryClient();
 
@@ -55,6 +57,10 @@ const App = () => (
                   <Route path="/dashboard" element={<DashboardPage />} />
                   <Route path="/profile" element={<ProfilePage />} />
                   
+                  <Route element={<ReviewerProtectedRoute />}>
+                    <Route path="/reviewer/dashboard" element={<ReviewerDashboardPage />} />
+                  </Route>
+
                   <Route element={<CreatorProtectedRoute />}>
                     <Route path="/creator/dashboard" element={<CreatorDashboardPage />} />
                     <Route path="/creator/new-program" element={<CreateProgramPage />} />
