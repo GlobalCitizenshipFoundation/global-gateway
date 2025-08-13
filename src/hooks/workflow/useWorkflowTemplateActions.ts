@@ -153,7 +153,7 @@ export const useWorkflowTemplateActions = ({ setTemplates, fetchTemplates }: Use
     return true;
   };
 
-  const handleUpdateStageOrder = async (updates: { id: string; order_index: number; workflow_template_id: string }[]) => {
+  const handleUpdateStageOrder = async (updates: WorkflowStage[]) => {
     if (!user) return;
     const updatesWithMetadata = updates.map(u => ({ ...u, last_edited_by_user_id: user.id, last_edited_at: new Date().toISOString() }));
     const { error } = await supabase.from('workflow_steps').upsert(updatesWithMetadata);
