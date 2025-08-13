@@ -155,6 +155,11 @@ export const WorkflowStagePropertiesPanel = ({
   const selectedStageType = form.watch("step_type");
   const selectedStatusTag = form.watch("status_tag");
 
+  const currentStageIndex = allStages.findIndex(s => s.id === stage.id);
+  const availableResubmissionStages = allStages.filter((s, index) =>
+    s.step_type === 'form' && index < currentStageIndex
+  );
+
   return (
     <div className="p-6 h-full overflow-y-auto bg-background border-l">
       <div className="flex justify-between items-center mb-6">
@@ -221,13 +226,11 @@ export const WorkflowStagePropertiesPanel = ({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {allStages
-                        .filter(s => s.step_type === 'form' && s.order_index < stage.order_index)
-                        .map(formStage => (
-                          <SelectItem key={formStage.id} value={String(formStage.order_index)}>
-                            {formStage.name} (Stage {formStage.order_index})
-                          </SelectItem>
-                        ))}
+                      {availableResubmissionStages.map((formStage, index) => (
+                        <SelectItem key={formStage.id} value={String(formStage.order_index)}>
+                          {formStage.name} (Current Stage {index + 1})
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                   <FormDescription>
