@@ -4,11 +4,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { useSession } from '@/contexts/SessionContext';
 import { Navigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { useTheme } from 'next-themes'; // Import useTheme
 
 const LoginPage = () => {
   const { session } = useSession();
-  const { theme } = useTheme(); // Get the current theme
 
   if (session) {
     return <Navigate to="/" />;
@@ -28,7 +26,7 @@ const LoginPage = () => {
             supabaseClient={supabase}
             appearance={{ theme: ThemeSupa }}
             providers={[]}
-            theme={theme === 'dark' ? 'dark' : 'light'} // Dynamically set theme
+            theme="light"
             view="sign_in"
             showLinks={true}
             redirectTo={`${window.location.origin}/`}
