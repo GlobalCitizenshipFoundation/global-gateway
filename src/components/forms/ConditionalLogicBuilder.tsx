@@ -32,6 +32,7 @@ const fieldTypeOperators: Record<FormField['field_type'], Array<DisplayRule['ope
   radio: ['equals', 'not_equals', 'is_empty', 'is_not_empty'],
   checkbox: ['equals', 'not_equals', 'is_empty', 'is_not_empty'],
   richtext: ['equals', 'not_equals', 'contains', 'not_contains', 'is_empty', 'is_not_empty'],
+  rating: ['equals', 'not_equals', 'is_empty', 'is_not_empty'], // Added for rating field type
 };
 
 const operatorLabels: Record<DisplayRule['operator'], string> = {
@@ -172,6 +173,7 @@ const ConditionalLogicBuilder = ({
           </Popover>
         );
       case 'number':
+      case 'rating': // Rating fields can also be compared numerically
         return (
           <Input
             type="number"

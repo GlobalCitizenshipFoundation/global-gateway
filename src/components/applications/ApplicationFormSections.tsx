@@ -36,7 +36,7 @@ const ApplicationFormSections = ({
           <Card key={section.id} className="mb-6">
             <CardHeader>
               <div className="flex items-center gap-2">
-                <CardTitle className="text-xl">{section.name}</CardTitle>
+                <CardTitle className="text-2xl font-bold">{section.name}</CardTitle> {/* Adjusted typography */}
                 {hasTooltip && (
                   <Tooltip>
                     <TooltipTrigger asChild>
@@ -66,7 +66,7 @@ const ApplicationFormSections = ({
       {uncategorizedFields.length > 0 && (
         <Card className="mb-6">
           <CardHeader>
-            <CardTitle className="text-xl">Additional Information</CardTitle>
+            <CardTitle className="text-2xl font-bold">Additional Information</CardTitle> {/* Adjusted typography */}
             <CardDescription>Fields not assigned to a specific section.</CardDescription>
           </CardHeader>
           <CardContent className="grid gap-6">

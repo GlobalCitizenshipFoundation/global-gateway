@@ -1,7 +1,7 @@
 import { useCallback, useRef } from 'react';
 import { useSession } from '@/contexts/auth/SessionContext';
 import { showError, showSuccess } from '@/utils/toast';
-import { FormField, DisplayRule, Form as FormType } from '@/types';
+import { FormField, DisplayRule, Form as FormType, FormSection } from '@/types'; // Import FormSection
 import { useFormBuilderState } from '@/hooks/forms/useFormBuilderState';
 import { useFormBuilderActions } from '@/hooks/forms/useFormBuilderActions'; // Import the actions hook
 
@@ -59,6 +59,7 @@ export const useFormBuilderHandlers = ({
   const {
     handleAddSection: performAddSection,
     handleDeleteSection: performDeleteSection,
+    handleSaveEditedSection: performSaveEditedSection, // Destructure new action
     handleAddField: performAddField,
     handleDeleteField: performDeleteField,
     handleToggleRequired: performToggleRequired,
@@ -136,6 +137,18 @@ export const useFormBuilderHandlers = ({
       triggerAutoSave();
     }
   }, [user, setHasUnsavedChanges, setFormLastEditedAt, setFormLastEditedByUserId, performDeleteSection, triggerAutoSave]);
+
+  const handleSaveEditedSection = useCallback(async (sectionId: string, values: { name: string; description: string | null; tooltip: string | null; }) => {
+    if (!user) return;
+    const success = await performSaveEditedSection(sectionId, values);
+    if (success) {
+      showSuccess("Section updated successfully!");
+      setHasUnsavedChanges(true);
+      setFormLastEditedAt(new Date().toISOString());
+      setFormLastEditedByUserId(user.id);
+      triggerAutoSave();
+    }
+  }, [user, setHasUnsavedChanges, setFormLastEditedAt, setFormLastEditedByUserId, performSaveEditedSection, triggerAutoSave]);
 
   const handleAddField = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
@@ -317,6 +330,7 @@ export const useFormBuilderHandlers = ({
     triggerAutoSave,
     handleAddSection,
     handleDeleteSection,
+    handleSaveEditedSection, // Expose new handler
     handleAddField,
     handleDeleteField,
     handleToggleRequired,

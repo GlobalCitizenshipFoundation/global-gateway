@@ -18,7 +18,8 @@ import { FormSectionsList } from "@/components/forms/form-builder/FormSectionsLi
 import { UncategorizedFieldsList } from "@/components/forms/form-builder/UncategorizedFieldsList";
 import { FormFieldItem } from "@/components/forms/form-builder/FormFieldItem";
 import { FieldPropertiesPanel } from "@/components/forms/form-builder/FieldPropertiesPanel";
-import { FormField } from "@/types";
+import { SectionPropertiesPanel } from "@/components/forms/form-builder/SectionPropertiesPanel"; // Import new panel
+import { FormField, FormSection } from "@/types";
 
 const FormBuilderPage = () => {
   const { formId } = useParams<{ formId: string }>();
@@ -48,6 +49,7 @@ const FormBuilderPage = () => {
   } = state;
 
   const [selectedField, setSelectedField] = useState<FormField | null>(null);
+  const [selectedSection, setSelectedSection] = useState<FormSection | null>(null); // New state for selected section
 
   // Initialize actions from the dedicated hook
   const formBuilderActions = useFormBuilderActions({
@@ -139,7 +141,7 @@ const FormBuilderPage = () => {
 
       <DndContext sensors={combinedSensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd} onDragStart={handleDragStart}>
         <ResizablePanelGroup direction="horizontal" className="min-h-[600px] border rounded-lg mt-8">
-          <ResizablePanel defaultSize={selectedField ? 65 : 100} minSize={30}>
+          <ResizablePanel defaultSize={selectedField || selectedSection ? 65 : 100} minSize={30}>
             <div className="p-6 h-full overflow-y-auto">
               <FormSectionsList
                 sections={sections}
@@ -153,7 +155,8 @@ const FormBuilderPage = () => {
                 onEditField={(field) => setSelectedField(field)}
                 onUpdateLabel={handlers.handleUpdateFieldLabel}
                 onSelectField={setSelectedField}
-                onQuickAddField={handleQuickAddField} // Pass the new handler
+                onQuickAddField={handleQuickAddField}
+                onSelectSection={setSelectedSection} // Pass new handler
               />
 
               <UncategorizedFieldsList
@@ -200,18 +203,27 @@ const FormBuilderPage = () => {
               </div>
             </div>
           </ResizablePanel>
-          {selectedField && (
+          {(selectedField || selectedSection) && ( // Conditionally render panel
             <>
               <ResizableHandle withHandle />
               <ResizablePanel defaultSize={35} minSize={25}>
-                <FieldPropertiesPanel
-                  field={selectedField}
-                  sections={sections}
-                  allFields={fields}
-                  onSave={handlers.handleSaveEditedField}
-                  onSaveLogic={handlers.handleSaveLogic}
-                  onClose={() => setSelectedField(null)}
-                />
+                {selectedField && (
+                  <FieldPropertiesPanel
+                    field={selectedField}
+                    sections={sections}
+                    allFields={fields}
+                    onSave={handlers.handleSaveEditedField}
+                    onSaveLogic={handlers.handleSaveLogic}
+                    onClose={() => setSelectedField(null)}
+                  />
+                )}
+                {selectedSection && (
+                  <SectionPropertiesPanel
+                    section={selectedSection}
+                    onSave={handlers.handleSaveEditedSection}
+                    onClose={() => setSelectedSection(null)}
+                  />
+                )}
               </ResizablePanel>
             </>
           )}

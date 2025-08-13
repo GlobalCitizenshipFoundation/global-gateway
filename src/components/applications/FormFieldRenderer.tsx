@@ -47,7 +47,7 @@ const FormFieldRenderer = ({ field, submitting }: FormFieldRendererProps) => {
       render={({ field: formHookField }) => (
         <FormItem className="grid gap-2">
           <div className="flex items-center gap-2">
-            <FormLabel htmlFor={field.id}>
+            <FormLabel htmlFor={field.id} className="text-lg font-semibold"> {/* Adjusted typography */}
               {field.label}
               {field.is_required && <span className="text-destructive ml-1">*</span>}
             </FormLabel>

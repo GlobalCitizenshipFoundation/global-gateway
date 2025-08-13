@@ -5,11 +5,11 @@ import { FormField, FormSection } from '@/types';
 import { FormProvider, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import ApplicationFormSections from '@/components/applications/ApplicationFormSections';
-import { ApplicantInfoCard } from '@/components/applications/ApplicantInfoCard';
+import ApplicationFormSections from '@/components/application/ApplicationFormSections';
+import { ApplicantInfoCard } from '@/components/application/ApplicantInfoCard';
 import DOMPurify from 'dompurify';
-import { TooltipProvider } from '@/components/ui/tooltip';
-import { shouldFieldBeDisplayed } from '@/utils/forms/formFieldUtils';
+import { TooltipProvider } from '@/components/ui/tooltip'; // Required for tooltips in preview
+import { shouldFieldBeDisplayed } from '@/utils/forms/formFieldUtils'; // Import the missing utility
 
 interface FormPreviewDialogProps {
   isOpen: boolean;
@@ -20,9 +20,12 @@ interface FormPreviewDialogProps {
   formFields: FormField[];
 }
 
+// Define a dynamic schema for the preview form, making all fields optional
+// This is because we are only previewing, not validating submission.
 const createPreviewSchema = (fields: FormField[]) => {
   const schemaFields: { [key: string]: z.ZodTypeAny } = {};
   fields.forEach(field => {
+    // For preview, all fields are optional and can be any type
     schemaFields[field.id] = z.any().optional().nullable();
   });
   return z.object(schemaFields);
@@ -38,26 +41,30 @@ const FormPreviewDialog = ({
 }: FormPreviewDialogProps) => {
   const [currentResponses, setCurrentResponses] = useState<Record<string, any>>({});
 
+  // Create a dynamic form instance for the preview, using a relaxed schema
   const previewSchema = createPreviewSchema(formFields);
   const form = useForm<Record<string, any>>({
     resolver: zodResolver(previewSchema),
-    defaultValues: {},
-    mode: "onChange",
+    defaultValues: {}, // No default values needed for preview
+    mode: "onChange", // Update responses on change for conditional logic
   });
 
   const { watch, setValue } = form;
 
+  // Watch all fields to update currentResponses for conditional logic evaluation
   useEffect(() => {
     const subscription = watch((value, { name, type }) => {
       if (name) {
         setCurrentResponses(prev => ({ ...prev, [name]: value[name] }));
       } else {
+        // If no specific name, it means all fields changed (e.g., on initial load)
         setCurrentResponses(value);
       }
     });
     return () => subscription.unsubscribe();
   }, [watch]);
 
+  // Initialize responses when formFields change (e.g., when dialog opens with new form data)
   useEffect(() => {
     const initialResponses: Record<string, any> = {};
     formFields.forEach(field => {
@@ -65,14 +72,17 @@ const FormPreviewDialog = ({
         initialResponses[field.id] = [];
       } else if (field.field_type === 'number') {
         initialResponses[field.id] = undefined;
+      } else if (field.field_type === 'rating') {
+        initialResponses[field.id] = field.rating_min_value ?? 1;
       } else {
         initialResponses[field.id] = '';
       }
     });
     form.reset(initialResponses);
     setCurrentResponses(initialResponses);
-  }, [formFields, form]);
+  }, [formFields, form]); // Depend on formFields to re-initialize when structure changes
 
+  // Filter fields based on conditional logic for display in preview
   const displayedFormFields = formFields.filter(field =>
     shouldFieldBeDisplayed(field, currentResponses, formFields)
   );
@@ -94,15 +104,16 @@ const FormPreviewDialog = ({
           </DialogDescription>
         </DialogHeader>
         <div className="py-4">
-          <TooltipProvider>
+          <TooltipProvider> {/* Wrap with TooltipProvider for tooltips to work */}
             <FormProvider {...form}>
               <form className="grid gap-6">
+                {/* Applicant Info Card is not dynamic, so it can be hardcoded for preview */}
                 <ApplicantInfoCard fullName="Preview Applicant" email="preview@example.com" />
 
                 <ApplicationFormSections
                   formSections={formSections}
                   displayedFormFields={displayedFormFields}
-                  submitting={false}
+                  submitting={false} // Always false for preview
                 />
 
                 {formFields.length === 0 && (

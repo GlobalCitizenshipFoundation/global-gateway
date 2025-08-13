@@ -6,7 +6,7 @@ import { useSession } from '@/contexts/auth/SessionContext';
 interface UseFormBuilderActionsProps {
   formId: string | undefined;
   setSections: React.Dispatch<React.SetStateAction<FormSection[]>>;
-  setFields: React.Dispatch<React.SetStateAction<FormField[]>>;
+  setFields: React.Dispatch<React.SetStateAction<FormField[]>>; // Fixed: React.ReactAction to React.SetStateAction
   fetchData: () => Promise<void>;
 }
 
@@ -78,6 +78,38 @@ export const useFormBuilderActions = ({
     }
   };
 
+  const handleSaveEditedSection = async (sectionId: string, values: { name: string; description: string | null; tooltip: string | null; }) => {
+    if (!user) return false;
+    const now = new Date().toISOString();
+
+    setSections((prevSections: FormSection[]) => // Explicitly type prevSections
+      prevSections.map((s: FormSection) => // Explicitly type s
+        s.id === sectionId
+          ? { ...s, name: values.name, description: values.description, tooltip: values.tooltip, last_edited_by_user_id: user.id, last_edited_at: now }
+          : s
+      )
+    );
+
+    const { error } = await supabase
+      .from('form_sections')
+      .update({
+        name: values.name,
+        description: values.description,
+        tooltip: values.tooltip,
+        last_edited_by_user_id: user.id,
+        last_edited_at: now,
+      })
+      .eq('id', sectionId);
+
+    if (error) {
+      showError(`Failed to update section: ${error.message}. Reverting.`);
+      fetchData(); // Re-fetch to revert optimistic update
+      return false;
+    } else {
+      return true;
+    }
+  };
+
   const handleAddField = async (label: string, type: FormField['field_type'], options: string, sectionId: string | null, description: string | null, tooltip: string | null, placeholder: string | null) => {
     if (!label.trim() || !formId || !user) return null;
 
@@ -135,14 +167,14 @@ export const useFormBuilderActions = ({
       showError(`Failed to add field: ${error.message}`);
       return null;
     } else if (data) {
-      setFields(prev => [...prev, data as FormField]);
+      setFields((prev: FormField[]) => [...prev, data as FormField]); // Explicitly type prev
       return data as FormField;
     }
     return null;
   };
 
   const handleDeleteField = async (fieldId: string) => {
-    setFields(prev => prev.filter(f => f.id !== fieldId));
+    setFields((prev: FormField[]) => prev.filter((f: FormField) => f.id !== fieldId)); // Explicitly type prev and f
     const { error } = await supabase.from('form_fields').delete().eq('id', fieldId);
     if (error) {
       showError(`Failed to delete field: ${error.message}. Reverting.`);
@@ -155,11 +187,11 @@ export const useFormBuilderActions = ({
 
   const handleToggleRequired = async (fieldId: string, isRequired: boolean) => {
     if (!user) return false;
-    setFields(prev => prev.map(f => f.id === fieldId ? { ...f, is_required: isRequired } : f));
+    setFields((prev: FormField[]) => prev.map((f: FormField) => f.id === fieldId ? { ...f, is_required: isRequired } : f)); // Explicitly type prev and f
     const { error } = await supabase.from('form_fields').update({ is_required: isRequired, last_edited_by_user_id: user.id, last_edited_at: new Date().toISOString() }).eq('id', fieldId);
     if (error) {
       showError(`Failed to update field: ${error.message}. Reverting.`);
-      setFields(prev => prev.map(f => f.id === fieldId ? { ...f, is_required: !isRequired } : f));
+      setFields((prev: FormField[]) => prev.map((f: FormField) => f.id === fieldId ? { ...f, is_required: !isRequired } : f)); // Explicitly type prev and f
       return false;
     } else {
       return true;
@@ -168,8 +200,8 @@ export const useFormBuilderActions = ({
 
   const handleSaveLogic = async (fieldId: string, rules: DisplayRule[]) => {
     if (!user) return false;
-    setFields(prevFields =>
-      prevFields.map(f => (f.id === fieldId ? { ...f, display_rules: rules } : f))
+    setFields((prevFields: FormField[]) => // Explicitly type prevFields
+      prevFields.map((f: FormField) => (f.id === fieldId ? { ...f, display_rules: rules } : f)) // Explicitly type f
     );
     const { error } = await supabase
       .from('form_fields')
@@ -250,8 +282,8 @@ export const useFormBuilderActions = ({
       updatePayload.rating_max_label = null;
     }
 
-    setFields(prevFields =>
-      prevFields.map(f =>
+    setFields((prevFields: FormField[]) => // Explicitly type prevFields
+      prevFields.map((f: FormField) => // Explicitly type f
         f.id === fieldId
           ? { ...f, ...(updatePayload as FormField) } // Merge all updated properties
           : f
@@ -275,8 +307,8 @@ export const useFormBuilderActions = ({
 
   const handleUpdateFieldLabel = async (fieldId: string, newLabel: string) => {
     if (!user) return false;
-    setFields(prevFields =>
-      prevFields.map(f => (f.id === fieldId ? { ...f, label: newLabel } : f))
+    setFields((prevFields: FormField[]) => // Explicitly type prevFields
+      prevFields.map((f: FormField) => (f.id === fieldId ? { ...f, label: newLabel } : f)) // Explicitly type f
     );
     const { error } = await supabase
       .from('form_fields')
@@ -426,6 +458,7 @@ export const useFormBuilderActions = ({
   return {
     handleAddSection,
     handleDeleteSection,
+    handleSaveEditedSection,
     handleAddField,
     handleDeleteField,
     handleToggleRequired,
