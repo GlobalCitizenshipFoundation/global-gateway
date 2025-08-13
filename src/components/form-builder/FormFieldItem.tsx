@@ -20,6 +20,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Input } from '@/components/ui/input'; // Import Input for inline editing
+import { cn } from '@/lib/utils';
 
 interface FormFieldItemProps {
   field: FormField;
@@ -81,7 +82,10 @@ export const FormFieldItem = ({ field, onDelete, onToggleRequired, onSelectField
     <li
       ref={setNodeRef}
       style={style}
-      className="flex items-center justify-between p-3 bg-secondary rounded-md gap-4"
+      className={cn(
+        "flex items-center justify-between p-3 bg-secondary rounded-md gap-4",
+        hasLogic && "border-l-4 border-blue-500"
+      )}
     >
       <div className="flex items-center gap-2 flex-grow">
         <Button variant="ghost" size="icon" className="cursor-grab" {...attributes} {...listeners}>
