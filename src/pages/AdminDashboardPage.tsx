@@ -29,6 +29,7 @@ import {
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import UserImpersonationList from "@/components/admin/UserImpersonationList"; // Import the new component
 
 type DeletionRequest = {
   id: string;
@@ -124,11 +125,13 @@ const AdminDashboardPage = () => {
 
   return (
     <>
-      <div className="container py-12">
+      <div className="container py-12 space-y-8">
+        <UserImpersonationList /> {/* New: User Impersonation List */}
+
         <Card>
           <CardHeader>
-            <CardTitle>Admin Dashboard</CardTitle>
-            <CardDescription>Manage account deletion requests.</CardDescription>
+            <CardTitle>Account Deletion Requests</CardTitle>
+            <CardDescription>Manage user requests for account deletion.</CardDescription>
           </CardHeader>
           <CardContent>
             <Table>

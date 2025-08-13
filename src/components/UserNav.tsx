@@ -14,6 +14,7 @@ import { useSession } from "@/contexts/SessionContext";
 import { supabase } from "@/integrations/supabase/client";
 import { showError, showSuccess } from "@/utils/toast";
 import { Profile } from "@/types";
+import { UserCheck } from "lucide-react"; // Import UserCheck icon
 
 // Move getInitials outside the component to prevent re-creation on every render
 const getInitials = (name: string) => {
@@ -26,7 +27,7 @@ const getInitials = (name: string) => {
 };
 
 const UserNav = () => {
-  const { user, profile } = useSession(); // Get profile from session
+  const { user, profile, impersonatingAsProfile, stopImpersonation } = useSession(); // Get profile and impersonation state
   const navigate = useNavigate();
 
   const handleLogout = async () => {
@@ -39,8 +40,12 @@ const UserNav = () => {
     }
   };
 
-  const fullName = user?.user_metadata?.full_name;
-  const avatarUrl = user?.user_metadata?.avatar_url;
+  const displayProfile = impersonatingAsProfile || profile;
+  const displayFullName = displayProfile?.first_name && displayProfile?.last_name 
+    ? `${displayProfile.first_name} ${displayProfile.last_name}` 
+    : user?.email; // Fallback to email if no name
+
+  const displayAvatarUrl = displayProfile?.avatar_url;
 
   const creatorRoles: Profile['role'][] = ['creator', 'admin', 'super_admin'];
   const adminRoles: Profile['role'][] = ['admin', 'super_admin'];
@@ -50,20 +55,28 @@ const UserNav = () => {
       <DropdownMenuTrigger asChild>
         <div className="relative h-8 w-8 rounded-full cursor-pointer">
           <Avatar className="h-8 w-8">
-            <AvatarImage src={avatarUrl} alt={fullName || 'User'} />
+            <AvatarImage src={displayAvatarUrl || undefined} alt={displayFullName || 'User'} />
             <AvatarFallback>
-              {fullName ? getInitials(fullName) : 'U'}
+              {displayFullName ? getInitials(displayFullName) : 'U'}
             </AvatarFallback>
           </Avatar>
+          {impersonatingAsProfile && (
+            <UserCheck className="absolute -bottom-1 -right-1 h-4 w-4 text-green-500 bg-background rounded-full p-0.5 border border-green-500" />
+          )}
         </div>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-56" align="end" forceMount>
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
-            <p className="text-sm font-medium leading-none">{fullName || 'User'}</p>
+            <p className="text-sm font-medium leading-none">{displayFullName}</p>
             <p className="text-xs leading-none text-muted-foreground">
               {user?.email}
             </p>
+            {impersonatingAsProfile && (
+              <p className="text-xs leading-none text-green-500 flex items-center gap-1 mt-1">
+                <UserCheck className="h-3 w-3" /> Impersonating as {impersonatingAsProfile.role}
+              </p>
+            )}
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
@@ -76,7 +89,7 @@ const UserNav = () => {
           </DropdownMenuItem>
         </DropdownMenuGroup>
         
-        {profile && creatorRoles.includes(profile.role) && (
+        {displayProfile && creatorRoles.includes(displayProfile.role) && (
           <>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
@@ -94,7 +107,7 @@ const UserNav = () => {
           </>
         )}
 
-        {profile && adminRoles.includes(profile.role) && (
+        {displayProfile && adminRoles.includes(displayProfile.role) && (
           <>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
@@ -107,9 +120,15 @@ const UserNav = () => {
         )}
 
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={handleLogout}>
-          Log out
-        </DropdownMenuItem>
+        {impersonatingAsProfile ? (
+          <DropdownMenuItem onClick={stopImpersonation} className="text-red-500 focus:text-red-500">
+            Stop Impersonating
+          </DropdownMenuItem>
+        ) : (
+          <DropdownMenuItem onClick={handleLogout}>
+            Log out
+          </DropdownMenuItem>
+        )}
       </DropdownMenuContent>
     </DropdownMenu>
   );
