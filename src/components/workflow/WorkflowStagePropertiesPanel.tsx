@@ -17,6 +17,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { WorkflowStage, Form as FormType, EmailTemplate } from "@/types";
 import { X } from "lucide-react";
+import { DecisionOptionsInput } from './DecisionOptionsInput';
+import RichTextEditor from '../common/RichTextEditor';
 
 const editWorkflowStageSchema = z.object({
   name: z.string().min(1, { message: "Stage name cannot be empty." }),
@@ -24,6 +26,8 @@ const editWorkflowStageSchema = z.object({
   step_type: z.enum(['form', 'screening', 'review', 'resubmission', 'decision', 'email', 'scheduling', 'status']),
   form_id: z.string().nullable().optional(),
   email_template_id: z.string().nullable().optional(),
+  decision_options: z.array(z.string().min(1, "Outcome cannot be empty.")).optional(),
+  status_message: z.string().optional(),
 });
 
 type EditWorkflowStageValues = z.infer<typeof editWorkflowStageSchema>;
@@ -32,7 +36,7 @@ interface WorkflowStagePropertiesPanelProps {
   stage: WorkflowStage;
   forms: FormType[];
   emailTemplates: EmailTemplate[];
-  onSave: (stageId: string, values: EditWorkflowStageValues) => void;
+  onSave: (stageId: string, values: Partial<WorkflowStage>) => void;
   onClose: () => void;
 }
 
@@ -50,18 +54,53 @@ export const WorkflowStagePropertiesPanel = ({
 
   useEffect(() => {
     if (stage) {
+      let decision_options: string[] | undefined = undefined;
+      let status_message: string | undefined = undefined;
+      let standard_description = stage.description || '';
+
+      if (stage.step_type === 'decision' && stage.description) {
+        try {
+          const config = JSON.parse(stage.description);
+          if (Array.isArray(config.outcomes)) {
+            decision_options = config.outcomes;
+            standard_description = '';
+          }
+        } catch (e) { /* Not valid JSON, treat as standard description */ }
+      } else if (stage.step_type === 'status' && stage.description) {
+        status_message = stage.description;
+        standard_description = '';
+      }
+
       form.reset({
         name: stage.name,
-        description: stage.description || '',
+        description: standard_description,
         step_type: stage.step_type,
         form_id: stage.form_id || null,
         email_template_id: stage.email_template_id || null,
+        decision_options: decision_options || ['Accepted', 'Declined'],
+        status_message: status_message || '',
       });
     }
   }, [stage, form]);
 
   const onSubmit = (values: EditWorkflowStageValues) => {
-    onSave(stage.id, values);
+    let descriptionPayload: string | null = values.description || null;
+
+    if (values.step_type === 'decision') {
+      descriptionPayload = JSON.stringify({ outcomes: values.decision_options || [] });
+    } else if (values.step_type === 'status') {
+      descriptionPayload = values.status_message || null;
+    }
+
+    const finalValues: Partial<WorkflowStage> = {
+      name: values.name,
+      step_type: values.step_type,
+      form_id: values.form_id,
+      email_template_id: values.email_template_id,
+      description: descriptionPayload,
+    };
+
+    onSave(stage.id, finalValues);
   };
 
   const selectedStageType = form.watch("step_type");
@@ -85,19 +124,6 @@ export const WorkflowStagePropertiesPanel = ({
                 <FormLabel>Stage Name</FormLabel>
                 <FormControl>
                   <Input placeholder="e.g., Initial Review" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormFieldComponent
-            control={form.control}
-            name="description"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Description (Optional)</FormLabel>
-                <FormControl>
-                  <Textarea placeholder="Describe the purpose of this stage" {...field} value={field.value || ''} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -130,6 +156,56 @@ export const WorkflowStagePropertiesPanel = ({
               </FormItem>
             )}
           />
+
+          {selectedStageType === 'decision' && (
+            <FormFieldComponent
+              control={form.control}
+              name="decision_options"
+              render={() => (
+                <FormItem>
+                  <FormLabel>Decision Outcomes</FormLabel>
+                  <FormControl>
+                    <DecisionOptionsInput />
+                  </FormControl>
+                  <FormDescription>Define the possible outcomes for this decision stage.</FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
+
+          {selectedStageType === 'status' && (
+            <FormFieldComponent
+              control={form.control}
+              name="status_message"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Status Message</FormLabel>
+                  <FormControl>
+                    <RichTextEditor value={field.value || ''} onChange={field.onChange} />
+                  </FormControl>
+                  <FormDescription>This content will be displayed to the user at this stage.</FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
+
+          {selectedStageType !== 'decision' && selectedStageType !== 'status' && (
+            <FormFieldComponent
+              control={form.control}
+              name="description"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Description (Optional)</FormLabel>
+                  <FormControl>
+                    <Textarea placeholder="Describe the purpose of this stage" {...field} value={field.value || ''} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
 
           {['form', 'review', 'resubmission'].includes(selectedStageType) && (
             <FormFieldComponent
