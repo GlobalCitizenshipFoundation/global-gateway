@@ -1,33 +1,24 @@
 {
   "compilerOptions": {
-    "composite": true,
-    "tsBuildInfoFile": "./node_modules/.tsbuildinfo",
-    "target": "ES2020",
-    "useDefineForClassFields": true,
-    "lib": ["ES2020", "DOM", "DOM.Iterable"],
-    "module": "ESNext",
-    "skipLibCheck": true,
-
-    /* Bundler mode */
-    "moduleResolution": "bundler",
-    "allowImportingTsExtensions": true,
-    "resolveJsonModule": true,
-    "isolatedModules": true,
-    "noEmit": true,
-    "jsx": "react-jsx",
-
-    /* Linting */
-    "strict": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "noFallthroughCasesInSwitch": true,
-
-    /* Path Aliases */
-    "baseUrl": ".",
+    "target": "es2020", // Enables modern JS features like async/await, Map, Set, etc.
+    "lib": ["dom", "dom.iterable", "es2020"], // Provides types for DOM APIs, iterables, and ES2020 features
+    "jsx": "react-jsx", // Configures TypeScript to use the new JSX transform
+    "module": "esnext", // Specifies module code generation for bundlers like Vite
+    "moduleResolution": "bundler", // Recommended module resolution strategy for Vite
+    "allowJs": true, // Allows JavaScript files to be compiled
+    "skipLibCheck": true, // Skips type checking of all declaration files (*.d.ts)
+    "esModuleInterop": true, // Enables compatibility with CommonJS modules
+    "allowSyntheticDefaultImports": true, // Allows default imports from modules with no default export
+    "strict": true, // Enables all strict type-checking options
+    "forceConsistentCasingInFileNames": true, // Ensures consistent casing in file names
+    "noFallthroughCasesInSwitch": true, // Reports errors for fallthrough cases in switch statements
+    "resolveJsonModule": true, // Allows importing .json files
+    "isolatedModules": true, // Ensures each file can be safely transpiled in isolation
+    "noEmit": true, // Prevents TypeScript from emitting output files
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"] // Configures path aliases
     }
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx"],
-  "references": [{ "path": "./tsconfig.node.json" }]
+  "include": ["src"], // Specifies which files to include in the compilation
+  "references": [{ "path": "./tsconfig.node.json" }] // References other tsconfig files
 }
