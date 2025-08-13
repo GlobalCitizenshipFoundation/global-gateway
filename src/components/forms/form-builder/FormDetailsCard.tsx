@@ -38,7 +38,10 @@ export const FormDetailsCard = ({ state }: FormDetailsCardProps) => {
   // useFormBuilderHandlers now directly imports and uses actions internally
   const { triggerAutoSave } = useFormBuilderHandlers({
     state,
-    // Removed performUpdateFormDetails/Status as they are handled internally by useFormBuilderHandlers
+    // The properties 'performUpdateFormDetails' and 'performUpdateFormStatus'
+    // are no longer expected here as useFormBuilderHandlers now accesses
+    // them directly from useFormBuilderActions internally.
+    // These lines were causing the TypeScript error and are now removed.
   });
 
   useEffect(() => {
