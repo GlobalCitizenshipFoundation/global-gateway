@@ -39,9 +39,7 @@ type DeletionRequest = {
   profiles: {
     first_name: string | null;
     last_name: string | null;
-    users: {
-      email: string;
-    } | null;
+    email: string | null; // Email is now directly on profiles
   } | null;
 };
 
@@ -64,7 +62,7 @@ const AdminDashboardPage = () => {
           request_date,
           status,
           admin_notes,
-          profiles ( first_name, last_name, users ( email ) )
+          profiles ( first_name, last_name, email )
         `)
         .order('request_date', { ascending: true });
 
@@ -74,11 +72,9 @@ const AdminDashboardPage = () => {
         const formattedData = data.map(req => {
           const originalProfile = Array.isArray(req.profiles) ? req.profiles[0] : req.profiles;
           
+          // No need for nested 'users' anymore, email is directly on profile
           const correctedProfile = originalProfile ? {
             ...originalProfile,
-            users: (originalProfile.users && Array.isArray(originalProfile.users))
-              ? originalProfile.users[0] || null
-              : null,
           } : null;
 
           return {
@@ -157,7 +153,7 @@ const AdminDashboardPage = () => {
                   <TableRow key={req.id}>
                     <TableCell>
                       <div className="font-medium">{[req.profiles?.first_name, req.profiles?.last_name].filter(Boolean).join(' ') || 'N/A'}</div>
-                      <div className="text-sm text-muted-foreground">{req.profiles?.users?.email}</div>
+                      <div className="text-sm text-muted-foreground">{req.profiles?.email || 'N/A'}</div>
                     </TableCell>
                     <TableCell>{new Date(req.request_date).toLocaleDateString()}</TableCell>
                     <TableCell><Badge variant={req.status === 'pending' ? 'default' : 'secondary'}>{req.status}</Badge></TableCell>

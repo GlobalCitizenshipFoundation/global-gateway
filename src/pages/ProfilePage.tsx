@@ -36,7 +36,7 @@ const ProfilePage = () => {
         setLoading(true);
         const { data, error } = await supabase
           .from('profiles')
-          .select('first_name, middle_name, last_name, role, avatar_url')
+          .select('first_name, middle_name, last_name, role, avatar_url, email') // Fetch email directly
           .eq('id', user.id)
           .single();
 
@@ -48,8 +48,10 @@ const ProfilePage = () => {
           setLastName(data.last_name || '');
           setRole(data.role || 'applicant');
           setAvatarUrl(data.avatar_url || null);
+          setEmail(data.email || user.email || ''); // Use email from profile, fallback to auth.user.email
+        } else {
+          setEmail(user.email || ''); // If no profile yet, use auth.user.email
         }
-        setEmail(user.email || '');
         setLoading(false);
       }
     };
@@ -71,6 +73,7 @@ const ProfilePage = () => {
         middle_name: middleName.trim() || null,
         last_name: lastName.trim() || null,
         updated_at: now,
+        email: email.trim() || null, // Update email in profile as well
       })
       .eq('id', user.id);
 
@@ -82,7 +85,8 @@ const ProfilePage = () => {
         middle_name: middleName.trim() || null,
         last_name: lastName.trim() || null,
         full_name: fullName || null, // Keep full_name in metadata for convenience
-      }
+      },
+      email: email.trim() || undefined, // Allow updating email via auth.updateUser
     });
 
     if (profileError || userUpdateError) {
@@ -206,9 +210,9 @@ const ProfilePage = () => {
 
               <div className="grid gap-2">
                 <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" value={email} disabled />
+                <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} disabled={isSubmitting} />
                 <p className="text-sm text-muted-foreground">
-                  To change your email, please reach out to the admin support.
+                  You can update your email here.
                 </p>
               </div>
 

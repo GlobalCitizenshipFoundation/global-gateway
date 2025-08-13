@@ -35,7 +35,7 @@ export const SessionContextProvider = ({ children }: { children: React.ReactNode
   const fetchProfile = async (userId: string) => {
     const { data: profileData, error: profileError } = await supabase
       .from('profiles')
-      .select('*')
+      .select('*') // Select all columns, including the new 'email'
       .eq('id', userId)
       .single();
     

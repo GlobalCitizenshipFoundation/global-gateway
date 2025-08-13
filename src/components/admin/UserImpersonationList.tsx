@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge";
 // Define a specific type for users displayed in the impersonation list
 type ImpersonationUser = Profile & {
   full_name: string | null;
-  users: { email: string | null } | null;
+  // Removed 'users' nested object, email is now directly on Profile
 };
 
 const UserImpersonationList = () => {
@@ -33,7 +33,7 @@ const UserImpersonationList = () => {
       setLoading(true);
       setError(null);
 
-      // Fetch all profiles and join with auth.users to get email
+      // Fetch all profiles and now directly select email from profiles
       const { data, error } = await supabase
         .from('profiles')
         .select(`
@@ -44,7 +44,7 @@ const UserImpersonationList = () => {
           avatar_url,
           updated_at,
           role,
-          users ( email )
+          email
         `)
         .order('created_at', { ascending: true });
 
@@ -53,13 +53,9 @@ const UserImpersonationList = () => {
         setError(error.message);
       } else if (data) {
         const formattedUsers = data.map(p => {
-          // Ensure 'users' is treated as a single object or null, not an array
-          const userEmailData = (p.users && Array.isArray(p.users)) ? p.users[0] : p.users;
-          
           return {
             ...p,
             full_name: [p.first_name, p.middle_name, p.last_name].filter(Boolean).join(' ').trim(),
-            users: userEmailData,
           };
         });
         setUsers(formattedUsers as ImpersonationUser[]);
@@ -129,7 +125,7 @@ const UserImpersonationList = () => {
               <TableRow key={u.id}>
                 <TableCell>
                   <div className="font-medium">{u.full_name || 'N/A'}</div>
-                  <div className="text-sm text-muted-foreground">{u.users?.email || 'N/A'}</div>
+                  <div className="text-sm text-muted-foreground">{u.email || 'N/A'}</div>
                 </TableCell>
                 <TableCell>
                   <Badge variant="secondary" className="capitalize">{u.role}</Badge>

@@ -119,4 +119,5 @@ export type Profile = {
   avatar_url: string | null;
   updated_at: string;
   role: 'applicant' | 'reviewer' | 'lead_reviewer' | 'creator' | 'admin' | 'super_admin';
+  email: string | null; // Added email directly to profile
 };
