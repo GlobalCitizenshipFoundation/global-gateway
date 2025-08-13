@@ -164,3 +164,16 @@ export type ApplicationReview = {
     avatar_url: string | null;
   } | null;
 };
+
+export type ApplicationAssignment = {
+  id: string;
+  application_id: string;
+  reviewer_id: string;
+  created_at: string;
+  profiles?: {
+    first_name: string | null;
+    last_name: string | null;
+    avatar_url: string | null;
+    email: string | null;
+  } | null;
+};

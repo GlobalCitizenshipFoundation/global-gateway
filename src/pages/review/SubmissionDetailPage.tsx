@@ -28,6 +28,7 @@ import DOMPurify from 'dompurify';
 import { ReviewList } from "@/components/review/ReviewList";
 import { ReviewForm } from "@/components/review/ReviewForm";
 import { useSession } from "@/contexts/auth/SessionContext";
+import { ReviewerAssignment } from "@/components/review/ReviewerAssignment";
 
 type SubmissionDetail = {
   id: string;
@@ -255,6 +256,7 @@ const SubmissionDetailPage = () => {
         </Card>
       </div>
       <div className="lg:col-span-1 space-y-8">
+        <ReviewerAssignment applicationId={submissionId!} />
         <ReviewForm onSubmit={handleReviewSubmit} isSubmitting={isSubmittingReview} />
         <ReviewList reviews={reviews} />
       </div>
