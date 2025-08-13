@@ -27,6 +27,8 @@ import EmailManagementPage from "./pages/emails/EmailManagementPage";
 import EmailComposerPage from "./pages/emails/EmailComposerPage";
 import UserManagementPage from "./pages/admin/UserManagementPage";
 import { ThemeProvider } from "next-themes";
+import WorkflowManagementPage from "./pages/workflow/WorkflowManagementPage";
+import WorkflowBuilderPage from "./pages/workflow/WorkflowBuilderPage";
 
 const queryClient = new QueryClient();
 
@@ -64,6 +66,9 @@ const App = () => (
                     
                     <Route path="/creator/forms" element={<FormManagementPage />} />
                     <Route path="/creator/forms/:formId/edit" element={<FormBuilderPage />} />
+
+                    <Route path="/creator/workflows" element={<WorkflowManagementPage />} />
+                    <Route path="/creator/workflows/:workflowId/edit" element={<WorkflowBuilderPage />} />
 
                     <Route path="/creator/emails" element={<EmailManagementPage />} />
                     <Route path="/creator/emails/compose" element={<EmailComposerPage />} />

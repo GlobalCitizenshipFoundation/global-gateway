@@ -10,6 +10,7 @@ export type Program = {
   allow_pdf_download: boolean;
   updated_at: string;
   form_id: string | null; // Link to Form
+  workflow_template_id: string | null; // Link to Workflow Template
 };
 
 export type Form = {
@@ -116,6 +117,31 @@ export type EmailTemplate = {
   body: string; // HTML content
   is_default: boolean;
   status: 'draft' | 'published';
+  created_at: string;
+  updated_at: string;
+  last_edited_by_user_id: string | null;
+  last_edited_at: string | null;
+};
+
+export type WorkflowTemplate = {
+  id: string;
+  user_id: string;
+  name: string;
+  description: string | null;
+  status: 'draft' | 'published';
+  created_at: string;
+  updated_at: string;
+  last_edited_by_user_id: string | null;
+  last_edited_at: string | null;
+};
+
+export type WorkflowStep = {
+  id: string;
+  workflow_template_id: string;
+  name: string;
+  description: string | null;
+  step_type: 'form' | 'review' | 'email' | 'decision';
+  order_index: number;
   created_at: string;
   updated_at: string;
   last_edited_by_user_id: string | null;
