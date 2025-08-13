@@ -17,6 +17,7 @@ import { showError, showSuccess } from "@/utils/toast";
 const REVIEWER_ROLES = ['reviewer', 'lead_reviewer', 'admin', 'super_admin'];
 const CREATOR_ROLES = ['creator', 'admin', 'super_admin'];
 const ADMIN_ROLES = ['admin', 'super_admin'];
+const SUPER_ADMIN_ROLES = ['super_admin'];
 
 const UserNav = () => {
   const { user, profile } = useSession();
@@ -41,6 +42,7 @@ const UserNav = () => {
   const canAccessReviewerTools = profile && REVIEWER_ROLES.includes(profile.role);
   const canAccessCreatorTools = profile && CREATOR_ROLES.includes(profile.role);
   const canAccessAdminTools = profile && ADMIN_ROLES.includes(profile.role);
+  const canAccessSuperAdminTools = profile && SUPER_ADMIN_ROLES.includes(profile.role);
 
   return (
     <DropdownMenu>
@@ -108,6 +110,18 @@ const UserNav = () => {
               <DropdownMenuLabel>Admin</DropdownMenuLabel>
               <DropdownMenuItem asChild>
                 <Link to="/admin/user-management">User Management</Link>
+              </DropdownMenuItem>
+            </DropdownMenuGroup>
+          </>
+        )}
+
+        {canAccessSuperAdminTools && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuGroup>
+              <DropdownMenuLabel>Super Admin</DropdownMenuLabel>
+              <DropdownMenuItem asChild>
+                <Link to="/admin/account-deletion">Deletion Requests</Link>
               </DropdownMenuItem>
             </DropdownMenuGroup>
           </>

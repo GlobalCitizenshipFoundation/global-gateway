@@ -19,6 +19,7 @@ import ProtectedRoute from "./components/auth/ProtectedRoute";
 import CreatorProtectedRoute from "./components/auth/CreatorProtectedRoute";
 import AdminProtectedRoute from "./components/auth/AdminProtectedRoute";
 import ReviewerProtectedRoute from "./components/auth/ReviewerProtectedRoute";
+import SuperAdminProtectedRoute from "./components/auth/SuperAdminProtectedRoute";
 import ManageWorkflowPage from "./pages/workflow/ManageWorkflowPage";
 import PipelineViewPage from "./pages/workflow/PipelineViewPage";
 import FormBuilderPage from "./pages/forms/FormBuilderPage";
@@ -27,6 +28,7 @@ import FormManagementPage from "./pages/forms/FormManagementPage";
 import EmailManagementPage from "./pages/emails/EmailManagementPage";
 import EmailComposerPage from "./pages/emails/EmailComposerPage";
 import UserManagementPage from "./pages/admin/UserManagementPage";
+import AccountDeletionPage from "./pages/admin/AccountDeletionPage";
 import { ThemeProvider } from "next-themes";
 import WorkflowManagementPage from "./pages/workflow/WorkflowManagementPage";
 import WorkflowBuilderPage from "./pages/workflow/WorkflowBuilderPage";
@@ -83,6 +85,10 @@ const App = () => (
 
                   <Route element={<AdminProtectedRoute />}>
                     <Route path="/admin/user-management" element={<UserManagementPage />} />
+                  </Route>
+
+                  <Route element={<SuperAdminProtectedRoute />}>
+                    <Route path="/admin/account-deletion" element={<AccountDeletionPage />} />
                   </Route>
                 </Route>
 

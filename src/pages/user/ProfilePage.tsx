@@ -28,27 +28,38 @@ const ProfilePage = () => {
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [hasPendingDeletionRequest, setHasPendingDeletionRequest] = useState(false);
 
   useEffect(() => {
     const fetchProfile = async () => {
       if (user) {
         setLoading(true);
-        const { data, error } = await supabase
+        const profilePromise = supabase
           .from('profiles')
           .select('first_name, middle_name, last_name, role, avatar_url')
           .eq('id', user.id)
           .single();
 
-        if (error && error.code !== 'PGRST116') {
-          showError("Could not fetch profile: " + error.message);
-        } else if (data) {
-          setFirstName(data.first_name || '');
-          setMiddleName(data.middle_name || '');
-          setLastName(data.last_name || '');
-          setRole(data.role || 'applicant');
-          setAvatarUrl(data.avatar_url || null);
+        const deletionRequestPromise = supabase
+          .from('account_deletion_requests')
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('status', 'pending')
+          .single();
+
+        const [{ data: profileData, error: profileError }, { data: deletionRequestData }] = await Promise.all([profilePromise, deletionRequestPromise]);
+
+        if (profileError && profileError.code !== 'PGRST116') {
+          showError("Could not fetch profile: " + profileError.message);
+        } else if (profileData) {
+          setFirstName(profileData.first_name || '');
+          setMiddleName(profileData.middle_name || '');
+          setLastName(profileData.last_name || '');
+          setRole(profileData.role || 'applicant');
+          setAvatarUrl(profileData.avatar_url || null);
         }
         setEmail(user.email || '');
+        setHasPendingDeletionRequest(!!deletionRequestData);
         setLoading(false);
       }
     };
@@ -90,9 +101,24 @@ const ProfilePage = () => {
     setIsSubmitting(false);
   };
 
-  const handleRequestAccountDeletion = () => {
-    showSuccess("Your account deletion request has been sent. We will contact you shortly.");
+  const handleRequestAccountDeletion = async () => {
+    if (!user) return;
     setIsDeleteDialogOpen(false);
+
+    const { error } = await supabase
+      .from('account_deletion_requests')
+      .insert({ user_id: user.id });
+
+    if (error) {
+      if (error.code === '23505') { // Unique constraint violation
+        showError("You already have a pending deletion request.");
+      } else {
+        showError(`Failed to submit request: ${error.message}`);
+      }
+    } else {
+      showSuccess("Your account deletion request has been sent. We will contact you shortly.");
+      setHasPendingDeletionRequest(true);
+    }
   };
 
   const getFullName = () => {
@@ -176,8 +202,8 @@ const ProfilePage = () => {
                 <Button type="submit" disabled={isSubmitting}>
                   {isSubmitting ? "Saving Changes..." : "Save Changes"}
                 </Button>
-                <Button variant="destructive" onClick={() => setIsDeleteDialogOpen(true)} type="button">
-                  Request Account Deletion
+                <Button variant="destructive" onClick={() => setIsDeleteDialogOpen(true)} type="button" disabled={hasPendingDeletionRequest}>
+                  {hasPendingDeletionRequest ? "Deletion Request Pending" : "Request Account Deletion"}
                 </Button>
               </div>
             </form>
