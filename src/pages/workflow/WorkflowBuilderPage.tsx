@@ -17,6 +17,7 @@ import { WorkflowStagePropertiesPanel } from "@/components/workflow/WorkflowStag
 import { WorkflowStage, Form as FormType, EmailTemplate } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/contexts/auth/SessionContext";
+import { isWorkflowPublishable } from '@/utils/workflowValidation';
 
 const WorkflowBuilderPage = () => {
   const { user } = useSession();
@@ -28,6 +29,7 @@ const WorkflowBuilderPage = () => {
   const [selectedStage, setSelectedStage] = useState<WorkflowStage | null>(null);
   const [forms, setForms] = useState<FormType[]>([]);
   const [emailTemplates, setEmailTemplates] = useState<EmailTemplate[]>([]);
+  const [validationErrors, setValidationErrors] = useState<Map<string, string>>(new Map());
 
   useEffect(() => {
     if (template) {
@@ -35,6 +37,11 @@ const WorkflowBuilderPage = () => {
       setDescription(template.description || '');
     }
   }, [template]);
+
+  useEffect(() => {
+    const { errors } = isWorkflowPublishable(stages);
+    setValidationErrors(errors);
+  }, [stages]);
 
   useEffect(() => {
     const fetchDropdownData = async () => {
@@ -164,7 +171,13 @@ const WorkflowBuilderPage = () => {
                 <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
                   <SortableContext items={stages.map(s => s.id)} strategy={verticalListSortingStrategy}>
                     {stages.map(stage => (
-                      <WorkflowStageCard key={stage.id} stage={stage} onDelete={deleteStage} onEdit={setSelectedStage} />
+                      <WorkflowStageCard
+                        key={stage.id}
+                        stage={stage}
+                        validationError={validationErrors.get(stage.id) || null}
+                        onDelete={deleteStage}
+                        onEdit={setSelectedStage}
+                      />
                     ))}
                   </SortableContext>
                 </DndContext>

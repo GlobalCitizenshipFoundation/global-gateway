@@ -2,17 +2,19 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { GripVertical, Trash2, Pencil } from 'lucide-react';
+import { GripVertical, Trash2, Pencil, AlertTriangle } from 'lucide-react';
 import { WorkflowStage } from '@/types';
 import { Badge } from '../ui/badge';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface WorkflowStageCardProps {
   stage: WorkflowStage;
+  validationError: string | null;
   onDelete: (stageId: string) => void;
   onEdit: (stage: WorkflowStage) => void;
 }
 
-export const WorkflowStageCard = ({ stage, onDelete, onEdit }: WorkflowStageCardProps) => {
+export const WorkflowStageCard = ({ stage, validationError, onDelete, onEdit }: WorkflowStageCardProps) => {
   const {
     attributes,
     listeners,
@@ -37,7 +39,19 @@ export const WorkflowStageCard = ({ stage, onDelete, onEdit }: WorkflowStageCard
               <GripVertical className="h-5 w-5 text-muted-foreground" />
             </Button>
             <div>
-              <CardTitle className="text-lg">{stage.name}</CardTitle>
+              <CardTitle className="text-lg flex items-center gap-2">
+                {stage.name}
+                {validationError && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <AlertTriangle className="h-5 w-5 text-destructive" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>{validationError}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                )}
+              </CardTitle>
               <CardDescription>
                 <Badge variant="secondary" className="capitalize">{stage.step_type}</Badge>
               </CardDescription>

@@ -4,6 +4,7 @@ import { useSession } from '@/contexts/auth/SessionContext';
 import { showError, showSuccess } from '@/utils/toast';
 import { useNavigate } from 'react-router-dom';
 import { WorkflowTemplate, WorkflowStage } from '@/types';
+import { isWorkflowPublishable } from '@/utils/workflowValidation';
 
 interface UseWorkflowTemplateActionsProps {
   setTemplates?: React.Dispatch<React.SetStateAction<WorkflowTemplate[]>>;
@@ -61,6 +62,32 @@ export const useWorkflowTemplateActions = ({ setTemplates, fetchTemplates }: Use
 
   const handleUpdateTemplateStatus = async (templateId: string, newStatus: 'draft' | 'published') => {
     if (!user) return;
+
+    if (newStatus === 'published') {
+      const { data: stages, error: stagesError } = await supabase
+        .from('workflow_steps')
+        .select('*')
+        .eq('workflow_template_id', templateId);
+
+      if (stagesError) {
+        showError("Could not verify workflow stages before publishing.");
+        return;
+      }
+
+      const { publishable, errors } = isWorkflowPublishable(stages as WorkflowStage[]);
+
+      if (!publishable) {
+        const errorMessages = Array.from(errors.entries()).map(([stageId, message]: [string, string]) => {
+          const stageName = stages.find(s => s.id === stageId)?.name || 'A stage';
+          return `• '${stageName}': ${message}`;
+        }).join('\n');
+        showError(`Cannot publish workflow. Please fix the following issues:\n${errorMessages}`, {
+          duration: 10000,
+        });
+        return;
+      }
+    }
+
     const now = new Date().toISOString();
     const { error } = await supabase
       .from('workflow_templates')
