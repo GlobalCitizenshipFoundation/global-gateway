@@ -358,14 +358,14 @@ const CreateProgramPage = () => {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Start with Form Template (Optional)</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value || ''}>
+                    <Select onValueChange={(value) => field.onChange(value === '__none__' ? null : value)} value={field.value || ''}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Select a template or start blank" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="">Start from scratch (blank form)</SelectItem>
+                        <SelectItem value="__none__">Start from scratch (blank form)</SelectItem>
                         {formTemplates.length > 0 && <DropdownMenuSeparator />}
                         {formTemplates.map(template => (
                           <SelectItem key={template.id} value={template.id}>{template.name}</SelectItem>
@@ -385,14 +385,14 @@ const CreateProgramPage = () => {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Workflow Template (Optional)</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value || ''}>
+                    <Select onValueChange={(value) => field.onChange(value === '__none__' ? null : value)} value={field.value || ''}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Select a workflow" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="">No workflow attached</SelectItem>
+                        <SelectItem value="__none__">No workflow attached</SelectItem>
                         {workflowTemplates.length > 0 && <DropdownMenuSeparator />}
                         {workflowTemplates.map(template => (
                           <SelectItem key={template.id} value={template.id}>{template.name}</SelectItem>

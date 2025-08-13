@@ -292,14 +292,14 @@ export const WorkflowStagePropertiesPanel = ({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Select Form (Optional)</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value || ''}>
+                  <Select onValueChange={(value) => field.onChange(value === '__none__' ? null : value)} value={field.value || ''}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Choose a form for this stage" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="">No form attached</SelectItem>
+                      <SelectItem value="__none__">No form attached</SelectItem>
                       {forms.map(form => (
                         <SelectItem key={form.id} value={form.id}>{form.name}</SelectItem>
                       ))}
@@ -320,14 +320,14 @@ export const WorkflowStagePropertiesPanel = ({
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Trigger Email (Optional)</FormLabel>
-                <Select onValueChange={field.onChange} value={field.value || ''}>
+                <Select onValueChange={(value) => field.onChange(value === '__none__' ? null : value)} value={field.value || ''}>
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder="Choose an email template" />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="">No email attached</SelectItem>
+                    <SelectItem value="__none__">No email attached</SelectItem>
                     {emailTemplates.map(template => (
                       <SelectItem key={template.id} value={template.id}>{template.name}</SelectItem>
                     ))}

@@ -282,14 +282,14 @@ const EditProgramPage = () => {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Workflow Template</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value || ''}>
+                    <Select onValueChange={(value) => field.onChange(value === '__none__' ? null : value)} value={field.value || ''}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Select a workflow" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="">No workflow attached</SelectItem>
+                        <SelectItem value="__none__">No workflow attached</SelectItem>
                         {workflowTemplates.map(template => (
                           <SelectItem key={template.id} value={template.id}>{template.name}</SelectItem>
                         ))}
