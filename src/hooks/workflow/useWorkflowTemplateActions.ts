@@ -61,7 +61,7 @@ export const useWorkflowTemplateActions = ({ setTemplates, fetchTemplates }: Use
   };
 
   const handleUpdateTemplateStatus = async (templateId: string, newStatus: 'draft' | 'published') => {
-    if (!user) return;
+    if (!user) return false;
 
     if (newStatus === 'published') {
       const { data: stages, error: stagesError } = await supabase
@@ -71,7 +71,7 @@ export const useWorkflowTemplateActions = ({ setTemplates, fetchTemplates }: Use
 
       if (stagesError) {
         showError("Could not verify workflow stages before publishing.");
-        return;
+        return false;
       }
 
       const { publishable, errors } = isWorkflowPublishable(stages as WorkflowStage[]);
@@ -84,7 +84,7 @@ export const useWorkflowTemplateActions = ({ setTemplates, fetchTemplates }: Use
         showError(`Cannot publish workflow. Please fix the following issues:\n${errorMessages}`, {
           duration: 10000,
         });
-        return;
+        return false;
       }
     }
 
@@ -96,14 +96,16 @@ export const useWorkflowTemplateActions = ({ setTemplates, fetchTemplates }: Use
 
     if (error) {
       showError(`Failed to update status: ${error.message}`);
+      return false;
     } else {
       showSuccess(`Template status updated to "${newStatus}".`);
       if (fetchTemplates) fetchTemplates();
+      return true;
     }
   };
 
   const handleUpdateTemplateDetails = async (templateId: string, name: string, description: string | null) => {
-    if (!user) return;
+    if (!user) return false;
     setIsSubmitting(true);
     const now = new Date().toISOString();
     const { error } = await supabase
@@ -111,12 +113,12 @@ export const useWorkflowTemplateActions = ({ setTemplates, fetchTemplates }: Use
       .update({ name, description, last_edited_by_user_id: user.id, last_edited_at: now, updated_at: now })
       .eq('id', templateId);
 
+    setIsSubmitting(false);
     if (error) {
       showError(`Failed to update details: ${error.message}`);
-    } else {
-      showSuccess("Template details saved.");
+      return false;
     }
-    setIsSubmitting(false);
+    return true;
   };
 
   const handleAddStage = async (templateId: string, currentStages: WorkflowStage[]) => {
@@ -177,6 +179,64 @@ export const useWorkflowTemplateActions = ({ setTemplates, fetchTemplates }: Use
     showSuccess("Stage details updated.");
     return true;
   };
+
+  const handleDuplicateTemplate = async (templateId: string, newTemplateName: string) => {
+    if (!user) {
+      showError("You must be logged in to duplicate a template.");
+      return false;
+    }
+    
+    const { data: originalTemplate, error: fetchError } = await supabase.from('workflow_templates').select('*').eq('id', templateId).single();
+    if (fetchError || !originalTemplate) {
+      showError("Could not find the original template to copy.");
+      return false;
+    }
+
+    const now = new Date().toISOString();
+    const { data: newTemplate, error: insertTemplateError } = await supabase.from('workflow_templates').insert({
+        user_id: user.id,
+        name: newTemplateName,
+        description: originalTemplate.description,
+        status: 'draft',
+        last_edited_by_user_id: user.id,
+        last_edited_at: now,
+        updated_at: now,
+    }).select('id').single();
+    if (insertTemplateError || !newTemplate) {
+      showError(`Failed to create new template: ${insertTemplateError.message}`);
+      return false;
+    }
+
+    const { data: originalSteps, error: stepsError } = await supabase.from('workflow_steps').select('*').eq('workflow_template_id', templateId);
+    if (stepsError) {
+      showError(`Failed to copy stages: ${stepsError.message}`);
+      await supabase.from('workflow_templates').delete().eq('id', newTemplate.id);
+      return false;
+    }
+
+    if (originalSteps && originalSteps.length > 0) {
+        const newSteps = originalSteps.map(step => {
+            const { id, workflow_template_id, created_at, ...rest } = step;
+            return {
+                ...rest,
+                workflow_template_id: newTemplate.id,
+                last_edited_by_user_id: user.id,
+                last_edited_at: now,
+            };
+        });
+        const { error: insertStepsError } = await supabase.from('workflow_steps').insert(newSteps);
+        if (insertStepsError) {
+          showError(`Failed to insert copied stages: ${insertStepsError.message}`);
+          await supabase.from('workflow_templates').delete().eq('id', newTemplate.id);
+          return false;
+        }
+    }
+
+    showSuccess("Template duplicated successfully!");
+    if (fetchTemplates) fetchTemplates();
+    navigate(`/creator/workflows/${newTemplate.id}/edit`);
+    return true;
+  };
   
   return { 
     isSubmitting, 
@@ -188,5 +248,6 @@ export const useWorkflowTemplateActions = ({ setTemplates, fetchTemplates }: Use
     handleDeleteStage,
     handleUpdateStageOrder,
     handleUpdateStageDetails,
+    handleDuplicateTemplate,
   };
 };

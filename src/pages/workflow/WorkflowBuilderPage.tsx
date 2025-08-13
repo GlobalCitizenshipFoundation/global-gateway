@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { WorkflowStageCard } from "@/components/workflow/WorkflowStageCard";
@@ -18,11 +18,15 @@ import { WorkflowStage, Form as FormType, EmailTemplate } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/contexts/auth/SessionContext";
 import { isWorkflowPublishable } from '@/utils/workflowValidation';
+import { WorkflowActions } from "@/components/workflow/WorkflowActions";
+import { DuplicateWorkflowTemplateDialog } from "@/components/workflow/DuplicateWorkflowTemplateDialog";
+
+const AUTO_SAVE_DEBOUNCE_TIME = 2000;
 
 const WorkflowBuilderPage = () => {
   const { user } = useSession();
-  const { workflowId, template, stages, setStages, loading, fetchData } = useWorkflowBuilderData();
-  const { isSubmitting, handleUpdateTemplateDetails, handleAddStage, handleDeleteStage, handleUpdateStageOrder, handleUpdateStageDetails } = useWorkflowTemplateActions({});
+  const { workflowId, template, setTemplate, stages, setStages, loading, fetchData, isAutoSaving, setIsAutoSaving, hasUnsavedChanges, setHasUnsavedChanges, lastSavedTimestamp, setLastSavedTimestamp, lastEditedByUserName, creatorUserName } = useWorkflowBuilderData();
+  const { isSubmitting, handleUpdateTemplateDetails, handleAddStage, handleDeleteStage, handleUpdateStageOrder, handleUpdateStageDetails, handleUpdateTemplateStatus, handleDuplicateTemplate } = useWorkflowTemplateActions({});
 
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -30,6 +34,11 @@ const WorkflowBuilderPage = () => {
   const [forms, setForms] = useState<FormType[]>([]);
   const [emailTemplates, setEmailTemplates] = useState<EmailTemplate[]>([]);
   const [validationErrors, setValidationErrors] = useState<Map<string, string>>(new Map());
+  const [isDuplicateDialogOpen, setIsDuplicateDialogOpen] = useState(false);
+  const [newTemplateName, setNewTemplateName] = useState('');
+  const [isDuplicating, setIsDuplicating] = useState(false);
+
+  const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     if (template) {
@@ -46,13 +55,7 @@ const WorkflowBuilderPage = () => {
   useEffect(() => {
     const fetchDropdownData = async () => {
       if (!user) return;
-      const formsPromise = supabase
-        .from('forms')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('is_template', false)
-        .eq('status', 'published')
-        .order('name', { ascending: true });
+      const formsPromise = supabase.from('forms').select('*').eq('user_id', user.id).eq('is_template', false).eq('status', 'published').order('name', { ascending: true });
       const emailsPromise = supabase.from('email_templates').select('*').eq('user_id', user.id).eq('status', 'published').order('name', { ascending: true });
       
       const [{ data: formsData, error: formsError }, { data: emailsData, error: emailsError }] = await Promise.all([formsPromise, emailsPromise]);
@@ -66,16 +69,29 @@ const WorkflowBuilderPage = () => {
     fetchDropdownData();
   }, [user]);
 
-  const sensors = useSensors(
-    useSensor(PointerSensor),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
-  );
+  const triggerAutoSave = useCallback(() => {
+    if (autoSaveTimeoutRef.current) clearTimeout(autoSaveTimeoutRef.current);
+    setHasUnsavedChanges(true);
+    autoSaveTimeoutRef.current = setTimeout(async () => {
+      if (workflowId) {
+        setIsAutoSaving(true);
+        const success = await handleUpdateTemplateDetails(workflowId, name, description);
+        if (success) {
+          setLastSavedTimestamp(new Date());
+          setHasUnsavedChanges(false);
+        }
+        setIsAutoSaving(false);
+      }
+    }, AUTO_SAVE_DEBOUNCE_TIME);
+  }, [workflowId, name, description, handleUpdateTemplateDetails, setIsAutoSaving, setHasUnsavedChanges, setLastSavedTimestamp]);
 
-  const handleSaveDetails = () => {
-    if (workflowId) {
-      handleUpdateTemplateDetails(workflowId, name, description);
+  useEffect(() => {
+    if (!loading && template && (name !== template.name || description !== (template.description || ''))) {
+      triggerAutoSave();
     }
-  };
+  }, [name, description, template, loading, triggerAutoSave]);
+
+  const sensors = useSensors(useSensor(PointerSensor), useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }));
 
   const addNewStage = async () => {
     if (workflowId) {
@@ -88,9 +104,7 @@ const WorkflowBuilderPage = () => {
   };
 
   const deleteStage = async (stageId: string) => {
-    if (selectedStage?.id === stageId) {
-      setSelectedStage(null);
-    }
+    if (selectedStage?.id === stageId) setSelectedStage(null);
     const success = await handleDeleteStage(stageId);
     if (success) {
       setStages(prev => prev.filter(s => s.id !== stageId));
@@ -103,20 +117,9 @@ const WorkflowBuilderPage = () => {
     if (over && active.id !== over.id) {
       const oldIndex = stages.findIndex(s => s.id === active.id);
       const newIndex = stages.findIndex(s => s.id === over.id);
-      
-      const newOrderedStages = arrayMove(stages, oldIndex, newIndex).map((stage, index) => ({
-        ...stage,
-        order_index: index + 1,
-      }));
-      
+      const newOrderedStages = arrayMove(stages, oldIndex, newIndex).map((stage, index) => ({ ...stage, order_index: index + 1 }));
       setStages(newOrderedStages);
-
-      const updates = newOrderedStages.map((stage) => ({
-        id: stage.id,
-        order_index: stage.order_index,
-        workflow_template_id: workflowId!,
-      }));
-
+      const updates = newOrderedStages.map(stage => ({ id: stage.id, order_index: stage.order_index, workflow_template_id: workflowId! }));
       handleUpdateStageOrder(updates);
     }
   };
@@ -129,39 +132,63 @@ const WorkflowBuilderPage = () => {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="container py-12">
-        <Skeleton className="h-8 w-48 mb-4" />
-        <Skeleton className="h-64 w-full" />
-      </div>
-    );
-  }
+  const handlePublish = async () => {
+    if (workflowId) {
+      const success = await handleUpdateTemplateStatus(workflowId, 'published');
+      if (success) setTemplate(prev => prev ? { ...prev, status: 'published' } : null);
+    }
+  };
+
+  const handleUnpublish = async () => {
+    if (workflowId) {
+      const success = await handleUpdateTemplateStatus(workflowId, 'draft');
+      if (success) setTemplate(prev => prev ? { ...prev, status: 'draft' } : null);
+    }
+  };
+
+  const handleConfirmDuplicate = async () => {
+    if (workflowId) {
+      setIsDuplicating(true);
+      await handleDuplicateTemplate(workflowId, newTemplateName);
+      setIsDuplicating(false);
+      setIsDuplicateDialogOpen(false);
+    }
+  };
+
+  const renderStatusMessage = () => {
+    if (isAutoSaving) return <span className="text-blue-500">Saving...</span>;
+    if (hasUnsavedChanges) return <span className="text-orange-500">Unsaved changes</span>;
+    if (lastSavedTimestamp) return `Last saved: ${lastSavedTimestamp.toLocaleTimeString()}`;
+    return null;
+  };
+
+  if (loading) return <div className="container py-12"><Skeleton className="h-8 w-48 mb-4" /><Skeleton className="h-64 w-full" /></div>;
 
   return (
     <div className="container py-12">
-      <Link to="/creator/workflows" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-4">
-        <ArrowLeft className="h-4 w-4" />
-        Back to Workflows
-      </Link>
-      
+      <Link to="/creator/workflows" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-4"><ArrowLeft className="h-4 w-4" />Back to Workflows</Link>
       <ResizablePanelGroup direction="horizontal" className="min-h-[600px] border rounded-lg">
         <ResizablePanel defaultSize={selectedStage ? 65 : 100} minSize={30}>
           <div className="p-6 h-full overflow-y-auto">
             <Card className="mx-auto max-w-3xl mb-8">
               <CardHeader>
-                <CardTitle>Workflow Settings</CardTitle>
-                <CardDescription>Define the name and description for this workflow template.</CardDescription>
+                <div className="flex justify-between items-start">
+                  <div>
+                    <CardTitle>Workflow Settings</CardTitle>
+                    <CardDescription>Define the name and description for this workflow template.</CardDescription>
+                  </div>
+                  <div className="text-sm text-muted-foreground text-right">
+                    <p>{renderStatusMessage()}</p>
+                    {lastEditedByUserName && <p className="text-xs">By: {lastEditedByUserName}</p>}
+                    {creatorUserName && <p className="text-xs">Created by: {creatorUserName}</p>}
+                  </div>
+                </div>
               </CardHeader>
               <CardContent className="space-y-4">
                 <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Workflow Name" />
                 <Textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Workflow Description (optional)" />
-                <Button onClick={handleSaveDetails} disabled={isSubmitting}>
-                  {isSubmitting ? "Saving..." : "Save Details"}
-                </Button>
               </CardContent>
             </Card>
-
             <Card className="mx-auto max-w-3xl">
               <CardHeader>
                 <CardTitle>Workflow Stages</CardTitle>
@@ -170,23 +197,11 @@ const WorkflowBuilderPage = () => {
               <CardContent>
                 <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
                   <SortableContext items={stages.map(s => s.id)} strategy={verticalListSortingStrategy}>
-                    {stages.map(stage => (
-                      <WorkflowStageCard
-                        key={stage.id}
-                        stage={stage}
-                        validationError={validationErrors.get(stage.id) || null}
-                        onDelete={deleteStage}
-                        onEdit={setSelectedStage}
-                      />
-                    ))}
+                    {stages.map(stage => <WorkflowStageCard key={stage.id} stage={stage} validationError={validationErrors.get(stage.id) || null} onDelete={deleteStage} onEdit={setSelectedStage} />)}
                   </SortableContext>
                 </DndContext>
-                {stages.length === 0 && (
-                  <p className="text-center text-muted-foreground py-8">No stages yet. Add one to get started.</p>
-                )}
-                <Button variant="outline" className="w-full mt-4" onClick={addNewStage}>
-                  <Plus className="mr-2 h-4 w-4" /> Add Stage
-                </Button>
+                {stages.length === 0 && <p className="text-center text-muted-foreground py-8">No stages yet. Add one to get started.</p>}
+                <Button variant="outline" className="w-full mt-4" onClick={addNewStage}><Plus className="mr-2 h-4 w-4" /> Add Stage</Button>
               </CardContent>
             </Card>
           </div>
@@ -195,18 +210,26 @@ const WorkflowBuilderPage = () => {
           <>
             <ResizableHandle withHandle />
             <ResizablePanel defaultSize={35} minSize={25}>
-              <WorkflowStagePropertiesPanel
-                stage={selectedStage}
-                allStages={stages}
-                forms={forms}
-                emailTemplates={emailTemplates}
-                onSave={handleSaveStage}
-                onClose={() => setSelectedStage(null)}
-              />
+              <WorkflowStagePropertiesPanel stage={selectedStage} allStages={stages} forms={forms} emailTemplates={emailTemplates} onSave={handleSaveStage} onClose={() => setSelectedStage(null)} />
             </ResizablePanel>
           </>
         )}
       </ResizablePanelGroup>
+      <WorkflowActions
+        isSubmitting={isAutoSaving || isSubmitting}
+        hasUnsavedChanges={hasUnsavedChanges}
+        status={template?.status || 'draft'}
+        onSaveDraft={() => triggerAutoSave()}
+        onPublish={handlePublish}
+        onUnpublish={handleUnpublish}
+        onOpenDuplicateDialog={() => { setNewTemplateName(`Copy of ${name}`); setIsDuplicateDialogOpen(true); }}
+        isDuplicateDialogOpen={isDuplicateDialogOpen}
+        onCloseDuplicateDialog={() => setIsDuplicateDialogOpen(false)}
+        newTemplateName={newTemplateName}
+        setNewTemplateName={setNewTemplateName}
+        isDuplicating={isDuplicating}
+        onConfirmDuplicate={handleConfirmDuplicate}
+      />
     </div>
   );
 };
