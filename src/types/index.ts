@@ -135,12 +135,12 @@ export type WorkflowTemplate = {
   last_edited_at: string | null;
 };
 
-export type WorkflowStep = {
+export type WorkflowStage = {
   id: string;
   workflow_template_id: string;
   name: string;
   description: string | null;
-  step_type: 'form' | 'review' | 'email' | 'decision';
+  step_type: 'form' | 'screening' | 'review' | 'resubmission' | 'decision' | 'email' | 'scheduling' | 'status';
   order_index: number;
   created_at: string;
   updated_at: string;

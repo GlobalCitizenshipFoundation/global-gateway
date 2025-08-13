@@ -10,22 +10,22 @@ import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable';
-import { WorkflowStepCard } from "@/components/workflow/WorkflowStepCard";
+import { WorkflowStageCard } from "@/components/workflow/WorkflowStageCard";
 import { showSuccess, showError } from "@/utils/toast";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
-import { WorkflowStepPropertiesPanel } from "@/components/workflow/WorkflowStepPropertiesPanel";
-import { WorkflowStep, Form as FormType, EmailTemplate } from "@/types";
+import { WorkflowStagePropertiesPanel } from "@/components/workflow/WorkflowStagePropertiesPanel";
+import { WorkflowStage, Form as FormType, EmailTemplate } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/contexts/auth/SessionContext";
 
 const WorkflowBuilderPage = () => {
   const { user } = useSession();
-  const { workflowId, template, steps, setSteps, loading, fetchData } = useWorkflowBuilderData();
-  const { isSubmitting, handleUpdateTemplateDetails, handleAddStep, handleDeleteStep, handleUpdateStepOrder, handleUpdateStepDetails } = useWorkflowTemplateActions({});
+  const { workflowId, template, stages, setStages, loading, fetchData } = useWorkflowBuilderData();
+  const { isSubmitting, handleUpdateTemplateDetails, handleAddStage, handleDeleteStage, handleUpdateStageOrder, handleUpdateStageDetails } = useWorkflowTemplateActions({});
 
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
-  const [selectedStep, setSelectedStep] = useState<WorkflowStep | null>(null);
+  const [selectedStage, setSelectedStage] = useState<WorkflowStage | null>(null);
   const [forms, setForms] = useState<FormType[]>([]);
   const [emailTemplates, setEmailTemplates] = useState<EmailTemplate[]>([]);
 
@@ -64,48 +64,48 @@ const WorkflowBuilderPage = () => {
     }
   };
 
-  const addNewStep = async () => {
+  const addNewStage = async () => {
     if (workflowId) {
-      const newStep = await handleAddStep(workflowId, steps);
-      if (newStep) {
-        setSteps(prev => [...prev, newStep]);
-        showSuccess("New step added.");
+      const newStage = await handleAddStage(workflowId, stages);
+      if (newStage) {
+        setStages(prev => [...prev, newStage]);
+        showSuccess("New stage added.");
       }
     }
   };
 
-  const deleteStep = async (stepId: string) => {
-    if (selectedStep?.id === stepId) {
-      setSelectedStep(null);
+  const deleteStage = async (stageId: string) => {
+    if (selectedStage?.id === stageId) {
+      setSelectedStage(null);
     }
-    const success = await handleDeleteStep(stepId);
+    const success = await handleDeleteStage(stageId);
     if (success) {
-      setSteps(prev => prev.filter(s => s.id !== stepId));
-      showSuccess("Step deleted.");
+      setStages(prev => prev.filter(s => s.id !== stageId));
+      showSuccess("Stage deleted.");
     }
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     if (over && active.id !== over.id) {
-      const oldIndex = steps.findIndex(s => s.id === active.id);
-      const newIndex = steps.findIndex(s => s.id === over.id);
-      const newOrderedSteps = arrayMove(steps, oldIndex, newIndex);
-      setSteps(newOrderedSteps);
+      const oldIndex = stages.findIndex(s => s.id === active.id);
+      const newIndex = stages.findIndex(s => s.id === over.id);
+      const newOrderedStages = arrayMove(stages, oldIndex, newIndex);
+      setStages(newOrderedStages);
 
-      const updates = newOrderedSteps.map((step, index) => ({
-        id: step.id,
+      const updates = newOrderedStages.map((stage, index) => ({
+        id: stage.id,
         order_index: index + 1,
       }));
-      handleUpdateStepOrder(updates);
+      handleUpdateStageOrder(updates);
     }
   };
 
-  const handleSaveStep = async (stepId: string, values: Partial<WorkflowStep>) => {
-    const success = await handleUpdateStepDetails(stepId, values);
+  const handleSaveStage = async (stageId: string, values: Partial<WorkflowStage>) => {
+    const success = await handleUpdateStageDetails(stageId, values);
     if (success) {
       fetchData(); // Re-fetch to get the latest data
-      setSelectedStep(null);
+      setSelectedStage(null);
     }
   };
 
@@ -126,7 +126,7 @@ const WorkflowBuilderPage = () => {
       </Link>
       
       <ResizablePanelGroup direction="horizontal" className="min-h-[600px] border rounded-lg">
-        <ResizablePanel defaultSize={selectedStep ? 65 : 100} minSize={30}>
+        <ResizablePanel defaultSize={selectedStage ? 65 : 100} minSize={30}>
           <div className="p-6 h-full overflow-y-auto">
             <Card className="mx-auto max-w-3xl mb-8">
               <CardHeader>
@@ -144,37 +144,37 @@ const WorkflowBuilderPage = () => {
 
             <Card className="mx-auto max-w-3xl">
               <CardHeader>
-                <CardTitle>Workflow Steps</CardTitle>
-                <CardDescription>Add and arrange the steps for this workflow. Drag to reorder.</CardDescription>
+                <CardTitle>Workflow Stages</CardTitle>
+                <CardDescription>Add and arrange the stages for this workflow. Drag to reorder.</CardDescription>
               </CardHeader>
               <CardContent>
                 <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-                  <SortableContext items={steps.map(s => s.id)} strategy={verticalListSortingStrategy}>
-                    {steps.map(step => (
-                      <WorkflowStepCard key={step.id} step={step} onDelete={deleteStep} onEdit={setSelectedStep} />
+                  <SortableContext items={stages.map(s => s.id)} strategy={verticalListSortingStrategy}>
+                    {stages.map(stage => (
+                      <WorkflowStageCard key={stage.id} stage={stage} onDelete={deleteStage} onEdit={setSelectedStage} />
                     ))}
                   </SortableContext>
                 </DndContext>
-                {steps.length === 0 && (
-                  <p className="text-center text-muted-foreground py-8">No steps yet. Add one to get started.</p>
+                {stages.length === 0 && (
+                  <p className="text-center text-muted-foreground py-8">No stages yet. Add one to get started.</p>
                 )}
-                <Button variant="outline" className="w-full mt-4" onClick={addNewStep}>
-                  <Plus className="mr-2 h-4 w-4" /> Add Step
+                <Button variant="outline" className="w-full mt-4" onClick={addNewStage}>
+                  <Plus className="mr-2 h-4 w-4" /> Add Stage
                 </Button>
               </CardContent>
             </Card>
           </div>
         </ResizablePanel>
-        {selectedStep && (
+        {selectedStage && (
           <>
             <ResizableHandle withHandle />
             <ResizablePanel defaultSize={35} minSize={25}>
-              <WorkflowStepPropertiesPanel
-                step={selectedStep}
+              <WorkflowStagePropertiesPanel
+                stage={selectedStage}
                 forms={forms}
                 emailTemplates={emailTemplates}
-                onSave={handleSaveStep}
-                onClose={() => setSelectedStep(null)}
+                onSave={handleSaveStage}
+                onClose={() => setSelectedStage(null)}
               />
             </ResizablePanel>
           </>

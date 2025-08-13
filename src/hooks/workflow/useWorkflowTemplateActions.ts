@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useSession } from '@/contexts/auth/SessionContext';
 import { showError, showSuccess } from '@/utils/toast';
 import { useNavigate } from 'react-router-dom';
-import { WorkflowTemplate, WorkflowStep } from '@/types';
+import { WorkflowTemplate, WorkflowStage } from '@/types';
 
 interface UseWorkflowTemplateActionsProps {
   setTemplates?: React.Dispatch<React.SetStateAction<WorkflowTemplate[]>>;
@@ -92,14 +92,14 @@ export const useWorkflowTemplateActions = ({ setTemplates, fetchTemplates }: Use
     setIsSubmitting(false);
   };
 
-  const handleAddStep = async (templateId: string, currentSteps: WorkflowStep[]) => {
+  const handleAddStage = async (templateId: string, currentStages: WorkflowStage[]) => {
     if (!user) return null;
-    const nextOrderIndex = currentSteps.length > 0 ? Math.max(...currentSteps.map(s => s.order_index)) + 1 : 1;
+    const nextOrderIndex = currentStages.length > 0 ? Math.max(...currentStages.map(s => s.order_index)) + 1 : 1;
     const { data, error } = await supabase
       .from('workflow_steps')
       .insert({
         workflow_template_id: templateId,
-        name: "New Step",
+        name: "New Stage",
         step_type: "form", // Default type
         order_index: nextOrderIndex,
         last_edited_by_user_id: user.id,
@@ -109,45 +109,45 @@ export const useWorkflowTemplateActions = ({ setTemplates, fetchTemplates }: Use
       .single();
     
     if (error) {
-      showError(`Failed to add step: ${error.message}`);
+      showError(`Failed to add stage: ${error.message}`);
       return null;
     }
-    return data as WorkflowStep;
+    return data as WorkflowStage;
   };
 
-  const handleDeleteStep = async (stepId: string) => {
-    const { error } = await supabase.from('workflow_steps').delete().eq('id', stepId);
+  const handleDeleteStage = async (stageId: string) => {
+    const { error } = await supabase.from('workflow_steps').delete().eq('id', stageId);
     if (error) {
-      showError(`Failed to delete step: ${error.message}`);
+      showError(`Failed to delete stage: ${error.message}`);
       return false;
     }
     return true;
   };
 
-  const handleUpdateStepOrder = async (updates: { id: string; order_index: number }[]) => {
+  const handleUpdateStageOrder = async (updates: { id: string; order_index: number }[]) => {
     if (!user) return;
     const updatesWithMetadata = updates.map(u => ({ ...u, last_edited_by_user_id: user.id, last_edited_at: new Date().toISOString() }));
     const { error } = await supabase.from('workflow_steps').upsert(updatesWithMetadata);
     if (error) {
       showError(`Failed to save new order: ${error.message}`);
     } else {
-      showSuccess("Step order saved.");
+      showSuccess("Stage order saved.");
     }
   };
 
-  const handleUpdateStepDetails = async (stepId: string, payload: Partial<WorkflowStep>) => {
+  const handleUpdateStageDetails = async (stageId: string, payload: Partial<WorkflowStage>) => {
     if (!user) return false;
     const now = new Date().toISOString();
     const { error } = await supabase
       .from('workflow_steps')
       .update({ ...payload, last_edited_by_user_id: user.id, last_edited_at: now, updated_at: now })
-      .eq('id', stepId);
+      .eq('id', stageId);
 
     if (error) {
-      showError(`Failed to update step details: ${error.message}`);
+      showError(`Failed to update stage details: ${error.message}`);
       return false;
     }
-    showSuccess("Step details updated.");
+    showSuccess("Stage details updated.");
     return true;
   };
   
@@ -157,9 +157,9 @@ export const useWorkflowTemplateActions = ({ setTemplates, fetchTemplates }: Use
     handleDeleteTemplate, 
     handleUpdateTemplateStatus,
     handleUpdateTemplateDetails,
-    handleAddStep,
-    handleDeleteStep,
-    handleUpdateStepOrder,
-    handleUpdateStepDetails,
+    handleAddStage,
+    handleDeleteStage,
+    handleUpdateStageOrder,
+    handleUpdateStageDetails,
   };
 };

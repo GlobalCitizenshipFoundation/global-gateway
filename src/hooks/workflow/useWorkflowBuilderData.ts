@@ -1,13 +1,13 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { WorkflowTemplate, WorkflowStep } from '@/types';
+import { WorkflowTemplate, WorkflowStage } from '@/types';
 import { showError } from '@/utils/toast';
 
 export const useWorkflowBuilderData = () => {
   const { workflowId } = useParams<{ workflowId: string }>();
   const [template, setTemplate] = useState<WorkflowTemplate | null>(null);
-  const [steps, setSteps] = useState<WorkflowStep[]>([]);
+  const [stages, setStages] = useState<WorkflowStage[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchData = useCallback(async () => {
@@ -23,13 +23,13 @@ export const useWorkflowBuilderData = () => {
       .eq('id', workflowId)
       .single();
 
-    const stepsPromise = supabase
+    const stagesPromise = supabase
       .from('workflow_steps')
       .select('*')
       .eq('workflow_template_id', workflowId)
       .order('order_index', { ascending: true });
 
-    const [{ data: templateData, error: templateError }, { data: stepsData, error: stepsError }] = await Promise.all([templatePromise, stepsPromise]);
+    const [{ data: templateData, error: templateError }, { data: stagesData, error: stagesError }] = await Promise.all([templatePromise, stagesPromise]);
 
     if (templateError) {
       showError("Could not fetch workflow template details.");
@@ -38,11 +38,11 @@ export const useWorkflowBuilderData = () => {
       setTemplate(templateData as WorkflowTemplate);
     }
 
-    if (stepsError) {
-      showError("Could not fetch workflow steps.");
-      setSteps([]);
+    if (stagesError) {
+      showError("Could not fetch workflow stages.");
+      setStages([]);
     } else {
-      setSteps(stepsData as WorkflowStep[]);
+      setStages(stagesData as WorkflowStage[]);
     }
 
     setLoading(false);
@@ -52,5 +52,5 @@ export const useWorkflowBuilderData = () => {
     fetchData();
   }, [fetchData]);
 
-  return { workflowId, template, setTemplate, steps, setSteps, loading, fetchData };
+  return { workflowId, template, setTemplate, stages, setStages, loading, fetchData };
 };

@@ -3,16 +3,16 @@ import { CSS } from '@dnd-kit/utilities';
 import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { GripVertical, Trash2, Pencil } from 'lucide-react';
-import { WorkflowStep } from '@/types';
+import { WorkflowStage } from '@/types';
 import { Badge } from '../ui/badge';
 
-interface WorkflowStepCardProps {
-  step: WorkflowStep;
-  onDelete: (stepId: string) => void;
-  onEdit: (step: WorkflowStep) => void;
+interface WorkflowStageCardProps {
+  stage: WorkflowStage;
+  onDelete: (stageId: string) => void;
+  onEdit: (stage: WorkflowStage) => void;
 }
 
-export const WorkflowStepCard = ({ step, onDelete, onEdit }: WorkflowStepCardProps) => {
+export const WorkflowStageCard = ({ stage, onDelete, onEdit }: WorkflowStageCardProps) => {
   const {
     attributes,
     listeners,
@@ -20,7 +20,7 @@ export const WorkflowStepCard = ({ step, onDelete, onEdit }: WorkflowStepCardPro
     transform,
     transition,
     isDragging,
-  } = useSortable({ id: step.id, data: { type: "Step", step } });
+  } = useSortable({ id: stage.id, data: { type: "Stage", stage } });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -37,17 +37,17 @@ export const WorkflowStepCard = ({ step, onDelete, onEdit }: WorkflowStepCardPro
               <GripVertical className="h-5 w-5 text-muted-foreground" />
             </Button>
             <div>
-              <CardTitle className="text-lg">{step.name}</CardTitle>
+              <CardTitle className="text-lg">{stage.name}</CardTitle>
               <CardDescription>
-                <Badge variant="secondary" className="capitalize">{step.step_type}</Badge>
+                <Badge variant="secondary" className="capitalize">{stage.step_type}</Badge>
               </CardDescription>
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" onClick={() => onEdit(step)}>
+            <Button variant="ghost" size="icon" onClick={() => onEdit(stage)}>
               <Pencil className="h-4 w-4 text-muted-foreground" />
             </Button>
-            <Button variant="ghost" size="icon" onClick={() => onDelete(step.id)}>
+            <Button variant="ghost" size="icon" onClick={() => onDelete(stage.id)}>
               <Trash2 className="h-4 w-4 text-destructive" />
             </Button>
           </div>
