@@ -203,3 +203,15 @@ export type EvaluationTemplate = {
   created_at: string;
   updated_at: string;
 };
+
+export type EvaluationCriterion = {
+  id: string;
+  template_id: string;
+  label: string;
+  criterion_type: 'number_scale' | 'pass_fail' | 'text' | 'select';
+  options: string[] | null;
+  min_score: number | null;
+  max_score: number | null;
+  weight: number;
+  order: number;
+};
