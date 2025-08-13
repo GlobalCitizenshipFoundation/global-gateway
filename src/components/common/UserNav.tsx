@@ -15,6 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { showError, showSuccess } from "@/utils/toast";
 
 const CREATOR_ROLES = ['creator', 'admin', 'super_admin'];
+const REVIEWER_ROLES = ['reviewer', 'lead_reviewer', 'admin', 'super_admin'];
 
 const UserNav = () => {
   const { user, profile } = useSession();
@@ -37,6 +38,7 @@ const UserNav = () => {
 
   const fullName = [firstName, middleName, lastName].filter(Boolean).join(' ').trim();
   const canAccessCreatorTools = profile && CREATOR_ROLES.includes(profile.role);
+  const canAccessReviewerTools = profile && REVIEWER_ROLES.includes(profile.role);
 
   return (
     <DropdownMenu>
@@ -64,6 +66,18 @@ const UserNav = () => {
           </DropdownMenuItem>
         </DropdownMenuGroup>
         
+        {canAccessReviewerTools && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuGroup>
+              <DropdownMenuLabel>Reviewer</DropdownMenuLabel>
+              <DropdownMenuItem asChild>
+                <Link to="/reviewer/dashboard">Reviewer Dashboard</Link>
+              </DropdownMenuItem>
+            </DropdownMenuGroup>
+          </>
+        )}
+
         {canAccessCreatorTools && (
           <>
             <DropdownMenuSeparator />
@@ -77,9 +91,6 @@ const UserNav = () => {
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
                 <Link to="/creator/emails">Manage Email Templates</Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link to="/creator/emails/compose">New Email Template</Link>
               </DropdownMenuItem>
             </DropdownMenuGroup>
           </>

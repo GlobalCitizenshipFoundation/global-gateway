@@ -17,6 +17,7 @@ import SubmissionDetailPage from "./pages/review/SubmissionDetailPage";
 import { SessionContextProvider } from "./contexts/auth/SessionContext";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import CreatorProtectedRoute from "./components/auth/CreatorProtectedRoute";
+import ReviewerProtectedRoute from "./components/auth/ReviewerProtectedRoute";
 import ManageWorkflowPage from "./pages/workflow/ManageWorkflowPage";
 import PipelineViewPage from "./pages/workflow/PipelineViewPage";
 import FormBuilderPage from "./pages/forms/FormBuilderPage";
@@ -25,6 +26,7 @@ import FormManagementPage from "./pages/forms/FormManagementPage";
 import EmailManagementPage from "./pages/emails/EmailManagementPage";
 import EmailComposerPage from "./pages/emails/EmailComposerPage";
 import { ThemeProvider } from "next-themes";
+import ReviewerDashboardPage from "./pages/review/ReviewerDashboardPage";
 
 const queryClient = new QueryClient();
 
@@ -66,6 +68,10 @@ const App = () => (
                     <Route path="/creator/emails" element={<EmailManagementPage />} />
                     <Route path="/creator/emails/compose" element={<EmailComposerPage />} />
                     <Route path="/creator/emails/compose/:templateId" element={<EmailComposerPage />} />
+                  </Route>
+
+                  <Route element={<ReviewerProtectedRoute />}>
+                    <Route path="/reviewer/dashboard" element={<ReviewerDashboardPage />} />
                   </Route>
                 </Route>
 
