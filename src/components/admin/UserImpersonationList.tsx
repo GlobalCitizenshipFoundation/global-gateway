@@ -46,7 +46,7 @@ const UserImpersonationList = () => {
           role,
           email
         `)
-        .order('created_at', { ascending: true });
+        .order('updated_at', { ascending: true });
 
       if (error) {
         showError("Failed to fetch users: " + error.message);
