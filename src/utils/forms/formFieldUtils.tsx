@@ -38,14 +38,8 @@ export const evaluateRule = (rule: DisplayRule, currentResponsesMap: Record<stri
 
   switch (rule.operator) {
     case 'equals':
-      if (triggerField.field_type === 'checkbox') {
-        return Array.isArray(rule.value) && Array.isArray(normalizedResponse) && rule.value.every(val => normalizedResponse.includes(val));
-      }
       return normalizedResponse === rule.value;
     case 'not_equals':
-      if (triggerField.field_type === 'checkbox') {
-        return Array.isArray(rule.value) && Array.isArray(normalizedResponse) && !rule.value.every(val => normalizedResponse.includes(val));
-      }
       return normalizedResponse !== rule.value;
     case 'contains':
       return typeof normalizedResponse === 'string' && typeof rule.value === 'string' && normalizedResponse.includes(rule.value);
@@ -75,6 +69,12 @@ export const evaluateRule = (rule: DisplayRule, currentResponsesMap: Record<stri
       return normalizedResponse instanceof Date && ruleValue instanceof Date && normalizedResponse < ruleValue;
     case 'is_after':
       return normalizedResponse instanceof Date && ruleValue instanceof Date && normalizedResponse > ruleValue;
+    case 'contains_all_of':
+      return Array.isArray(rule.value) && Array.isArray(normalizedResponse) && rule.value.every(val => normalizedResponse.includes(val));
+    case 'contains_any_of':
+      return Array.isArray(rule.value) && Array.isArray(normalizedResponse) && rule.value.some(val => normalizedResponse.includes(val));
+    case 'contains_none_of':
+      return Array.isArray(rule.value) && Array.isArray(normalizedResponse) && !rule.value.some(val => normalizedResponse.includes(val));
     default:
       return false;
   }

@@ -30,7 +30,7 @@ const fieldTypeOperators: Record<FormField['field_type'], Array<DisplayRule['ope
   date: ['equals', 'not_equals', 'is_before', 'is_after', 'is_empty', 'is_not_empty'],
   select: ['equals', 'not_equals', 'is_empty', 'is_not_empty'],
   radio: ['equals', 'not_equals', 'is_empty', 'is_not_empty'],
-  checkbox: ['equals', 'not_equals', 'is_empty', 'is_not_empty'],
+  checkbox: ['contains_any_of', 'contains_all_of', 'contains_none_of', 'is_empty', 'is_not_empty'],
   richtext: ['equals', 'not_equals', 'contains', 'not_contains', 'is_empty', 'is_not_empty'],
   rating: ['equals', 'not_equals', 'greater_than', 'less_than', 'is_empty', 'is_not_empty'],
 };
@@ -46,6 +46,9 @@ const operatorLabels: Record<DisplayRule['operator'], string> = {
   less_than: 'is less than',
   is_before: 'is before',
   is_after: 'is after',
+  contains_all_of: 'contains all of',
+  contains_any_of: 'contains any of',
+  contains_none_of: 'contains none of',
 };
 
 const ConditionalLogicBuilder = ({
@@ -95,7 +98,7 @@ const ConditionalLogicBuilder = ({
         showError("Please provide a value for all rules that require one.");
         return;
       }
-      if (triggerField?.field_type === 'checkbox' && (rule.operator === 'equals' || rule.operator === 'not_equals') && Array.isArray(rule.value) && rule.value.length === 0) {
+      if (triggerField?.field_type === 'checkbox' && (rule.operator === 'contains_all_of' || rule.operator === 'contains_any_of' || rule.operator === 'contains_none_of') && Array.isArray(rule.value) && rule.value.length === 0) {
         showError("Checkbox rules must have at least one selected option.");
         return;
       }
@@ -232,7 +235,9 @@ const ConditionalLogicBuilder = ({
                 onValueChange={(val) => {
                   updateRule(index, 'field_id', val);
                   updateRule(index, 'value', null);
-                  updateRule(index, 'operator', 'equals');
+                  const newTriggerField = allFields.find(f => f.id === val);
+                  const newDefaultOperator = newTriggerField ? fieldTypeOperators[newTriggerField.field_type][0] : 'equals';
+                  updateRule(index, 'operator', newDefaultOperator);
                 }}
               >
                 <SelectTrigger>

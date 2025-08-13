@@ -64,7 +64,7 @@ export type FormSection = {
 
 export type DisplayRule = {
   field_id: string;
-  operator: 'equals' | 'not_equals' | 'contains' | 'not_contains' | 'is_empty' | 'is_not_empty' | 'greater_than' | 'less_than' | 'is_before' | 'is_after';
+  operator: 'equals' | 'not_equals' | 'contains' | 'not_contains' | 'is_empty' | 'is_not_empty' | 'greater_than' | 'less_than' | 'is_before' | 'is_after' | 'contains_all_of' | 'contains_any_of' | 'contains_none_of';
   value: string | string[] | boolean | number | null;
   logic_type?: 'AND' | 'OR'; // For combining multiple rules
 };
