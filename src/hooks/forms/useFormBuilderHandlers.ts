@@ -7,8 +7,9 @@ import { useFormBuilderActions } from '@/hooks/forms/useFormBuilderActions'; // 
 
 interface UseFormBuilderHandlersProps {
   state: ReturnType<typeof useFormBuilderState>;
-  // Removed performUpdateFormDetails and performUpdateFormStatus from here
-  // as they are now accessed directly from useFormBuilderActions within this hook.
+  // The properties 'performUpdateFormDetails' and 'performUpdateFormStatus'
+  // are no longer expected here as useFormBuilderHandlers now accesses
+  // them directly from useFormBuilderActions within this hook.
 }
 
 const AUTO_SAVE_DEBOUNCE_TIME = 2000; // 2 seconds
