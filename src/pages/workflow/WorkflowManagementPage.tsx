@@ -1,13 +1,38 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Plus } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useWorkflowTemplatesData } from "@/hooks/workflows/useWorkflowTemplatesData";
-import { useWorkflowTemplateActions } from "@/hooks/workflows/useWorkflowTemplateActions";
+import { useWorkflowTemplatesData } from "@/hooks/workflow/useWorkflowTemplatesData";
+import { useWorkflowTemplateActions } from "@/hooks/workflow/useWorkflowTemplateActions";
+import { WorkflowTemplatesTable } from "@/components/workflow/WorkflowTemplatesTable";
+import { DeleteWorkflowTemplateDialog } from "@/components/workflow/DeleteWorkflowTemplateDialog";
+import { WorkflowTemplate } from "@/types";
 
 const WorkflowManagementPage = () => {
   const { templates, setTemplates, loading, error, fetchTemplates } = useWorkflowTemplatesData();
-  const { isSubmitting, handleCreateBlankTemplate } = useWorkflowTemplateActions({ setTemplates, fetchTemplates });
+  const { 
+    isSubmitting, 
+    handleCreateBlankTemplate,
+    handleDeleteTemplate,
+    handleUpdateTemplateStatus
+  } = useWorkflowTemplateActions({ setTemplates, fetchTemplates });
+
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [selectedTemplate, setSelectedTemplate] = useState<WorkflowTemplate | null>(null);
+
+  const openDeleteDialog = (template: WorkflowTemplate) => {
+    setSelectedTemplate(template);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = () => {
+    if (selectedTemplate) {
+      handleDeleteTemplate(selectedTemplate.id);
+      setIsDeleteDialogOpen(false);
+      setSelectedTemplate(null);
+    }
+  };
 
   if (loading) {
     return (
@@ -54,13 +79,20 @@ const WorkflowManagementPage = () => {
         </div>
         <Card>
           <CardContent className="p-0">
-            {/* A full table component will be added in a future step */}
-            <div className="p-6 text-center text-muted-foreground">
-              {templates.length > 0 ? `${templates.length} workflow templates loaded. Table UI coming soon.` : "No workflow templates found. Create one to get started!"}
-            </div>
+            <WorkflowTemplatesTable
+              templates={templates}
+              onUpdateStatus={handleUpdateTemplateStatus}
+              onDelete={openDeleteDialog}
+            />
           </CardContent>
         </Card>
       </div>
+      <DeleteWorkflowTemplateDialog
+        isOpen={isDeleteDialogOpen}
+        onClose={() => setIsDeleteDialogOpen(false)}
+        templateToDelete={selectedTemplate}
+        onConfirmDelete={confirmDelete}
+      />
     </>
   );
 };

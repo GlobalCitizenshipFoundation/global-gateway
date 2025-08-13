@@ -30,6 +30,7 @@ export const useWorkflowTemplateActions = ({ setTemplates, fetchTemplates }: Use
         status: 'draft',
         last_edited_by_user_id: user.id,
         last_edited_at: now,
+        updated_at: now,
       })
       .select('id')
       .single();
@@ -43,6 +44,36 @@ export const useWorkflowTemplateActions = ({ setTemplates, fetchTemplates }: Use
     }
     setIsSubmitting(false);
   };
+
+  const handleDeleteTemplate = async (templateId: string) => {
+    const { error } = await supabase
+      .from('workflow_templates')
+      .delete()
+      .eq('id', templateId);
+
+    if (error) {
+      showError(`Failed to delete template: ${error.message}`);
+    } else {
+      showSuccess("Workflow template deleted successfully.");
+      fetchTemplates();
+    }
+  };
+
+  const handleUpdateTemplateStatus = async (templateId: string, newStatus: 'draft' | 'published') => {
+    if (!user) return;
+    const now = new Date().toISOString();
+    const { error } = await supabase
+      .from('workflow_templates')
+      .update({ status: newStatus, last_edited_by_user_id: user.id, last_edited_at: now, updated_at: now })
+      .eq('id', templateId);
+
+    if (error) {
+      showError(`Failed to update status: ${error.message}`);
+    } else {
+      showSuccess(`Template status updated to "${newStatus}".`);
+      fetchTemplates();
+    }
+  };
   
-  return { isSubmitting, handleCreateBlankTemplate };
+  return { isSubmitting, handleCreateBlankTemplate, handleDeleteTemplate, handleUpdateTemplateStatus };
 };
