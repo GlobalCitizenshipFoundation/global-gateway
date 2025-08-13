@@ -69,16 +69,21 @@ export const FormsTable = ({ forms, onUpdateStatus, onSaveAsTemplate, onDelete }
           <TableHead>Form Name</TableHead>
           <TableHead className="hidden md:table-cell">Type</TableHead>
           <TableHead className="hidden lg:table-cell">Status</TableHead>
-          <TableHead className="hidden xl:table-cell">Last Modified</TableHead>
+          <TableHead className="hidden xl:table-cell">Created</TableHead>
+          <TableHead className="hidden 2xl:table-cell">Last Modified</TableHead>
           <TableHead className="text-right">Actions</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
         {forms.length > 0 ? forms.map((form) => (
           <TableRow key={form.id} className={cn(form.is_template && "bg-blue-50/50 dark:bg-blue-950/20")}>
-            <TableCell className="font-medium">{form.name}</TableCell>
+            <TableCell className="font-medium">
+              <Link to={`/creator/forms/${form.id}/edit`} className="hover:underline">
+                {form.name}
+              </Link>
+            </TableCell>
             <TableCell className="hidden md:table-cell">
-              <Badge variant="outline">{form.is_template ? 'Template' : 'Program Form'}</Badge>
+              <Badge variant="outline">{form.is_template ? 'Template' : 'Form'}</Badge>
             </TableCell>
             <TableCell className="hidden lg:table-cell">
               <Badge variant={form.status === 'published' ? 'default' : 'secondary'}>
@@ -86,7 +91,15 @@ export const FormsTable = ({ forms, onUpdateStatus, onSaveAsTemplate, onDelete }
               </Badge>
             </TableCell>
             <TableCell className="hidden xl:table-cell">
-              {form.last_edited_at ? new Date(form.last_edited_at).toLocaleString() : new Date(form.created_at).toLocaleString()}
+              {new Date(form.created_at).toLocaleDateString()}
+              {form.user_id && ( // Assuming user_id is the creator
+                <div className="text-xs text-muted-foreground">
+                  By: {userNames.get(form.user_id) || 'Loading...'}
+                </div>
+              )}
+            </TableCell>
+            <TableCell className="hidden 2xl:table-cell">
+              {form.last_edited_at ? new Date(form.last_edited_at).toLocaleString() : new Date(form.updated_at).toLocaleString()}
               {form.last_edited_by_user_id && (
                 <div className="text-xs text-muted-foreground">
                   By: {userNames.get(form.last_edited_by_user_id) || 'Loading...'}
@@ -104,7 +117,9 @@ export const FormsTable = ({ forms, onUpdateStatus, onSaveAsTemplate, onDelete }
                 <DropdownMenuContent align="end">
                   <DropdownMenuLabel>Actions</DropdownMenuLabel>
                   <DropdownMenuItem asChild>
-                    <Link to={`/creator/forms/${form.id}/edit`}>Edit Form</Link>
+                    <Link to={`/creator/forms/${form.id}/edit`}>
+                      {form.is_template ? 'Edit Template' : 'Edit Form'}
+                    </Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuLabel>Status</DropdownMenuLabel>

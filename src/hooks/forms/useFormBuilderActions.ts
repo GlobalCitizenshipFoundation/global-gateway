@@ -118,6 +118,15 @@ export const useFormBuilderActions = ({
         placeholder: placeholder || null,
         last_edited_by_user_id: user.id,
         last_edited_at: new Date().toISOString(),
+        // Default values for new date and rating fields
+        date_min: null,
+        date_max: null,
+        date_allow_past: true,
+        date_allow_future: true,
+        rating_min_value: 1,
+        rating_max_value: 5,
+        rating_min_label: "Poor",
+        rating_max_label: "Excellent",
       })
       .select()
       .single();
@@ -176,34 +185,82 @@ export const useFormBuilderActions = ({
     }
   };
 
-  const handleSaveEditedField = async (fieldId: string, values: { label: string; field_type: FormField['field_type']; options?: string; is_required: boolean; description?: string | null; tooltip?: string | null; placeholder?: string | null; section_id?: string | null; }) => {
+  const handleSaveEditedField = async (fieldId: string, values: {
+    label: string;
+    field_type: FormField['field_type'];
+    options?: string;
+    is_required: boolean;
+    description?: string | null;
+    tooltip?: string | null;
+    placeholder?: string | null;
+    section_id?: string | null;
+    date_min?: string | null;
+    date_max?: string | null;
+    date_allow_past?: boolean;
+    date_allow_future?: boolean;
+    rating_min_value?: number | null;
+    rating_max_value?: number | null;
+    rating_min_label?: string | null;
+    rating_max_label?: string | null;
+  }) => {
     if (!user) return false;
     const updatedOptions = (values.field_type === 'select' || values.field_type === 'radio' || values.field_type === 'checkbox')
       ? values.options?.split(',').map(opt => opt.trim()) || null
       : null;
 
+    // Prepare update object for Supabase
+    const updatePayload: Partial<FormField> = {
+      label: values.label,
+      field_type: values.field_type,
+      options: updatedOptions,
+      is_required: values.is_required,
+      description: values.description || null,
+      tooltip: values.tooltip || null,
+      placeholder: values.placeholder || null,
+      section_id: values.section_id === 'none' ? null : values.section_id || null,
+      last_edited_by_user_id: user.id,
+      last_edited_at: new Date().toISOString(),
+    };
+
+    // Conditionally add date properties
+    if (values.field_type === 'date') {
+      updatePayload.date_min = values.date_min || null;
+      updatePayload.date_max = values.date_max || null;
+      updatePayload.date_allow_past = values.date_allow_past ?? true;
+      updatePayload.date_allow_future = values.date_allow_future ?? true;
+    } else {
+      // Ensure date properties are reset if field type changes from date
+      updatePayload.date_min = null;
+      updatePayload.date_max = null;
+      updatePayload.date_allow_past = true;
+      updatePayload.date_allow_future = true;
+    }
+
+    // Conditionally add rating properties
+    if (values.field_type === 'rating') {
+      updatePayload.rating_min_value = values.rating_min_value ?? 1;
+      updatePayload.rating_max_value = values.rating_max_value ?? 5;
+      updatePayload.rating_min_label = values.rating_min_label || "Poor";
+      updatePayload.rating_max_label = values.rating_max_label || "Excellent";
+    } else {
+      // Ensure rating properties are reset if field type changes from rating
+      updatePayload.rating_min_value = null;
+      updatePayload.rating_max_value = null;
+      updatePayload.rating_min_label = null;
+      updatePayload.rating_max_label = null;
+    }
+
     setFields(prevFields =>
       prevFields.map(f =>
         f.id === fieldId
-          ? { ...f, label: values.label, field_type: values.field_type, options: updatedOptions, is_required: values.is_required, description: values.description || null, tooltip: values.tooltip || null, placeholder: values.placeholder || null, section_id: values.section_id === 'none' ? null : values.section_id || null } // Ensure section_id is null if undefined
+          ? { ...f, ...(updatePayload as FormField) } // Merge all updated properties
           : f
       )
     );
 
     const { error } = await supabase
       .from('form_fields')
-      .update({
-        label: values.label,
-        field_type: values.field_type,
-        options: updatedOptions,
-        is_required: values.is_required,
-        description: values.description || null,
-        tooltip: values.tooltip || null,
-        placeholder: values.placeholder || null,
-        section_id: values.section_id === 'none' ? null : values.section_id || null, // Ensure section_id is null if undefined
-        last_edited_by_user_id: user.id,
-        last_edited_at: new Date().toISOString(),
-      })
+      .update(updatePayload)
       .eq('id', fieldId);
 
     if (error) {
@@ -340,6 +397,14 @@ export const useFormBuilderActions = ({
         placeholder: field.placeholder,
         last_edited_by_user_id: user.id,
         last_edited_at: now,
+        date_min: field.date_min,
+        date_max: field.date_max,
+        date_allow_past: field.date_allow_past,
+        date_allow_future: field.date_allow_future,
+        rating_min_value: field.rating_min_value,
+        rating_max_value: field.rating_max_value,
+        rating_min_label: field.rating_min_label,
+        rating_max_label: field.rating_max_label,
       }));
 
       const { error: insertSectionsError } = await supabase.from('form_sections').insert(newSectionsToInsert);

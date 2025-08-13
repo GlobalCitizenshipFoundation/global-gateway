@@ -74,7 +74,7 @@ export type FormField = {
   form_id: string; // Changed from program_id
   section_id: string | null;
   label: string;
-  field_type: 'text' | 'textarea' | 'select' | 'radio' | 'checkbox' | 'email' | 'date' | 'phone' | 'number' | 'richtext';
+  field_type: 'text' | 'textarea' | 'select' | 'radio' | 'checkbox' | 'email' | 'date' | 'phone' | 'number' | 'richtext' | 'rating';
   options: string[] | null;
   is_required: boolean;
   order: number;
@@ -84,6 +84,16 @@ export type FormField = {
   placeholder: string | null; // New: Placeholder text for input fields
   last_edited_by_user_id: string | null; // New
   last_edited_at: string | null; // New
+  // New date properties
+  date_min: string | null; // ISO string for min date
+  date_max: string | null; // ISO string for max date
+  date_allow_past: boolean;
+  date_allow_future: boolean;
+  // New rating properties
+  rating_min_value: number | null;
+  rating_max_value: number | null;
+  rating_min_label: string | null;
+  rating_max_label: string | null;
 };
 
 export type Profile = {

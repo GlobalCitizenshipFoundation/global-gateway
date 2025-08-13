@@ -5,6 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { FormField, FormSection } from '@/types';
 import { showError, showSuccess } from '@/utils/toast';
 import { reorderFormFields } from '@/utils/forms/reorderFormFields'; // Import the new utility
+import { useSession } from '@/contexts/auth/SessionContext'; // Import useSession
 
 interface UseFormFieldDragAndDropProps {
   fields: FormField[];
@@ -15,6 +16,7 @@ interface UseFormFieldDragAndDropProps {
 
 export const useFormFieldDragAndDrop = ({ fields, setFields, sections, fetchData }: UseFormFieldDragAndDropProps) => {
   const [activeDragItem, setActiveDragItem] = useState<FormField | null>(null);
+  const { user } = useSession(); // Get the current user
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -31,7 +33,7 @@ export const useFormFieldDragAndDrop = ({ fields, setFields, sections, fetchData
     setActiveDragItem(null);
     const { active, over } = event;
 
-    if (!over) return;
+    if (!over || !user) return; // Ensure user is logged in
 
     const activeFieldId = active.id as string;
     const overId = over.id as string;
@@ -40,10 +42,17 @@ export const useFormFieldDragAndDrop = ({ fields, setFields, sections, fetchData
     const { updatedFields, updatesToSend } = reorderFormFields(fields, activeFieldId, overId, sections);
 
     if (updatesToSend.length > 0) {
+      // Add last_edited_by_user_id and last_edited_at to each updated field
+      const updatesWithMetadata = updatesToSend.map(field => ({
+        ...field,
+        last_edited_by_user_id: user.id,
+        last_edited_at: new Date().toISOString(),
+      }));
+
       // Optimistic update
       setFields(updatedFields);
 
-      const { error } = await supabase.from('form_fields').upsert(updatesToSend);
+      const { error } = await supabase.from('form_fields').upsert(updatesWithMetadata);
       if (error) {
         showError(`Failed to save changes: ${error.message}. Reverting.`);
         // Revert to original state by re-fetching or using a stored original state
@@ -54,7 +63,7 @@ export const useFormFieldDragAndDrop = ({ fields, setFields, sections, fetchData
         fetchData();
       }
     }
-  }, [fields, sections, setFields, fetchData]);
+  }, [fields, sections, setFields, fetchData, user]);
 
   return {
     sensors,

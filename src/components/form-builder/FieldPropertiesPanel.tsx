@@ -20,17 +20,31 @@ import { Separator } from "@/components/ui/separator";
 import { FormField, FormSection, DisplayRule } from "@/types";
 import ConditionalLogicBuilder from "@/components/forms/ConditionalLogicBuilder";
 import RichTextEditor from "@/components/common/RichTextEditor"; // Updated import path
-import { X, FileText, FolderOpen } from "lucide-react"; // Import FileText and FolderOpen icons
+import { X, FileText, FolderOpen, CalendarIcon } from "lucide-react"; // Import CalendarIcon
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"; // Import Popover
+import { Calendar } from "@/components/ui/calendar"; // Import Calendar
+import { cn } from "@/lib/utils"; // Import cn
+import { format } from "date-fns"; // Import format
 
 const editFormFieldSchema = z.object({
   label: z.string().min(1, { message: "Label cannot be empty." }),
-  field_type: z.enum(['text', 'textarea', 'select', 'radio', 'checkbox', 'email', 'date', 'phone', 'number', 'richtext']),
+  field_type: z.enum(['text', 'textarea', 'select', 'radio', 'checkbox', 'email', 'date', 'phone', 'number', 'richtext', 'rating']),
   options: z.string().optional(), // Comma-separated for select/radio/checkbox
   is_required: z.boolean(),
   description: z.string().nullable().optional(),
   tooltip: z.string().nullable().optional(),
   placeholder: z.string().nullable().optional(),
   section_id: z.string().nullable().optional(),
+  // New date properties
+  date_min: z.string().nullable().optional(),
+  date_max: z.string().nullable().optional(),
+  date_allow_past: z.boolean().optional(),
+  date_allow_future: z.boolean().optional(),
+  // New rating properties
+  rating_min_value: z.preprocess((val) => (val === '' ? null : Number(val)), z.number().nullable().optional()),
+  rating_max_value: z.preprocess((val) => (val === '' ? null : Number(val)), z.number().nullable().optional()),
+  rating_min_label: z.string().nullable().optional(),
+  rating_max_label: z.string().nullable().optional(),
 });
 
 type EditFormFieldValues = z.infer<typeof editFormFieldSchema>;
@@ -63,6 +77,14 @@ export const FieldPropertiesPanel = ({
       tooltip: "",
       placeholder: "",
       section_id: null,
+      date_min: null,
+      date_max: null,
+      date_allow_past: true,
+      date_allow_future: true,
+      rating_min_value: 1,
+      rating_max_value: 5,
+      rating_min_label: "Poor",
+      rating_max_label: "Excellent",
     },
   });
 
@@ -70,13 +92,21 @@ export const FieldPropertiesPanel = ({
     if (field) {
       form.reset({
         label: field.label,
-        field_type: field.field_type,
+        field_type: field.field_type as EditFormFieldValues['field_type'], // Explicitly cast to resolve type error
         options: Array.isArray(field.options) ? field.options.join(', ') : '',
         is_required: field.is_required,
         description: field.description || '',
         tooltip: field.tooltip || '',
         placeholder: field.placeholder || '',
         section_id: field.section_id || null,
+        date_min: field.date_min || null,
+        date_max: field.date_max || null,
+        date_allow_past: field.date_allow_past ?? true,
+        date_allow_future: field.date_allow_future ?? true,
+        rating_min_value: field.rating_min_value ?? 1,
+        rating_max_value: field.rating_max_value ?? 5,
+        rating_min_label: field.rating_min_label || "Poor",
+        rating_max_label: field.rating_max_label || "Excellent",
       });
     }
   }, [field, form]);
@@ -87,6 +117,8 @@ export const FieldPropertiesPanel = ({
 
   const selectedFieldType = form.watch("field_type");
   const showPlaceholder = ['text', 'textarea', 'email', 'phone', 'number'].includes(selectedFieldType);
+  const showDateSettings = selectedFieldType === 'date';
+  const showRatingSettings = selectedFieldType === 'rating';
 
   return (
     <div className="p-6 h-full overflow-y-auto bg-background border-l">
@@ -137,6 +169,7 @@ export const FieldPropertiesPanel = ({
                     <SelectItem value="phone">Phone Number</SelectItem>
                     <SelectItem value="number">Number</SelectItem>
                     <SelectItem value="richtext">Rich Text</SelectItem>
+                    <SelectItem value="rating">Rating Scale (NPS)</SelectItem>
                   </SelectContent>
                 </Select>
                 <FormMessage />
@@ -160,6 +193,201 @@ export const FieldPropertiesPanel = ({
                 </FormItem>
               )}
             />
+          )}
+          {showDateSettings && (
+            <>
+              <h3 className="text-md font-semibold mt-4">Date Picker Settings</h3>
+              <FormFieldComponent
+                control={form.control}
+                name="date_min"
+                render={({ field: formHookField }) => (
+                  <FormItem className="flex flex-col">
+                    <FormLabel>Minimum Date (Optional)</FormLabel>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <FormControl>
+                          <Button
+                            variant={"outline"}
+                            className={cn(
+                              "w-full pl-3 text-left font-normal",
+                              !formHookField.value && "text-muted-foreground"
+                            )}
+                          >
+                            {formHookField.value ? (
+                              format(new Date(formHookField.value), "PPP")
+                            ) : (
+                              <span>No minimum date</span>
+                            )}
+                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                          </Button>
+                        </FormControl>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={formHookField.value ? new Date(formHookField.value) : undefined}
+                          onSelect={(date) => formHookField.onChange(date ? date.toISOString() : null)}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                    <FormDescription>
+                      Set the earliest date an applicant can select.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormFieldComponent
+                control={form.control}
+                name="date_max"
+                render={({ field: formHookField }) => (
+                  <FormItem className="flex flex-col">
+                    <FormLabel>Maximum Date (Optional)</FormLabel>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <FormControl>
+                          <Button
+                            variant={"outline"}
+                            className={cn(
+                              "w-full pl-3 text-left font-normal",
+                              !formHookField.value && "text-muted-foreground"
+                            )}
+                          >
+                            {formHookField.value ? (
+                              format(new Date(formHookField.value), "PPP")
+                            ) : (
+                              <span>No maximum date</span>
+                            )}
+                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                          </Button>
+                        </FormControl>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={formHookField.value ? new Date(formHookField.value) : undefined}
+                          onSelect={(date) => formHookField.onChange(date ? date.toISOString() : null)}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                    <FormDescription>
+                      Set the latest date an applicant can select.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormFieldComponent
+                control={form.control}
+                name="date_allow_past"
+                render={({ field: formHookField }) => (
+                  <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                    <FormControl>
+                      <Checkbox
+                        checked={formHookField.value}
+                        onCheckedChange={formHookField.onChange}
+                      />
+                    </FormControl>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel>
+                        Allow Past Dates
+                      </FormLabel>
+                      <FormDescription>
+                        If unchecked, applicants cannot select dates before today.
+                      </FormDescription>
+                    </div>
+                  </FormItem>
+                )}
+              />
+              <FormFieldComponent
+                control={form.control}
+                name="date_allow_future"
+                render={({ field: formHookField }) => (
+                  <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                    <FormControl>
+                      <Checkbox
+                        checked={formHookField.value}
+                        onCheckedChange={formHookField.onChange}
+                      />
+                    </FormControl>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel>
+                        Allow Future Dates
+                      </FormLabel>
+                      <FormDescription>
+                        If unchecked, applicants cannot select dates after today.
+                      </FormDescription>
+                    </div>
+                  </FormItem>
+                )}
+              />
+            </>
+          )}
+          {showRatingSettings && (
+            <>
+              <h3 className="text-md font-semibold mt-4">Rating Scale Settings</h3>
+              <div className="grid grid-cols-2 gap-4">
+                <FormFieldComponent
+                  control={form.control}
+                  name="rating_min_value"
+                  render={({ field: formHookField }) => (
+                    <FormItem>
+                      <FormLabel>Minimum Value</FormLabel>
+                      <FormControl>
+                        <Input type="number" placeholder="e.g., 1" {...formHookField} value={formHookField.value ?? ''} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormFieldComponent
+                  control={form.control}
+                  name="rating_max_value"
+                  render={({ field: formHookField }) => (
+                    <FormItem>
+                      <FormLabel>Maximum Value</FormLabel>
+                      <FormControl>
+                        <Input type="number" placeholder="e.g., 10" {...formHookField} value={formHookField.value ?? ''} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <FormFieldComponent
+                  control={form.control}
+                  name="rating_min_label"
+                  render={({ field: formHookField }) => (
+                    <FormItem>
+                      <FormLabel>Min Value Label</FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g., Not at all likely" {...formHookField} value={formHookField.value ?? ''} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormFieldComponent
+                  control={form.control}
+                  name="rating_max_label"
+                  render={({ field: formHookField }) => (
+                    <FormItem>
+                      <FormLabel>Max Value Label</FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g., Extremely likely" {...formHookField} value={formHookField.value ?? ''} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              <FormDescription>
+                Define the range and labels for your rating scale.
+              </FormDescription>
+            </>
           )}
           <FormFieldComponent
             control={form.control}

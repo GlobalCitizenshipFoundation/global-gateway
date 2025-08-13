@@ -9,8 +9,10 @@ import { DeleteFormDialog } from "@/components/forms/DeleteFormDialog";
 import { CreateFormFromTemplateDialog } from "@/components/forms/CreateFormFromTemplateDialog";
 import { SaveAsTemplateDialog } from "@/components/forms/SaveAsTemplateDialog";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useState } from "react";
+import { useState, useMemo } from "react"; // Import useMemo
 import { Form as FormType } from "@/types";
+import { Input } from "@/components/ui/input"; // Import Input
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"; // Import Select components
 
 const FormManagementPage = () => {
   const { forms, setForms, templates, setTemplates, loading, error } = useFormsData();
@@ -21,11 +23,49 @@ const FormManagementPage = () => {
     handleUpdateFormStatus,
   } = useFormManagementActions({ setForms, setTemplates, templates });
 
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterType, setFilterType] = useState<'all' | 'form' | 'template'>('all');
+  const [sortBy, setSortBy] = useState<'name' | 'created_at' | 'updated_at'>('updated_at');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+
   const openCreateFromTemplateDialog = () => {
     setSelectedTemplateId(null);
     setNewFormName('');
     setIsCreateFromTemplateDialogOpen(true);
   };
+
+  const filteredAndSortedForms = useMemo(() => {
+    let filtered = forms.filter(form => {
+      const matchesSearch = form.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                            (form.description && form.description.toLowerCase().includes(searchTerm.toLowerCase()));
+      const matchesType = filterType === 'all' ||
+                          (filterType === 'form' && !form.is_template) ||
+                          (filterType === 'template' && form.is_template);
+      return matchesSearch && matchesType;
+    });
+
+    filtered.sort((a, b) => {
+      let compareA: any;
+      let compareB: any;
+
+      if (sortBy === 'name') {
+        compareA = a.name.toLowerCase();
+        compareB = b.name.toLowerCase();
+      } else if (sortBy === 'created_at') {
+        compareA = new Date(a.created_at).getTime();
+        compareB = new Date(b.created_at).getTime();
+      } else { // updated_at
+        compareA = new Date(a.last_edited_at || a.updated_at).getTime();
+        compareB = new Date(b.last_edited_at || b.updated_at).getTime();
+      }
+
+      if (compareA < compareB) return sortOrder === 'asc' ? -1 : 1;
+      if (compareA > compareB) return sortOrder === 'asc' ? 1 : -1;
+      return 0;
+    });
+
+    return filtered;
+  }, [forms, searchTerm, filterType, sortBy, sortOrder]);
 
   if (loading) {
     return (
@@ -76,10 +116,49 @@ const FormManagementPage = () => {
             </Button>
           </div>
         </div>
+
+        <div className="flex flex-col md:flex-row gap-4 mb-8">
+          <Input
+            placeholder="Search forms by name or description..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="flex-grow"
+          />
+          <Select value={filterType} onValueChange={(value: 'all' | 'form' | 'template') => setFilterType(value)}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Filter by Type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Types</SelectItem>
+              <SelectItem value="form">Forms</SelectItem>
+              <SelectItem value="template">Templates</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={sortBy} onValueChange={(value: 'name' | 'created_at' | 'updated_at') => setSortBy(value)}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Sort By" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="name">Name</SelectItem>
+              <SelectItem value="created_at">Created Date</SelectItem>
+              <SelectItem value="updated_at">Last Modified</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={sortOrder} onValueChange={(value: 'asc' | 'desc') => setSortOrder(value)}>
+            <SelectTrigger className="w-[120px]">
+              <SelectValue placeholder="Order" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="asc">Ascending</SelectItem>
+              <SelectItem value="desc">Descending</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
         <Card>
           <CardContent className="p-0">
             <FormsTable
-              forms={forms}
+              forms={filteredAndSortedForms}
               onUpdateStatus={handleUpdateFormStatus}
               onSaveAsTemplate={(form) => {
                 setTemplateFormToCopy(form);

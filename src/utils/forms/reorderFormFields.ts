@@ -87,14 +87,27 @@ export const reorderFormFields = (
   });
 
   // Prepare batch update for Supabase
-  const updatesToSend: { id: string; order: number; section_id: string | null; }[] = finalUpdatedFields.filter(f => {
+  // IMPORTANT: Send ALL properties of the field, not just id, order, section_id
+  // This prevents Supabase from setting unspecified columns to NULL if they have NOT NULL constraints.
+  const updatesToSend: FormField[] = finalUpdatedFields.filter(f => {
     const originalField = currentFields.find(orig => orig.id === f.id);
+    // Only include fields that actually changed order or section_id
     return originalField && (originalField.order !== f.order || originalField.section_id !== f.section_id);
-  }).map(f => ({
-    id: f.id,
-    order: f.order,
-    section_id: f.section_id,
-  }));
+  }).map(f => {
+    // Find the original field to ensure all its properties are carried over
+    const originalField = currentFields.find(orig => orig.id === f.id);
+    if (!originalField) {
+      // This should ideally not happen if the filter above is correct
+      console.warn(`Original field not found for ID: ${f.id}`);
+      return f; // Fallback to sending the current state of 'f'
+    }
+    // Return the full updated field object
+    return {
+      ...originalField, // Spread all original properties
+      order: f.order, // Override with new order
+      section_id: f.section_id, // Override with new section_id
+    };
+  });
 
   return { updatedFields: finalUpdatedFields, updatesToSend };
 };

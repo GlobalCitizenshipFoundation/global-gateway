@@ -6,7 +6,7 @@ import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/componen
 
 import { useFormBuilderState } from "@/hooks/forms/useFormBuilderState";
 import { useFormBuilderHandlers } from "@/hooks/forms/useFormBuilderHandlers";
-import { useFormBuilderActions } from "@/hooks/forms/useFormBuilderActions";
+import { useFormBuilderActions } from "@/hooks/forms/useFormBuilderActions"; // Import directly
 import { useFormFieldDragAndDrop } from "@/hooks/forms/useFormFieldDragAndDrop"; // Import directly
 import { useFormSectionDragAndDrop } from "@/hooks/forms/useFormSectionDragAndDrop"; // Import directly
 
@@ -113,6 +113,21 @@ const FormBuilderPage = () => {
 
   const uncategorizedFields = getFieldsForSection(null);
 
+  const handleQuickAddField = (sectionId: string) => {
+    setNewFieldSectionId(sectionId);
+    setNewFieldLabel(''); // Clear previous label
+    setNewFieldType('text'); // Reset to default type
+    setNewFieldOptions(''); // Clear options
+    setNewFieldDescription('');
+    setNewFieldTooltip('');
+    setNewFieldPlaceholder('');
+    // Optionally scroll to the add field form
+    const addFieldFormElement = document.getElementById('add-field-form');
+    if (addFieldFormElement) {
+      addFieldFormElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+
   return (
     <div className="container py-12">
       <Link to="/creator/forms" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-4">
@@ -138,6 +153,7 @@ const FormBuilderPage = () => {
                 onEditField={(field) => setSelectedField(field)}
                 onUpdateLabel={handlers.handleUpdateFieldLabel}
                 onSelectField={setSelectedField}
+                onQuickAddField={handleQuickAddField} // Pass the new handler
               />
 
               <UncategorizedFieldsList
@@ -161,25 +177,27 @@ const FormBuilderPage = () => {
                 handleAddSection={handlers.handleAddSection}
               />
 
-              <AddFieldForm
-                newFieldLabel={newFieldLabel}
-                setNewFieldLabel={setNewFieldLabel}
-                newFieldType={newFieldType}
-                setNewFieldType={setNewFieldType}
-                newFieldOptions={newFieldOptions}
-                setNewFieldOptions={setNewFieldOptions}
-                newFieldSectionId={newFieldSectionId}
-                setNewFieldSectionId={setNewFieldSectionId}
-                newFieldDescription={newFieldDescription}
-                setNewFieldDescription={setNewFieldDescription}
-                newFieldTooltip={newFieldTooltip}
-                setNewFieldTooltip={setNewFieldTooltip}
-                newFieldPlaceholder={newFieldPlaceholder}
-                setNewFieldPlaceholder={setNewFieldPlaceholder}
-                isSubmitting={isAddingField}
-                handleAddField={handlers.handleAddField}
-                sections={sections}
-              />
+              <div id="add-field-form"> {/* Add ID for scrolling */}
+                <AddFieldForm
+                  newFieldLabel={newFieldLabel}
+                  setNewFieldLabel={setNewFieldLabel}
+                  newFieldType={newFieldType}
+                  setNewFieldType={setNewFieldType}
+                  newFieldOptions={newFieldOptions}
+                  setNewFieldOptions={setNewFieldOptions}
+                  newFieldSectionId={newFieldSectionId}
+                  setNewFieldSectionId={setNewFieldSectionId}
+                  newFieldDescription={newFieldDescription}
+                  setNewFieldDescription={setNewFieldDescription}
+                  newFieldTooltip={newFieldTooltip}
+                  setNewFieldTooltip={setNewFieldTooltip}
+                  newFieldPlaceholder={newFieldPlaceholder}
+                  setNewFieldPlaceholder={setNewFieldPlaceholder}
+                  isSubmitting={isAddingField}
+                  handleAddField={handlers.handleAddField}
+                  sections={sections}
+                />
+              </div>
             </div>
           </ResizablePanel>
           {selectedField && (

@@ -78,6 +78,7 @@ export const AddFieldForm = ({
                 <SelectItem value="phone">Phone Number</SelectItem>
                 <SelectItem value="number">Number</SelectItem>
                 <SelectItem value="richtext">Rich Text</SelectItem>
+                <SelectItem value="rating">Rating Scale (NPS)</SelectItem>
               </SelectContent>
             </Select>
           </div>

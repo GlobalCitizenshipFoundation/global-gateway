@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useSession } from '@/contexts/auth/SessionContext';
 import { Form as FormType, FormField, FormSection } from '@/types';
 import { showError, showSuccess } from '@/utils/toast';
+import { useNavigate } from 'react-router-dom'; // Import useNavigate
 
 interface UseFormManagementActionsProps {
   setForms: React.Dispatch<React.SetStateAction<FormType[]>>;
@@ -12,6 +13,7 @@ interface UseFormManagementActionsProps {
 
 export const useFormManagementActions = ({ setForms, setTemplates, templates }: UseFormManagementActionsProps) => {
   const { user } = useSession();
+  const navigate = useNavigate(); // Initialize useNavigate
 
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedForm, setSelectedForm] = useState<FormType | null>(null);
@@ -88,7 +90,7 @@ export const useFormManagementActions = ({ setForms, setTemplates, templates }: 
     } else {
       showSuccess("Blank form created successfully! Redirecting to form builder.");
       setForms(prev => [...prev, { ...newFormData, user_id: user.id, name: "New Blank Form", is_template: false, status: 'draft', description: null, created_at: now, updated_at: now, last_edited_by_user_id: user.id, last_edited_at: now }]);
-      window.location.href = `/creator/forms/${newFormData.id}/edit`;
+      navigate(`/creator/forms/${newFormData.id}/edit`); // Use navigate
     }
     setIsCreatingForm(false);
   };
@@ -189,7 +191,7 @@ export const useFormManagementActions = ({ setForms, setTemplates, templates }: 
     showSuccess("Form created from template successfully! Redirecting to form builder.");
     setForms(prev => [...prev, { ...newFormData, user_id: user!.id, name: newFormName, is_template: false, status: 'draft', description: template.description, created_at: now, updated_at: now, last_edited_by_user_id: user!.id, last_edited_at: now }]);
     setIsCreateFromTemplateDialogOpen(false);
-    window.location.href = `/creator/forms/${newFormData.id}/edit`;
+    navigate(`/creator/forms/${newFormData.id}/edit`); // Use navigate
     setIsCreatingForm(false);
   };
 
@@ -230,7 +232,7 @@ export const useFormManagementActions = ({ setForms, setTemplates, templates }: 
 
       const { data: currentFields, error: fieldsError } = await supabase
         .from('form_fields')
-        .select('id, form_id, section_id, label, field_type, options, is_required, order, display_rules, description, tooltip, placeholder, last_edited_by_user_id, last_edited_at') // Explicitly select columns
+        .select('*')
         .eq('form_id', templateFormToCopy.id)
         .order('order', { ascending: true });
 
@@ -271,6 +273,14 @@ export const useFormManagementActions = ({ setForms, setTemplates, templates }: 
         placeholder: field.placeholder,
         last_edited_by_user_id: user.id,
         last_edited_at: now,
+        date_min: field.date_min,
+        date_max: field.date_max,
+        date_allow_past: field.date_allow_past,
+        date_allow_future: field.date_allow_future,
+        rating_min_value: field.rating_min_value,
+        rating_max_value: field.rating_max_value,
+        rating_min_label: field.rating_min_label,
+        rating_max_label: field.rating_max_label,
       }));
 
       const { error: insertSectionsError } = await supabase.from('form_sections').insert(newSectionsToInsert);

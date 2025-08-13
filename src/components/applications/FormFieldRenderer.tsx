@@ -24,6 +24,7 @@ import React from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import DOMPurify from 'dompurify';
+import { Slider } from "@/components/ui/slider"; // Import Slider
 
 interface FormFieldRendererProps {
   field: FormField;
@@ -178,6 +179,16 @@ const FormFieldRenderer = ({ field, submitting }: FormFieldRendererProps) => {
                     selected={typeof formHookField.value === 'string' && formHookField.value ? new Date(formHookField.value) : undefined}
                     onSelect={(date) => formHookField.onChange(date ? date.toISOString() : '')}
                     initialFocus
+                    // Apply date constraints
+                    fromDate={field.date_allow_past ? undefined : new Date()}
+                    toDate={field.date_allow_future ? undefined : new Date()}
+                    disabled={(date) => {
+                      const minDate = field.date_min ? new Date(field.date_min) : null;
+                      const maxDate = field.date_max ? new Date(field.date_max) : null;
+                      if (minDate && date < minDate) return true;
+                      if (maxDate && date > maxDate) return true;
+                      return false;
+                    }}
                   />
                 </PopoverContent>
               </Popover>
@@ -215,6 +226,30 @@ const FormFieldRenderer = ({ field, submitting }: FormFieldRendererProps) => {
                 readOnly={submitting}
                 className="min-h-[120px]"
               />
+            </FormControl>
+          ) : field.field_type === 'rating' ? (
+            <FormControl>
+              <div className="grid gap-2">
+                <Slider
+                  id={field.id}
+                  min={field.rating_min_value ?? 1}
+                  max={field.rating_max_value ?? 5}
+                  step={1}
+                  value={[Number(formHookField.value) || (field.rating_min_value ?? 1)]}
+                  onValueChange={(val) => formHookField.onChange(val[0])}
+                  disabled={submitting}
+                  className="w-full"
+                />
+                <div className="flex justify-between text-sm text-muted-foreground">
+                  <span>{field.rating_min_label || field.rating_min_value}</span>
+                  <span>{field.rating_max_label || field.rating_max_value}</span>
+                </div>
+                <Input
+                  type="hidden"
+                  {...formHookField}
+                  value={Number(formHookField.value) || (field.rating_min_value ?? 1)}
+                />
+              </div>
             </FormControl>
           ) : (
             <FormControl>

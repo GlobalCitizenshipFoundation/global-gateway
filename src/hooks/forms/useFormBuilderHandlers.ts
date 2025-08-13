@@ -195,7 +195,24 @@ export const useFormBuilderHandlers = ({
     }
   }, [user, setHasUnsavedChanges, setFormLastEditedAt, setFormLastEditedByUserId, performSaveLogic, triggerAutoSave]);
 
-  const handleSaveEditedField = useCallback(async (fieldId: string, values: { label: string; field_type: FormField['field_type']; options?: string; is_required: boolean; description?: string | null; tooltip?: string | null; placeholder?: string | null; section_id?: string | null; }) => {
+  const handleSaveEditedField = useCallback(async (fieldId: string, values: {
+    label: string;
+    field_type: FormField['field_type'];
+    options?: string;
+    is_required: boolean;
+    description?: string | null;
+    tooltip?: string | null;
+    placeholder?: string | null;
+    section_id?: string | null;
+    date_min?: string | null;
+    date_max?: string | null;
+    date_allow_past?: boolean;
+    date_allow_future?: boolean;
+    rating_min_value?: number | null;
+    rating_max_value?: number | null;
+    rating_min_label?: string | null;
+    rating_max_label?: string | null;
+  }) => {
     if (!user) return;
     const success = await performSaveEditedField(fieldId, values);
     if (success) {
