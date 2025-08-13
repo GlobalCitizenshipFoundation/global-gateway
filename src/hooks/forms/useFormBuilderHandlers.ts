@@ -1,7 +1,7 @@
 import { useCallback, useRef } from 'react';
 import { useSession } from '@/contexts/auth/SessionContext';
 import { showError, showSuccess } from '@/utils/toast';
-import { FormField, DisplayRule, Form as FormType, FormSection } from '@/types'; // Import FormSection
+import { FormField, DisplayRule, Form as FormType } from '@/types';
 import { useFormBuilderState } from '@/hooks/forms/useFormBuilderState';
 import { useFormBuilderActions } from '@/hooks/forms/useFormBuilderActions'; // Import the actions hook
 
@@ -9,7 +9,7 @@ interface UseFormBuilderHandlersProps {
   state: ReturnType<typeof useFormBuilderState>;
   // The properties 'performUpdateFormDetails' and 'performUpdateFormStatus'
   // are no longer expected here as useFormBuilderHandlers now accesses
-  // them directly from useFormBuilderActions within this hook.
+  // them directly from useFormBuilderActions internally.
 }
 
 const AUTO_SAVE_DEBOUNCE_TIME = 2000; // 2 seconds
