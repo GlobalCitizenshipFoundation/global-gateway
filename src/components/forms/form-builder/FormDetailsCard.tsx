@@ -31,15 +31,14 @@ export const FormDetailsCard = ({ state }: FormDetailsCardProps) => {
   const formBuilderActions = useFormBuilderActions({
     formId: formId,
     setSections: state.setSections,
-    setFields: state.fields, // Corrected: use state.fields
+    setFields: state.setFields,
     fetchData: state.fetchData,
   });
 
-  // Pass the entire formBuilderActions object to useFormBuilderHandlers
+  // useFormBuilderHandlers now directly imports and uses actions internally
   const { triggerAutoSave } = useFormBuilderHandlers({
     state,
-    // No longer passing performUpdateFormDetails/Status directly here
-    // as useFormBuilderHandlers will access them from formBuilderActions internally
+    // Removed performUpdateFormDetails/Status as they are handled internally by useFormBuilderHandlers
   });
 
   useEffect(() => {
