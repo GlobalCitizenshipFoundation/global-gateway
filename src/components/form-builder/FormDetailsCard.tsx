@@ -2,10 +2,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import RichTextEditor from "@/components/RichTextEditor";
-import { useFormBuilderState } from "@/hooks/useFormBuilderState";
-import { useFormBuilderHandlers } from "@/hooks/useFormBuilderHandlers";
-import { useFormBuilderActions } from "@/hooks/useFormBuilderActions";
+import RichTextEditor from "@/components/common/RichTextEditor"; // Updated import path
+import { useFormBuilderState } from "@/hooks/forms/useFormBuilderState";
+import { useFormBuilderHandlers } from "@/hooks/forms/useFormBuilderHandlers";
+import { useFormBuilderActions } from "@/hooks/forms/useFormBuilderActions";
 import { useEffect } from "react";
 
 interface FormDetailsCardProps {

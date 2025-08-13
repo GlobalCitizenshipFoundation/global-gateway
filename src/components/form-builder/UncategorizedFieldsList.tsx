@@ -1,4 +1,4 @@
-import { FormFieldItem } from "@/components/FormFieldItem";
+import { FormFieldItem } from "@/components/form-builder/FormFieldItem"; // Updated import path
 import { FormField } from "@/types";
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { useDroppable } from "@dnd-kit/core";

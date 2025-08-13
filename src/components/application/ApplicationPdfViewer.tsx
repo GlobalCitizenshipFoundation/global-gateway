@@ -4,7 +4,7 @@ import jsPDF from 'jspdf';
 import { Button } from '@/components/ui/button';
 import { Download } from 'lucide-react';
 import { FormField, FormSection } from '@/types';
-import { formatResponseValue, shouldFieldBeDisplayed } from '@/utils/formFieldUtils';
+import { formatResponseValue, shouldFieldBeDisplayed } from '@/utils/forms/formFieldUtils';
 import { showError, showSuccess } from '@/utils/toast';
 import { Separator } from '@/components/ui/separator';
 import DOMPurify from 'dompurify'; // Import DOMPurify

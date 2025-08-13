@@ -17,7 +17,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { CalendarIcon, Info } from "lucide-react"; // Import Info icon
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
-import RichTextEditor from "@/components/RichTextEditor";
+import RichTextEditor from "@/components/common/RichTextEditor"; // Updated import path
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import React from "react";

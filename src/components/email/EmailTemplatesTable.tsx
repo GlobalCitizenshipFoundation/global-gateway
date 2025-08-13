@@ -107,7 +107,7 @@ export const EmailTemplatesTable = ({ emailTemplates, onUpdateStatus, onDelete, 
                 <DropdownMenuContent align="end">
                   <DropdownMenuLabel>Actions</DropdownMenuLabel>
                   <DropdownMenuItem asChild>
-                    <Link to={`/creator/emails/compose/${template.id}`}>Edit Template</Link> {/* Link to the new composer page for editing */}
+                    <Link to={`/creator/emails/compose/${template.id}`}>Edit Template</Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => onPreview(template)}>
                     Preview
@@ -129,7 +129,7 @@ export const EmailTemplatesTable = ({ emailTemplates, onUpdateStatus, onDelete, 
                     onClick={() => onDelete(template)}
                     disabled={template.is_default}
                   >
-                    {template.is_default ? "Cannot Delete Default" : "Delete Template"}
+                    {template.is_default ? "Cannot Delete" : "Delete Template"}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>

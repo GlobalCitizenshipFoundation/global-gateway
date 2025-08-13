@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
-import ProgramCard from "@/components/ProgramCard";
+import ProgramCard from "@/components/programs/ProgramCard";
 import { Program } from "@/types";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";

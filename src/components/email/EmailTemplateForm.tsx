@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
-import RichTextEditor from "@/components/RichTextEditor";
+import RichTextEditor from "@/components/common/RichTextEditor"; // Updated import path
 import { EmailTemplate } from "@/types";
 
 const emailTemplateSchema = z.object({

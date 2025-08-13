@@ -15,6 +15,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+
 } from "@/components/ui/dropdown-menu";
 import { Program } from "@/types";
 import { MoreHorizontal } from "lucide-react";
@@ -25,7 +26,7 @@ interface ProgramsTableProps {
   submissionCounts: Map<string, number>;
   onUpdateStatus: (programId: string, newStatus: 'draft' | 'published') => void;
   onDelete: (program: Program) => void;
-  onOpenDeleteDialog: (program: Program) => void; // New prop for opening dialog
+  onOpenDeleteDialog: (program: Program) => void;
 }
 
 export const ProgramsTable = ({ programs, submissionCounts, onUpdateStatus, onDelete, onOpenDeleteDialog }: ProgramsTableProps) => {
@@ -119,3 +120,5 @@ export const ProgramsTable = ({ programs, submissionCounts, onUpdateStatus, onDe
     </Table>
   );
 };
+
+export default ProgramsTable;

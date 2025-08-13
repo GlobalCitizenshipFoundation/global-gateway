@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Plus } from "lucide-react";
 import { Label } from "@/components/ui/label";
-import RichTextEditor from "@/components/RichTextEditor"; // Import RichTextEditor
+import RichTextEditor from "@/components/common/RichTextEditor"; // Updated import path
 
 interface AddSectionFormProps {
   newSectionName: string;

@@ -93,7 +93,7 @@ export type Profile = {
   last_name: string | null;
   avatar_url: string | null;
   updated_at: string;
-  role: 'applicant' | 'creator' | 'admin'; // New: Role for the user
+  role: 'applicant' | 'recommender' | 'reviewer' | 'lead_reviewer' | 'creator' | 'admin' | 'super_admin';
 };
 
 export type EmailTemplate = {

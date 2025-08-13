@@ -1,10 +1,10 @@
 import { Button } from "@/components/ui/button";
 import { SaveAsTemplateDialog } from "@/components/forms/SaveAsTemplateDialog";
 import FormPreviewDialog from "@/components/form-builder/FormPreviewDialog";
-import { useFormBuilderState } from "@/hooks/useFormBuilderState";
-import { useFormBuilderHandlers } from "@/hooks/useFormBuilderHandlers";
-import { useFormBuilderActions } from "@/hooks/useFormBuilderActions";
-import { useSession } from "@/contexts/SessionContext";
+import { useFormBuilderState } from "@/hooks/forms/useFormBuilderState";
+import { useFormBuilderHandlers } from "@/hooks/forms/useFormBuilderHandlers";
+import { useFormBuilderActions } from "@/hooks/forms/useFormBuilderActions";
+import { useSession } from "@/contexts/auth/SessionContext";
 
 interface FormActionsProps {
   state: ReturnType<typeof useFormBuilderState>;

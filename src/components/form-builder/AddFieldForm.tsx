@@ -5,7 +5,7 @@ import { FormField, FormSection } from "@/types";
 import { Plus, FileText, FolderOpen } from "lucide-react"; // Import FileText and FolderOpen icons
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import RichTextEditor from "@/components/RichTextEditor"; // Import RichTextEditor
+import RichTextEditor from "@/components/common/RichTextEditor"; // Updated import path
 
 interface AddFieldFormProps {
   newFieldLabel: string;

@@ -1,7 +1,7 @@
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { FormFieldItem } from "@/components/FormFieldItem";
+import { FormFieldItem } from "@/components/form-builder/FormFieldItem"; // Updated import path
 import { FormField, FormSection } from "@/types";
 import { GripVertical, Trash2, Info } from "lucide-react"; // Import Info icon
 import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";

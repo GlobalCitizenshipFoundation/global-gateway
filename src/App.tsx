@@ -4,26 +4,27 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
-import Layout from "./components/Layout";
-import LoginPage from "./pages/LoginPage";
-import ApplyPage from "./pages/ApplyPage";
-import DashboardPage from "./pages/DashboardPage";
-import ProfilePage from "./pages/ProfilePage";
-import CreatorDashboardPage from "./pages/CreatorDashboardPage";
-import CreateProgramPage from "./pages/CreateProgramPage";
-import EditProgramPage from "./pages/EditProgramPage";
-import SubmissionsListPage from "./pages/SubmissionsListPage";
-import SubmissionDetailPage from "./pages/SubmissionDetailPage";
-import { SessionContextProvider } from "./contexts/SessionContext";
-import ProtectedRoute from "./components/ProtectedRoute";
-import ManageWorkflowPage from "./pages/ManageWorkflowPage";
-import PipelineViewPage from "./pages/PipelineViewPage";
-import FormBuilderPage from "./pages/FormBuilderPage";
-import ProgramDetailsPage from "./pages/ProgramDetailsPage";
-import FormManagementPage from "./pages/FormManagementPage";
-import EmailManagementPage from "./pages/EmailManagementPage"; // Ensure this is imported
-import EmailComposerPage from "./pages/EmailComposerPage"; // Import the renamed composer page
-import { ThemeProvider } from "next-themes"; // Import ThemeProvider
+import Layout from "./components/common/Layout";
+import LoginPage from "./pages/auth/LoginPage";
+import ApplyPage from "./pages/applications/ApplyPage";
+import DashboardPage from "./pages/applications/DashboardPage";
+import ProfilePage from "./pages/user/ProfilePage";
+import CreatorDashboardPage from "./pages/programs/CreatorDashboardPage";
+import CreateProgramPage from "./pages/programs/CreateProgramPage";
+import EditProgramPage from "./pages/programs/EditProgramPage";
+import SubmissionsListPage from "./pages/review/SubmissionsListPage";
+import SubmissionDetailPage from "./pages/review/SubmissionDetailPage";
+import { SessionContextProvider } from "./contexts/auth/SessionContext";
+import ProtectedRoute from "./components/auth/ProtectedRoute";
+import CreatorProtectedRoute from "./components/auth/CreatorProtectedRoute";
+import ManageWorkflowPage from "./pages/workflow/ManageWorkflowPage";
+import PipelineViewPage from "./pages/workflow/PipelineViewPage";
+import FormBuilderPage from "./pages/forms/FormBuilderPage";
+import ProgramDetailsPage from "./pages/programs/ProgramDetailsPage";
+import FormManagementPage from "./pages/forms/FormManagementPage";
+import EmailManagementPage from "./pages/emails/EmailManagementPage";
+import EmailComposerPage from "./pages/emails/EmailComposerPage";
+import { ThemeProvider } from "next-themes";
 
 const queryClient = new QueryClient();
 
@@ -36,7 +37,6 @@ const App = () => (
       disableTransitionOnChange
     >
       <TooltipProvider>
-        {/* Removed <Toaster /> as sonner is used */}
         <Sonner />
         <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
           <SessionContextProvider>
@@ -46,30 +46,29 @@ const App = () => (
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/programs/:programId" element={<ProgramDetailsPage />} />
                 
-                {/* Protected Routes */}
                 <Route element={<ProtectedRoute />}>
                   <Route path="/apply/:programId" element={<ApplyPage />} />
                   <Route path="/dashboard" element={<DashboardPage />} />
                   <Route path="/profile" element={<ProfilePage />} />
-                  <Route path="/creator/dashboard" element={<CreatorDashboardPage />} />
-                  <Route path="/creator/new-program" element={<CreateProgramPage />} />
-                  <Route path="/creator/program/:programId/edit" element={<EditProgramPage />} />
-                  <Route path="/creator/program/:programId/workflow" element={<ManageWorkflowPage />} />
-                  <Route path="/creator/program/:programId/submissions" element={<SubmissionsListPage />} />
-                  <Route path="/creator/program/:programId/pipeline" element={<PipelineViewPage />} />
-                  <Route path="/creator/program/:programId/submission/:submissionId" element={<SubmissionDetailPage />} />
                   
-                  {/* Form Management Routes */}
-                  <Route path="/creator/forms" element={<FormManagementPage />} />
-                  <Route path="/creator/forms/:formId/edit" element={<FormBuilderPage />} />
+                  <Route element={<CreatorProtectedRoute />}>
+                    <Route path="/creator/dashboard" element={<CreatorDashboardPage />} />
+                    <Route path="/creator/new-program" element={<CreateProgramPage />} />
+                    <Route path="/creator/program/:programId/edit" element={<EditProgramPage />} />
+                    <Route path="/creator/program/:programId/workflow" element={<ManageWorkflowPage />} />
+                    <Route path="/creator/program/:programId/submissions" element={<SubmissionsListPage />} />
+                    <Route path="/creator/program/:programId/pipeline" element={<PipelineViewPage />} />
+                    <Route path="/creator/program/:programId/submission/:submissionId" element={<SubmissionDetailPage />} />
+                    
+                    <Route path="/creator/forms" element={<FormManagementPage />} />
+                    <Route path="/creator/forms/:formId/edit" element={<FormBuilderPage />} />
 
-                  {/* Email Management Routes */}
-                  <Route path="/creator/emails" element={<EmailManagementPage />} />
-                  <Route path="/creator/emails/compose" element={<EmailComposerPage />} /> {/* New route for creating */}
-                  <Route path="/creator/emails/compose/:templateId" element={<EmailComposerPage />} /> {/* New route for editing */}
+                    <Route path="/creator/emails" element={<EmailManagementPage />} />
+                    <Route path="/creator/emails/compose" element={<EmailComposerPage />} />
+                    <Route path="/creator/emails/compose/:templateId" element={<EmailComposerPage />} />
+                  </Route>
                 </Route>
 
-                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </Layout>

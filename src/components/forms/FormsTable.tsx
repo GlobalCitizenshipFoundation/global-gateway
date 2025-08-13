@@ -19,7 +19,7 @@ import {
 import { Form as FormType } from "@/types";
 import { MoreHorizontal } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils"; // Import cn for conditional styling
+import { cn } from "@/lib/utils";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -60,7 +60,7 @@ export const FormsTable = ({ forms, onUpdateStatus, onSaveAsTemplate, onDelete }
       }
     };
     fetchUserNames();
-  }, [forms, userNames]); // Depend on forms and userNames to re-fetch if new users appear
+  }, [forms, userNames]);
 
   return (
     <Table>

@@ -9,7 +9,7 @@ import ApplicationFormSections from '@/components/application/ApplicationFormSec
 import { ApplicantInfoCard } from '@/components/application/ApplicantInfoCard';
 import DOMPurify from 'dompurify';
 import { TooltipProvider } from '@/components/ui/tooltip'; // Required for tooltips in preview
-import { shouldFieldBeDisplayed } from '@/utils/formFieldUtils'; // Import the missing utility
+import { shouldFieldBeDisplayed } from '@/utils/forms/formFieldUtils'; // Import the missing utility
 
 interface FormPreviewDialogProps {
   isOpen: boolean;
