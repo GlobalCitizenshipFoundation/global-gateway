@@ -27,8 +27,6 @@ const ApplicationFormSections = ({
     <>
       {formSections.map(section => {
         const fieldsInSection = getFieldsForSection(section.id);
-        if (fieldsInSection.length === 0) return null;
-
         const hasTooltip = section.tooltip && section.tooltip.trim() !== '';
         const sanitizedDescription = section.description ? DOMPurify.sanitize(section.description, { USE_PROFILES: { html: true } }) : null;
 
@@ -36,14 +34,14 @@ const ApplicationFormSections = ({
           <Card key={section.id} className="mb-6">
             <CardHeader>
               <div className="flex items-center gap-2">
-                <CardTitle className="text-2xl font-bold">{section.name}</CardTitle> {/* Adjusted typography */}
+                <CardTitle className="text-2xl font-bold">{section.name}</CardTitle>
                 {hasTooltip && (
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Info className="h-4 w-4 text-muted-foreground cursor-help" />
                     </TooltipTrigger>
-                    <TooltipContent className="max-w-xs bg-gray-800 text-white p-2 rounded-md text-sm">
-                      {section.tooltip}
+                    <TooltipContent>
+                      <p>{section.tooltip}</p>
                     </TooltipContent>
                   </Tooltip>
                 )}
@@ -54,11 +52,13 @@ const ApplicationFormSections = ({
                 </CardDescription>
               )}
             </CardHeader>
-            <CardContent className="grid gap-6">
-              {fieldsInSection.map(field => (
-                <FormFieldRenderer key={field.id} field={field} submitting={submitting} />
-              ))}
-            </CardContent>
+            {fieldsInSection.length > 0 && (
+              <CardContent className="grid gap-6">
+                {fieldsInSection.map(field => (
+                  <FormFieldRenderer key={field.id} field={field} submitting={submitting} />
+                ))}
+              </CardContent>
+            )}
           </Card>
         );
       })}
@@ -66,7 +66,7 @@ const ApplicationFormSections = ({
       {uncategorizedFields.length > 0 && (
         <Card className="mb-6">
           <CardHeader>
-            <CardTitle className="text-2xl font-bold">Additional Information</CardTitle> {/* Adjusted typography */}
+            <CardTitle className="text-2xl font-bold">Additional Information</CardTitle>
             <CardDescription>Fields not assigned to a specific section.</CardDescription>
           </CardHeader>
           <CardContent className="grid gap-6">
