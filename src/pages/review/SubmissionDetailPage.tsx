@@ -21,8 +21,8 @@ import { useEffect, useState, useMemo, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 import { showError, showSuccess } from "@/utils/toast";
-import { ProgramStage, FormField, FormSection, ApplicationReview } from "@/types";
-import { evaluateRule, shouldFieldBeDisplayed, formatResponseValue } from "@/utils/forms/formFieldUtils";
+import { ProgramStage, FormField, FormSection, ApplicationReview, EvaluationCriterion } from "@/types";
+import { shouldFieldBeDisplayed, formatResponseValue } from "@/utils/forms/formFieldUtils";
 import ApplicationPdfViewer from "@/components/applications/ApplicationPdfViewer";
 import DOMPurify from 'dompurify';
 import { ReviewList } from "@/components/review/ReviewList";
@@ -30,6 +30,7 @@ import { ReviewForm } from "@/components/review/ReviewForm";
 import { useSession } from "@/contexts/auth/SessionContext";
 import { ReviewerAssignment } from "@/components/review/ReviewerAssignment";
 import { YourReviewCard } from "@/components/review/YourReviewCard";
+import { DynamicReviewForm } from "@/components/review/DynamicReviewForm";
 
 type SubmissionDetail = {
   id: string;
@@ -44,6 +45,7 @@ type SubmissionDetail = {
   } | null;
   program_stages: {
     name: string;
+    evaluation_template_id: string | null;
   } | null;
 };
 
@@ -61,6 +63,7 @@ const SubmissionDetailPage = () => {
   const [allFormSections, setAllFormSections] = useState<FormSection[]>([]);
   const [programStages, setProgramStages] = useState<ProgramStage[]>([]);
   const [reviews, setReviews] = useState<ApplicationReview[]>([]);
+  const [evaluationCriteria, setEvaluationCriteria] = useState<EvaluationCriterion[]>([]);
   const [selectedStage, setSelectedStage] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
@@ -74,13 +77,13 @@ const SubmissionDetailPage = () => {
 
     const submissionPromise = supabase
       .from('applications')
-      .select(`id, submitted_date, full_name, email, stage_id, programs(title, form_id, allow_pdf_download), program_stages(name)`)
+      .select(`id, submitted_date, full_name, email, stage_id, programs(title, form_id, allow_pdf_download), program_stages(name, evaluation_template_id)`)
       .eq('id', submissionId)
       .single();
     
     const reviewsPromise = supabase
       .from('application_reviews')
-      .select('*, profiles(first_name, last_name, avatar_url)')
+      .select('*, profiles(first_name, last_name, avatar_url), review_scores(*, evaluation_criteria(label, criterion_type))')
       .eq('application_id', submissionId)
       .order('created_at', { ascending: false });
 
@@ -103,6 +106,18 @@ const SubmissionDetailPage = () => {
       showError("Could not load reviews.");
     } else {
       setReviews(reviewsData as ApplicationReview[]);
+    }
+
+    if (formattedSubmissionData.program_stages?.evaluation_template_id) {
+      const { data: criteriaData, error: criteriaError } = await supabase
+        .from('evaluation_criteria')
+        .select('*')
+        .eq('template_id', formattedSubmissionData.program_stages.evaluation_template_id)
+        .order('order', { ascending: true });
+      if (criteriaError) showError("Could not load evaluation criteria.");
+      else setEvaluationCriteria(criteriaData as EvaluationCriterion[]);
+    } else {
+      setEvaluationCriteria([]);
     }
 
     const formId = formattedSubmissionData.programs?.form_id;
@@ -178,20 +193,30 @@ const SubmissionDetailPage = () => {
     setUpdating(false);
   };
 
-  const handleReviewSubmit = async (values: { score: number; notes?: string }) => {
+  const handleReviewSubmit = async (values: Record<string, any>) => {
     if (!user || !submission) return;
     setIsSubmittingReview(true);
-    const { error } = await supabase.from('application_reviews').insert({
-      application_id: submission.id,
-      reviewer_id: user.id,
-      score: values.score,
-      notes: values.notes,
+
+    const scores = evaluationCriteria.map(criterion => ({
+      criterion_id: criterion.id,
+      value: String(values[criterion.id]),
+    }));
+
+    const { error } = await supabase.rpc('submit_review_with_scores', {
+      p_application_id: submission.id,
+      p_program_stage_id: submission.stage_id,
+      p_evaluation_template_id: submission.program_stages?.evaluation_template_id,
+      p_overall_score: values.overall_score,
+      p_internal_notes: values.internal_notes,
+      p_shared_feedback: values.shared_feedback,
+      p_scores: scores,
     });
+
     if (error) {
       showError(`Failed to submit review: ${error.message}`);
     } else {
       showSuccess("Review submitted successfully!");
-      fetchSubmissionDetails(); // Re-fetch all data to show the new review
+      fetchSubmissionDetails();
     }
     setIsSubmittingReview(false);
   };
@@ -279,8 +304,10 @@ const SubmissionDetailPage = () => {
         
         {userReview ? (
           <YourReviewCard review={userReview} />
+        ) : evaluationCriteria.length > 0 ? (
+          <DynamicReviewForm criteria={evaluationCriteria} onSubmit={handleReviewSubmit} isSubmitting={isSubmittingReview} />
         ) : (
-          <ReviewForm onSubmit={handleReviewSubmit} isSubmitting={isSubmittingReview} />
+          <ReviewForm onSubmit={async (values) => handleReviewSubmit({ ...values, internal_notes: values.notes })} isSubmitting={isSubmittingReview} />
         )}
 
         {isManager && <ReviewList reviews={reviews} />}

@@ -161,19 +161,35 @@ export type WorkflowStage = {
   evaluation_template_id: string | null; // New
 };
 
+export type ReviewScore = {
+  id: string;
+  review_id: string;
+  criterion_id: string;
+  value: string | null;
+  evaluation_criteria?: {
+    label: string;
+    criterion_type: EvaluationCriterion['criterion_type'];
+  } | null;
+};
+
 export type ApplicationReview = {
   id: string;
   application_id: string;
   reviewer_id: string;
   score: number | null;
-  notes: string | null;
+  notes: string | null; // Internal notes
   created_at: string;
   updated_at: string;
+  program_stage_id: string | null;
+  evaluation_template_id: string | null;
+  shared_feedback: string | null;
+  is_feedback_shared: boolean;
   profiles?: {
     first_name: string | null;
     last_name: string | null;
     avatar_url: string | null;
   } | null;
+  review_scores?: ReviewScore[];
 };
 
 export type ApplicationAssignment = {

@@ -34,7 +34,23 @@ export const ReviewList = ({ reviews }: ReviewListProps) => {
                 Score: <span className="text-primary">{review.score}/10</span>
               </div>
             </div>
-            <p className="text-muted-foreground whitespace-pre-wrap">{review.notes || "No notes provided."}</p>
+            {review.review_scores && review.review_scores.length > 0 && (
+              <div className="mt-4 pt-4 border-t">
+                <h4 className="font-semibold mb-2">Detailed Scores:</h4>
+                <dl className="space-y-2">
+                  {review.review_scores.map(score => (
+                    <div key={score.id} className="flex justify-between text-sm">
+                      <dt className="text-muted-foreground">{score.evaluation_criteria?.label || 'Criterion'}</dt>
+                      <dd className="font-medium">{score.value}</dd>
+                    </div>
+                  ))}
+                </dl>
+              </div>
+            )}
+            <div className="mt-4">
+              <h4 className="font-semibold mb-1">Internal Notes:</h4>
+              <p className="text-muted-foreground whitespace-pre-wrap text-sm">{review.notes || "No notes provided."}</p>
+            </div>
           </div>
         ))}
       </CardContent>
