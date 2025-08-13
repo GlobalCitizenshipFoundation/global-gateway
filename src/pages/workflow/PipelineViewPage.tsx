@@ -22,6 +22,8 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { shouldFieldBeDisplayed, formatResponseValue } from "@/utils/forms/formFieldUtils";
 import DOMPurify from 'dompurify';
+import { sendEmailByTemplateId } from "@/utils/emailSender";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 type SubmissionDetail = {
   id: string;
@@ -42,6 +44,11 @@ type ResponseWithField = {
   form_fields: FormField | null;
 };
 
+type DecisionOutcome = {
+  name: string;
+  email_template_id: string | null;
+};
+
 const PipelineViewPage = () => {
   const { programId } = useParams<{ programId: string }>();
   const [programTitle, setProgramTitle] = useState("");
@@ -57,6 +64,8 @@ const PipelineViewPage = () => {
   const [allFormFieldsForLogic, setAllFormFieldsForLogic] = useState<FormField[]>([]);
   const [sheetLoading, setSheetLoading] = useState(false);
   const [currentStageInSheet, setCurrentStageInSheet] = useState('');
+  const [decisionOutcomes, setDecisionOutcomes] = useState<DecisionOutcome[]>([]);
+  const [isMakingDecision, setIsMakingDecision] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -64,7 +73,7 @@ const PipelineViewPage = () => {
       setLoading(true);
 
       const programPromise = supabase.from("programs").select("title, form_id").eq("id", programId).single();
-      const stagesPromise = supabase.from("program_stages").select("id, name, order").eq("program_id", programId).order("order", { ascending: true });
+      const stagesPromise = supabase.from("program_stages").select("*").eq("program_id", programId).order("order", { ascending: true });
       const applicationsPromise = supabase.from("applications").select("id, full_name, email, stage_id").eq("program_id", programId);
 
       const [
@@ -172,6 +181,7 @@ const PipelineViewPage = () => {
     setSheetLoading(true);
     setSelectedSubmission(null);
     setAllSubmissionResponses([]);
+    setDecisionOutcomes([]);
 
     const { data: submissionData, error: submissionError } = await supabase
       .from('applications').select(`id, submitted_date, full_name, email, stage_id, programs(title, form_id, allow_pdf_download), program_stages(name)`).eq('id', applicant.id).single();
@@ -190,6 +200,18 @@ const PipelineViewPage = () => {
     setSelectedSubmission(formattedSubmissionData);
     setCurrentStageInSheet(formattedSubmissionData.stage_id);
 
+    const currentStage = stages.find(s => s.id === formattedSubmissionData.stage_id);
+    if (currentStage?.step_type === 'decision' && currentStage.description) {
+      try {
+        const config = JSON.parse(currentStage.description);
+        if (Array.isArray(config.outcomes)) {
+          setDecisionOutcomes(config.outcomes);
+        }
+      } catch (e) {
+        console.error("Failed to parse decision outcomes:", e);
+      }
+    }
+
     const { data: responsesData, error: responsesError } = await supabase
       .from('application_responses').select(`value, form_fields ( id, label, field_type, options, is_required, order, display_rules, description, tooltip, placeholder )`).eq('application_id', applicant.id);
     
@@ -206,29 +228,39 @@ const PipelineViewPage = () => {
     setSheetLoading(false);
   };
 
-  const handleStageUpdateInSheet = async () => {
-    if (!selectedSubmission || selectedSubmission.stage_id === currentStageInSheet) return;
-    
-    setSheetLoading(true);
-    const { data, error } = await supabase
-      .from('applications').update({ stage_id: currentStageInSheet }).eq('id', selectedSubmission.id)
-      .select(`id, submitted_date, full_name, email, stage_id, programs(title, form_id, allow_pdf_download), program_stages(name)`)
-      .single();
+  const handleMakeDecision = async (outcome: DecisionOutcome) => {
+    if (!selectedSubmission) return;
+    setIsMakingDecision(true);
 
-    if (error) {
-      showError(`Failed to update stage: ${error.message}`);
-    } else {
-      const updatedSubmissionData: SubmissionDetail = {
-        ...data,
-        programs: data.programs as unknown as SubmissionDetail['programs'],
-        program_stages: data.program_stages as unknown as SubmissionDetail['program_stages'],
-      };
-      setApplications(apps => apps.map(app => app.id === selectedSubmission.id ? { ...app, stage_id: currentStageInSheet } : app));
-      showSuccess(`Application moved to a new stage.`);
-      setIsSheetOpen(false);
+    const currentStageIndex = stages.findIndex(s => s.id === selectedSubmission.stage_id);
+    const nextStage = stages[currentStageIndex + 1];
+
+    if (nextStage) {
+      const { error } = await supabase.from('applications').update({ stage_id: nextStage.id }).eq('id', selectedSubmission.id);
+      if (error) {
+        showError(`Failed to move applicant: ${error.message}`);
+        setIsMakingDecision(false);
+        return;
+      }
+      setApplications(apps => apps.map(app => app.id === selectedSubmission.id ? { ...app, stage_id: nextStage.id } : app));
     }
-    setSheetLoading(false);
+
+    if (outcome.email_template_id) {
+      await sendEmailByTemplateId(outcome.email_template_id, selectedSubmission.email, {
+        applicant_name: selectedSubmission.full_name,
+        program_title: programTitle,
+        decision_outcome: outcome.name,
+      });
+    }
+
+    showSuccess(`Decision "${outcome.name}" recorded. Applicant moved to next stage.`);
+    setIsMakingDecision(false);
+    setIsSheetOpen(false);
   };
+
+  const currentStageForSheet = useMemo(() => {
+    return stages.find(s => s.id === selectedSubmission?.stage_id);
+  }, [stages, selectedSubmission]);
 
   return (
     <div className="container py-12">
@@ -285,6 +317,21 @@ const PipelineViewPage = () => {
             </div>
           ) : (
             <div className="space-y-6">
+              {currentStageForSheet?.step_type === 'decision' && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Make a Decision</CardTitle>
+                    <CardDescription>Select an outcome for this application.</CardDescription>
+                  </CardHeader>
+                  <CardContent className="grid grid-cols-2 gap-2">
+                    {decisionOutcomes.map(outcome => (
+                      <Button key={outcome.name} onClick={() => handleMakeDecision(outcome)} disabled={isMakingDecision}>
+                        {outcome.name}
+                      </Button>
+                    ))}
+                  </CardContent>
+                </Card>
+              )}
               <div>
                 <h3 className="font-semibold text-lg mb-4">Application Responses</h3>
                 <dl className="space-y-4">
@@ -315,27 +362,6 @@ const PipelineViewPage = () => {
                 </dl>
               </div>
             </div>
-          )}
-
-          {!sheetLoading && selectedSubmission && (
-            <SheetFooter className="mt-8 pt-4 border-t">
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-medium">Change Stage:</span>
-                <Select value={currentStageInSheet} onValueChange={setCurrentStageInSheet}>
-                  <SelectTrigger className="w-[180px]">
-                    <SelectValue placeholder="Select a stage" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {stages.map(stage => (
-                      <SelectItem key={stage.id} value={stage.id}>{stage.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <Button onClick={handleStageUpdateInSheet} disabled={sheetLoading || selectedSubmission.stage_id === currentStageInSheet}>
-                Update Stage
-              </Button>
-            </SheetFooter>
           )}
         </SheetContent>
       </Sheet>

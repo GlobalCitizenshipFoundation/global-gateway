@@ -65,3 +65,34 @@ export const sendEmailTemplate = async (templateName: string, recipientEmail: st
     htmlBody: interpolatedBody,
   });
 };
+
+// New helper to fetch and send a template by ID
+export const sendEmailByTemplateId = async (templateId: string, recipientEmail: string, dynamicData: Record<string, string> = {}) => {
+  const { data: template, error } = await supabase
+    .from('email_templates')
+    .select('subject, body')
+    .eq('id', templateId)
+    .eq('status', 'published')
+    .single();
+
+  if (error || !template) {
+    showError(`Failed to find published email template with ID "${templateId}".`);
+    console.error(`Error fetching template ${templateId}:`, error);
+    return false;
+  }
+
+  let interpolatedSubject = template.subject;
+  let interpolatedBody = template.body;
+
+  for (const key in dynamicData) {
+    const placeholder = new RegExp(`{{${key}}}`, 'g');
+    interpolatedSubject = interpolatedSubject.replace(placeholder, dynamicData[key]);
+    interpolatedBody = interpolatedBody.replace(placeholder, dynamicData[key]);
+  }
+
+  return sendEmail({
+    to: recipientEmail,
+    subject: interpolatedSubject,
+    htmlBody: interpolatedBody,
+  });
+};
