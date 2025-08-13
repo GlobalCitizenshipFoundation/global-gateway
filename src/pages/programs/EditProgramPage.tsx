@@ -35,6 +35,9 @@ import { showError, showSuccess } from "@/utils/toast";
 import { useEffect, useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { WorkflowTemplate } from "@/types";
+import { useSession } from "@/contexts/auth/SessionContext";
 
 const programFormSchema = z.object({
   title: z.string().min(5, {
@@ -48,6 +51,7 @@ const programFormSchema = z.object({
   }),
   submission_button_text: z.string().optional().nullable(),
   allow_pdf_download: z.boolean().optional(),
+  workflow_template_id: z.string().optional().nullable(),
 });
 
 type ProgramFormValues = z.infer<typeof programFormSchema>;
@@ -55,21 +59,23 @@ type ProgramFormValues = z.infer<typeof programFormSchema>;
 const EditProgramPage = () => {
   const { programId } = useParams<{ programId: string }>();
   const navigate = useNavigate();
+  const { user } = useSession();
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formId, setFormId] = useState<string | null>(null);
+  const [workflowTemplates, setWorkflowTemplates] = useState<WorkflowTemplate[]>([]);
 
   const form = useForm<ProgramFormValues>({
     resolver: zodResolver(programFormSchema),
   });
 
   useEffect(() => {
-    const fetchProgram = async () => {
-      if (!programId) return;
+    const fetchProgramAndWorkflows = async () => {
+      if (!programId || !user) return;
       setLoading(true);
       const { data, error } = await supabase
         .from('programs')
-        .select('title, description, deadline, submission_button_text, allow_pdf_download, form_id')
+        .select('title, description, deadline, submission_button_text, allow_pdf_download, form_id, workflow_template_id')
         .eq('id', programId)
         .single();
 
@@ -83,13 +89,28 @@ const EditProgramPage = () => {
           deadline: new Date(data.deadline),
           submission_button_text: data.submission_button_text || '',
           allow_pdf_download: data.allow_pdf_download || false,
+          workflow_template_id: data.workflow_template_id || null,
         });
         setFormId(data.form_id);
       }
+
+      const { data: wfData, error: wfError } = await supabase
+        .from('workflow_templates')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('status', 'published')
+        .order('name', { ascending: true });
+
+      if (wfError) {
+        showError("Failed to load workflow templates: " + wfError.message);
+      } else {
+        setWorkflowTemplates(wfData as WorkflowTemplate[]);
+      }
+
       setLoading(false);
     };
-    fetchProgram();
-  }, [programId, navigate, form]);
+    fetchProgramAndWorkflows();
+  }, [programId, navigate, form, user]);
 
   async function onSubmit(values: ProgramFormValues) {
     setIsSubmitting(true);
@@ -101,6 +122,7 @@ const EditProgramPage = () => {
         deadline: values.deadline.toISOString(),
         submission_button_text: values.submission_button_text || null,
         allow_pdf_download: values.allow_pdf_download || false,
+        workflow_template_id: values.workflow_template_id || null,
       })
       .eq('id', programId!);
 
@@ -251,6 +273,32 @@ const EditProgramPage = () => {
                         If checked, applicants will have an option to download their submitted application as a PDF.
                       </FormDescription>
                     </div>
+                  </FormItem>
+                )}
+              />
+              <FormFieldComponent
+                control={form.control}
+                name="workflow_template_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Workflow Template</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value || ''}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a workflow" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="">No workflow attached</SelectItem>
+                        {workflowTemplates.map(template => (
+                          <SelectItem key={template.id} value={template.id}>{template.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormDescription>
+                      Choose a pre-defined workflow to manage the application pipeline for this program.
+                    </FormDescription>
+                    <FormMessage />
                   </FormItem>
                 )}
               />

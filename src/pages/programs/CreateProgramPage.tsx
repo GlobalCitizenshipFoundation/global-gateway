@@ -35,7 +35,7 @@ import { useNavigate } from "react-router-dom";
 import { showError, showSuccess } from "@/utils/toast";
 import { useEffect, useState } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Form as FormType } from "@/types";
+import { Form as FormType, WorkflowTemplate } from "@/types";
 import { Label } from "@/components/ui/label";
 import { DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 
@@ -50,6 +50,7 @@ const programFormSchema = z.object({
     required_error: "A deadline date is required.",
   }),
   formTemplateId: z.string().nullable().optional(),
+  workflowTemplateId: z.string().nullable().optional(),
 });
 
 type ProgramFormValues = z.infer<typeof programFormSchema>;
@@ -58,7 +59,8 @@ const CreateProgramPage = () => {
   const { user } = useSession();
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [templates, setTemplates] = useState<FormType[]>([]);
+  const [formTemplates, setFormTemplates] = useState<FormType[]>([]);
+  const [workflowTemplates, setWorkflowTemplates] = useState<WorkflowTemplate[]>([]);
 
   const form = useForm<ProgramFormValues>({
     resolver: zodResolver(programFormSchema),
@@ -66,6 +68,7 @@ const CreateProgramPage = () => {
       title: "",
       description: "",
       formTemplateId: null,
+      workflowTemplateId: null,
     },
   });
 
@@ -82,10 +85,29 @@ const CreateProgramPage = () => {
       if (error) {
         showError("Failed to load form templates: " + error.message);
       } else {
-        setTemplates(data as FormType[]);
+        setFormTemplates(data as FormType[]);
       }
     };
     fetchTemplates();
+  }, [user]);
+
+  useEffect(() => {
+    const fetchWorkflowTemplates = async () => {
+      if (!user) return;
+      const { data, error } = await supabase
+        .from('workflow_templates')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('status', 'published')
+        .order('name', { ascending: true });
+
+      if (error) {
+        showError("Failed to load workflow templates: " + error.message);
+      } else {
+        setWorkflowTemplates(data as WorkflowTemplate[]);
+      }
+    };
+    fetchWorkflowTemplates();
   }, [user]);
 
   async function onSubmit(values: ProgramFormValues) {
@@ -99,7 +121,7 @@ const CreateProgramPage = () => {
     const now = new Date().toISOString();
 
     if (values.formTemplateId) {
-      const template = templates.find(t => t.id === values.formTemplateId);
+      const template = formTemplates.find(t => t.id === values.formTemplateId);
       if (!template) {
         showError("Selected template not found.");
         setIsSubmitting(false);
@@ -211,6 +233,7 @@ const CreateProgramPage = () => {
       deadline: values.deadline.toISOString(),
       status: 'draft',
       form_id: newFormId,
+      workflow_template_id: values.workflowTemplateId || null,
     }).select('id').single();
 
     if (programError || !programData) {
@@ -318,14 +341,41 @@ const CreateProgramPage = () => {
                       </FormControl>
                       <SelectContent>
                         <SelectItem value="">Start from scratch (blank form)</SelectItem>
-                        {templates.length > 0 && <DropdownMenuSeparator />}
-                        {templates.map(template => (
+                        {formTemplates.length > 0 && <DropdownMenuSeparator />}
+                        {formTemplates.map(template => (
                           <SelectItem key={template.id} value={template.id}>{template.name}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                     <FormDescription>
                       Choose an existing form template to pre-populate your new program's application form.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="workflowTemplateId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Workflow Template (Optional)</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value || ''}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a workflow" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="">No workflow attached</SelectItem>
+                        {workflowTemplates.length > 0 && <DropdownMenuSeparator />}
+                        {workflowTemplates.map(template => (
+                          <SelectItem key={template.id} value={template.id}>{template.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormDescription>
+                      Choose a pre-defined workflow to manage the application pipeline for this program.
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
