@@ -26,7 +26,10 @@ const editWorkflowStageSchema = z.object({
   step_type: z.enum(['form', 'screening', 'review', 'resubmission', 'decision', 'email', 'scheduling', 'status']),
   form_id: z.string().nullable().optional(),
   email_template_id: z.string().nullable().optional(),
-  decision_options: z.array(z.string().min(1, "Outcome cannot be empty.")).optional(),
+  decision_options: z.array(z.object({
+    name: z.string().min(1, "Outcome name cannot be empty."),
+    email_template_id: z.string().nullable().optional(),
+  })).optional(),
   status_message: z.string().optional(),
 });
 
@@ -54,7 +57,7 @@ export const WorkflowStagePropertiesPanel = ({
 
   useEffect(() => {
     if (stage) {
-      let decision_options: string[] | undefined = undefined;
+      let decision_options: { name: string; email_template_id: string | null }[] | undefined = undefined;
       let status_message: string | undefined = undefined;
       let standard_description = stage.description || '';
 
@@ -62,7 +65,10 @@ export const WorkflowStagePropertiesPanel = ({
         try {
           const config = JSON.parse(stage.description);
           if (Array.isArray(config.outcomes)) {
-            decision_options = config.outcomes;
+            decision_options = config.outcomes.map((o: any) => ({
+              name: o.name || '',
+              email_template_id: o.email_template_id || null
+            }));
             standard_description = '';
           }
         } catch (e) { /* Not valid JSON, treat as standard description */ }
@@ -77,7 +83,7 @@ export const WorkflowStagePropertiesPanel = ({
         step_type: stage.step_type,
         form_id: stage.form_id || null,
         email_template_id: stage.email_template_id || null,
-        decision_options: decision_options || ['Accepted', 'Declined'],
+        decision_options: decision_options || [{ name: 'Accepted', email_template_id: null }, { name: 'Declined', email_template_id: null }],
         status_message: status_message || '',
       });
     }
@@ -87,7 +93,8 @@ export const WorkflowStagePropertiesPanel = ({
     let descriptionPayload: string | null = values.description || null;
 
     if (values.step_type === 'decision') {
-      descriptionPayload = JSON.stringify({ outcomes: values.decision_options || [] });
+      const validOutcomes = values.decision_options?.filter(o => o.name.trim() !== '') || [];
+      descriptionPayload = JSON.stringify({ outcomes: validOutcomes });
     } else if (values.step_type === 'status') {
       descriptionPayload = values.status_message || null;
     }
@@ -165,9 +172,9 @@ export const WorkflowStagePropertiesPanel = ({
                 <FormItem>
                   <FormLabel>Decision Outcomes</FormLabel>
                   <FormControl>
-                    <DecisionOptionsInput />
+                    <DecisionOptionsInput emailTemplates={emailTemplates} />
                   </FormControl>
-                  <FormDescription>Define the possible outcomes for this decision stage.</FormDescription>
+                  <FormDescription>Define the possible outcomes and trigger an optional email for each.</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
