@@ -33,6 +33,7 @@ import { ThemeProvider } from "next-themes";
 import WorkflowManagementPage from "./pages/workflow/WorkflowManagementPage";
 import WorkflowBuilderPage from "./pages/workflow/WorkflowBuilderPage";
 import ReviewerDashboardPage from "@/pages/reviewer/ReviewerDashboardPage";
+import EditApplicationPage from "./pages/applications/EditApplicationPage";
 
 const queryClient = new QueryClient();
 
@@ -56,6 +57,7 @@ const App = () => (
                 
                 <Route element={<ProtectedRoute />}>
                   <Route path="/apply/:programId" element={<ApplyPage />} />
+                  <Route path="/application/:applicationId/edit" element={<EditApplicationPage />} />
                   <Route path="/dashboard" element={<DashboardPage />} />
                   <Route path="/profile" element={<ProfilePage />} />
                   

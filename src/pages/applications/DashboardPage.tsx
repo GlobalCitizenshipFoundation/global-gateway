@@ -22,6 +22,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Application as UserApplication, FormField, FormSection } from "@/types";
 import ApplicationPdfViewer from "@/components/applications/ApplicationPdfViewer";
 import { ApplicationStatusAlert } from "@/components/application/ApplicationStatusAlert";
+import { Button } from "@/components/ui/button";
 
 const DashboardPage = () => {
   const { user } = useSession();
@@ -177,7 +178,11 @@ const DashboardPage = () => {
                     <Badge variant="secondary">{app.program_stages?.name || 'N/A'}</Badge>
                   </TableCell>
                   <TableCell className="text-right">
-                    {app.programs?.allow_pdf_download && (
+                    {app.program_stages?.step_type === 'resubmission' ? (
+                      <Button asChild>
+                        <Link to={`/application/${app.id}/edit`}>Edit & Resubmit</Link>
+                      </Button>
+                    ) : app.programs?.allow_pdf_download ? (
                       <ApplicationPdfViewer
                         applicationId={app.id}
                         programTitle={app.programs?.title || 'Application'}
@@ -189,7 +194,7 @@ const DashboardPage = () => {
                         allFormFields={allFormFields.filter(f => f.form_id === app.programs?.form_id)}
                         formSections={allFormSections.filter(s => s.form_id === app.programs?.form_id)}
                       />
-                    )}
+                    ) : null}
                   </TableCell>
                 </TableRow>
               )) : (
