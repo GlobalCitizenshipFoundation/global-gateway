@@ -25,10 +25,10 @@ export const useWorkflowBuilderHandlers = ({
 
   const {
     templateId,
-    templateName, setTemplateName,
-    templateDescription, setTemplateDescription,
-    templateStatus, setTemplateStatus,
-    workflowSteps, setWorkflowSteps,
+    templateName,
+    templateDescription,
+    setTemplateStatus,
+    setWorkflowSteps,
     fetchData,
     setIsAutoSaving,
     setLastSavedTimestamp,
@@ -40,7 +40,7 @@ export const useWorkflowBuilderHandlers = ({
     newStepName, setNewStepName,
     newStepDescription, setNewStepDescription,
     newStepType, setNewStepType,
-    isAddingStep, setIsAddingStep,
+    setIsAddingStep,
   } = state;
 
   const showSavedFeedback = useCallback(() => {

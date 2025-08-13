@@ -8,15 +8,15 @@ import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/componen
 import { useWorkflowBuilderState } from "@/hooks/useWorkflowBuilderState";
 import { useWorkflowBuilderHandlers } from "@/hooks/useWorkflowBuilderHandlers";
 import { useWorkflowBuilderActions } from "@/hooks/useWorkflowBuilderActions";
-import { useWorkflowStepDragAndDrop } from "@/hooks/useWorkflowStepDragAndDrop"; // Will create this next
+import { useWorkflowStepDragAndDrop } from "@/hooks/useWorkflowStepDragAndDrop";
 
 import { WorkflowTemplateDetailsCard } from "@/components/workflow-builder/WorkflowTemplateDetailsCard";
 import { WorkflowActions } from "@/components/workflow-builder/WorkflowActions";
 import { AddWorkflowStepForm } from "@/components/workflow-builder/AddWorkflowStepForm";
 import { WorkflowStepsList } from "@/components/workflow-builder/WorkflowStepsList";
-import { WorkflowStepItem } from "@/components/workflow-builder/WorkflowStepItem"; // For DragOverlay
-import { WorkflowStepPropertiesPanel } from "@/components/workflow-builder/WorkflowStepPropertiesPanel"; // New import
-import { WorkflowStep } from "@/types"; // Import WorkflowStep type
+import { WorkflowStepItem } from "@/components/workflow-builder/WorkflowStepItem";
+import { WorkflowStepPropertiesPanel } from "@/components/workflow-builder/WorkflowStepPropertiesPanel";
+import { WorkflowStep } from "@/types";
 
 const WorkflowBuilderPage = () => {
   const { templateId } = useParams<{ templateId: string }>();
@@ -30,7 +30,7 @@ const WorkflowBuilderPage = () => {
     newStepName, setNewStepName,
     newStepDescription, setNewStepDescription,
     newStepType, setNewStepType,
-    isAddingStep, setIsAddingStep,
+    isAddingStep,
     setHasUnsavedChanges,
     fetchData,
   } = state;

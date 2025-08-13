@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import { WorkflowTemplate, WorkflowStep } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
