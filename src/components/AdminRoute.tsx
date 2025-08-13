@@ -16,8 +16,9 @@ const AdminRoute = () => {
     );
   }
 
-  if (!session || profile?.role !== 'admin') {
-    // Redirect them to the home page if they are not an admin.
+  // Allow access if authenticated and role is 'admin' OR 'super_admin'
+  if (!session || (profile?.role !== 'admin' && profile?.role !== 'super_admin')) {
+    // Redirect them to the home page if they are not an admin or super_admin.
     return <Navigate to="/" replace />;
   }
 
