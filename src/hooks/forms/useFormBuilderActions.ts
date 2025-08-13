@@ -82,14 +82,6 @@ export const useFormBuilderActions = ({
     if (!user) return false;
     const now = new Date().toISOString();
 
-    setSections((prevSections: FormSection[]) =>
-      prevSections.map((s: FormSection) =>
-        s.id === sectionId
-          ? { ...s, name: values.name, description: values.description ?? null, tooltip: values.tooltip ?? null, last_edited_by_user_id: user.id, last_edited_at: now }
-          : s
-      )
-    );
-
     const { error } = await supabase
       .from('form_sections')
       .update({
@@ -102,10 +94,11 @@ export const useFormBuilderActions = ({
       .eq('id', sectionId);
 
     if (error) {
-      showError(`Failed to update section: ${error.message}. Reverting.`);
+      showError(`Failed to update section: ${error.message}.`);
       fetchData();
       return false;
     } else {
+      fetchData(); // Re-fetch on success to ensure UI consistency
       return true;
     }
   };
@@ -199,19 +192,18 @@ export const useFormBuilderActions = ({
 
   const handleSaveLogic = async (fieldId: string, rules: DisplayRule[], logicType: 'AND' | 'OR') => {
     if (!user) return false;
-    setFields(prevFields =>
-      prevFields.map(f => (f.id === fieldId ? { ...f, display_rules: rules, display_rules_logic_type: logicType } : f))
-    );
+    
     const { error } = await supabase
       .from('form_fields')
       .update({ display_rules: rules, display_rules_logic_type: logicType, last_edited_by_user_id: user.id, last_edited_at: new Date().toISOString() })
       .eq('id', fieldId);
 
     if (error) {
-      showError(`Failed to save display logic: ${error.message}. Reverting.`);
-      fetchData();
+      showError(`Failed to save display logic: ${error.message}.`);
+      fetchData(); // Re-fetch on error
       return false;
     } else {
+      fetchData(); // Re-fetch on success to ensure UI consistency
       return true;
     }
   };
@@ -276,25 +268,17 @@ export const useFormBuilderActions = ({
       updatePayload.rating_max_label = null;
     }
 
-    setFields(prevFields =>
-      prevFields.map(f =>
-        f.id === fieldId
-          ? { ...f, ...(updatePayload as FormField) }
-          : f
-      )
-    );
-
     const { error } = await supabase
       .from('form_fields')
       .update(updatePayload)
       .eq('id', fieldId);
 
     if (error) {
-      showError(`Failed to update field: ${error.message}. Reverting.`);
+      showError(`Failed to update field: ${error.message}.`);
       fetchData();
       return false;
     } else {
-      fetchData();
+      fetchData(); // Re-fetch on success to ensure UI consistency
       return true;
     }
   };

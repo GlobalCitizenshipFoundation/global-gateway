@@ -258,7 +258,7 @@ const ConditionalLogicBuilder = ({
                 value={rule.operator}
                 onValueChange={(val) => {
                   const operator = val as DisplayRule['operator'];
-                  const value = (operator === 'is_empty' || operator === 'is_not_empty') ? null : rule.value;
+                  const value = (operator === 'is_empty' || operator === 'is_not_empty') ? null : null; // Always reset value on operator change
                   updateRule(index, { operator, value });
                 }}
                 disabled={!triggerField}
