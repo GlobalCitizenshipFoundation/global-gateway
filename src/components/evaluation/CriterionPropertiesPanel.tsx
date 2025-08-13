@@ -1,0 +1,193 @@
+import { useEffect } from 'react';
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { Button } from "@/components/ui/button";
+import {
+  Form,
+  FormControl,
+  FormField as FormFieldComponent,
+  FormItem,
+  FormLabel,
+  FormMessage,
+  FormDescription,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { EvaluationCriterion } from "@/types";
+import { X } from "lucide-react";
+
+const criterionSchema = z.object({
+  label: z.string().min(1, "Label is required."),
+  criterion_type: z.enum(['number_scale', 'pass_fail', 'text', 'select']),
+  options: z.string().optional(),
+  min_score: z.preprocess((val) => val === '' ? null : Number(val), z.number().nullable().optional()),
+  max_score: z.preprocess((val) => val === '' ? null : Number(val), z.number().nullable().optional()),
+  weight: z.preprocess((val) => Number(val), z.number().min(0, "Weight must be non-negative.")),
+});
+
+type CriterionFormValues = z.infer<typeof criterionSchema>;
+
+interface CriterionPropertiesPanelProps {
+  criterion: EvaluationCriterion;
+  onSave: (criterionId: string, values: Partial<EvaluationCriterion>) => void;
+  onClose: () => void;
+}
+
+export const CriterionPropertiesPanel = ({ criterion, onSave, onClose }: CriterionPropertiesPanelProps) => {
+  const form = useForm<CriterionFormValues>({
+    resolver: zodResolver(criterionSchema),
+    defaultValues: {
+      label: '',
+      criterion_type: 'number_scale',
+      options: '',
+      min_score: 1,
+      max_score: 5,
+      weight: 1.0,
+    },
+  });
+
+  useEffect(() => {
+    if (criterion) {
+      form.reset({
+        label: criterion.label,
+        criterion_type: criterion.criterion_type,
+        options: Array.isArray(criterion.options) ? criterion.options.join(', ') : '',
+        min_score: criterion.min_score,
+        max_score: criterion.max_score,
+        weight: criterion.weight,
+      });
+    }
+  }, [criterion, form]);
+
+  const onSubmit = (values: CriterionFormValues) => {
+    const updates: Partial<EvaluationCriterion> = {
+      label: values.label,
+      criterion_type: values.criterion_type,
+      weight: values.weight,
+      options: values.criterion_type === 'select' ? values.options?.split(',').map(opt => opt.trim()) || null : null,
+      min_score: values.criterion_type === 'number_scale' ? values.min_score : null,
+      max_score: values.criterion_type === 'number_scale' ? values.max_score : null,
+    };
+    onSave(criterion.id, updates);
+  };
+
+  const selectedType = form.watch('criterion_type');
+
+  return (
+    <div className="p-6 h-full overflow-y-auto bg-background border-l">
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-xl font-semibold">Edit Criterion</h2>
+        <Button variant="ghost" size="icon" onClick={onClose}>
+          <X className="h-5 w-5" />
+        </Button>
+      </div>
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <FormFieldComponent
+            control={form.control}
+            name="label"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Label</FormLabel>
+                <FormControl>
+                  <Input {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormFieldComponent
+            control={form.control}
+            name="criterion_type"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Criterion Type</FormLabel>
+                <Select onValueChange={field.onChange} value={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a type" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="number_scale">Number Scale</SelectItem>
+                    <SelectItem value="pass_fail">Pass / Fail</SelectItem>
+                    <SelectItem value="text">Text Response</SelectItem>
+                    <SelectItem value="select">Dropdown</SelectItem>
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          {selectedType === 'number_scale' && (
+            <div className="grid grid-cols-2 gap-4">
+              <FormFieldComponent
+                control={form.control}
+                name="min_score"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Min Score</FormLabel>
+                    <FormControl>
+                      <Input type="number" {...field} value={field.value ?? ''} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormFieldComponent
+                control={form.control}
+                name="max_score"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Max Score</FormLabel>
+                    <FormControl>
+                      <Input type="number" {...field} value={field.value ?? ''} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+          )}
+          {selectedType === 'select' && (
+            <FormFieldComponent
+              control={form.control}
+              name="options"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Options</FormLabel>
+                  <FormControl>
+                    <Textarea {...field} placeholder="Comma-separated options" />
+                  </FormControl>
+                  <FormDescription>
+                    Enter options separated by commas.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
+          <FormFieldComponent
+            control={form.control}
+            name="weight"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Weight</FormLabel>
+                <FormControl>
+                  <Input type="number" step="0.1" {...field} />
+                </FormControl>
+                <FormDescription>
+                  Determines the importance of this criterion in the total score.
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <Button type="submit" className="w-full">Save Criterion</Button>
+        </form>
+      </Form>
+    </div>
+  );
+};

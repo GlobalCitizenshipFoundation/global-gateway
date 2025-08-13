@@ -16,6 +16,7 @@ import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/componen
 import { EvaluationCriterion } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/contexts/auth/SessionContext";
+import { CriterionPropertiesPanel } from "@/components/evaluation/CriterionPropertiesPanel";
 
 const EditEvaluationTemplatePage = () => {
   const { user } = useSession();
@@ -66,6 +67,15 @@ const EditEvaluationTemplatePage = () => {
     if (success) {
       setCriteria(prev => prev.filter(c => c.id !== criterionId));
       showSuccess("Criterion deleted.");
+    }
+  };
+
+  const handleSaveCriterion = async (criterionId: string, values: Partial<EvaluationCriterion>) => {
+    const success = await handleUpdateCriterion(criterionId, values);
+    if (success) {
+      fetchData();
+      setSelectedCriterion(null);
+      showSuccess("Criterion updated successfully.");
     }
   };
 
@@ -133,8 +143,11 @@ const EditEvaluationTemplatePage = () => {
           <>
             <ResizableHandle withHandle />
             <ResizablePanel defaultSize={35} minSize={25}>
-              <p className="p-6">Properties panel for "{selectedCriterion.label}" will be implemented here.</p>
-              <Button onClick={() => setSelectedCriterion(null)}>Close</Button>
+              <CriterionPropertiesPanel
+                criterion={selectedCriterion}
+                onSave={handleSaveCriterion}
+                onClose={() => setSelectedCriterion(null)}
+              />
             </ResizablePanel>
           </>
         )}
