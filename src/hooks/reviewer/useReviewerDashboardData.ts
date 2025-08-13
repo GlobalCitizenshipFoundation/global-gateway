@@ -44,14 +44,21 @@ export const useReviewerDashboardData = () => {
         showError("Error fetching assigned applications: " + fetchError.message);
       } else {
         const formattedData = data.map(assignment => {
-          const application = Array.isArray(assignment.applications) ? assignment.applications[0] : assignment.applications;
-          if (application) {
-            application.programs = Array.isArray(application.programs) ? application.programs[0] : application.programs;
-            application.program_stages = Array.isArray(application.program_stages) ? application.program_stages[0] : application.program_stages;
+          const applicationData = Array.isArray(assignment.applications) ? assignment.applications[0] : assignment.applications;
+          
+          if (!applicationData) {
+            return { ...assignment, applications: null };
           }
+
+          const formattedApplication = {
+            ...applicationData,
+            programs: Array.isArray(applicationData.programs) ? applicationData.programs[0] : applicationData.programs,
+            program_stages: Array.isArray(applicationData.program_stages) ? applicationData.program_stages[0] : applicationData.program_stages,
+          };
+
           return {
             ...assignment,
-            applications: application,
+            applications: formattedApplication,
           };
         });
         setAssignments(formattedData as ApplicationAssignment[]);

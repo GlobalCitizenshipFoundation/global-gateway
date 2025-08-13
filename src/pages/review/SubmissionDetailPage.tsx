@@ -29,6 +29,7 @@ import { ReviewList } from "@/components/review/ReviewList";
 import { ReviewForm } from "@/components/review/ReviewForm";
 import { useSession } from "@/contexts/auth/SessionContext";
 import { ReviewerAssignment } from "@/components/review/ReviewerAssignment";
+import { YourReviewCard } from "@/components/review/YourReviewCard";
 
 type SubmissionDetail = {
   id: string;
@@ -53,7 +54,7 @@ type ResponseWithField = {
 
 const SubmissionDetailPage = () => {
   const { programId, submissionId } = useParams<{ programId: string, submissionId: string }>();
-  const { user } = useSession();
+  const { user, profile } = useSession();
   const [submission, setSubmission] = useState<SubmissionDetail | null>(null);
   const [allResponses, setAllResponses] = useState<ResponseWithField[]>([]);
   const [allFormFieldsForLogic, setAllFormFieldsForLogic] = useState<FormField[]>([]);
@@ -186,6 +187,15 @@ const SubmissionDetailPage = () => {
     setIsSubmittingReview(false);
   };
 
+  const userReview = useMemo(() => {
+    if (!user || !reviews) return null;
+    return reviews.find(r => r.reviewer_id === user.id) || null;
+  }, [reviews, user]);
+
+  const isManager = useMemo(() => {
+    return profile && ['creator', 'admin', 'super_admin'].includes(profile.role);
+  }, [profile]);
+
   return (
     <div className="container py-12 grid grid-cols-1 lg:grid-cols-3 gap-8">
       <div className="lg:col-span-2 space-y-8">
@@ -256,9 +266,15 @@ const SubmissionDetailPage = () => {
         </Card>
       </div>
       <div className="lg:col-span-1 space-y-8">
-        <ReviewerAssignment applicationId={submissionId!} />
-        <ReviewForm onSubmit={handleReviewSubmit} isSubmitting={isSubmittingReview} />
-        <ReviewList reviews={reviews} />
+        {isManager && <ReviewerAssignment applicationId={submissionId!} />}
+        
+        {userReview ? (
+          <YourReviewCard review={userReview} />
+        ) : (
+          <ReviewForm onSubmit={handleReviewSubmit} isSubmitting={isSubmittingReview} />
+        )}
+
+        {isManager && <ReviewList reviews={reviews} />}
       </div>
     </div>
   );
