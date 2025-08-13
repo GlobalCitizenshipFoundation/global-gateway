@@ -5,7 +5,7 @@ import { Program } from '@/types';
 import { showError } from '@/utils/toast';
 
 export const useProgramsData = () => {
-  const { user } = useSession();
+  const { user, profile } = useSession();
   const [programs, setPrograms] = useState<Program[]>([]);
   const [submissionCounts, setSubmissionCounts] = useState<Map<string, number>>(new Map());
   const [loading, setLoading] = useState(true);
@@ -13,7 +13,7 @@ export const useProgramsData = () => {
 
   useEffect(() => {
     const fetchData = async () => {
-      if (!user) {
+      if (!user || !profile) {
         setLoading(false);
         return;
       }
@@ -21,11 +21,17 @@ export const useProgramsData = () => {
       setLoading(true);
       setError(null);
 
-      const { data: programsData, error: programsError } = await supabase
+      let query = supabase
         .from('programs')
-        .select('id, title, deadline, status, created_at, updated_at')
-        .eq('user_id', user.id)
+        .select('id, title, deadline, status, created_at, updated_at, form_id')
         .order('created_at', { ascending: false });
+
+      // If user is not an admin or super_admin, only fetch their own programs
+      if (profile.role !== 'admin' && profile.role !== 'super_admin') {
+        query = query.eq('user_id', user.id);
+      }
+
+      const { data: programsData, error: programsError } = await query;
 
       if (programsError) {
         setError(programsError.message);
@@ -60,7 +66,7 @@ export const useProgramsData = () => {
     };
 
     fetchData();
-  }, [user]);
+  }, [user, profile]);
 
   return { programs, setPrograms, submissionCounts, loading, error };
 };

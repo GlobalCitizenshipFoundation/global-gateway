@@ -5,7 +5,7 @@ import { Form as FormType } from '@/types';
 import { showError } from '@/utils/toast';
 
 export const useFormsData = () => {
-  const { user } = useSession();
+  const { user, profile } = useSession();
   const [forms, setForms] = useState<FormType[]>([]);
   const [templates, setTemplates] = useState<FormType[]>([]);
   const [loading, setLoading] = useState(true);
@@ -13,7 +13,7 @@ export const useFormsData = () => {
 
   useEffect(() => {
     const fetchData = async () => {
-      if (!user) {
+      if (!user || !profile) {
         setLoading(false);
         return;
       }
@@ -21,11 +21,17 @@ export const useFormsData = () => {
       setLoading(true);
       setError(null);
 
-      const { data, error: fetchError } = await supabase
+      let query = supabase
         .from('forms')
         .select('*')
-        .eq('user_id', user.id)
         .order('created_at', { ascending: false });
+
+      // If user is not an admin or super_admin, only fetch their own forms
+      if (profile.role !== 'admin' && profile.role !== 'super_admin') {
+        query = query.eq('user_id', user.id);
+      }
+
+      const { data, error: fetchError } = await query;
 
       if (fetchError) {
         setError(fetchError.message);
@@ -38,7 +44,7 @@ export const useFormsData = () => {
     };
 
     fetchData();
-  }, [user]);
+  }, [user, profile]);
 
   return { forms, setForms, templates, setTemplates, loading, error };
 };

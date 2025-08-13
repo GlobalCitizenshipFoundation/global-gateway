@@ -5,13 +5,13 @@ import { EmailTemplate } from '@/types';
 import { showError } from '@/utils/toast';
 
 export const useEmailTemplatesData = () => {
-  const { user } = useSession();
+  const { user, profile } = useSession();
   const [emailTemplates, setEmailTemplates] = useState<EmailTemplate[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const fetchEmailTemplates = async () => {
-    if (!user) {
+    if (!user || !profile) {
       setLoading(false);
       return;
     }
@@ -19,12 +19,17 @@ export const useEmailTemplatesData = () => {
     setLoading(true);
     setError(null);
 
-    // Fetch templates created by the current user, and all default templates
-    const { data, error: fetchError } = await supabase
+    let query = supabase
       .from('email_templates')
       .select('*')
-      .or(`user_id.eq.${user.id},is_default.eq.true`) // Fetch user's own or default templates
       .order('name', { ascending: true });
+
+    // If user is not an admin or super_admin, only fetch their own templates and default templates
+    if (profile.role !== 'admin' && profile.role !== 'super_admin') {
+      query = query.or(`user_id.eq.${user.id},is_default.eq.true`);
+    }
+
+    const { data, error: fetchError } = await query;
 
     if (fetchError) {
       setError(fetchError.message);
@@ -37,7 +42,7 @@ export const useEmailTemplatesData = () => {
 
   useEffect(() => {
     fetchEmailTemplates();
-  }, [user]);
+  }, [user, profile]);
 
   return { emailTemplates, setEmailTemplates, loading, error, fetchEmailTemplates };
 };
