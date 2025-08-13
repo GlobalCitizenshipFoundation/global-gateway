@@ -134,6 +134,22 @@ export const useWorkflowTemplateActions = ({ setTemplates, fetchTemplates }: Use
       showSuccess("Step order saved.");
     }
   };
+
+  const handleUpdateStepDetails = async (stepId: string, payload: Partial<WorkflowStep>) => {
+    if (!user) return false;
+    const now = new Date().toISOString();
+    const { error } = await supabase
+      .from('workflow_steps')
+      .update({ ...payload, last_edited_by_user_id: user.id, last_edited_at: now, updated_at: now })
+      .eq('id', stepId);
+
+    if (error) {
+      showError(`Failed to update step details: ${error.message}`);
+      return false;
+    }
+    showSuccess("Step details updated.");
+    return true;
+  };
   
   return { 
     isSubmitting, 
@@ -144,5 +160,6 @@ export const useWorkflowTemplateActions = ({ setTemplates, fetchTemplates }: Use
     handleAddStep,
     handleDeleteStep,
     handleUpdateStepOrder,
+    handleUpdateStepDetails,
   };
 };

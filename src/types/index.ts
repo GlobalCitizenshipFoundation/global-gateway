@@ -146,4 +146,6 @@ export type WorkflowStep = {
   updated_at: string;
   last_edited_by_user_id: string | null;
   last_edited_at: string | null;
+  form_id: string | null;
+  email_template_id: string | null;
 };

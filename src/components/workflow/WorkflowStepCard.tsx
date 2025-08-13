@@ -2,16 +2,17 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { GripVertical, Trash2 } from 'lucide-react';
+import { GripVertical, Trash2, Pencil } from 'lucide-react';
 import { WorkflowStep } from '@/types';
 import { Badge } from '../ui/badge';
 
 interface WorkflowStepCardProps {
   step: WorkflowStep;
   onDelete: (stepId: string) => void;
+  onEdit: (step: WorkflowStep) => void;
 }
 
-export const WorkflowStepCard = ({ step, onDelete }: WorkflowStepCardProps) => {
+export const WorkflowStepCard = ({ step, onDelete, onEdit }: WorkflowStepCardProps) => {
   const {
     attributes,
     listeners,
@@ -42,9 +43,14 @@ export const WorkflowStepCard = ({ step, onDelete }: WorkflowStepCardProps) => {
               </CardDescription>
             </div>
           </div>
-          <Button variant="ghost" size="icon" onClick={() => onDelete(step.id)}>
-            <Trash2 className="h-4 w-4 text-destructive" />
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" size="icon" onClick={() => onEdit(step)}>
+              <Pencil className="h-4 w-4 text-muted-foreground" />
+            </Button>
+            <Button variant="ghost" size="icon" onClick={() => onDelete(step.id)}>
+              <Trash2 className="h-4 w-4 text-destructive" />
+            </Button>
+          </div>
         </CardHeader>
       </Card>
     </div>
