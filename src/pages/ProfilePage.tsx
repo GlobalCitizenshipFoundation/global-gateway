@@ -143,6 +143,19 @@ const ProfilePage = () => {
     return [firstName, middleName, lastName].filter(Boolean).join(' ').trim();
   };
 
+  const getRoleLabel = (role: 'applicant' | 'creator' | 'admin') => {
+    switch (role) {
+      case 'applicant':
+        return 'Applicant';
+      case 'creator':
+        return 'Program Creator';
+      case 'admin':
+        return 'Administrator';
+      default:
+        return 'User';
+    }
+  };
+
   return (
     <div className="container py-12">
       <Card className="mx-auto max-w-xl">
@@ -189,7 +202,7 @@ const ProfilePage = () => {
                 <div>
                   <h3 className="text-xl font-semibold">{getFullName() || 'No Name Set'}</h3>
                   <p className="text-muted-foreground text-sm">{email}</p>
-                  <Badge variant="secondary" className="mt-2 capitalize">{role}</Badge>
+                  <Badge variant="secondary" className="mt-2">{getRoleLabel(role)}</Badge>
                 </div>
               </div>
 
