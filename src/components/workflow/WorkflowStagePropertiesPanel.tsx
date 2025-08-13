@@ -15,7 +15,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { WorkflowStage, Form as FormType, EmailTemplate } from "@/types";
+import { WorkflowStage, Form as FormType, EmailTemplate, EvaluationTemplate } from "@/types";
 import { X } from "lucide-react";
 import { DecisionOptionsInput } from './DecisionOptionsInput';
 import RichTextEditor from '../common/RichTextEditor';
@@ -26,6 +26,7 @@ const editWorkflowStageSchema = z.object({
   step_type: z.enum(['form', 'screening', 'review', 'resubmission', 'decision', 'email', 'scheduling', 'status']),
   form_id: z.string().nullable().optional(),
   email_template_id: z.string().nullable().optional(),
+  evaluation_template_id: z.string().nullable().optional(), // New
   decision_options: z.array(z.object({
     name: z.string().min(1, "Outcome name cannot be empty."),
     email_template_id: z.string().nullable().optional(),
@@ -54,6 +55,7 @@ interface WorkflowStagePropertiesPanelProps {
   allStages: WorkflowStage[];
   forms: FormType[];
   emailTemplates: EmailTemplate[];
+  evaluationTemplates: EvaluationTemplate[]; // New
   onSave: (stageId: string, values: Partial<WorkflowStage>) => void;
   onClose: () => void;
 }
@@ -63,6 +65,7 @@ export const WorkflowStagePropertiesPanel = ({
   allStages,
   forms,
   emailTemplates,
+  evaluationTemplates, // New
   onSave,
   onClose,
 }: WorkflowStagePropertiesPanelProps) => {
@@ -113,6 +116,7 @@ export const WorkflowStagePropertiesPanel = ({
         step_type: stage.step_type,
         form_id: stage.form_id || null,
         email_template_id: stage.email_template_id || null,
+        evaluation_template_id: stage.evaluation_template_id || null, // New
         decision_options: decision_options || [{ name: 'Accepted', email_template_id: null }, { name: 'Declined', email_template_id: null }],
         status_message: status_message || '',
         status_tag: status_tag || 'Info',
@@ -146,6 +150,7 @@ export const WorkflowStagePropertiesPanel = ({
       step_type: values.step_type,
       form_id: values.form_id,
       email_template_id: values.email_template_id,
+      evaluation_template_id: values.evaluation_template_id, // New
       description: descriptionPayload,
     };
 
@@ -211,6 +216,35 @@ export const WorkflowStagePropertiesPanel = ({
               </FormItem>
             )}
           />
+
+          {selectedStageType === 'review' && (
+            <FormFieldComponent
+              control={form.control}
+              name="evaluation_template_id"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Evaluation Template (Scorecard)</FormLabel>
+                  <Select onValueChange={(value) => field.onChange(value === '__none__' ? null : value)} value={field.value || ''}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Choose a scorecard for this stage" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="__none__">No scorecard attached</SelectItem>
+                      {evaluationTemplates.map(template => (
+                        <SelectItem key={template.id} value={template.id}>{template.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormDescription>
+                    This scorecard will be used by reviewers at this stage.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
 
           {selectedStageType === 'resubmission' && (
             <FormFieldComponent
@@ -339,7 +373,7 @@ export const WorkflowStagePropertiesPanel = ({
               name="form_id"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Select Form (Optional)</FormLabel>
+                  <FormLabel>Attach Form (for Reviewer)</FormLabel>
                   <Select onValueChange={(value) => field.onChange(value === '__none__' ? null : value)} value={field.value || ''}>
                     <FormControl>
                       <SelectTrigger>

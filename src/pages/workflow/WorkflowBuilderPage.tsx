@@ -14,12 +14,11 @@ import { WorkflowStageCard } from "@/components/workflow/WorkflowStageCard";
 import { showSuccess, showError } from "@/utils/toast";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 import { WorkflowStagePropertiesPanel } from "@/components/workflow/WorkflowStagePropertiesPanel";
-import { WorkflowStage, Form as FormType, EmailTemplate } from "@/types";
+import { WorkflowStage, Form as FormType, EmailTemplate, EvaluationTemplate } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/contexts/auth/SessionContext";
 import { isWorkflowPublishable } from '@/utils/workflowValidation';
 import { WorkflowActions } from "@/components/workflow/WorkflowActions";
-import { DuplicateWorkflowTemplateDialog } from "@/components/workflow/DuplicateWorkflowTemplateDialog";
 
 const AUTO_SAVE_DEBOUNCE_TIME = 2000;
 
@@ -33,6 +32,7 @@ const WorkflowBuilderPage = () => {
   const [selectedStage, setSelectedStage] = useState<WorkflowStage | null>(null);
   const [forms, setForms] = useState<FormType[]>([]);
   const [emailTemplates, setEmailTemplates] = useState<EmailTemplate[]>([]);
+  const [evaluationTemplates, setEvaluationTemplates] = useState<EvaluationTemplate[]>([]);
   const [validationErrors, setValidationErrors] = useState<Map<string, string>>(new Map());
   const [isDuplicateDialogOpen, setIsDuplicateDialogOpen] = useState(false);
   const [newTemplateName, setNewTemplateName] = useState('');
@@ -57,14 +57,18 @@ const WorkflowBuilderPage = () => {
       if (!user) return;
       const formsPromise = supabase.from('forms').select('*').eq('user_id', user.id).eq('is_template', false).eq('status', 'published').order('name', { ascending: true });
       const emailsPromise = supabase.from('email_templates').select('*').eq('user_id', user.id).eq('status', 'published').order('name', { ascending: true });
+      const evaluationsPromise = supabase.from('evaluation_templates').select('*').eq('user_id', user.id).order('name', { ascending: true });
       
-      const [{ data: formsData, error: formsError }, { data: emailsData, error: emailsError }] = await Promise.all([formsPromise, emailsPromise]);
+      const [{ data: formsData, error: formsError }, { data: emailsData, error: emailsError }, { data: evalsData, error: evalsError }] = await Promise.all([formsPromise, emailsPromise, evaluationsPromise]);
 
       if (formsError) showError("Could not load forms for selection.");
       else setForms(formsData as FormType[]);
 
       if (emailsError) showError("Could not load email templates for selection.");
       else setEmailTemplates(emailsData as EmailTemplate[]);
+
+      if (evalsError) showError("Could not load evaluation templates for selection.");
+      else setEvaluationTemplates(evalsData as EvaluationTemplate[]);
     };
     fetchDropdownData();
   }, [user]);
@@ -209,7 +213,7 @@ const WorkflowBuilderPage = () => {
           <>
             <ResizableHandle withHandle />
             <ResizablePanel defaultSize={35} minSize={25}>
-              <WorkflowStagePropertiesPanel stage={selectedStage} allStages={stages} forms={forms} emailTemplates={emailTemplates} onSave={handleSaveStage} onClose={() => setSelectedStage(null)} />
+              <WorkflowStagePropertiesPanel stage={selectedStage} allStages={stages} forms={forms} emailTemplates={emailTemplates} evaluationTemplates={evaluationTemplates} onSave={handleSaveStage} onClose={() => setSelectedStage(null)} />
             </ResizablePanel>
           </>
         )}

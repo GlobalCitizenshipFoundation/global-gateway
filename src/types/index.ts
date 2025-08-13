@@ -36,6 +36,7 @@ export type ProgramStage = {
   description: string | null;
   form_id: string | null;
   email_template_id: string | null;
+  evaluation_template_id: string | null; // New
 };
 
 export type Application = {
@@ -157,6 +158,7 @@ export type WorkflowStage = {
   last_edited_at: string | null;
   form_id: string | null;
   email_template_id: string | null;
+  evaluation_template_id: string | null; // New
 };
 
 export type ApplicationReview = {
