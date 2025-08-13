@@ -3,11 +3,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
-import { ProgramStage } from "@/types";
+import { EmailTemplate, ProgramStage } from "@/types";
 import { showError, showSuccess } from "@/utils/toast";
 import { ArrowLeft, Plus, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useEmailTemplatesData } from "@/hooks/useEmailTemplatesData"; // Import the hook
 
 const ManageWorkflowPage = () => {
   const { programId } = useParams<{ programId: string }>();
@@ -16,6 +18,8 @@ const ManageWorkflowPage = () => {
   const [newStageName, setNewStageName] = useState('');
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const { emailTemplates, loading: templatesLoading, error: templatesError } = useEmailTemplatesData();
 
   useEffect(() => {
     const fetchWorkflow = async () => {
@@ -64,6 +68,7 @@ const ManageWorkflowPage = () => {
         program_id: programId,
         name: newStageName,
         order: nextOrder,
+        email_template_id: null, // New stages start without a template
       })
       .select()
       .single();
@@ -92,6 +97,28 @@ const ManageWorkflowPage = () => {
     }
   };
 
+  const handleUpdateStageTemplate = async (stageId: string, templateId: string | null) => {
+    setIsSubmitting(true);
+    const { error } = await supabase
+      .from('program_stages')
+      .update({ email_template_id: templateId })
+      .eq('id', stageId);
+
+    if (error) {
+      showError(`Failed to update stage email template: ${error.message}`);
+    } else {
+      setStages(prevStages =>
+        prevStages.map(stage =>
+          stage.id === stageId ? { ...stage, email_template_id: templateId } : stage
+        )
+      );
+      showSuccess("Stage email template updated successfully.");
+    }
+    setIsSubmitting(false);
+  };
+
+  const publishedEmailTemplates = emailTemplates.filter(t => t.status === 'published');
+
   return (
     <div className="container py-12">
       <Link to="/creator/dashboard" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-4">
@@ -108,16 +135,36 @@ const ManageWorkflowPage = () => {
         <CardContent>
           <div className="space-y-4">
             <h3 className="text-lg font-medium">Current Stages</h3>
-            {loading ? (
-              <p>Loading stages...</p>
+            {loading || templatesLoading ? (
+              <p>Loading stages and templates...</p>
+            ) : templatesError ? (
+              <p className="text-destructive">Error loading email templates: {templatesError}</p>
             ) : stages.length > 0 ? (
-              <ul className="space-y-2">
+              <ul className="space-y-4">
                 {stages.map(stage => (
-                  <li key={stage.id} className="flex items-center justify-between p-3 bg-secondary rounded-md">
-                    <span className="font-medium">{stage.name}</span>
-                    <Button variant="ghost" size="icon" onClick={() => handleDeleteStage(stage.id)}>
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
+                  <li key={stage.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 bg-secondary rounded-md gap-2">
+                    <span className="font-medium flex-grow">{stage.name}</span>
+                    <div className="flex items-center gap-2 w-full sm:w-auto">
+                      <Label htmlFor={`template-select-${stage.id}`} className="sr-only sm:not-sr-only">Email Template:</Label>
+                      <Select
+                        value={stage.email_template_id || ''}
+                        onValueChange={(value) => handleUpdateStageTemplate(stage.id, value === '' ? null : value)}
+                        disabled={isSubmitting}
+                      >
+                        <SelectTrigger id={`template-select-${stage.id}`} className="w-full sm:w-[200px]">
+                          <SelectValue placeholder="No email template" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="">No email template</SelectItem>
+                          {publishedEmailTemplates.map(template => (
+                            <SelectItem key={template.id} value={template.id}>{template.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Button variant="ghost" size="icon" onClick={() => handleDeleteStage(stage.id)} disabled={isSubmitting}>
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    </div>
                   </li>
                 ))}
               </ul>

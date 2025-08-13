@@ -11,7 +11,7 @@ import {
 } from "@dnd-kit/core";
 import { SortableContext } from "@dnd-kit/sortable";
 import { supabase } from "@/integrations/supabase/client";
-import { FormField, ProgramStage } from "@/types";
+import { FormField, ProgramStage, EmailTemplate } from "@/types"; // Import EmailTemplate
 import { Applicant, ApplicantCard } from "@/components/ApplicantCard";
 import { KanbanColumn } from "@/components/KanbanColumn";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -22,6 +22,8 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { shouldFieldBeDisplayed, formatResponseValue } from "@/utils/formFieldUtils";
 import DOMPurify from 'dompurify'; // Import DOMPurify
+import { sendEmailTemplate } from "@/utils/emailSender"; // Import sendEmailTemplate
+import { useEmailTemplatesData } from "@/hooks/useEmailTemplatesData"; // Import useEmailTemplatesData
 
 type SubmissionDetail = {
   id: string;
@@ -29,6 +31,11 @@ type SubmissionDetail = {
   full_name: string;
   email: string;
   stage_id: string;
+  programs: { // Corrected type definition
+    title: string;
+    form_id: string | null;
+    allow_pdf_download: boolean;
+  } | null;
   program_stages: { name: string } | null;
 };
 
@@ -53,14 +60,16 @@ const PipelineViewPage = () => {
   const [sheetLoading, setSheetLoading] = useState(false);
   const [currentStageInSheet, setCurrentStageInSheet] = useState('');
 
+  const { emailTemplates } = useEmailTemplatesData(); // Fetch emailTemplates
+
   useEffect(() => {
     const fetchData = async () => {
       if (!programId) return;
       setLoading(true);
 
       const programPromise = supabase.from("programs").select("title, form_id").eq("id", programId).single(); // Fetch form_id
-      const stagesPromise = supabase.from("program_stages").select("id, name, order").eq("program_id", programId).order("order", { ascending: true });
-      const applicationsPromise = supabase.from("applications").select("id, full_name, stage_id").eq("program_id", programId);
+      const stagesPromise = supabase.from("program_stages").select("id, name, order, email_template_id").eq("program_id", programId).order("order", { ascending: true }); // Fetch email_template_id
+      const applicationsPromise = supabase.from("applications").select("id, full_name, email, stage_id").eq("program_id", programId); // Fetch email for sending
 
       const [
         { data: programData, error: programError },
@@ -118,7 +127,8 @@ const PipelineViewPage = () => {
     if (activeIsApplicant && overIsColumn && active.data.current?.applicant.stage_id !== overId) {
       const applicantId = activeId as string;
       const newStageId = overId as string;
-      
+      const applicantEmail = active.data.current?.applicant.email; // Get applicant email from drag data
+
       const originalApplications = [...applications];
       setApplications((apps) =>
         apps.map((app) => (app.id === applicantId ? { ...app, stage_id: newStageId } : app))
@@ -131,6 +141,21 @@ const PipelineViewPage = () => {
         setApplications(originalApplications);
       } else {
         showSuccess("Applicant moved successfully.");
+        
+        // Find the new stage and its associated email template
+        const newStage = stages.find(s => s.id === newStageId);
+        if (newStage?.email_template_id && applicantEmail) {
+          const template = emailTemplates.find(t => t.id === newStage.email_template_id);
+          if (template) {
+            await sendEmailTemplate(template.name, applicantEmail, {
+              applicant_name: active.data.current?.applicant.full_name || 'Applicant',
+              program_title: programTitle,
+              new_stage_name: newStage.name,
+            });
+          } else {
+            console.warn(`Email template with ID ${newStage.email_template_id} not found for sending.`);
+          }
+        }
       }
     }
   };
@@ -173,7 +198,7 @@ const PipelineViewPage = () => {
     setAllSubmissionResponses([]);
 
     const { data: submissionData, error: submissionError } = await supabase
-      .from('applications').select(`id, submitted_date, full_name, email, stage_id, program_stages(name)`).eq('id', applicant.id).single();
+      .from('applications').select(`id, submitted_date, full_name, email, stage_id, programs(title, form_id, allow_pdf_download), program_stages(name)`).eq('id', applicant.id).single();
 
     if (submissionError) {
       showError("Failed to load submission details.");
@@ -183,7 +208,8 @@ const PipelineViewPage = () => {
     }
     const formattedSubmissionData: SubmissionDetail = {
       ...submissionData,
-      program_stages: Array.isArray(submissionData.program_stages) ? submissionData.program_stages[0] : submissionData.program_stages,
+      programs: submissionData.programs, // Simplified assignment
+      program_stages: submissionData.program_stages, // Simplified assignment
     };
     setSelectedSubmission(formattedSubmissionData);
     setCurrentStageInSheet(formattedSubmissionData.stage_id);
@@ -209,32 +235,40 @@ const PipelineViewPage = () => {
     if (!selectedSubmission || selectedSubmission.stage_id === currentStageInSheet) return;
     
     setSheetLoading(true);
-    const { error } = await supabase
-      .from('applications').update({ stage_id: currentStageInSheet }).eq('id', selectedSubmission.id);
+    const { data, error } = await supabase
+      .from('applications').update({ stage_id: currentStageInSheet }).eq('id', selectedSubmission.id)
+      .select(`id, submitted_date, full_name, email, stage_id, programs(title, form_id, allow_pdf_download), program_stages(name)`) // Select necessary fields for email
+      .single();
 
     if (error) {
       showError(`Failed to update stage: ${error.message}`);
     } else {
+      const updatedSubmissionData: SubmissionDetail = {
+        ...data,
+        programs: data.programs, // Simplified assignment
+        program_stages: data.program_stages, // Simplified assignment
+      };
       setApplications(apps => apps.map(app => app.id === selectedSubmission.id ? { ...app, stage_id: currentStageInSheet } : app));
       showSuccess(`Application moved to a new stage.`);
       setIsSheetOpen(false);
+
+      // Send email if a template is associated with the new stage
+      const newStage = stages.find(s => s.id === currentStageInSheet);
+      if (newStage?.email_template_id && updatedSubmissionData.email) {
+        const template = emailTemplates.find(t => t.id === newStage.email_template_id);
+        if (template) {
+          await sendEmailTemplate(template.name, updatedSubmissionData.email, {
+            applicant_name: updatedSubmissionData.full_name || 'Applicant',
+            program_title: updatedSubmissionData.programs?.title || 'Program',
+            new_stage_name: newStage.name,
+          });
+        } else {
+          console.warn(`Email template with ID ${newStage.email_template_id} not found for sending.`);
+        }
+      }
     }
     setSheetLoading(false);
   };
-
-  if (loading) {
-    return (
-      <div className="container py-12">
-        <Skeleton className="h-6 w-48 mb-4" />
-        <Skeleton className="h-8 w-64 mb-8" />
-        <div className="flex gap-4">
-          <Skeleton className="w-72 h-96" />
-          <Skeleton className="w-72 h-96" />
-          <Skeleton className="w-72 h-96" />
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="container py-12">
