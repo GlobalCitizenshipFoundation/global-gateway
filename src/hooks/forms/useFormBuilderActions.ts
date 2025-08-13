@@ -81,11 +81,19 @@ export const useFormBuilderActions = ({
   const handleAddField = async (label: string, type: FormField['field_type'], options: string, sectionId: string | null, description: string | null, tooltip: string | null, placeholder: string | null) => {
     if (!label.trim() || !formId || !user) return null;
 
-    const { data: currentFieldsInTargetSection, error: fetchError } = await supabase
+    let query = supabase
       .from('form_fields')
       .select('order')
-      .eq('form_id', formId)
-      .eq('section_id', sectionId);
+      .eq('form_id', formId);
+    
+    // Conditionally apply section_id filter based on whether it's null
+    if (sectionId === null) {
+      query = query.is('section_id', null);
+    } else {
+      query = query.eq('section_id', sectionId);
+    }
+
+    const { data: currentFieldsInTargetSection, error: fetchError } = await query;
 
     if (fetchError) {
       showError(`Failed to fetch fields for new order: ${fetchError.message}`);

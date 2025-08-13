@@ -43,14 +43,13 @@ export const useFormBuilderHandlers = ({
     setIsSavingTemplate,
     setIsFormPreviewOpen,
     newSectionName, setNewSectionName,
-    newSectionDescription, setNewSectionDescription, // New
-    newSectionTooltip, setNewSectionTooltip, // New
+    newSectionDescription, setNewSectionDescription,
+    newSectionTooltip, setNewSectionTooltip,
     isAddingSection, setIsAddingSection,
     newFieldLabel, setNewFieldLabel,
     newFieldType, setNewFieldType,
     newFieldOptions, setNewFieldOptions,
     newFieldSectionId, setNewFieldSectionId,
-    // Removed newFieldHelpText
     newFieldDescription, setNewFieldDescription,
     newFieldTooltip, setNewFieldTooltip,
     newFieldPlaceholder, setNewFieldPlaceholder,
@@ -71,9 +70,9 @@ export const useFormBuilderHandlers = ({
     if (autoSaveTimeoutRef.current) {
       clearTimeout(autoSaveTimeoutRef.current);
     }
-    setHasUnsavedChanges(true); // Indicate unsaved changes immediately
+    setHasUnsavedChanges(true);
     autoSaveTimeoutRef.current = setTimeout(async () => {
-      if (!formId || !user) return; // Ensure user is logged in for auto-save
+      if (!formId || !user) return;
 
       setIsAutoSaving(true);
       const now = new Date().toISOString();
@@ -84,7 +83,7 @@ export const useFormBuilderHandlers = ({
         setFormLastEditedAt(now);
         setFormLastEditedByUserId(user.id);
         setHasUnsavedChanges(false);
-        showSavedFeedback(); // Show "Saved!" confirmation
+        showSavedFeedback();
       } else {
         showError("Auto-save failed. Please check your connection.");
       }
@@ -117,8 +116,8 @@ export const useFormBuilderHandlers = ({
         form_id: formId,
         name: newSectionName,
         order: nextOrder,
-        description: newSectionDescription || null, // New
-        tooltip: newSectionTooltip || null, // New
+        description: newSectionDescription || null,
+        tooltip: newSectionTooltip || null,
         last_edited_by_user_id: user.id,
         last_edited_at: now,
       })
@@ -131,82 +130,51 @@ export const useFormBuilderHandlers = ({
       showSuccess("Section added successfully.");
       setSections(prev => [...prev, data]);
       setNewSectionName('');
-      setNewSectionDescription(''); // Reset
-      setNewSectionTooltip(''); // Reset
+      setNewSectionDescription('');
+      setNewSectionTooltip('');
       setNewFieldSectionId(data.id);
-      setHasUnsavedChanges(true); // Mark as unsaved
-      setFormLastEditedAt(now); // Update form's last edited timestamp
-      setFormLastEditedByUserId(user.id); // Update form's last edited user
-      triggerAutoSave(); // Trigger auto-save for form details
+      setHasUnsavedChanges(true);
+      setFormLastEditedAt(now);
+      setFormLastEditedByUserId(user.id);
+      triggerAutoSave();
     }
     setIsAddingSection(false);
   }, [formId, newSectionName, newSectionDescription, newSectionTooltip, user, setSections, setNewSectionName, setNewSectionDescription, setNewSectionTooltip, setNewFieldSectionId, setHasUnsavedChanges, setFormLastEditedAt, setFormLastEditedByUserId, setIsAddingSection, triggerAutoSave]);
 
   const handleDeleteSection = useCallback(async (sectionId: string) => {
-    const originalSections = [...sections];
-    const originalFields = [...fields];
-    setSections(sections.filter(s => s.id !== sectionId));
-    setFields(fields.map(f => f.section_id === sectionId ? { ...f, section_id: null } : f));
-    setHasUnsavedChanges(true); // Mark as unsaved
-
-    const { data: fieldsToUpdate, error: fetchFieldsError } = await supabase
-      .from('form_fields')
-      .select('id')
-      .eq('section_id', sectionId);
-
-    if (fetchFieldsError) {
-      showError(`Failed to fetch fields for section deletion: ${fetchFieldsError.message}. Reverting.`);
-      setSections(originalSections);
-      setFields(originalFields);
-      setHasUnsavedChanges(false); // Revert unsaved status
-      return;
-    }
-
-    const now = new Date().toISOString();
-    const updatesForFields = fieldsToUpdate.map(field => ({
-      id: field.id,
-      section_id: null,
-      last_edited_by_user_id: user?.id || null,
-      last_edited_at: now,
-    }));
-
-    const { error: updateFieldsError } = await supabase
-      .from('form_fields')
-      .upsert(updatesForFields);
-
-    if (updateFieldsError) {
-      showError(`Failed to uncategorize fields: ${updateFieldsError.message}. Reverting.`);
-      setSections(originalSections);
-      setFields(originalFields);
-      setHasUnsavedChanges(false); // Revert unsaved status
-      return;
-    }
-
-    const { error: deleteSectionError } = await supabase.from('form_sections').delete().eq('id', sectionId);
-    if (deleteSectionError) {
-      showError(`Failed to delete section: ${deleteSectionError.message}. Reverting.`);
-      setSections(originalSections);
-      setFields(originalFields);
-      setHasUnsavedChanges(false); // Revert unsaved status
+    const { error } = await supabase.rpc('delete_form_section_with_field_handling', {
+      p_section_id: sectionId,
+      p_user_id: user?.id,
+      p_field_action: 'uncategorize_fields', // Default action for this handler
+      p_target_section_id: null,
+    });
+  
+    if (error) {
+      showError(`Failed to delete section: ${error.message}`);
     } else {
-      showSuccess("Section and its fields uncategorized successfully.");
-      fetchData(); // Re-fetch to ensure full consistency after all operations
-      setFormLastEditedAt(now); // Update form's last edited timestamp
-      setFormLastEditedByUserId(user?.id || null); // Update form's last edited user
-      triggerAutoSave(); // Trigger auto-save for form details
+      showSuccess("Section deleted and fields moved to uncategorized successfully.");
+      fetchData(); // Re-fetch to update the UI
     }
-  }, [sections, fields, setSections, setFields, user, fetchData, setHasUnsavedChanges, setFormLastEditedAt, setFormLastEditedByUserId, triggerAutoSave]);
+  }, [user, fetchData]);
 
   const handleAddField = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newFieldLabel.trim() || !formId || !user) return;
 
     setIsAddingField(true);
-    const { data: currentFieldsInTargetSection, error: fetchError } = await supabase
+    let query = supabase
       .from('form_fields')
       .select('order')
-      .eq('form_id', formId)
-      .eq('section_id', newFieldSectionId);
+      .eq('form_id', formId);
+    
+    // Conditionally apply section_id filter based on whether it's null
+    if (newFieldSectionId === null) {
+      query = query.is('section_id', null);
+    } else {
+      query = query.eq('section_id', newFieldSectionId);
+    }
+
+    const { data: currentFieldsInTargetSection, error: fetchError } = await query;
 
     if (fetchError) {
       showError(`Failed to fetch fields for new order: ${fetchError.message}`);
@@ -228,7 +196,6 @@ export const useFormBuilderHandlers = ({
         options: (newFieldType === 'select' || newFieldType === 'radio' || newFieldType === 'checkbox') ? newFieldOptions.split(',').map(opt => opt.trim()) : null,
         is_required: false,
         display_rules: null,
-        // Removed help_text
         description: newFieldDescription || null,
         tooltip: newFieldTooltip || null,
         placeholder: newFieldPlaceholder || null,
@@ -246,62 +213,58 @@ export const useFormBuilderHandlers = ({
       setNewFieldLabel('');
       setNewFieldOptions('');
       setNewFieldType('text');
-      // Removed setNewFieldHelpText
       setNewFieldDescription('');
       setNewFieldTooltip('');
       setNewFieldPlaceholder('');
-      setHasUnsavedChanges(true); // Mark as unsaved
-      setFormLastEditedAt(now); // Update form's last edited timestamp
-      setFormLastEditedByUserId(user.id); // Update form's last edited user
-      triggerAutoSave(); // Trigger auto-save for form details
+      setHasUnsavedChanges(true);
+      setFormLastEditedAt(now);
+      setFormLastEditedByUserId(user.id);
+      triggerAutoSave();
     }
     setIsAddingField(false);
   }, [formId, newFieldLabel, newFieldType, newFieldOptions, newFieldSectionId, newFieldDescription, newFieldTooltip, newFieldPlaceholder, user, setFields, setNewFieldLabel, setNewFieldOptions, setNewFieldType, setNewFieldDescription, setNewFieldTooltip, setNewFieldPlaceholder, setHasUnsavedChanges, setFormLastEditedAt, setFormLastEditedByUserId, setIsAddingField, triggerAutoSave]);
 
   const handleDeleteField = useCallback(async (fieldId: string) => {
     setFields(prev => prev.filter(f => f.id !== fieldId));
-    setHasUnsavedChanges(true); // Mark as unsaved
+    setHasUnsavedChanges(true);
     const { error } = await supabase.from('form_fields').delete().eq('id', fieldId);
     if (error) {
       showError(`Failed to delete field: ${error.message}. Reverting.`);
       fetchData();
-      setHasUnsavedChanges(false); // Revert unsaved status
+      setHasUnsavedChanges(false);
     } else {
       showSuccess("Field deleted successfully.");
       const now = new Date().toISOString();
-      setFormLastEditedAt(now); // Update form's last edited timestamp
-      setFormLastEditedByUserId(user?.id || null); // Update form's last edited user
-      triggerAutoSave(); // Trigger auto-save for form details
+      setFormLastEditedAt(now);
+      setFormLastEditedByUserId(user?.id || null);
+      triggerAutoSave();
     }
   }, [setFields, fetchData, setHasUnsavedChanges, setFormLastEditedAt, setFormLastEditedByUserId, user, triggerAutoSave]);
 
   const handleToggleRequired = useCallback(async (fieldId: string, isRequired: boolean) => {
     if (!user) return;
     setFields(prev => prev.map(f => f.id === fieldId ? { ...f, is_required: isRequired } : f));
-    setHasUnsavedChanges(true); // Mark as unsaved
+    setHasUnsavedChanges(true);
     const now = new Date().toISOString();
     const { error } = await supabase.from('form_fields').update({ is_required: isRequired, last_edited_by_user_id: user.id, last_edited_at: now }).eq('id', fieldId);
     if (error) {
       showError(`Failed to update field: ${error.message}. Reverting.`);
-      setFields(prev => prev.map(f => f.id === fieldId ? { ...f, is_required: !isRequired } : f)); // Revert
-      setHasUnsavedChanges(false); // Revert unsaved status
+      setFields(prev => prev.map(f => f.id === fieldId ? { ...f, is_required: !isRequired } : f));
+      setHasUnsavedChanges(false);
     } else {
       showSuccess("Field requirement updated.");
-      setFormLastEditedAt(now); // Update form's last edited timestamp
-      setFormLastEditedByUserId(user.id); // Update form's last edited user
-      triggerAutoSave(); // Trigger auto-save for form details
+      setFormLastEditedAt(now);
+      setFormLastEditedByUserId(user.id);
+      triggerAutoSave();
     }
   }, [setFields, user, setHasUnsavedChanges, setFormLastEditedAt, setFormLastEditedByUserId, triggerAutoSave]);
-
-  // handleEditLogic and handleEditField are now replaced by setSelectedField in FormBuilderPage
-  // The logic for saving is now handled by handleSaveEditedField and handleSaveLogic directly from FieldPropertiesPanel
 
   const handleSaveLogic = useCallback(async (fieldId: string, rules: DisplayRule[]) => {
     if (!user) return;
     setFields(prevFields =>
       prevFields.map(f => (f.id === fieldId ? { ...f, display_rules: rules } : f))
     );
-    setHasUnsavedChanges(true); // Mark as unsaved
+    setHasUnsavedChanges(true);
     const now = new Date().toISOString();
     const { error } = await supabase
       .from('form_fields')
@@ -311,12 +274,12 @@ export const useFormBuilderHandlers = ({
     if (error) {
       showError(`Failed to save display logic: ${error.message}. Reverting.`);
       fetchData();
-      setHasUnsavedChanges(false); // Revert unsaved status
+      setHasUnsavedChanges(false);
     } else {
       showSuccess("Display logic saved successfully!");
-      setFormLastEditedAt(now); // Update form's last edited timestamp
-      setFormLastEditedByUserId(user.id); // Update form's last edited user
-      triggerAutoSave(); // Trigger auto-save for form details
+      setFormLastEditedAt(now);
+      setFormLastEditedByUserId(user.id);
+      triggerAutoSave();
     }
   }, [setFields, user, fetchData, setHasUnsavedChanges, setFormLastEditedAt, setFormLastEditedByUserId, triggerAutoSave]);
 
@@ -333,7 +296,7 @@ export const useFormBuilderHandlers = ({
           : f
       )
     );
-    setHasUnsavedChanges(true); // Mark as unsaved
+    setHasUnsavedChanges(true);
     const now = new Date().toISOString();
 
     const { error } = await supabase
@@ -343,7 +306,6 @@ export const useFormBuilderHandlers = ({
         field_type: values.field_type,
         options: updatedOptions,
         is_required: values.is_required,
-        // Removed help_text
         description: values.description || null,
         tooltip: values.tooltip || null,
         placeholder: values.placeholder || null,
@@ -356,13 +318,13 @@ export const useFormBuilderHandlers = ({
     if (error) {
       showError(`Failed to update field: ${error.message}. Reverting.`);
       fetchData();
-      setHasUnsavedChanges(false); // Revert unsaved status
+      setHasUnsavedChanges(false);
     } else {
       showSuccess("Field updated successfully!");
-      fetchData(); // Re-fetch to ensure correct order and section display after update
-      setFormLastEditedAt(now); // Update form's last edited timestamp
-      setFormLastEditedByUserId(user.id); // Update form's last edited user
-      triggerAutoSave(); // Trigger auto-save for form details
+      fetchData();
+      setFormLastEditedAt(now);
+      setFormLastEditedByUserId(user.id);
+      triggerAutoSave();
     }
   }, [setFields, user, fetchData, setHasUnsavedChanges, setFormLastEditedAt, setFormLastEditedByUserId, triggerAutoSave]);
 
@@ -371,7 +333,7 @@ export const useFormBuilderHandlers = ({
     setFields(prevFields =>
       prevFields.map(f => (f.id === fieldId ? { ...f, label: newLabel } : f))
     );
-    setHasUnsavedChanges(true); // Mark as unsaved
+    setHasUnsavedChanges(true);
     const now = new Date().toISOString();
     const { error } = await supabase
       .from('form_fields')
@@ -381,12 +343,12 @@ export const useFormBuilderHandlers = ({
     if (error) {
       showError(`Failed to update label: ${error.message}. Reverting.`);
       fetchData();
-      setHasUnsavedChanges(false); // Revert unsaved status
+      setHasUnsavedChanges(false);
     } else {
       showSuccess("Field label updated.");
-      setFormLastEditedAt(now); // Update form's last edited timestamp
-      setFormLastEditedByUserId(user.id); // Update form's last edited user
-      triggerAutoSave(); // Trigger auto-save for form details
+      setFormLastEditedAt(now);
+      setFormLastEditedByUserId(user.id);
+      triggerAutoSave();
     }
   }, [setFields, user, fetchData, setHasUnsavedChanges, setFormLastEditedAt, setFormLastEditedByUserId, triggerAutoSave]);
 
@@ -398,9 +360,9 @@ export const useFormBuilderHandlers = ({
     if (success) {
       setFormStatus(status);
       setHasUnsavedChanges(false);
-      setFormLastEditedAt(now); // Update form's last edited timestamp
-      setFormLastEditedByUserId(user.id); // Update form's last edited user
-      showSavedFeedback(); // Show "Saved!" confirmation
+      setFormLastEditedAt(now);
+      setFormLastEditedByUserId(user.id);
+      showSavedFeedback();
     }
     setIsUpdatingStatus(false);
     return success;
@@ -417,7 +379,7 @@ export const useFormBuilderHandlers = ({
       setFormLastEditedByUserId(user.id);
       setHasUnsavedChanges(false);
       showSuccess("Form draft saved successfully!");
-      showSavedFeedback(); // Show "Saved!" confirmation
+      showSavedFeedback();
     } else {
       showError("Failed to save draft. Please try again.");
     }
@@ -490,8 +452,8 @@ export const useFormBuilderHandlers = ({
           form_id: newTemplateFormData.id,
           name: section.name,
           order: section.order,
-          description: section.description, // Copy section description
-          tooltip: section.tooltip, // Copy section tooltip
+          description: section.description,
+          tooltip: section.tooltip,
           last_edited_by_user_id: user.id,
           last_edited_at: now,
         };
@@ -507,7 +469,6 @@ export const useFormBuilderHandlers = ({
         is_required: field.is_required,
         order: field.order,
         display_rules: field.display_rules,
-        // Removed help_text
         description: field.description,
         tooltip: field.tooltip,
         placeholder: field.placeholder,
@@ -527,9 +488,9 @@ export const useFormBuilderHandlers = ({
       showSuccess("Form saved as template successfully!");
       setIsSaveAsTemplateDialogOpen(false);
       setNewTemplateName('');
-      setFormLastEditedAt(now); // Update form's last edited timestamp
-      setFormLastEditedByUserId(user.id); // Update form's last edited user
-      triggerAutoSave(); // Trigger auto-save for form details
+      setFormLastEditedAt(now);
+      setFormLastEditedByUserId(user.id);
+      triggerAutoSave();
     } catch (err: any) {
       showError("An unexpected error occurred: " + err.message);
     } finally {
