@@ -39,14 +39,14 @@ export const DecisionOptionsInput = ({ emailTemplates }: DecisionOptionsInputPro
               name={`decision_options.${index}.email_template_id`}
               render={({ field }) => (
                 <FormItem>
-                  <Select onValueChange={field.onChange} value={field.value || ''}>
+                  <Select onValueChange={(value) => field.onChange(value === '__none__' ? null : value)} value={field.value || ''}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Select email to trigger (optional)" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="">No email</SelectItem>
+                      <SelectItem value="__none__">No email</SelectItem>
                       {emailTemplates.map(template => (
                         <SelectItem key={template.id} value={template.id}>{template.name}</SelectItem>
                       ))}
