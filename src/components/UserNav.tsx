@@ -40,13 +40,16 @@ const UserNav = () => {
     }
   };
 
-  // Determine which profile to display in the UI
+  // Determine which profile to display in the UI (name, email, avatar)
   const displayProfile = impersonatingAsProfile || profile;
   const displayFullName = displayProfile?.first_name && displayProfile?.last_name 
     ? `${displayProfile.first_name} ${displayProfile.last_name}` 
     : user?.email; // Fallback to email if no name
 
   const displayAvatarUrl = displayProfile?.avatar_url;
+
+  // Use the actual user's profile for role-based navigation links
+  const actualUserRole = profile?.role;
 
   const creatorRoles: Profile['role'][] = ['creator', 'admin', 'super_admin'];
   const adminRoles: Profile['role'][] = ['admin', 'super_admin'];
@@ -90,8 +93,8 @@ const UserNav = () => {
           </DropdownMenuItem>
         </DropdownMenuGroup>
         
-        {/* Use the profile of the user being impersonated for navigation links */}
-        {displayProfile && creatorRoles.includes(displayProfile.role) && (
+        {/* Always show creator links if the actual user has a creator role */}
+        {actualUserRole && creatorRoles.includes(actualUserRole) && (
           <>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
@@ -109,7 +112,8 @@ const UserNav = () => {
           </>
         )}
 
-        {displayProfile && adminRoles.includes(displayProfile.role) && (
+        {/* Always show admin links if the actual user has an admin role */}
+        {actualUserRole && adminRoles.includes(actualUserRole) && (
           <>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
