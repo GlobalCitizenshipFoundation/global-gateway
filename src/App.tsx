@@ -17,13 +17,15 @@ import SubmissionsListPage from "./pages/SubmissionsListPage";
 import SubmissionDetailPage from "./pages/SubmissionDetailPage";
 import { SessionContextProvider } from "./contexts/SessionContext";
 import ProtectedRoute from "./components/ProtectedRoute";
+import AdminRoute from "./components/AdminRoute"; // Import AdminRoute
 import ManageWorkflowPage from "./pages/ManageWorkflowPage";
 import PipelineViewPage from "./pages/PipelineViewPage";
 import FormBuilderPage from "./pages/FormBuilderPage";
 import ProgramDetailsPage from "./pages/ProgramDetailsPage";
 import FormManagementPage from "./pages/FormManagementPage";
 import WorkflowTemplatesPage from "./pages/WorkflowTemplatesPage";
-import WorkflowBuilderPage from "./pages/WorkflowBuilderPage"; // Import the new page
+import WorkflowBuilderPage from "./pages/WorkflowBuilderPage";
+import AdminDashboardPage from "./pages/AdminDashboardPage"; // Import AdminDashboardPage
 import { ThemeProvider } from "next-themes";
 
 const queryClient = new QueryClient();
@@ -66,7 +68,12 @@ const App = () => (
 
                   {/* Workflow Templates Routes */}
                   <Route path="/creator/workflow-templates" element={<WorkflowTemplatesPage />} />
-                  <Route path="/creator/workflow-templates/:templateId/edit" element={<WorkflowBuilderPage />} /> {/* New route */}
+                  <Route path="/creator/workflow-templates/:templateId/edit" element={<WorkflowBuilderPage />} />
+                </Route>
+
+                {/* Admin Routes */}
+                <Route element={<AdminRoute />}>
+                  <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
                 </Route>
 
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

@@ -25,7 +25,7 @@ const getInitials = (name: string) => {
 };
 
 const UserNav = () => {
-  const { user } = useSession();
+  const { user, profile } = useSession(); // Get profile from session
   const navigate = useNavigate();
 
   const handleLogout = async () => {
@@ -84,6 +84,17 @@ const UserNav = () => {
             <Link to="/creator/workflow-templates">Manage Workflows</Link>
           </DropdownMenuItem>
         </DropdownMenuGroup>
+        {profile?.role === 'admin' && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuGroup>
+              <DropdownMenuLabel>Admin</DropdownMenuLabel>
+              <DropdownMenuItem asChild>
+                <Link to="/admin/dashboard">Admin Dashboard</Link>
+              </DropdownMenuItem>
+            </DropdownMenuGroup>
+          </>
+        )}
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleLogout}>
           Log out
