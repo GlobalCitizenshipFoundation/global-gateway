@@ -1,4 +1,4 @@
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import AvatarWithInitials from "@/components/AvatarWithInitials"; // Import the new component
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -13,21 +13,9 @@ import { Link, useNavigate } from "react-router-dom";
 import { useSession } from "@/contexts/SessionContext";
 import { supabase } from "@/integrations/supabase/client";
 import { showError, showSuccess } from "@/utils/toast";
-import { Profile } from "@/types";
-import { UserCheck } from "lucide-react"; // Import UserCheck icon
-
-// Move getInitials outside the component to prevent re-creation on every render
-const getInitials = (name: string) => {
-  if (!name) return 'U';
-  const parts = name.split(' ').filter(Boolean);
-  if (parts.length === 1) {
-    return parts[0].substring(0, 2).toUpperCase();
-  }
-  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-};
 
 const UserNav = () => {
-  const { user, profile, impersonatingAsProfile, stopImpersonation } = useSession(); // Get profile and impersonation state
+  const { user } = useSession();
   const navigate = useNavigate();
 
   const handleLogout = async () => {
@@ -40,47 +28,28 @@ const UserNav = () => {
     }
   };
 
-  // Determine which profile to display in the UI (name, email, avatar)
-  const displayProfile = impersonatingAsProfile || profile;
-  const displayFullName = displayProfile?.first_name && displayProfile?.last_name 
-    ? `${displayProfile.first_name} ${displayProfile.last_name}` 
-    : user?.email; // Fallback to email if no name
+  // Derive full name from user_metadata, which will be updated by ProfilePage
+  const firstName = user?.user_metadata?.first_name;
+  const middleName = user?.user_metadata?.middle_name;
+  const lastName = user?.user_metadata?.last_name;
+  const avatarUrl = user?.user_metadata?.avatar_url;
 
-  const displayAvatarUrl = displayProfile?.avatar_url;
-
-  // Use the actual user's profile for role-based navigation links
-  const actualUserRole = profile?.role;
-
-  const creatorRoles: Profile['role'][] = ['creator', 'admin', 'super_admin'];
-  const adminRoles: Profile['role'][] = ['admin', 'super_admin'];
+  const fullName = [firstName, middleName, lastName].filter(Boolean).join(' ').trim();
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <div className="relative h-8 w-8 rounded-full cursor-pointer">
-          <Avatar className="h-8 w-8">
-            <AvatarImage src={displayAvatarUrl || undefined} alt={displayFullName || 'User'} />
-            <AvatarFallback>
-              {displayFullName ? getInitials(displayFullName) : 'U'}
-            </AvatarFallback>
-          </Avatar>
-          {impersonatingAsProfile && (
-            <UserCheck className="absolute -bottom-1 -right-1 h-4 w-4 text-green-500 bg-background rounded-full p-0.5 border border-green-500" />
-          )}
+          <AvatarWithInitials name={fullName} src={avatarUrl} className="h-8 w-8" />
         </div>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-56" align="end" forceMount>
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
-            <p className="text-sm font-medium leading-none">{displayFullName}</p>
+            <p className="text-sm font-medium leading-none">{fullName || 'User'}</p>
             <p className="text-xs leading-none text-muted-foreground">
-              {user?.email} {/* Always show actual user's email */}
+              {user?.email}
             </p>
-            {impersonatingAsProfile && (
-              <p className="text-xs leading-none text-green-500 flex items-center gap-1 mt-1">
-                <UserCheck className="h-3 w-3" /> Impersonating as {impersonatingAsProfile.role}
-              </p>
-            )}
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
@@ -92,49 +61,20 @@ const UserNav = () => {
             <Link to="/profile">Profile</Link>
           </DropdownMenuItem>
         </DropdownMenuGroup>
-        
-        {/* Always show creator links if the actual user has a creator role */}
-        {actualUserRole && creatorRoles.includes(actualUserRole) && (
-          <>
-            <DropdownMenuSeparator />
-            <DropdownMenuGroup>
-              <DropdownMenuLabel>Creator</DropdownMenuLabel>
-              <DropdownMenuItem asChild>
-                <Link to="/creator/dashboard">Manage Programs</Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link to="/creator/forms">Manage Forms</Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link to="/creator/workflow-templates">Manage Workflows</Link>
-              </DropdownMenuItem>
-            </DropdownMenuGroup>
-          </>
-        )}
-
-        {/* Always show admin links if the actual user has an admin role */}
-        {actualUserRole && adminRoles.includes(actualUserRole) && (
-          <>
-            <DropdownMenuSeparator />
-            <DropdownMenuGroup>
-              <DropdownMenuLabel>Admin</DropdownMenuLabel>
-              <DropdownMenuItem asChild>
-                <Link to="/admin/dashboard">Admin Dashboard</Link>
-              </DropdownMenuItem>
-            </DropdownMenuGroup>
-          </>
-        )}
-
         <DropdownMenuSeparator />
-        {impersonatingAsProfile ? (
-          <DropdownMenuItem onClick={stopImpersonation} className="text-red-500 focus:text-red-500">
-            Stop Impersonating
+        <DropdownMenuGroup>
+          <DropdownMenuLabel>Creator</DropdownMenuLabel>
+          <DropdownMenuItem asChild>
+            <Link to="/creator/dashboard">Manage Programs</Link>
           </DropdownMenuItem>
-        ) : (
-          <DropdownMenuItem onClick={handleLogout}>
-            Log out
+          <DropdownMenuItem asChild>
+            <Link to="/creator/forms">Manage Forms</Link>
           </DropdownMenuItem>
-        )}
+        </DropdownMenuGroup>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={handleLogout}>
+          Log out
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );

@@ -9,7 +9,7 @@ import { useFormBuilderState } from "@/hooks/useFormBuilderState";
 import { useFormBuilderHandlers } from "@/hooks/useFormBuilderHandlers";
 import { useFormBuilderActions } from "@/hooks/useFormBuilderActions";
 import { useFormFieldDragAndDrop } from "@/hooks/useFormFieldDragAndDrop";
-import { useFormSectionDragAndDrop } from "@/hooks/useFormSectionDragAndDrop"; // Fixed: Added 'from' keyword
+import { useFormSectionDragAndDrop } from "@/hooks/useFormSectionDragAndDrop";
 
 import { FormDetailsCard } from "@/components/form-builder/FormDetailsCard";
 import { FormActions } from "@/components/form-builder/FormActions";
@@ -32,13 +32,14 @@ const FormBuilderPage = () => {
     loading,
     getFieldsForSection,
     newSectionName, setNewSectionName,
-    newSectionDescription, setNewSectionDescription,
-    newSectionTooltip, setNewSectionTooltip,
+    newSectionDescription, setNewSectionDescription, // New
+    newSectionTooltip, setNewSectionTooltip, // New
     isAddingSection, setIsAddingSection,
     newFieldLabel, setNewFieldLabel,
     newFieldType, setNewFieldType,
     newFieldOptions, setNewFieldOptions,
     newFieldSectionId, setNewFieldSectionId,
+    // Removed newFieldHelpText
     newFieldDescription, setNewFieldDescription,
     newFieldTooltip, setNewFieldTooltip,
     newFieldPlaceholder, setNewFieldPlaceholder,
@@ -125,13 +126,10 @@ const FormBuilderPage = () => {
         Back to Forms
       </Link>
 
-      {/* Harmonizing the FormDetailsCard width */}
-      <div className="max-w-4xl mx-auto mb-8">
-        <FormDetailsCard state={state} />
-      </div>
+      <FormDetailsCard state={state} />
 
       <DndContext sensors={combinedSensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd} onDragStart={handleDragStart}>
-        <ResizablePanelGroup direction="horizontal" className="min-h-[600px] border rounded-lg">
+        <ResizablePanelGroup direction="horizontal" className="min-h-[600px] border rounded-lg mt-8">
           <ResizablePanel defaultSize={selectedField ? 65 : 100} minSize={30}>
             <div className="p-6 h-full overflow-y-auto">
               <FormSectionsList
@@ -142,29 +140,29 @@ const FormBuilderPage = () => {
                 handleDeleteSection={handlers.handleDeleteSection}
                 handleDeleteField={handlers.handleDeleteField}
                 handleToggleRequired={handlers.handleToggleRequired}
-                onEditLogic={(field) => setSelectedField(field)}
-                onEditField={(field) => setSelectedField(field)}
+                onEditLogic={(field) => setSelectedField(field)} // Set selected field to open panel
+                onEditField={(field) => setSelectedField(field)} // Set selected field to open panel
                 onUpdateLabel={handlers.handleUpdateFieldLabel}
-                onSelectField={setSelectedField}
+                onSelectField={setSelectedField} // Pass new prop
               />
 
               <UncategorizedFieldsList
                 uncategorizedFields={uncategorizedFields}
                 handleDeleteField={handlers.handleDeleteField}
                 handleToggleRequired={handlers.handleToggleRequired}
-                onEditLogic={(field) => setSelectedField(field)}
-                onEditField={(field) => setSelectedField(field)}
+                onEditLogic={(field) => setSelectedField(field)} // Set selected field to open panel
+                onEditField={(field) => setSelectedField(field)} // Set selected field to open panel
                 onUpdateLabel={handlers.handleUpdateFieldLabel}
-                onSelectField={setSelectedField}
+                onSelectField={setSelectedField} // Pass new prop
               />
 
               <AddSectionForm
                 newSectionName={newSectionName}
                 setNewSectionName={setNewSectionName}
-                newSectionDescription={newSectionDescription}
-                setNewSectionDescription={setNewSectionDescription}
-                newSectionTooltip={newSectionTooltip}
-                setNewSectionTooltip={setNewSectionTooltip}
+                newSectionDescription={newSectionDescription} // New
+                setNewSectionDescription={setNewSectionDescription} // New
+                newSectionTooltip={newSectionTooltip} // New
+                setNewSectionTooltip={setNewSectionTooltip} // New
                 isSubmitting={isAddingSection}
                 handleAddSection={handlers.handleAddSection}
               />
@@ -178,6 +176,7 @@ const FormBuilderPage = () => {
                 setNewFieldOptions={setNewFieldOptions}
                 newFieldSectionId={newFieldSectionId}
                 setNewFieldSectionId={setNewFieldSectionId}
+                // Removed newFieldHelpText
                 newFieldDescription={newFieldDescription}
                 setNewFieldDescription={setNewFieldDescription}
                 newFieldTooltip={newFieldTooltip}
@@ -197,7 +196,7 @@ const FormBuilderPage = () => {
                 <FieldPropertiesPanel
                   field={selectedField}
                   sections={sections}
-                  allFields={fields}
+                  allFields={fields} // Pass all fields for conditional logic
                   onSave={handlers.handleSaveEditedField}
                   onSaveLogic={handlers.handleSaveLogic}
                   onClose={() => setSelectedField(null)}
@@ -214,7 +213,7 @@ const FormBuilderPage = () => {
               onDelete={() => {}}
               onToggleRequired={() => {}}
               onUpdateLabel={() => {}}
-              onSelectField={() => {}}
+              onSelectField={() => {}} // Dummy for overlay
             />
           ) : activeSectionDragItem ? (
             <div className="p-4 bg-secondary rounded-md shadow-lg cursor-grabbing">

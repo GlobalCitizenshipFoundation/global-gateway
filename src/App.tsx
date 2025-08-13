@@ -17,16 +17,12 @@ import SubmissionsListPage from "./pages/SubmissionsListPage";
 import SubmissionDetailPage from "./pages/SubmissionDetailPage";
 import { SessionContextProvider } from "./contexts/SessionContext";
 import ProtectedRoute from "./components/ProtectedRoute";
-import AdminRoute from "./components/AdminRoute"; // Import AdminRoute
 import ManageWorkflowPage from "./pages/ManageWorkflowPage";
 import PipelineViewPage from "./pages/PipelineViewPage";
 import FormBuilderPage from "./pages/FormBuilderPage";
 import ProgramDetailsPage from "./pages/ProgramDetailsPage";
 import FormManagementPage from "./pages/FormManagementPage";
-import WorkflowTemplatesPage from "./pages/WorkflowTemplatesPage";
-import WorkflowBuilderPage from "./pages/WorkflowBuilderPage";
-import AdminDashboardPage from "./pages/AdminDashboardPage"; // Import AdminDashboardPage
-import { ThemeProvider } from "next-themes";
+import { ThemeProvider } from "next-themes"; // Import ThemeProvider
 
 const queryClient = new QueryClient();
 
@@ -62,18 +58,9 @@ const App = () => (
                   <Route path="/creator/program/:programId/pipeline" element={<PipelineViewPage />} />
                   <Route path="/creator/program/:programId/submission/:submissionId" element={<SubmissionDetailPage />} />
                   
-                  {/* Form Management Routes */}
+                  {/* New Form Management Routes */}
                   <Route path="/creator/forms" element={<FormManagementPage />} />
                   <Route path="/creator/forms/:formId/edit" element={<FormBuilderPage />} />
-
-                  {/* Workflow Templates Routes */}
-                  <Route path="/creator/workflow-templates" element={<WorkflowTemplatesPage />} />
-                  <Route path="/creator/workflow-templates/:templateId/edit" element={<WorkflowBuilderPage />} />
-                </Route>
-
-                {/* Admin Routes */}
-                <Route element={<AdminRoute />}>
-                  <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
                 </Route>
 
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

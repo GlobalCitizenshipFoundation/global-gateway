@@ -10,7 +10,6 @@ export type Program = {
   allow_pdf_download: boolean;
   updated_at: string;
   form_id: string | null; // Link to Form
-  workflow_template_id: string | null; // New: Link to WorkflowTemplate
 };
 
 export type Form = {
@@ -86,31 +85,6 @@ export type FormField = {
   last_edited_at: string | null; // New
 };
 
-export type WorkflowTemplate = {
-  id: string;
-  user_id: string;
-  name: string;
-  description: string | null;
-  status: 'draft' | 'published';
-  created_at: string;
-  updated_at: string;
-  last_edited_by_user_id: string | null;
-  last_edited_at: string | null;
-};
-
-export type WorkflowStep = {
-  id: string;
-  workflow_template_id: string;
-  name: string;
-  description: string | null;
-  step_type: 'review' | 'interview' | 'decision' | 'custom'; // Example types
-  order_index: number;
-  created_at: string;
-  updated_at: string;
-  last_edited_by_user_id: string | null;
-  last_edited_at: string | null;
-};
-
 export type Profile = {
   id: string;
   first_name: string | null;
@@ -118,6 +92,5 @@ export type Profile = {
   last_name: string | null;
   avatar_url: string | null;
   updated_at: string;
-  role: 'applicant' | 'reviewer' | 'lead_reviewer' | 'creator' | 'admin' | 'super_admin';
-  email: string | null; // Added email directly to profile
+  role: 'applicant' | 'creator' | 'admin'; // New: Role for the user
 };

@@ -28,7 +28,6 @@ const ProfilePage = () => {
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [isRequestingDeletion, setIsRequestingDeletion] = useState(false);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -36,7 +35,7 @@ const ProfilePage = () => {
         setLoading(true);
         const { data, error } = await supabase
           .from('profiles')
-          .select('first_name, middle_name, last_name, role, avatar_url, email') // Fetch email directly
+          .select('first_name, middle_name, last_name, role, avatar_url')
           .eq('id', user.id)
           .single();
 
@@ -48,10 +47,8 @@ const ProfilePage = () => {
           setLastName(data.last_name || '');
           setRole(data.role || 'applicant');
           setAvatarUrl(data.avatar_url || null);
-          setEmail(data.email || user.email || ''); // Use email from profile, fallback to auth.user.email
-        } else {
-          setEmail(user.email || ''); // If no profile yet, use auth.user.email
         }
+        setEmail(user.email || '');
         setLoading(false);
       }
     };
@@ -73,7 +70,6 @@ const ProfilePage = () => {
         middle_name: middleName.trim() || null,
         last_name: lastName.trim() || null,
         updated_at: now,
-        email: email.trim() || null, // Update email in profile as well
       })
       .eq('id', user.id);
 
@@ -85,8 +81,7 @@ const ProfilePage = () => {
         middle_name: middleName.trim() || null,
         last_name: lastName.trim() || null,
         full_name: fullName || null, // Keep full_name in metadata for convenience
-      },
-      email: email.trim() || undefined, // Allow updating email via auth.updateUser
+      }
     });
 
     if (profileError || userUpdateError) {
@@ -97,63 +92,18 @@ const ProfilePage = () => {
     setIsSubmitting(false);
   };
 
-  const handleRequestAccountDeletion = async () => {
-    if (!user) {
-      showError("You must be logged in to request account deletion.");
-      return;
-    }
-    setIsRequestingDeletion(true);
-
-    // Check if a request already exists
-    const { data: existingRequest, error: checkError } = await supabase
-      .from('account_deletion_requests')
-      .select('id')
-      .eq('user_id', user.id)
-      .in('status', ['pending', 'in_progress'])
-      .single();
-
-    if (checkError && checkError.code !== 'PGRST116') { // PGRST116 means no rows found, which is good
-      showError("Could not check for existing deletion requests: " + checkError.message);
-      setIsRequestingDeletion(false);
-      return;
-    }
-
-    if (existingRequest) {
-      showError("You already have a pending account deletion request.");
-      setIsRequestingDeletion(false);
-      setIsDeleteDialogOpen(false);
-      return;
-    }
-
-    // Insert a new request
-    const { error } = await supabase
-      .from('account_deletion_requests')
-      .insert({ user_id: user.id });
-
-    if (error) {
-      showError("Failed to submit deletion request: " + error.message);
-    } else {
-      showSuccess("Your account deletion request has been sent. We will process it shortly.");
-    }
-    setIsRequestingDeletion(false);
+  const handleRequestAccountDeletion = () => {
+    // In a real application, this would trigger a backend process
+    // to handle data deletion, potentially after a verification step.
+    // For this example, we'll just show a confirmation.
+    showSuccess("Your account deletion request has been sent. We will contact you shortly.");
     setIsDeleteDialogOpen(false);
+    // You might want to log the user out or redirect them after this.
+    // For now, we'll just close the dialog.
   };
 
   const getFullName = () => {
     return [firstName, middleName, lastName].filter(Boolean).join(' ').trim();
-  };
-
-  const getRoleLabel = (role: 'applicant' | 'creator' | 'admin') => {
-    switch (role) {
-      case 'applicant':
-        return 'Applicant';
-      case 'creator':
-        return 'Program Creator';
-      case 'admin':
-        return 'Administrator';
-      default:
-        return 'User';
-    }
   };
 
   return (
@@ -202,7 +152,7 @@ const ProfilePage = () => {
                 <div>
                   <h3 className="text-xl font-semibold">{getFullName() || 'No Name Set'}</h3>
                   <p className="text-muted-foreground text-sm">{email}</p>
-                  <Badge variant="secondary" className="mt-2">{getRoleLabel(role)}</Badge>
+                  <Badge variant="secondary" className="mt-2 capitalize">{role}</Badge>
                 </div>
               </div>
 
@@ -223,9 +173,9 @@ const ProfilePage = () => {
 
               <div className="grid gap-2">
                 <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} disabled={isSubmitting} />
+                <Input id="email" type="email" value={email} disabled />
                 <p className="text-sm text-muted-foreground">
-                  You can update your email here.
+                  To change your email, please reach out to the admin support.
                 </p>
               </div>
 
@@ -260,7 +210,6 @@ const ProfilePage = () => {
         isOpen={isDeleteDialogOpen}
         onClose={() => setIsDeleteDialogOpen(false)}
         onConfirm={handleRequestAccountDeletion}
-        isSubmitting={isRequestingDeletion}
       />
     </div>
   );

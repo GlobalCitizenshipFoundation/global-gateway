@@ -14,10 +14,9 @@ interface AccountDeletionDialogProps {
   isOpen: boolean;
   onClose: () => void;
   onConfirm: () => void;
-  isSubmitting: boolean;
 }
 
-export const AccountDeletionDialog = ({ isOpen, onClose, onConfirm, isSubmitting }: AccountDeletionDialogProps) => {
+export const AccountDeletionDialog = ({ isOpen, onClose, onConfirm }: AccountDeletionDialogProps) => {
   return (
     <AlertDialog open={isOpen} onOpenChange={onClose}>
       <AlertDialogContent>
@@ -30,9 +29,9 @@ export const AccountDeletionDialog = ({ isOpen, onClose, onConfirm, isSubmitting
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel onClick={onClose} disabled={isSubmitting}>Cancel</AlertDialogCancel>
-          <AlertDialogAction onClick={onConfirm} disabled={isSubmitting} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-            {isSubmitting ? "Submitting..." : "Confirm Deletion Request"}
+          <AlertDialogCancel onClick={onClose}>Cancel</AlertDialogCancel>
+          <AlertDialogAction onClick={onConfirm} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            Confirm Deletion Request
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

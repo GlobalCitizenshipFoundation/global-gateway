@@ -45,7 +45,7 @@ export const FormsTable = ({ forms, onUpdateStatus, onSaveAsTemplate, onDelete }
       if (uniqueUserIds.size > 0) {
         const { data, error } = await supabase
           .from('profiles')
-          .select('id, first_name, last_name') // Fetch first and last name
+          .select('id, full_name')
           .in('id', Array.from(uniqueUserIds));
 
         if (error) {
@@ -53,8 +53,7 @@ export const FormsTable = ({ forms, onUpdateStatus, onSaveAsTemplate, onDelete }
         } else if (data) {
           const newNames = new Map(userNames);
           data.forEach(profile => {
-            const fullName = [profile.first_name, profile.last_name].filter(Boolean).join(' ').trim();
-            newNames.set(profile.id, fullName || 'Unknown User');
+            newNames.set(profile.id, profile.full_name || 'Unknown User');
           });
           setUserNames(newNames);
         }
@@ -68,39 +67,31 @@ export const FormsTable = ({ forms, onUpdateStatus, onSaveAsTemplate, onDelete }
       <TableHeader>
         <TableRow>
           <TableHead>Form Name</TableHead>
-          <TableHead className="md:table-cell">Type</TableHead>
-          <TableHead className="lg:table-cell">Publication Status</TableHead>
-          <TableHead className="xl:table-cell">Form Updated Date</TableHead>
-          <TableHead className="xl:table-cell">Created Date</TableHead>
+          <TableHead className="hidden md:table-cell">Type</TableHead>
+          <TableHead className="hidden lg:table-cell">Status</TableHead>
+          <TableHead className="hidden xl:table-cell">Last Modified</TableHead>
           <TableHead className="text-right">Actions</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
         {forms.length > 0 ? forms.map((form) => (
           <TableRow key={form.id} className={cn(form.is_template && "bg-blue-50/50 dark:bg-blue-950/20")}>
-            <TableCell className="font-medium">
-              <Link to={`/creator/forms/${form.id}/edit`} className="hover:underline">
-                {form.name}
-              </Link>
+            <TableCell className="font-medium">{form.name}</TableCell>
+            <TableCell className="hidden md:table-cell">
+              <Badge variant="outline">{form.is_template ? 'Template' : 'Program Form'}</Badge>
             </TableCell>
-            <TableCell className="md:table-cell">
-              <Badge variant="outline">{form.is_template ? 'Template' : 'Form'}</Badge>
-            </TableCell>
-            <TableCell className="lg:table-cell">
+            <TableCell className="hidden lg:table-cell">
               <Badge variant={form.status === 'published' ? 'default' : 'secondary'}>
                 {form.status.charAt(0).toUpperCase() + form.status.slice(1)}
               </Badge>
             </TableCell>
-            <TableCell className="xl:table-cell">
-              {form.last_edited_at ? new Date(form.last_edited_at).toLocaleString() : new Date(form.updated_at).toLocaleString()}
+            <TableCell className="hidden xl:table-cell">
+              {form.last_edited_at ? new Date(form.last_edited_at).toLocaleString() : new Date(form.created_at).toLocaleString()}
               {form.last_edited_by_user_id && (
                 <div className="text-xs text-muted-foreground">
                   By: {userNames.get(form.last_edited_by_user_id) || 'Loading...'}
                 </div>
               )}
-            </TableCell>
-            <TableCell className="xl:table-cell">
-              {new Date(form.created_at).toLocaleDateString()}
             </TableCell>
             <TableCell className="text-right">
               <DropdownMenu>

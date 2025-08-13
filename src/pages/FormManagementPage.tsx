@@ -1,18 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Plus } from "lucide-react";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-  // PaginationEllipsis, // No longer needed directly here
-} from "@/components/ui/pagination";
-import { Label } from "@/components/ui/label";
 
 import { useFormsData } from "@/hooks/useFormsData";
 import { useFormManagementActions } from "@/hooks/useFormManagementActions";
@@ -21,9 +9,6 @@ import { DeleteFormDialog } from "@/components/forms/DeleteFormDialog";
 import { CreateFormFromTemplateDialog } from "@/components/forms/CreateFormFromTemplateDialog";
 import { SaveAsTemplateDialog } from "@/components/forms/SaveAsTemplateDialog";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useMemo, useState } from "react";
-import { Form as FormType } from "@/types";
-import { generatePagination } from "@/lib/pagination"; // Import the new utility
 
 const FormManagementPage = () => {
   const { forms, setForms, templates, setTemplates, loading, error } = useFormsData();
@@ -33,98 +18,6 @@ const FormManagementPage = () => {
     isSaveAsTemplateDialogOpen, setIsSaveAsTemplateDialogOpen, templateFormToCopy, setTemplateFormToCopy, newTemplateName, setNewTemplateName, isSavingTemplate, handleSaveAsTemplate,
     handleUpdateFormStatus,
   } = useFormManagementActions({ setForms, setTemplates, templates });
-
-  const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState<"all" | "draft" | "published">("all");
-  const [typeFilter, setTypeFilter] = useState<"all" | "template" | "program_form">("all");
-  const [sortBy, setSortBy] = useState<"name" | "updated_at" | "created_at">("updated_at");
-  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
-
-  // Pagination states
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
-
-  const filteredAndSortedForms = useMemo(() => {
-    let displayForms = [...forms];
-
-    // Apply search filter
-    if (searchTerm) {
-      const lowerCaseSearch = searchTerm.toLowerCase();
-      displayForms = displayForms.filter(
-        (form) =>
-          form.name.toLowerCase().includes(lowerCaseSearch) ||
-          (form.description && form.description.toLowerCase().includes(lowerCaseSearch))
-      );
-    }
-
-    // Apply status filter
-    if (statusFilter !== "all") {
-      displayForms = displayForms.filter((form) => form.status === statusFilter);
-    }
-
-    // Apply type filter
-    if (typeFilter === "template") {
-      displayForms = displayForms.filter((form) => form.is_template);
-    } else if (typeFilter === "program_form") {
-      displayForms = displayForms.filter((form) => !form.is_template);
-    }
-
-    // Apply sorting
-    displayForms.sort((a, b) => {
-      let compareValue = 0;
-      if (sortBy === "name") {
-        compareValue = a.name.localeCompare(b.name);
-      } else if (sortBy === "updated_at") {
-        const dateA = new Date(a.last_edited_at || a.updated_at).getTime();
-        const dateB = new Date(b.last_edited_at || b.updated_at).getTime();
-        compareValue = dateA - dateB;
-      } else if (sortBy === "created_at") {
-        const dateA = new Date(a.created_at).getTime();
-        const dateB = new Date(b.created_at).getTime();
-        compareValue = dateA - dateB;
-      }
-
-      return sortOrder === "asc" ? compareValue : -compareValue;
-    });
-
-    // Apply pagination
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
-    return displayForms.slice(startIndex, endIndex);
-  }, [forms, searchTerm, statusFilter, typeFilter, sortBy, sortOrder, currentPage, itemsPerPage]);
-
-  const totalFilteredForms = useMemo(() => {
-    let countForms = [...forms];
-    if (searchTerm) {
-      const lowerCaseSearch = searchTerm.toLowerCase();
-      countForms = countForms.filter(
-        (form) =>
-          form.name.toLowerCase().includes(lowerCaseSearch) ||
-          (form.description && form.description.toLowerCase().includes(lowerCaseSearch))
-      );
-    }
-    if (statusFilter !== "all") {
-      countForms = countForms.filter((form) => form.status === statusFilter);
-    }
-    if (typeFilter === "template") {
-      countForms = countForms.filter((form) => form.is_template);
-    } else if (typeFilter === "program_form") {
-      countForms = countForms.filter((form) => !form.is_template);
-    }
-    return countForms.length;
-  }, [forms, searchTerm, statusFilter, typeFilter]);
-
-  const totalPages = Math.ceil(totalFilteredForms / itemsPerPage);
-  const paginationItems = generatePagination(currentPage, totalPages);
-
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page);
-  };
-
-  const handleItemsPerPageChange = (value: string) => {
-    setItemsPerPage(Number(value));
-    setCurrentPage(1); // Reset to first page when items per page changes
-  };
 
   if (loading) {
     return (
@@ -175,77 +68,10 @@ const FormManagementPage = () => {
             </Button>
           </div>
         </div>
-
-        {/* Filters and Sorting - Optimized Layout */}
-        <div className="flex flex-wrap items-end gap-4 mb-8">
-          <div className="grid gap-2 flex-grow min-w-[200px] max-w-sm">
-            <Label htmlFor="search-forms">Search Forms</Label>
-            <Input
-              id="search-forms"
-              placeholder="Search by name or description..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
-          <div className="grid gap-2 min-w-[150px]">
-            <Label htmlFor="status-filter">Filter by Status</Label>
-            <Select value={statusFilter} onValueChange={(value: "all" | "draft" | "published") => setStatusFilter(value)}>
-              <SelectTrigger id="status-filter">
-                <SelectValue placeholder="All Statuses" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Statuses</SelectItem>
-                <SelectItem value="published">Published</SelectItem>
-                <SelectItem value="draft">Draft</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="grid gap-2 min-w-[150px]">
-            <Label htmlFor="type-filter">Filter by Type</Label>
-            <Select value={typeFilter} onValueChange={(value: "all" | "template" | "program_form") => setTypeFilter(value)}>
-              <SelectTrigger id="type-filter">
-                <SelectValue placeholder="All Types" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Types</SelectItem>
-                <SelectItem value="program_form">Forms</SelectItem>
-                <SelectItem value="template">Templates</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="flex gap-2 min-w-[200px]">
-            <div className="grid gap-2 flex-grow">
-              <Label htmlFor="sort-by">Sort by</Label>
-              <Select value={sortBy} onValueChange={(value: "name" | "updated_at" | "created_at") => setSortBy(value)}>
-                <SelectTrigger id="sort-by">
-                  <SelectValue placeholder="Sort by" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="name">Form Name</SelectItem>
-                  <SelectItem value="updated_at">Updated Date</SelectItem>
-                  <SelectItem value="created_at">Created Date</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="grid gap-2 w-[100px]">
-              <Label htmlFor="sort-order">Order</Label>
-              <Select value={sortOrder} onValueChange={(value: "asc" | "desc") => setSortOrder(value)}>
-                <SelectTrigger id="sort-order">
-                  <SelectValue placeholder="Order" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="asc">Asc</SelectItem>
-                  <SelectItem value="desc">Desc</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        </div>
-
         <Card>
           <CardContent className="p-0">
             <FormsTable
-              forms={filteredAndSortedForms}
+              forms={forms}
               onUpdateStatus={handleUpdateFormStatus}
               onSaveAsTemplate={(form) => {
                 setTemplateFormToCopy(form);
@@ -259,56 +85,6 @@ const FormManagementPage = () => {
             />
           </CardContent>
         </Card>
-
-        {/* Pagination Controls */}
-        {totalFilteredForms > 0 && (
-          <div className="flex justify-between items-center mt-8">
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">Items per page:</span>
-              <Select value={String(itemsPerPage)} onValueChange={handleItemsPerPageChange}>
-                <SelectTrigger className="w-[80px]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="10">10</SelectItem>
-                  <SelectItem value="25">25</SelectItem>
-                  <SelectItem value="50">50</SelectItem>
-                  <SelectItem value="100">100</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <Pagination>
-              <PaginationContent>
-                <PaginationItem>
-                  <PaginationPrevious
-                    onClick={() => handlePageChange(currentPage - 1)}
-                    className={currentPage === 1 ? "pointer-events-none opacity-50" : undefined}
-                  />
-                </PaginationItem>
-                {paginationItems.map((item, index) => (
-                  <PaginationItem key={index}>
-                    {item === '...' ? (
-                      <span className="px-4 py-2 text-sm text-muted-foreground">...</span>
-                    ) : (
-                      <PaginationLink
-                        onClick={() => handlePageChange(item as number)}
-                        isActive={item === currentPage}
-                      >
-                        {item}
-                      </PaginationLink>
-                    )}
-                  </PaginationItem>
-                ))}
-                <PaginationItem>
-                  <PaginationNext
-                    onClick={() => handlePageChange(currentPage + 1)}
-                    className={currentPage === totalPages ? "pointer-events-none opacity-50" : undefined}
-                  />
-                </PaginationItem>
-              </PaginationContent>
-            </Pagination>
-          </div>
-        )}
       </div>
 
       <DeleteFormDialog
