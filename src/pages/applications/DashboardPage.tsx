@@ -23,6 +23,7 @@ import { Application as UserApplication, FormField, FormSection } from "@/types"
 import ApplicationPdfViewer from "@/components/applications/ApplicationPdfViewer";
 import { ApplicationStatusAlert } from "@/components/application/ApplicationStatusAlert";
 import { Button } from "@/components/ui/button";
+import { ApplicationStageStatus } from "@/components/application/ApplicationStageStatus";
 
 const DashboardPage = () => {
   const { user } = useSession();
@@ -46,6 +47,7 @@ const DashboardPage = () => {
           program_id,
           user_id,
           stage_id,
+          stage_status,
           programs ( title, form_id, allow_pdf_download ),
           program_stages ( name, description, step_type )
         `)
@@ -176,9 +178,10 @@ const DashboardPage = () => {
                   </TableCell>
                   <TableCell>
                     <Badge variant="secondary">{app.program_stages?.name || 'N/A'}</Badge>
+                    <ApplicationStageStatus stageType={app.program_stages?.step_type} stageStatus={app.stage_status} />
                   </TableCell>
                   <TableCell className="text-right">
-                    {app.program_stages?.step_type === 'resubmission' ? (
+                    {app.program_stages?.step_type === 'resubmission' && app.stage_status !== 'Completed' ? (
                       <Button asChild>
                         <Link to={`/application/${app.id}/edit`}>Edit & Resubmit</Link>
                       </Button>

@@ -158,7 +158,16 @@ const SubmissionDetailPage = () => {
   const handleStageUpdate = async () => {
     if (!submission || !selectedStage || submission.stage_id === selectedStage) return;
     setUpdating(true);
-    const { data, error } = await supabase.from('applications').update({ stage_id: selectedStage }).eq('id', submission.id).select(`*, programs(*), program_stages(*)`).single();
+
+    const newStage = programStages.find(s => s.id === selectedStage);
+    let newStageStatus = 'Completed';
+    if (newStage?.step_type === 'resubmission') {
+      newStageStatus = 'Awaiting Resubmission';
+    } else if (newStage?.step_type === 'form') {
+      newStageStatus = 'Not Submitted';
+    }
+
+    const { data, error } = await supabase.from('applications').update({ stage_id: selectedStage, stage_status: newStageStatus }).eq('id', submission.id).select(`*, programs(*), program_stages(*)`).single();
     if (error) {
       showError(`Failed to update stage: ${error.message}`);
     } else {

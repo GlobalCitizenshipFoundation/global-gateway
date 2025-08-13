@@ -137,7 +137,15 @@ const PipelineViewPage = () => {
         apps.map((app) => (app.id === applicantId ? { ...app, stage_id: newStageId } : app))
       );
 
-      const { error } = await supabase.from("applications").update({ stage_id: newStageId }).eq("id", applicantId);
+      const newStage = stages.find(s => s.id === newStageId);
+      let newStageStatus = 'Completed';
+      if (newStage?.step_type === 'resubmission') {
+        newStageStatus = 'Awaiting Resubmission';
+      } else if (newStage?.step_type === 'form') {
+        newStageStatus = 'Not Submitted';
+      }
+
+      const { error } = await supabase.from("applications").update({ stage_id: newStageId, stage_status: newStageStatus }).eq("id", applicantId);
 
       if (error) {
         showError("Failed to move applicant. Reverting.");

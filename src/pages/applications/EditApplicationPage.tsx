@@ -24,21 +24,13 @@ const EditApplicationPage = () => {
   const { user } = useSession();
   const { application, program, applicationForm, formSections, formFields, loading, form, displayedFormFields } = useEditApplicationForm();
   const [submitting, setSubmitting] = useState(false);
+  const [savingDraft, setSavingDraft] = useState(false);
   const navigate = useNavigate();
 
-  const onSubmit = async (values: DynamicFormValues) => {
-    if (!user || !application || !program) {
-      showError("Cannot submit: required data is missing.");
-      return;
-    }
-    setSubmitting(true);
+  const saveResponses = async (values: DynamicFormValues) => {
+    if (!application) return false;
 
-    const { error: deleteError } = await supabase.from('application_responses').delete().eq('application_id', application.id);
-    if (deleteError) {
-      showError(`Failed to update submission: ${deleteError.message}`);
-      setSubmitting(false);
-      return;
-    }
+    await supabase.from('application_responses').delete().eq('application_id', application.id);
 
     const responseRecords = displayedFormFields
       .map(field => {
@@ -52,20 +44,54 @@ const EditApplicationPage = () => {
     if (responseRecords.length > 0) {
       const { error: insertError } = await supabase.from('application_responses').insert(responseRecords as any);
       if (insertError) {
-        showError(`Failed to save new responses: ${insertError.message}`);
-        setSubmitting(false);
-        return;
+        showError(`Failed to save responses: ${insertError.message}`);
+        return false;
       }
     }
+    return true;
+  };
 
-    const { error: updateAppError } = await supabase.from('applications').update({ submitted_date: new Date().toISOString() }).eq('id', application.id);
-    if (updateAppError) {
-      showError(`Failed to update submission timestamp: ${updateAppError.message}`);
-    } else {
-      showSuccess("Application resubmitted successfully!");
+  const handleSaveDraft = async () => {
+    setSavingDraft(true);
+    const values = form.getValues();
+    const responsesSaved = await saveResponses(values);
+
+    if (responsesSaved) {
+      const { error } = await supabase
+        .from('applications')
+        .update({ stage_status: 'In Progress', last_saved_at: new Date().toISOString() })
+        .eq('id', application!.id);
+      
+      if (error) showError(`Failed to save draft status: ${error.message}`);
+      else showSuccess("Draft saved successfully!");
+    }
+    setSavingDraft(false);
+  };
+
+  const onSubmit = async (values: DynamicFormValues) => {
+    if (!user || !application || !program) {
+      showError("Cannot submit: required data is missing.");
+      return;
+    }
+    setSubmitting(true);
+
+    const responsesSaved = await saveResponses(values);
+    if (!responsesSaved) {
+      setSubmitting(false);
+      return;
     }
 
-    navigate('/dashboard');
+    const { error: updateAppError } = await supabase
+      .from('applications')
+      .update({ submitted_date: new Date().toISOString(), stage_status: 'Completed' })
+      .eq('id', application.id);
+
+    if (updateAppError) {
+      showError(`Failed to update submission status: ${updateAppError.message}`);
+    } else {
+      showSuccess("Application resubmitted successfully!");
+      navigate('/dashboard');
+    }
     setSubmitting(false);
   };
 
@@ -103,11 +129,16 @@ const EditApplicationPage = () => {
               <ApplicationFormSections
                 formSections={formSections}
                 displayedFormFields={displayedFormFields}
-                submitting={submitting}
+                submitting={submitting || savingDraft}
               />
-              <Button type="submit" className="w-full" disabled={submitting}>
-                {submitting ? 'Resubmitting...' : 'Save & Resubmit Application'}
-              </Button>
+              <div className="flex justify-between items-center">
+                <Button type="button" variant="outline" onClick={handleSaveDraft} disabled={submitting || savingDraft}>
+                  {savingDraft ? 'Saving Draft...' : 'Save Draft'}
+                </Button>
+                <Button type="submit" disabled={submitting || savingDraft}>
+                  {submitting ? 'Resubmitting...' : 'Save & Resubmit Application'}
+                </Button>
+              </div>
             </form>
           </Form>
         </CardContent>

@@ -46,6 +46,8 @@ export type Application = {
   stage_id: string;
   full_name: string | null;
   email: string | null;
+  stage_status: string | null;
+  last_saved_at: string | null;
   programs: {
     title: string;
     allow_pdf_download: boolean; // Added for PDF download
