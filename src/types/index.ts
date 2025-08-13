@@ -149,3 +149,18 @@ export type WorkflowStep = {
   form_id: string | null;
   email_template_id: string | null;
 };
+
+export type ApplicationReview = {
+  id: string;
+  application_id: string;
+  reviewer_id: string;
+  score: number | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+  profiles?: {
+    first_name: string | null;
+    last_name: string | null;
+    avatar_url: string | null;
+  } | null;
+};
