@@ -226,9 +226,9 @@ export const WorkflowStagePropertiesPanel = ({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {availableResubmissionStages.map((formStage, index) => (
+                      {availableResubmissionStages.map((formStage) => (
                         <SelectItem key={formStage.id} value={String(formStage.order_index)}>
-                          {formStage.name} (Current Stage {index + 1})
+                          {formStage.name} (Current Stage {formStage.order_index})
                         </SelectItem>
                       ))}
                     </SelectContent>
