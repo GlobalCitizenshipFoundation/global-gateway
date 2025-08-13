@@ -75,9 +75,9 @@ const ConditionalLogicBuilder = ({
     setRules([...rules, { field_id: '', operator: 'equals', value: '' }]);
   };
 
-  const updateRule = (index: number, key: keyof DisplayRule, value: any) => {
+  const updateRule = (index: number, newRuleData: Partial<DisplayRule>) => {
     const newRules = [...rules];
-    newRules[index] = { ...newRules[index], [key]: value };
+    newRules[index] = { ...newRules[index], ...newRuleData };
     setRules(newRules);
   };
 
@@ -118,7 +118,7 @@ const ConditionalLogicBuilder = ({
         return (
           <Select
             value={rule.value as string || ''}
-            onValueChange={(val) => updateRule(index, 'value', val)}
+            onValueChange={(val) => updateRule(index, { value: val })}
           >
             <SelectTrigger>
               <SelectValue placeholder="Select an option" />
@@ -145,7 +145,7 @@ const ConditionalLogicBuilder = ({
                     const newValues = checked
                       ? [...selectedCheckboxes, option]
                       : selectedCheckboxes.filter(v => v !== option);
-                    updateRule(index, 'value', newValues);
+                    updateRule(index, { value: newValues });
                   }}
                 />
                 <Label htmlFor={`checkbox-${index}-${optIndex}`}>{option}</Label>
@@ -176,7 +176,7 @@ const ConditionalLogicBuilder = ({
               <Calendar
                 mode="single"
                 selected={rule.value ? new Date(rule.value as string) : undefined}
-                onSelect={(date) => updateRule(index, 'value', date ? date.toISOString() : null)}
+                onSelect={(date) => updateRule(index, { value: date ? date.toISOString() : null })}
                 initialFocus
               />
             </PopoverContent>
@@ -189,7 +189,7 @@ const ConditionalLogicBuilder = ({
             type="number"
             placeholder="Value"
             value={rule.value as number || ''}
-            onChange={(e) => updateRule(index, 'value', parseFloat(e.target.value))}
+            onChange={(e) => updateRule(index, { value: parseFloat(e.target.value) })}
           />
         );
       default:
@@ -197,7 +197,7 @@ const ConditionalLogicBuilder = ({
           <Input
             placeholder="Value"
             value={rule.value as string || ''}
-            onChange={(e) => updateRule(index, 'value', e.target.value)}
+            onChange={(e) => updateRule(index, { value: e.target.value })}
           />
         );
     }
@@ -233,11 +233,13 @@ const ConditionalLogicBuilder = ({
               <Select
                 value={rule.field_id}
                 onValueChange={(val) => {
-                  updateRule(index, 'field_id', val);
-                  updateRule(index, 'value', null);
                   const newTriggerField = allFields.find(f => f.id === val);
                   const newDefaultOperator = newTriggerField ? fieldTypeOperators[newTriggerField.field_type][0] : 'equals';
-                  updateRule(index, 'operator', newDefaultOperator);
+                  updateRule(index, {
+                    field_id: val,
+                    operator: newDefaultOperator,
+                    value: null,
+                  });
                 }}
               >
                 <SelectTrigger>
@@ -255,10 +257,9 @@ const ConditionalLogicBuilder = ({
               <Select
                 value={rule.operator}
                 onValueChange={(val) => {
-                  updateRule(index, 'operator', val as DisplayRule['operator']);
-                  if (val === 'is_empty' || val === 'is_not_empty') {
-                    updateRule(index, 'value', null);
-                  }
+                  const operator = val as DisplayRule['operator'];
+                  const value = (operator === 'is_empty' || operator === 'is_not_empty') ? null : rule.value;
+                  updateRule(index, { operator, value });
                 }}
                 disabled={!triggerField}
               >

@@ -61,8 +61,6 @@ const FormBuilderPage = () => {
 
   const handlers = useFormBuilderHandlers({
     state,
-    // No longer passing performUpdateFormDetails/Status directly here
-    // as useFormBuilderHandlers will access them from formBuilderActions internally
   });
 
   const {
@@ -112,6 +110,26 @@ const FormBuilderPage = () => {
       window.removeEventListener('beforeunload', handleBeforeUnload);
     };
   }, [state.hasUnsavedChanges]);
+
+  // Sync selected field with the main fields array to ensure panel has fresh data
+  useEffect(() => {
+    if (selectedField) {
+      const updatedFieldFromList = fields.find(f => f.id === selectedField.id);
+      if (updatedFieldFromList && JSON.stringify(updatedFieldFromList) !== JSON.stringify(selectedField)) {
+        setSelectedField(updatedFieldFromList);
+      }
+    }
+  }, [fields, selectedField]);
+
+  // Sync selected section with the main sections array
+  useEffect(() => {
+    if (selectedSection) {
+      const updatedSectionFromList = sections.find(s => s.id === selectedSection.id);
+      if (updatedSectionFromList && JSON.stringify(updatedSectionFromList) !== JSON.stringify(selectedSection)) {
+        setSelectedSection(updatedSectionFromList);
+      }
+    }
+  }, [sections, selectedSection]);
 
   const uncategorizedFields = getFieldsForSection(null);
 
