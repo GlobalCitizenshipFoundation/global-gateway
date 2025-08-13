@@ -241,8 +241,33 @@ const CreateProgramPage = () => {
       await supabase.from('forms').delete().eq('id', newFormId);
       setIsSubmitting(false);
     } else {
-      showSuccess("Program and its application form created successfully! Now, let's design your form.");
-      navigate(`/creator/forms/${newFormId}/edit`);
+      if (values.workflowTemplateId) {
+        const { data: stepsToCopy, error: stepsError } = await supabase
+          .from('workflow_steps')
+          .select('name, order_index')
+          .eq('workflow_template_id', values.workflowTemplateId)
+          .order('order_index', { ascending: true });
+
+        if (stepsError) {
+          showError(`Program created, but failed to copy workflow steps: ${stepsError.message}`);
+        } else if (stepsToCopy && stepsToCopy.length > 0) {
+          const newStages = stepsToCopy.map(step => ({
+            program_id: programData.id,
+            name: step.name,
+            order: step.order_index,
+          }));
+
+          const { error: insertStagesError } = await supabase
+            .from('program_stages')
+            .insert(newStages);
+
+          if (insertStagesError) {
+            showError(`Program created, but failed to insert workflow stages: ${insertStagesError.message}`);
+          }
+        }
+      }
+      showSuccess("Program created successfully!");
+      navigate(`/creator/dashboard`);
     }
   }
 
@@ -382,7 +407,7 @@ const CreateProgramPage = () => {
                 )}
               />
               <Button type="submit" className="w-full" disabled={isSubmitting}>
-                {isSubmitting ? "Creating Program..." : "Create and Design Form"}
+                {isSubmitting ? "Creating Program..." : "Create Program"}
               </Button>
             </form>
           </Form>

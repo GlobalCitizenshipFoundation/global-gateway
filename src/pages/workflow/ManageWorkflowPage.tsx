@@ -1,13 +1,46 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { ProgramStage } from "@/types";
 import { showError, showSuccess } from "@/utils/toast";
-import { ArrowLeft, Plus, Trash2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { ArrowLeft, Plus, Trash2, GripVertical } from "lucide-react";
+import { useEffect, useState, useCallback } from "react";
 import { Link, useParams } from "react-router-dom";
+import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
+import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+
+const SortableStageItem = ({ stage, onDelete }: { stage: ProgramStage; onDelete: (stageId: string) => void; }) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: stage.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <li ref={setNodeRef} style={style} className="flex items-center justify-between p-3 bg-secondary rounded-md gap-2">
+      <div className="flex items-center gap-2 flex-grow">
+        <Button variant="ghost" size="icon" className="cursor-grab" {...attributes} {...listeners}>
+          <GripVertical className="h-5 w-5 text-muted-foreground" />
+        </Button>
+        <span className="font-medium">{stage.name}</span>
+      </div>
+      <Button variant="ghost" size="icon" onClick={() => onDelete(stage.id)}>
+        <Trash2 className="h-4 w-4 text-destructive" />
+      </Button>
+    </li>
+  );
+};
 
 const ManageWorkflowPage = () => {
   const { programId } = useParams<{ programId: string }>();
@@ -17,39 +50,40 @@ const ManageWorkflowPage = () => {
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  useEffect(() => {
-    const fetchWorkflow = async () => {
-      if (!programId) return;
-      setLoading(true);
+  const fetchWorkflow = useCallback(async () => {
+    if (!programId) return;
+    setLoading(true);
 
-      const { data: programData, error: programError } = await supabase
-        .from('programs')
-        .select('title')
-        .eq('id', programId)
-        .single();
+    const { data: programData, error: programError } = await supabase
+      .from('programs')
+      .select('title')
+      .eq('id', programId)
+      .single();
 
-      if (programError || !programData) {
-        showError("Could not fetch program details.");
-        setLoading(false);
-        return;
-      }
-      setProgramTitle(programData.title);
-
-      const { data: stagesData, error: stagesError } = await supabase
-        .from('program_stages')
-        .select('*')
-        .eq('program_id', programId)
-        .order('order', { ascending: true });
-
-      if (stagesError) {
-        showError("Could not fetch workflow stages.");
-      } else {
-        setStages(stagesData || []);
-      }
+    if (programError || !programData) {
+      showError("Could not fetch program details.");
       setLoading(false);
-    };
-    fetchWorkflow();
+      return;
+    }
+    setProgramTitle(programData.title);
+
+    const { data: stagesData, error: stagesError } = await supabase
+      .from('program_stages')
+      .select('*')
+      .eq('program_id', programId)
+      .order('order', { ascending: true });
+
+    if (stagesError) {
+      showError("Could not fetch workflow stages.");
+    } else {
+      setStages(stagesData || []);
+    }
+    setLoading(false);
   }, [programId]);
+
+  useEffect(() => {
+    fetchWorkflow();
+  }, [fetchWorkflow]);
 
   const handleAddStage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -92,6 +126,34 @@ const ManageWorkflowPage = () => {
     }
   };
 
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
+
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+      const oldIndex = stages.findIndex(s => s.id === active.id);
+      const newIndex = stages.findIndex(s => s.id === over.id);
+      const newOrderedStages = arrayMove(stages, oldIndex, newIndex);
+      setStages(newOrderedStages);
+
+      const updates = newOrderedStages.map((stage, index) => ({
+        id: stage.id,
+        order: index + 1,
+      }));
+
+      const { error } = await supabase.from('program_stages').upsert(updates);
+      if (error) {
+        showError("Failed to save new order. Reverting.");
+        fetchWorkflow();
+      } else {
+        showSuccess("Stage order saved.");
+      }
+    }
+  };
+
   return (
     <div className="container py-12">
       <Link to="/creator/dashboard" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-4">
@@ -102,7 +164,7 @@ const ManageWorkflowPage = () => {
         <CardHeader>
           <CardTitle>Manage Workflow</CardTitle>
           <CardDescription>
-            Define the stages for your program: <span className="font-semibold">{programTitle}</span>
+            Define and reorder the stages for your program: <span className="font-semibold">{programTitle}</span>
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -111,18 +173,15 @@ const ManageWorkflowPage = () => {
             {loading ? (
               <p>Loading stages...</p>
             ) : stages.length > 0 ? (
-              <ul className="space-y-4">
-                {stages.map(stage => (
-                  <li key={stage.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 bg-secondary rounded-md gap-2">
-                    <span className="font-medium flex-grow">{stage.name}</span>
-                    <div className="flex items-center gap-2 w-full sm:w-auto">
-                      <Button variant="ghost" size="icon" onClick={() => handleDeleteStage(stage.id)} disabled={isSubmitting}>
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
-                    </div>
-                  </li>
-                ))}
-              </ul>
+              <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                <ul className="space-y-4">
+                  <SortableContext items={stages.map(s => s.id)} strategy={verticalListSortingStrategy}>
+                    {stages.map(stage => (
+                      <SortableStageItem key={stage.id} stage={stage} onDelete={handleDeleteStage} />
+                    ))}
+                  </SortableContext>
+                </ul>
+              </DndContext>
             ) : (
               <p className="text-muted-foreground text-sm">No stages defined yet. Add one to get started.</p>
             )}
