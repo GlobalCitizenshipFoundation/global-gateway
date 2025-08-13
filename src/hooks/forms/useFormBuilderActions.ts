@@ -73,7 +73,7 @@ export const useFormBuilderActions = ({
       showError(`Failed to delete section: ${error.message}`);
       return false;
     } else {
-      fetchData(); // Re-fetch to update the UI
+      fetchData();
       return true;
     }
   };
@@ -82,8 +82,8 @@ export const useFormBuilderActions = ({
     if (!user) return false;
     const now = new Date().toISOString();
 
-    setSections((prevSections: FormSection[]) => // Explicitly type prevSections
-      prevSections.map((s: FormSection) => // Explicitly type s
+    setSections((prevSections: FormSection[]) =>
+      prevSections.map((s: FormSection) =>
         s.id === sectionId
           ? { ...s, name: values.name, description: values.description ?? null, tooltip: values.tooltip ?? null, last_edited_by_user_id: user.id, last_edited_at: now }
           : s
@@ -103,7 +103,7 @@ export const useFormBuilderActions = ({
 
     if (error) {
       showError(`Failed to update section: ${error.message}. Reverting.`);
-      fetchData(); // Re-fetch to revert optimistic update
+      fetchData();
       return false;
     } else {
       return true;
@@ -118,7 +118,6 @@ export const useFormBuilderActions = ({
       .select('order')
       .eq('form_id', formId);
     
-    // Conditionally apply section_id filter based on whether it's null
     if (sectionId === null) {
       query = query.is('section_id', null);
     } else {
@@ -145,12 +144,12 @@ export const useFormBuilderActions = ({
         options: (type === 'select' || type === 'radio' || type === 'checkbox') ? options.split(',').map(opt => opt.trim()) : null,
         is_required: false,
         display_rules: null,
+        display_rules_logic_type: 'AND',
         description: description || null,
         tooltip: tooltip || null,
         placeholder: placeholder || null,
         last_edited_by_user_id: user.id,
         last_edited_at: new Date().toISOString(),
-        // Default values for new date and rating fields
         date_min: null,
         date_max: null,
         date_allow_past: true,
@@ -198,14 +197,14 @@ export const useFormBuilderActions = ({
     }
   };
 
-  const handleSaveLogic = async (fieldId: string, rules: DisplayRule[]) => {
+  const handleSaveLogic = async (fieldId: string, rules: DisplayRule[], logicType: 'AND' | 'OR') => {
     if (!user) return false;
     setFields(prevFields =>
-      prevFields.map(f => (f.id === fieldId ? { ...f, display_rules: rules } : f))
+      prevFields.map(f => (f.id === fieldId ? { ...f, display_rules: rules, display_rules_logic_type: logicType } : f))
     );
     const { error } = await supabase
       .from('form_fields')
-      .update({ display_rules: rules, last_edited_by_user_id: user.id, last_edited_at: new Date().toISOString() })
+      .update({ display_rules: rules, display_rules_logic_type: logicType, last_edited_by_user_id: user.id, last_edited_at: new Date().toISOString() })
       .eq('id', fieldId);
 
     if (error) {
@@ -240,7 +239,6 @@ export const useFormBuilderActions = ({
       ? values.options?.split(',').map(opt => opt.trim()) || null
       : null;
 
-    // Prepare update object for Supabase
     const updatePayload: Partial<FormField> = {
       label: values.label,
       field_type: values.field_type,
@@ -254,28 +252,24 @@ export const useFormBuilderActions = ({
       last_edited_at: new Date().toISOString(),
     };
 
-    // Conditionally add date properties
     if (values.field_type === 'date') {
       updatePayload.date_min = values.date_min || null;
       updatePayload.date_max = values.date_max || null;
       updatePayload.date_allow_past = values.date_allow_past ?? true;
       updatePayload.date_allow_future = values.date_allow_future ?? true;
     } else {
-      // Ensure date properties are reset if field type changes from date
       updatePayload.date_min = null;
       updatePayload.date_max = null;
       updatePayload.date_allow_past = true;
       updatePayload.date_allow_future = true;
     }
 
-    // Conditionally add rating properties
     if (values.field_type === 'rating') {
       updatePayload.rating_min_value = values.rating_min_value ?? 1;
       updatePayload.rating_max_value = values.rating_max_value ?? 5;
       updatePayload.rating_min_label = values.rating_min_label || "Poor";
       updatePayload.rating_max_label = values.rating_max_label || "Excellent";
     } else {
-      // Ensure rating properties are reset if field type changes from rating
       updatePayload.rating_min_value = null;
       updatePayload.rating_max_value = null;
       updatePayload.rating_min_label = null;
@@ -285,7 +279,7 @@ export const useFormBuilderActions = ({
     setFields(prevFields =>
       prevFields.map(f =>
         f.id === fieldId
-          ? { ...f, ...(updatePayload as FormField) } // Merge all updated properties
+          ? { ...f, ...(updatePayload as FormField) }
           : f
       )
     );
@@ -424,6 +418,7 @@ export const useFormBuilderActions = ({
         is_required: field.is_required,
         order: field.order,
         display_rules: field.display_rules,
+        display_rules_logic_type: field.display_rules_logic_type,
         description: field.description,
         tooltip: field.tooltip,
         placeholder: field.placeholder,

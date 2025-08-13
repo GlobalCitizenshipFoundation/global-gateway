@@ -196,9 +196,9 @@ export const useFormBuilderHandlers = ({
     }
   }, [user, setHasUnsavedChanges, setFormLastEditedAt, setFormLastEditedByUserId, performToggleRequired, triggerAutoSave]);
 
-  const handleSaveLogic = useCallback(async (fieldId: string, rules: DisplayRule[]) => {
+  const handleSaveLogic = useCallback(async (fieldId: string, rules: DisplayRule[], logicType: 'AND' | 'OR') => {
     if (!user) return;
-    const success = await performSaveLogic(fieldId, rules);
+    const success = await performSaveLogic(fieldId, rules, logicType);
     if (success) {
       showSuccess("Display logic saved successfully!");
       setHasUnsavedChanges(true);

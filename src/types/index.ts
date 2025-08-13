@@ -64,7 +64,7 @@ export type FormSection = {
 
 export type DisplayRule = {
   field_id: string;
-  operator: 'equals' | 'not_equals' | 'contains' | 'not_contains' | 'is_empty' | 'is_not_empty';
+  operator: 'equals' | 'not_equals' | 'contains' | 'not_contains' | 'is_empty' | 'is_not_empty' | 'greater_than' | 'less_than' | 'is_before' | 'is_after';
   value: string | string[] | boolean | number | null;
   logic_type?: 'AND' | 'OR'; // For combining multiple rules
 };
@@ -79,6 +79,7 @@ export type FormField = {
   is_required: boolean;
   order: number;
   display_rules: DisplayRule[] | null;
+  display_rules_logic_type: 'AND' | 'OR'; // New: Logic type for rules
   description: string | null;
   tooltip: string | null;
   placeholder: string | null; // New: Placeholder text for input fields

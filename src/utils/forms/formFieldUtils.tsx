@@ -17,37 +17,30 @@ export const evaluateRule = (rule: DisplayRule, currentResponsesMap: Record<stri
 
   if (!triggerField) return false; // Trigger field not found
 
-  // Normalize triggerFieldResponse for comparison
   let normalizedResponse: any = triggerFieldResponse;
   if (triggerField.field_type === 'checkbox') {
-    // Checkbox values are stored as JSON string in DB, but as string[] in react-hook-form
-    // So, if it's a string, try to parse it. If it's already an array, use it.
     try {
       normalizedResponse = typeof triggerFieldResponse === 'string' ? JSON.parse(triggerFieldResponse) : triggerFieldResponse;
     } catch {
-      normalizedResponse = []; // Fallback for malformed or empty string
+      normalizedResponse = [];
     }
     if (!Array.isArray(normalizedResponse)) normalizedResponse = [];
-  } else if (triggerField.field_type === 'number') {
-    // Numbers can be number or undefined from react-hook-form, or string from DB
+  } else if (triggerField.field_type === 'number' || triggerField.field_type === 'rating') {
     normalizedResponse = typeof triggerFieldResponse === 'string' ? parseFloat(triggerFieldResponse) : triggerFieldResponse;
-    if (isNaN(normalizedResponse)) normalizedResponse = undefined; // Treat NaN as undefined for consistency
+    if (isNaN(normalizedResponse)) normalizedResponse = undefined;
   } else if (triggerField.field_type === 'date') {
-    // Dates are ISO strings from react-hook-form
-    normalizedResponse = triggerFieldResponse;
+    normalizedResponse = triggerFieldResponse ? new Date(triggerFieldResponse) : undefined;
   } else {
-    // For other types, ensure it's a string
     normalizedResponse = typeof triggerFieldResponse === 'string' ? triggerFieldResponse : String(triggerFieldResponse || '');
   }
 
+  const ruleValue = triggerField.field_type === 'date' && typeof rule.value === 'string' ? new Date(rule.value) : rule.value;
 
   switch (rule.operator) {
     case 'equals':
       if (triggerField.field_type === 'checkbox') {
-        // For checkboxes, rule.value is string[], normalizedResponse is string[]
         return Array.isArray(rule.value) && Array.isArray(normalizedResponse) && rule.value.every(val => normalizedResponse.includes(val));
       }
-      // For numbers, compare directly. For others, compare as strings.
       return normalizedResponse === rule.value;
     case 'not_equals':
       if (triggerField.field_type === 'checkbox') {
@@ -62,7 +55,7 @@ export const evaluateRule = (rule: DisplayRule, currentResponsesMap: Record<stri
       if (triggerField.field_type === 'checkbox') {
         return Array.isArray(normalizedResponse) && normalizedResponse.length === 0;
       }
-      if (triggerField.field_type === 'number') {
+      if (triggerField.field_type === 'number' || triggerField.field_type === 'rating') {
         return normalizedResponse === undefined || normalizedResponse === null;
       }
       return !normalizedResponse || String(normalizedResponse).trim() === '';
@@ -70,10 +63,18 @@ export const evaluateRule = (rule: DisplayRule, currentResponsesMap: Record<stri
       if (triggerField.field_type === 'checkbox') {
         return Array.isArray(normalizedResponse) && normalizedResponse.length > 0;
       }
-      if (triggerField.field_type === 'number') {
+      if (triggerField.field_type === 'number' || triggerField.field_type === 'rating') {
         return normalizedResponse !== undefined && normalizedResponse !== null;
       }
       return !!normalizedResponse && String(normalizedResponse).trim() !== '';
+    case 'greater_than':
+      return typeof normalizedResponse === 'number' && typeof ruleValue === 'number' && normalizedResponse > ruleValue;
+    case 'less_than':
+      return typeof normalizedResponse === 'number' && typeof ruleValue === 'number' && normalizedResponse < ruleValue;
+    case 'is_before':
+      return normalizedResponse instanceof Date && ruleValue instanceof Date && normalizedResponse < ruleValue;
+    case 'is_after':
+      return normalizedResponse instanceof Date && ruleValue instanceof Date && normalizedResponse > ruleValue;
     default:
       return false;
   }
@@ -90,8 +91,14 @@ export const shouldFieldBeDisplayed = (field: FormField, currentResponsesMap: Re
   if (!field.display_rules || field.display_rules.length === 0) {
     return true; // No rules, always display
   }
-  // Assuming 'AND' logic for multiple rules for simplicity
-  return field.display_rules.every(rule => evaluateRule(rule, currentResponsesMap, allFormFields));
+
+  const logicType = field.display_rules_logic_type || 'AND';
+
+  if (logicType === 'AND') {
+    return field.display_rules.every(rule => evaluateRule(rule, currentResponsesMap, allFormFields));
+  } else { // OR logic
+    return field.display_rules.some(rule => evaluateRule(rule, currentResponsesMap, allFormFields));
+  }
 };
 
 /**

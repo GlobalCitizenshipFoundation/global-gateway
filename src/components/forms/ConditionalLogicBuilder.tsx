@@ -16,7 +16,7 @@ import { format } from 'date-fns';
 interface ConditionalLogicBuilderProps {
   fieldToEdit: FormField | null;
   allFields: FormField[];
-  onSave: (fieldId: string, rules: DisplayRule[]) => void;
+  onSave: (fieldId: string, rules: DisplayRule[], logicType: 'AND' | 'OR') => void;
   isOpen?: boolean;
   onClose?: () => void;
 }
@@ -26,13 +26,13 @@ const fieldTypeOperators: Record<FormField['field_type'], Array<DisplayRule['ope
   textarea: ['equals', 'not_equals', 'contains', 'not_contains', 'is_empty', 'is_not_empty'],
   email: ['equals', 'not_equals', 'contains', 'not_contains', 'is_empty', 'is_not_empty'],
   phone: ['equals', 'not_equals', 'contains', 'not_contains', 'is_empty', 'is_not_empty'],
-  number: ['equals', 'not_equals', 'is_empty', 'is_not_empty'],
-  date: ['equals', 'not_equals', 'is_empty', 'is_not_empty'],
+  number: ['equals', 'not_equals', 'greater_than', 'less_than', 'is_empty', 'is_not_empty'],
+  date: ['equals', 'not_equals', 'is_before', 'is_after', 'is_empty', 'is_not_empty'],
   select: ['equals', 'not_equals', 'is_empty', 'is_not_empty'],
   radio: ['equals', 'not_equals', 'is_empty', 'is_not_empty'],
   checkbox: ['equals', 'not_equals', 'is_empty', 'is_not_empty'],
   richtext: ['equals', 'not_equals', 'contains', 'not_contains', 'is_empty', 'is_not_empty'],
-  rating: ['equals', 'not_equals', 'is_empty', 'is_not_empty'], // Added for rating field type
+  rating: ['equals', 'not_equals', 'greater_than', 'less_than', 'is_empty', 'is_not_empty'],
 };
 
 const operatorLabels: Record<DisplayRule['operator'], string> = {
@@ -42,6 +42,10 @@ const operatorLabels: Record<DisplayRule['operator'], string> = {
   not_contains: 'does not contain',
   is_empty: 'is empty',
   is_not_empty: 'is not empty',
+  greater_than: 'is greater than',
+  less_than: 'is less than',
+  is_before: 'is before',
+  is_after: 'is after',
 };
 
 const ConditionalLogicBuilder = ({
@@ -50,12 +54,15 @@ const ConditionalLogicBuilder = ({
   onSave,
 }: ConditionalLogicBuilderProps) => {
   const [rules, setRules] = useState<DisplayRule[]>([]);
+  const [logicType, setLogicType] = useState<'AND' | 'OR'>('AND');
 
   useEffect(() => {
     if (fieldToEdit) {
       setRules(fieldToEdit.display_rules || []);
+      setLogicType(fieldToEdit.display_rules_logic_type || 'AND');
     } else {
       setRules([]);
+      setLogicType('AND');
     }
   }, [fieldToEdit]);
 
@@ -94,7 +101,7 @@ const ConditionalLogicBuilder = ({
       }
     }
 
-    onSave(fieldToEdit.id, rules);
+    onSave(fieldToEdit.id, rules, logicType);
   };
 
   const renderValueInput = (rule: DisplayRule, index: number, triggerField: FormField | undefined) => {
@@ -173,7 +180,7 @@ const ConditionalLogicBuilder = ({
           </Popover>
         );
       case 'number':
-      case 'rating': // Rating fields can also be compared numerically
+      case 'rating':
         return (
           <Input
             type="number"
@@ -195,6 +202,21 @@ const ConditionalLogicBuilder = ({
 
   return (
     <div className="grid gap-4 py-4">
+      {rules.length > 0 && (
+        <div className="grid gap-2">
+          <Label>Show this field if:</Label>
+          <RadioGroup value={logicType} onValueChange={(value: 'AND' | 'OR') => setLogicType(value)} className="flex gap-4">
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="AND" id="logic-and" />
+              <Label htmlFor="logic-and">All of the following rules match</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="OR" id="logic-or" />
+              <Label htmlFor="logic-or">Any of the following rules match</Label>
+            </div>
+          </RadioGroup>
+        </div>
+      )}
       {rules.length === 0 && (
         <p className="text-muted-foreground text-sm">No rules defined. Add a rule to get started.</p>
       )}

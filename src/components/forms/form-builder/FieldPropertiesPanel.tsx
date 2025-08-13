@@ -19,28 +19,26 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
 import { FormField, FormSection, DisplayRule } from "@/types";
 import ConditionalLogicBuilder from "@/components/forms/ConditionalLogicBuilder";
-import RichTextEditor from "@/components/common/RichTextEditor"; // Updated import path
-import { X, FileText, FolderOpen, CalendarIcon } from "lucide-react"; // Import CalendarIcon
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"; // Import Popover
-import { Calendar } from "@/components/ui/calendar"; // Import Calendar
-import { cn } from "@/lib/utils"; // Import cn
-import { format } from "date-fns"; // Import format
+import RichTextEditor from "@/components/common/RichTextEditor";
+import { X, FileText, FolderOpen, CalendarIcon } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { cn } from "@/lib/utils";
+import { format } from "date-fns";
 
 const editFormFieldSchema = z.object({
   label: z.string().min(1, { message: "Label cannot be empty." }),
   field_type: z.enum(['text', 'textarea', 'select', 'radio', 'checkbox', 'email', 'date', 'phone', 'number', 'richtext', 'rating']),
-  options: z.string().optional(), // Comma-separated for select/radio/checkbox
+  options: z.string().optional(),
   is_required: z.boolean(),
   description: z.string().nullable().optional(),
   tooltip: z.string().nullable().optional(),
   placeholder: z.string().nullable().optional(),
   section_id: z.string().nullable().optional(),
-  // New date properties
   date_min: z.string().nullable().optional(),
   date_max: z.string().nullable().optional(),
   date_allow_past: z.boolean().optional(),
   date_allow_future: z.boolean().optional(),
-  // New rating properties
   rating_min_value: z.preprocess((val) => (val === '' ? null : Number(val)), z.number().nullable().optional()),
   rating_max_value: z.preprocess((val) => (val === '' ? null : Number(val)), z.number().nullable().optional()),
   rating_min_label: z.string().nullable().optional(),
@@ -52,9 +50,9 @@ type EditFormFieldValues = z.infer<typeof editFormFieldSchema>;
 interface FieldPropertiesPanelProps {
   field: FormField;
   sections: FormSection[];
-  allFields: FormField[]; // For conditional logic
+  allFields: FormField[];
   onSave: (fieldId: string, values: EditFormFieldValues) => void;
-  onSaveLogic: (fieldId: string, rules: DisplayRule[]) => void;
+  onSaveLogic: (fieldId: string, rules: DisplayRule[], logicType: 'AND' | 'OR') => void;
   onClose: () => void;
 }
 
@@ -92,7 +90,7 @@ export const FieldPropertiesPanel = ({
     if (field) {
       form.reset({
         label: field.label,
-        field_type: field.field_type,
+        field_type: field.field_type as EditFormFieldValues['field_type'],
         options: Array.isArray(field.options) ? field.options.join(', ') : '',
         is_required: field.is_required,
         description: field.description || '',
