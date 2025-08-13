@@ -21,11 +21,10 @@ import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 import { showError, showSuccess } from "@/utils/toast";
-import { ProgramStage, FormField, FormSection, EmailTemplate } from "@/types"; // Import EmailTemplate
+import { ProgramStage, FormField, FormSection } from "@/types";
 import { evaluateRule, shouldFieldBeDisplayed, formatResponseValue } from "@/utils/formFieldUtils";
-import ApplicationPdfViewer from "@/components/application/ApplicationPdfViewer"; // Import the new component
-import DOMPurify from 'dompurify'; // Import DOMPurify
-import { sendEmailTemplate } from "@/utils/emailSender"; // Import sendEmailTemplate
+import ApplicationPdfViewer from "@/components/application/ApplicationPdfViewer";
+import DOMPurify from 'dompurify';
 
 type SubmissionDetail = {
   id: string;
@@ -33,7 +32,7 @@ type SubmissionDetail = {
   full_name: string;
   email: string;
   stage_id: string;
-  programs: { // Corrected type definition
+  programs: {
     title: string;
     form_id: string | null;
     allow_pdf_download: boolean;
@@ -52,10 +51,9 @@ const SubmissionDetailPage = () => {
   const { programId, submissionId } = useParams<{ programId: string, submissionId: string }>();
   const [submission, setSubmission] = useState<SubmissionDetail | null>(null);
   const [allResponses, setAllResponses] = useState<ResponseWithField[]>([]);
-  const [allFormFieldsForLogic, setAllFormFieldsForLogic] = useState<FormField[]>([]); // Store all fields for logic evaluation
-  const [allFormSections, setAllFormSections] = useState<FormSection[]>([]); // State to hold all form sections
+  const [allFormFieldsForLogic, setAllFormFieldsForLogic] = useState<FormField[]>([]);
+  const [allFormSections, setAllFormSections] = useState<FormSection[]>([]);
   const [programStages, setProgramStages] = useState<ProgramStage[]>([]);
-  const [emailTemplates, setEmailTemplates] = useState<EmailTemplate[]>([]); // State to hold email templates
   const [selectedStage, setSelectedStage] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
@@ -67,7 +65,6 @@ const SubmissionDetailPage = () => {
       setLoading(true);
       setError(null);
 
-      // Fetch submission and program's form_id
       const { data: submissionData, error: submissionError } = await supabase
         .from('applications')
         .select(`id, submitted_date, full_name, email, stage_id, programs(title, form_id, allow_pdf_download), program_stages(name)`)
@@ -81,19 +78,18 @@ const SubmissionDetailPage = () => {
       }
       const formattedSubmissionData: SubmissionDetail = {
         ...submissionData,
-        programs: submissionData.programs, // Simplified assignment
-        program_stages: submissionData.program_stages, // Simplified assignment
+        programs: submissionData.programs as unknown as SubmissionDetail['programs'], // Explicit cast
+        program_stages: submissionData.program_stages as unknown as SubmissionDetail['program_stages'], // Explicit cast
       };
       setSubmission(formattedSubmissionData);
       setSelectedStage(formattedSubmissionData.stage_id);
 
       const formId = formattedSubmissionData.programs?.form_id;
 
-      // Fetch all form fields for the program's form (needed for display logic evaluation)
       if (formId) {
         const { data: allFieldsData, error: allFieldsError } = await supabase
           .from('form_fields')
-          .select('id, form_id, section_id, label, field_type, options, is_required, order, display_rules, description, tooltip, placeholder, last_edited_by_user_id, last_edited_at') // Explicitly select columns
+          .select('id, form_id, section_id, label, field_type, options, is_required, order, display_rules, description, tooltip, placeholder, last_edited_by_user_id, last_edited_at')
           .eq('form_id', formId)
           .order('order', { ascending: true });
 
@@ -103,10 +99,9 @@ const SubmissionDetailPage = () => {
           setAllFormFieldsForLogic(allFieldsData as FormField[]);
         }
 
-        // Fetch all form sections for the program's form
         const { data: sectionsData, error: sectionsError } = await supabase
           .from('form_sections')
-          .select('*, description, tooltip') // Select new columns
+          .select('*, description, tooltip')
           .eq('form_id', formId)
           .order('order', { ascending: true });
 
@@ -117,10 +112,9 @@ const SubmissionDetailPage = () => {
         }
       }
 
-      // Fetch responses with full form_fields data
       const { data: responsesData, error: responsesError } = await supabase
         .from('application_responses')
-        .select(`value, form_fields ( id, label, field_type, options, is_required, order, display_rules, description, tooltip, placeholder )`) // Explicitly select columns
+        .select(`value, form_fields ( id, label, field_type, options, is_required, order, display_rules, description, tooltip, placeholder )`)
         .eq('application_id', submissionId);
       
       if (responsesError) {
@@ -133,10 +127,9 @@ const SubmissionDetailPage = () => {
         setAllResponses(formattedData as ResponseWithField[]);
       }
 
-      // Fetch all possible stages for the program
       const { data: stagesData, error: stagesError } = await supabase
         .from('program_stages')
-        .select('id, name, order, program_id, created_at, email_template_id') // Added email_template_id
+        .select('id, name, order, program_id, created_at')
         .eq('program_id', programId)
         .order('order', { ascending: true });
       
@@ -146,30 +139,16 @@ const SubmissionDetailPage = () => {
         setProgramStages(stagesData as ProgramStage[]);
       }
 
-      // Fetch all published email templates
-      const { data: templatesData, error: templatesError } = await supabase
-        .from('email_templates')
-        .select('*')
-        .eq('status', 'published'); // Only fetch published templates
-
-      if (templatesError) {
-        showError("Could not fetch email templates.");
-      } else {
-        setEmailTemplates(templatesData as EmailTemplate[]);
-      }
-
       setLoading(false);
     };
 
     fetchSubmissionDetails();
   }, [submissionId, programId]);
 
-  // Memoize the filtered responses to avoid re-calculation on every render
   const displayedResponses = useMemo(() => {
     const currentResponsesMap: Record<string, any> = {};
     allResponses.forEach(res => {
       if (res.form_fields?.id && res.value !== null) {
-        // For checkbox, parse the JSON string back to an array for logic evaluation
         if (res.form_fields.field_type === 'checkbox') {
           try {
             currentResponsesMap[res.form_fields.id] = JSON.parse(res.value);
@@ -185,7 +164,6 @@ const SubmissionDetailPage = () => {
       }
     });
 
-    // Use allFormFieldsForLogic for shouldFieldBeDisplayed to ensure all fields are considered
     return allResponses.map(res => {
       const field = res.form_fields;
       if (!field) return null;
@@ -202,7 +180,7 @@ const SubmissionDetailPage = () => {
       .from('applications')
       .update({ stage_id: selectedStage })
       .eq('id', submission.id)
-      .select(`id, submitted_date, full_name, email, stage_id, programs(title, form_id, allow_pdf_download), program_stages(name)`) // Select necessary fields for email
+      .select(`id, submitted_date, full_name, email, stage_id, programs(title, form_id, allow_pdf_download), program_stages(name)`)
       .single();
 
     if (error) {
@@ -210,26 +188,11 @@ const SubmissionDetailPage = () => {
     } else {
       const updatedSubmissionData: SubmissionDetail = {
         ...data,
-        programs: data.programs, // Simplified assignment
-        program_stages: data.program_stages, // Simplified assignment
+        programs: data.programs as unknown as SubmissionDetail['programs'], // Explicit cast
+        program_stages: data.program_stages as unknown as SubmissionDetail['program_stages'], // Explicit cast
       };
       setSubmission(updatedSubmissionData);
       showSuccess(`Application moved to "${updatedSubmissionData.program_stages?.name}" stage.`);
-
-      // Send email if a template is associated with the new stage
-      const newStage = programStages.find(s => s.id === selectedStage);
-      if (newStage?.email_template_id && updatedSubmissionData.email) {
-        const template = emailTemplates.find(t => t.id === newStage.email_template_id);
-        if (template) {
-          await sendEmailTemplate(template.name, updatedSubmissionData.email, {
-            applicant_name: updatedSubmissionData.full_name || 'Applicant',
-            program_title: updatedSubmissionData.programs?.title || 'Program',
-            new_stage_name: newStage.name,
-          });
-        } else {
-          console.warn(`Email template with ID ${newStage.email_template_id} not found for sending.`);
-        }
-      }
     }
     setUpdating(false);
   };
@@ -266,7 +229,7 @@ const SubmissionDetailPage = () => {
                             <span className="ml-2 text-xs text-muted-foreground italic">(Hidden by logic)</span>
                           )}
                         </dt>
-                        {sanitizedDescription && ( // Display description
+                        {sanitizedDescription && (
                           <dd className="text-sm text-muted-foreground mt-1"><div dangerouslySetInnerHTML={{ __html: sanitizedDescription }} className="prose max-w-none" /></dd>
                         )}
                         {res.form_fields?.tooltip && (

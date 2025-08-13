@@ -31,7 +31,7 @@ export type ProgramStage = {
   name: string;
   order: number;
   created_at: string;
-  email_template_id: string | null; // New: Link to an email template
+  // email_template_id: string | null; // Removed: Link to an email template
 };
 
 export type Application = {
