@@ -31,6 +31,16 @@ const editWorkflowStageSchema = z.object({
     email_template_id: z.string().nullable().optional(),
   })).optional(),
   status_message: z.string().optional(),
+  status_tag: z.string().optional(),
+  status_custom_tag: z.string().optional(),
+}).refine(data => {
+  if (data.step_type === 'status' && data.status_tag === 'Custom' && !data.status_custom_tag) {
+    return false;
+  }
+  return true;
+}, {
+  message: "Custom tag text is required.",
+  path: ["status_custom_tag"],
 });
 
 type EditWorkflowStageValues = z.infer<typeof editWorkflowStageSchema>;
@@ -59,6 +69,8 @@ export const WorkflowStagePropertiesPanel = ({
     if (stage) {
       let decision_options: { name: string; email_template_id: string | null }[] | undefined = undefined;
       let status_message: string | undefined = undefined;
+      let status_tag: string | undefined = undefined;
+      let status_custom_tag: string | undefined = undefined;
       let standard_description = stage.description || '';
 
       if (stage.step_type === 'decision' && stage.description) {
@@ -73,7 +85,15 @@ export const WorkflowStagePropertiesPanel = ({
           }
         } catch (e) { /* Not valid JSON, treat as standard description */ }
       } else if (stage.step_type === 'status' && stage.description) {
-        status_message = stage.description;
+        try {
+          const config = JSON.parse(stage.description);
+          status_message = config.message || '';
+          status_tag = config.tag || 'Info';
+          status_custom_tag = config.custom_tag || '';
+        } catch (e) {
+          status_message = stage.description;
+          status_tag = 'Info';
+        }
         standard_description = '';
       }
 
@@ -85,6 +105,8 @@ export const WorkflowStagePropertiesPanel = ({
         email_template_id: stage.email_template_id || null,
         decision_options: decision_options || [{ name: 'Accepted', email_template_id: null }, { name: 'Declined', email_template_id: null }],
         status_message: status_message || '',
+        status_tag: status_tag || 'Info',
+        status_custom_tag: status_custom_tag || '',
       });
     }
   }, [stage, form]);
@@ -96,7 +118,14 @@ export const WorkflowStagePropertiesPanel = ({
       const validOutcomes = values.decision_options?.filter(o => o.name.trim() !== '') || [];
       descriptionPayload = JSON.stringify({ outcomes: validOutcomes });
     } else if (values.step_type === 'status') {
-      descriptionPayload = values.status_message || null;
+      const statusConfig: { message: string; tag: string; custom_tag?: string } = {
+        message: values.status_message || '',
+        tag: values.status_tag || 'Info',
+      };
+      if (values.status_tag === 'Custom') {
+        statusConfig.custom_tag = values.status_custom_tag || '';
+      }
+      descriptionPayload = JSON.stringify(statusConfig);
     }
 
     const finalValues: Partial<WorkflowStage> = {
@@ -111,6 +140,7 @@ export const WorkflowStagePropertiesPanel = ({
   };
 
   const selectedStageType = form.watch("step_type");
+  const selectedStatusTag = form.watch("status_tag");
 
   return (
     <div className="p-6 h-full overflow-y-auto bg-background border-l">
@@ -182,20 +212,61 @@ export const WorkflowStagePropertiesPanel = ({
           )}
 
           {selectedStageType === 'status' && (
-            <FormFieldComponent
-              control={form.control}
-              name="status_message"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Status Message</FormLabel>
-                  <FormControl>
-                    <RichTextEditor value={field.value || ''} onChange={field.onChange} />
-                  </FormControl>
-                  <FormDescription>This content will be displayed to the user at this stage.</FormDescription>
-                  <FormMessage />
-                </FormItem>
+            <>
+              <FormFieldComponent
+                control={form.control}
+                name="status_tag"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Message Tag</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a tag" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="Info">Info</SelectItem>
+                        <SelectItem value="Guideline">Guideline</SelectItem>
+                        <SelectItem value="Update">Update</SelectItem>
+                        <SelectItem value="Instruction">Instruction</SelectItem>
+                        <SelectItem value="Custom">Custom</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              {selectedStatusTag === 'Custom' && (
+                <FormFieldComponent
+                  control={form.control}
+                  name="status_custom_tag"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Custom Tag Text</FormLabel>
+                      <FormControl>
+                        <Input {...field} placeholder="Enter custom tag" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               )}
-            />
+              <FormFieldComponent
+                control={form.control}
+                name="status_message"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Status Message</FormLabel>
+                    <FormControl>
+                      <RichTextEditor value={field.value || ''} onChange={field.onChange} />
+                    </FormControl>
+                    <FormDescription>This content will be displayed to the user at this stage.</FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </>
           )}
 
           {selectedStageType !== 'decision' && selectedStageType !== 'status' && (
