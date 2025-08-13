@@ -226,7 +226,8 @@ export type EvaluationCriterion = {
   id: string;
   template_id: string;
   label: string;
-  criterion_type: 'number_scale' | 'pass_fail' | 'text' | 'select';
+  criterion_type: 'number_scale' | 'pass_fail' | 'short_text' | 'long_text' | 'select';
+  is_public: boolean;
   options: string[] | null;
   min_score: number | null;
   max_score: number | null;

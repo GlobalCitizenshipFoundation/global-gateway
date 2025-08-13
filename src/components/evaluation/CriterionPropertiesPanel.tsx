@@ -16,11 +16,14 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { EvaluationCriterion } from "@/types";
-import { X } from "lucide-react";
+import { Info, X } from "lucide-react";
+import { Switch } from '../ui/switch';
+import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 
 const criterionSchema = z.object({
   label: z.string().min(1, "Label is required."),
-  criterion_type: z.enum(['number_scale', 'pass_fail', 'text', 'select']),
+  criterion_type: z.enum(['number_scale', 'pass_fail', 'short_text', 'long_text', 'select']),
+  is_public: z.boolean(),
   options: z.string().optional(),
   min_score: z.preprocess((val) => val === '' ? null : Number(val), z.number().nullable().optional()),
   max_score: z.preprocess((val) => val === '' ? null : Number(val), z.number().nullable().optional()),
@@ -41,6 +44,7 @@ export const CriterionPropertiesPanel = ({ criterion, onSave, onClose }: Criteri
     defaultValues: {
       label: '',
       criterion_type: 'number_scale',
+      is_public: false,
       options: '',
       min_score: 1,
       max_score: 5,
@@ -53,6 +57,7 @@ export const CriterionPropertiesPanel = ({ criterion, onSave, onClose }: Criteri
       form.reset({
         label: criterion.label,
         criterion_type: criterion.criterion_type,
+        is_public: criterion.is_public,
         options: Array.isArray(criterion.options) ? criterion.options.join(', ') : '',
         min_score: criterion.min_score,
         max_score: criterion.max_score,
@@ -65,6 +70,7 @@ export const CriterionPropertiesPanel = ({ criterion, onSave, onClose }: Criteri
     const updates: Partial<EvaluationCriterion> = {
       label: values.label,
       criterion_type: values.criterion_type,
+      is_public: values.is_public,
       weight: values.weight,
       options: values.criterion_type === 'select' ? values.options?.split(',').map(opt => opt.trim()) || null : null,
       min_score: values.criterion_type === 'number_scale' ? values.min_score : null,
@@ -74,6 +80,7 @@ export const CriterionPropertiesPanel = ({ criterion, onSave, onClose }: Criteri
   };
 
   const selectedType = form.watch('criterion_type');
+  const isPublic = form.watch('is_public');
 
   return (
     <div className="p-6 h-full overflow-y-auto bg-background border-l">
@@ -113,7 +120,8 @@ export const CriterionPropertiesPanel = ({ criterion, onSave, onClose }: Criteri
                   <SelectContent>
                     <SelectItem value="number_scale">Number Scale</SelectItem>
                     <SelectItem value="pass_fail">Pass / Fail</SelectItem>
-                    <SelectItem value="text">Text Response</SelectItem>
+                    <SelectItem value="short_text">Short Text</SelectItem>
+                    <SelectItem value="long_text">Long Text</SelectItem>
                     <SelectItem value="select">Dropdown</SelectItem>
                   </SelectContent>
                 </Select>
@@ -185,6 +193,35 @@ export const CriterionPropertiesPanel = ({ criterion, onSave, onClose }: Criteri
               </FormItem>
             )}
           />
+          <FormFieldComponent
+            control={form.control}
+            name="is_public"
+            render={({ field }) => (
+              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                <div className="space-y-0.5">
+                  <FormLabel className="text-base">Visibility</FormLabel>
+                  <FormDescription>
+                    Set whether this criterion is internal or public.
+                  </FormDescription>
+                </div>
+                <FormControl>
+                  <Switch
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                  />
+                </FormControl>
+              </FormItem>
+            )}
+          />
+          {isPublic && (
+            <Alert>
+              <Info className="h-4 w-4" />
+              <AlertTitle>Public Criterion</AlertTitle>
+              <AlertDescription>
+                Aggregated and anonymized feedback for this criterion may be shared with applicants in the future.
+              </AlertDescription>
+            </Alert>
+          )}
           <Button type="submit" className="w-full">Save Criterion</Button>
         </form>
       </Form>

@@ -17,6 +17,7 @@ import { EvaluationCriterion } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/contexts/auth/SessionContext";
 import { CriterionPropertiesPanel } from "@/components/evaluation/CriterionPropertiesPanel";
+import { isEvaluationTemplatePublishable } from "@/utils/evaluation/evaluationValidation";
 
 const EditEvaluationTemplatePage = () => {
   const { user } = useSession();
@@ -27,6 +28,7 @@ const EditEvaluationTemplatePage = () => {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [selectedCriterion, setSelectedCriterion] = useState<EvaluationCriterion | null>(null);
+  const [validationErrors, setValidationErrors] = useState<Map<string, string>>(new Map());
 
   useEffect(() => {
     if (template) {
@@ -34,6 +36,11 @@ const EditEvaluationTemplatePage = () => {
       setDescription(template.description || '');
     }
   }, [template]);
+
+  useEffect(() => {
+    const { errors } = isEvaluationTemplatePublishable(criteria);
+    setValidationErrors(errors);
+  }, [criteria]);
 
   const handleDetailsSave = useCallback(async () => {
     if (!templateId || !user) return;
@@ -127,7 +134,7 @@ const EditEvaluationTemplatePage = () => {
                 <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
                   <SortableContext items={criteria.map(c => c.id)} strategy={verticalListSortingStrategy}>
                     {criteria.map(criterion => (
-                      <CriterionCard key={criterion.id} criterion={criterion} onDelete={confirmDelete} onEdit={setSelectedCriterion} />
+                      <CriterionCard key={criterion.id} criterion={criterion} validationError={validationErrors.get(criterion.id) || null} onDelete={confirmDelete} onEdit={setSelectedCriterion} />
                     ))}
                   </SortableContext>
                 </DndContext>

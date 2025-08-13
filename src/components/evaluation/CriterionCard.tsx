@@ -2,17 +2,19 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { GripVertical, Trash2, Pencil } from 'lucide-react';
+import { GripVertical, Trash2, Pencil, AlertTriangle, Eye } from 'lucide-react';
 import { EvaluationCriterion } from '@/types';
 import { Badge } from '../ui/badge';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface CriterionCardProps {
   criterion: EvaluationCriterion;
+  validationError: string | null;
   onDelete: (criterionId: string) => void;
   onEdit: (criterion: EvaluationCriterion) => void;
 }
 
-export const CriterionCard = ({ criterion, onDelete, onEdit }: CriterionCardProps) => {
+export const CriterionCard = ({ criterion, validationError, onDelete, onEdit }: CriterionCardProps) => {
   const {
     attributes,
     listeners,
@@ -31,7 +33,8 @@ export const CriterionCard = ({ criterion, onDelete, onEdit }: CriterionCardProp
   const typeLabels: Record<EvaluationCriterion['criterion_type'], string> = {
     number_scale: "Number Scale",
     pass_fail: "Pass / Fail",
-    text: "Text Response",
+    short_text: "Short Text",
+    long_text: "Long Text",
     select: "Dropdown",
   };
 
@@ -44,7 +47,29 @@ export const CriterionCard = ({ criterion, onDelete, onEdit }: CriterionCardProp
               <GripVertical className="h-5 w-5 text-muted-foreground" />
             </Button>
             <div>
-              <CardTitle className="text-lg">{criterion.label}</CardTitle>
+              <CardTitle className="text-lg flex items-center gap-2">
+                {criterion.label}
+                {criterion.is_public && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Eye className="h-4 w-4 text-blue-500" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>This criterion is public and may be shared with applicants.</p>
+                    </TooltipContent>
+                  </Tooltip>
+                )}
+                {validationError && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <AlertTriangle className="h-5 w-5 text-destructive" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>{validationError}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                )}
+              </CardTitle>
               <CardDescription>
                 <Badge variant="secondary" className="capitalize">{typeLabels[criterion.criterion_type]}</Badge>
               </CardDescription>

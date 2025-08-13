@@ -18,6 +18,9 @@ import { EvaluationCriterion } from "@/types";
 import { RadioGroup, RadioGroupItem } from "../ui/radio-group";
 import { Label } from "../ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
+import { Input } from "../ui/input";
+import { Info } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 
 interface DynamicReviewFormProps {
   criteria: EvaluationCriterion[];
@@ -37,8 +40,12 @@ export const DynamicReviewForm = ({ criteria, onSubmit, isSubmitting }: DynamicR
         case 'select':
           schema = z.string().min(1, "Please select an option.");
           break;
-        default:
+        case 'short_text':
+        case 'long_text':
           schema = z.string().optional();
+          break;
+        default:
+          schema = z.any();
       }
       acc[criterion.id] = schema;
       return acc;
@@ -80,7 +87,19 @@ export const DynamicReviewForm = ({ criteria, onSubmit, isSubmitting }: DynamicR
                 name={criterion.id as keyof ReviewFormValues}
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>{criterion.label}</FormLabel>
+                    <FormLabel className="flex items-center gap-2">
+                      {criterion.label}
+                      {criterion.is_public && (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p className="max-w-xs">Aggregated and anonymized feedback for this criterion may be shared with applicants.</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      )}
+                    </FormLabel>
                     <FormControl>
                       <>
                         {criterion.criterion_type === 'number_scale' && (
@@ -120,7 +139,10 @@ export const DynamicReviewForm = ({ criteria, onSubmit, isSubmitting }: DynamicR
                             </SelectContent>
                           </Select>
                         )}
-                        {criterion.criterion_type === 'text' && (
+                        {criterion.criterion_type === 'short_text' && (
+                          <Input {...field} placeholder="Your evaluation..." disabled={isSubmitting} />
+                        )}
+                        {criterion.criterion_type === 'long_text' && (
                           <Textarea {...field} placeholder="Your evaluation..." disabled={isSubmitting} />
                         )}
                       </>
