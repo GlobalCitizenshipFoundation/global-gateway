@@ -30,11 +30,14 @@ import { CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
-import { useNavigate, useParams, Link } from "react-router-dom"; // Import Link
+import { useNavigate, useParams, Link } from "react-router-dom";
 import { showError, showSuccess } from "@/utils/toast";
 import { useEffect, useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { WorkflowTemplate } from "@/types";
+import { useSession } from "@/contexts/SessionContext";
 
 const programFormSchema = z.object({
   title: z.string().min(5, {
@@ -48,48 +51,70 @@ const programFormSchema = z.object({
   }),
   submission_button_text: z.string().optional().nullable(),
   allow_pdf_download: z.boolean().optional(),
+  workflow_template_id: z.string().nullable().optional(), // New field
 });
 
 type ProgramFormValues = z.infer<typeof programFormSchema>;
 
 const EditProgramPage = () => {
   const { programId } = useParams<{ programId: string }>();
+  const { user } = useSession();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [formId, setFormId] = useState<string | null>(null); // State to store formId
+  const [formId, setFormId] = useState<string | null>(null);
+  const [workflowTemplates, setWorkflowTemplates] = useState<WorkflowTemplate[]>([]);
 
   const form = useForm<ProgramFormValues>({
     resolver: zodResolver(programFormSchema),
   });
 
   useEffect(() => {
-    const fetchProgram = async () => {
-      if (!programId) return;
+    const fetchInitialData = async () => {
+      if (!programId || !user) return;
       setLoading(true);
-      const { data, error } = await supabase
+
+      // Fetch program details
+      const { data: programData, error: programError } = await supabase
         .from('programs')
-        .select('title, description, deadline, submission_button_text, allow_pdf_download, form_id') // Fetch form_id
+        .select('title, description, deadline, submission_button_text, allow_pdf_download, form_id, workflow_template_id')
         .eq('id', programId)
         .single();
 
-      if (error || !data) {
+      if (programError || !programData) {
         showError("Failed to fetch program details.");
         navigate('/creator/dashboard');
-      } else {
-        form.reset({
-          title: data.title,
-          description: data.description || '',
-          deadline: new Date(data.deadline),
-          submission_button_text: data.submission_button_text || '',
-          allow_pdf_download: data.allow_pdf_download || false,
-        });
-        setFormId(data.form_id); // Set the formId
+        return;
       }
+
+      form.reset({
+        title: programData.title,
+        description: programData.description || '',
+        deadline: new Date(programData.deadline),
+        submission_button_text: programData.submission_button_text || '',
+        allow_pdf_download: programData.allow_pdf_download || false,
+        workflow_template_id: programData.workflow_template_id || null,
+      });
+      setFormId(programData.form_id);
+
+      // Fetch available workflow templates
+      const { data: templatesData, error: templatesError } = await supabase
+        .from('workflow_templates')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('status', 'published')
+        .order('name', { ascending: true });
+
+      if (templatesError) {
+        showError("Failed to load workflow templates.");
+      } else {
+        setWorkflowTemplates(templatesData);
+      }
+
       setLoading(false);
     };
-    fetchProgram();
-  }, [programId, navigate, form]);
+    fetchInitialData();
+  }, [programId, user, navigate, form]);
 
   async function onSubmit(values: ProgramFormValues) {
     setIsSubmitting(true);
@@ -101,6 +126,7 @@ const EditProgramPage = () => {
         deadline: values.deadline.toISOString(),
         submission_button_text: values.submission_button_text || null,
         allow_pdf_download: values.allow_pdf_download || false,
+        workflow_template_id: values.workflow_template_id || null, // Save the template link
       })
       .eq('id', programId!);
 
@@ -212,6 +238,32 @@ const EditProgramPage = () => {
                         />
                       </PopoverContent>
                     </Popover>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormFieldComponent
+                control={form.control}
+                name="workflow_template_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Workflow Template (Optional)</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value || ''}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a template" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="">None (Custom Workflow)</SelectItem>
+                        {workflowTemplates.map(template => (
+                          <SelectItem key={template.id} value={template.id}>{template.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormDescription>
+                      Link a workflow template to this program. You can apply its stages in the "Manage Workflow" section.
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
