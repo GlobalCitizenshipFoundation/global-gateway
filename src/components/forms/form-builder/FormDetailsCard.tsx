@@ -27,17 +27,19 @@ export const FormDetailsCard = ({ state }: FormDetailsCardProps) => {
     loading,
   } = state;
 
-  const { handleUpdateFormDetails, handleUpdateFormStatus } = useFormBuilderActions({
+  // Initialize actions from the dedicated hook
+  const formBuilderActions = useFormBuilderActions({
     formId: formId,
     setSections: state.setSections,
-    setFields: state.setFields,
+    setFields: state.fields, // Corrected: use state.fields
     fetchData: state.fetchData,
   });
 
+  // Pass the entire formBuilderActions object to useFormBuilderHandlers
   const { triggerAutoSave } = useFormBuilderHandlers({
     state,
-    performUpdateFormDetails: handleUpdateFormDetails,
-    performUpdateFormStatus: handleUpdateFormStatus,
+    // No longer passing performUpdateFormDetails/Status directly here
+    // as useFormBuilderHandlers will access them from formBuilderActions internally
   });
 
   useEffect(() => {

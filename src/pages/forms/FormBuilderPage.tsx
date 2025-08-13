@@ -7,8 +7,8 @@ import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/componen
 import { useFormBuilderState } from "@/hooks/forms/useFormBuilderState";
 import { useFormBuilderHandlers } from "@/hooks/forms/useFormBuilderHandlers";
 import { useFormBuilderActions } from "@/hooks/forms/useFormBuilderActions";
-import { useFormFieldDragAndDrop } from "@/hooks/forms/useFormFieldDragAndDrop";
-import { useFormSectionDragAndDrop } from "@/hooks/forms/useFormSectionDragAndDrop";
+import { useFormFieldDragAndDrop } from "@/hooks/forms/useFormFieldDragAndDrop"; // Import directly
+import { useFormSectionDragAndDrop } from "@/hooks/forms/useFormSectionDragAndDrop"; // Import directly
 
 import { FormDetailsCard } from "@/components/forms/form-builder/FormDetailsCard";
 import { FormActions } from "@/components/forms/form-builder/FormActions";
@@ -49,6 +49,7 @@ const FormBuilderPage = () => {
 
   const [selectedField, setSelectedField] = useState<FormField | null>(null);
 
+  // Initialize actions from the dedicated hook
   const formBuilderActions = useFormBuilderActions({
     formId: state.formId,
     setSections: state.setSections,
@@ -58,8 +59,8 @@ const FormBuilderPage = () => {
 
   const handlers = useFormBuilderHandlers({
     state,
-    performUpdateFormDetails: formBuilderActions.handleUpdateFormDetails,
-    performUpdateFormStatus: formBuilderActions.handleUpdateFormStatus,
+    // No longer passing performUpdateFormDetails/Status directly here
+    // as useFormBuilderHandlers will access them from formBuilderActions internally
   });
 
   const {

@@ -1,5 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
-import { FormField, FormSection, DisplayRule } from '@/types';
+import { FormField, FormSection, DisplayRule, Form as FormType } from '@/types'; // Import FormType
 import { showError, showSuccess } from '@/utils/toast';
 import { useSession } from '@/contexts/auth/SessionContext';
 
@@ -51,7 +51,6 @@ export const useFormBuilderActions = ({
       showError(`Failed to add section: ${error.message}`);
       return null;
     } else {
-      showSuccess("Section added successfully.");
       setSections(prev => [...prev, data]);
       return data;
     }
@@ -60,7 +59,7 @@ export const useFormBuilderActions = ({
   const handleDeleteSection = async (sectionId: string, fieldAction: 'delete_fields' | 'uncategorize_fields' | 'move_to_section', targetSectionId: string | null = null) => {
     if (!user) {
       showError("You must be logged in to delete a section.");
-      return;
+      return false;
     }
 
     const { error } = await supabase.rpc('delete_form_section_with_field_handling', {
@@ -72,9 +71,10 @@ export const useFormBuilderActions = ({
   
     if (error) {
       showError(`Failed to delete section: ${error.message}`);
+      return false;
     } else {
-      showSuccess("Section deleted and fields handled successfully.");
       fetchData(); // Re-fetch to update the UI
+      return true;
     }
   };
 
@@ -127,7 +127,6 @@ export const useFormBuilderActions = ({
       return null;
     } else if (data) {
       setFields(prev => [...prev, data as FormField]);
-      showSuccess("Field added successfully.");
       return data as FormField;
     }
     return null;
@@ -139,25 +138,27 @@ export const useFormBuilderActions = ({
     if (error) {
       showError(`Failed to delete field: ${error.message}. Reverting.`);
       fetchData();
+      return false;
     } else {
-      showSuccess("Field deleted successfully.");
+      return true;
     }
   };
 
   const handleToggleRequired = async (fieldId: string, isRequired: boolean) => {
-    if (!user) return;
+    if (!user) return false;
     setFields(prev => prev.map(f => f.id === fieldId ? { ...f, is_required: isRequired } : f));
     const { error } = await supabase.from('form_fields').update({ is_required: isRequired, last_edited_by_user_id: user.id, last_edited_at: new Date().toISOString() }).eq('id', fieldId);
     if (error) {
       showError(`Failed to update field: ${error.message}. Reverting.`);
       setFields(prev => prev.map(f => f.id === fieldId ? { ...f, is_required: !isRequired } : f));
+      return false;
     } else {
-      showSuccess("Field requirement updated.");
+      return true;
     }
   };
 
   const handleSaveLogic = async (fieldId: string, rules: DisplayRule[]) => {
-    if (!user) return;
+    if (!user) return false;
     setFields(prevFields =>
       prevFields.map(f => (f.id === fieldId ? { ...f, display_rules: rules } : f))
     );
@@ -169,13 +170,14 @@ export const useFormBuilderActions = ({
     if (error) {
       showError(`Failed to save display logic: ${error.message}. Reverting.`);
       fetchData();
+      return false;
     } else {
-      showSuccess("Display logic saved successfully!");
+      return true;
     }
   };
 
   const handleSaveEditedField = async (fieldId: string, values: { label: string; field_type: FormField['field_type']; options?: string; is_required: boolean; description?: string | null; tooltip?: string | null; placeholder?: string | null; section_id?: string | null; }) => {
-    if (!user) return;
+    if (!user) return false;
     const updatedOptions = (values.field_type === 'select' || values.field_type === 'radio' || values.field_type === 'checkbox')
       ? values.options?.split(',').map(opt => opt.trim()) || null
       : null;
@@ -207,14 +209,15 @@ export const useFormBuilderActions = ({
     if (error) {
       showError(`Failed to update field: ${error.message}. Reverting.`);
       fetchData();
+      return false;
     } else {
-      showSuccess("Field updated successfully!");
       fetchData();
+      return true;
     }
   };
 
   const handleUpdateFieldLabel = async (fieldId: string, newLabel: string) => {
-    if (!user) return;
+    if (!user) return false;
     setFields(prevFields =>
       prevFields.map(f => (f.id === fieldId ? { ...f, label: newLabel } : f))
     );
@@ -226,8 +229,9 @@ export const useFormBuilderActions = ({
     if (error) {
       showError(`Failed to update label: ${error.message}. Reverting.`);
       fetchData();
+      return false;
     } else {
-      showSuccess("Field label updated.");
+      return true;
     }
   };
 
@@ -242,7 +246,6 @@ export const useFormBuilderActions = ({
       showError(`Failed to update form status: ${error.message}`);
       return false;
     } else {
-      showSuccess(`Form status updated to "${status}".`);
       return true;
     }
   };
@@ -261,6 +264,100 @@ export const useFormBuilderActions = ({
     }
   };
 
+  const handleSaveAsTemplate = async (templateFormToCopy: FormType, newTemplateName: string) => {
+    if (!templateFormToCopy || !newTemplateName.trim()) {
+      showError("Template name cannot be empty.");
+      return false;
+    }
+    if (!user) {
+      showError("You must be logged in to save a template.");
+      return false;
+    }
+
+    try {
+      const now = new Date().toISOString();
+      const { data: newTemplateFormData, error: newTemplateFormError } = await supabase.from("forms").insert({
+        user_id: user.id,
+        name: newTemplateName,
+        is_template: true,
+        status: 'published',
+        description: templateFormToCopy.description,
+        last_edited_by_user_id: user.id,
+        last_edited_at: now,
+      }).select('id').single();
+
+      if (newTemplateFormError || !newTemplateFormData) {
+        showError(`Failed to create template form: ${newTemplateFormError?.message}`);
+        return false;
+      }
+
+      const { data: currentSections, error: sectionsError } = await supabase
+        .from('form_sections')
+        .select('*')
+        .eq('form_id', templateFormToCopy.id)
+        .order('order', { ascending: true });
+
+      const { data: currentFields, error: fieldsError } = await supabase
+        .from('form_fields')
+        .select('*')
+        .eq('form_id', templateFormToCopy.id)
+        .order('order', { ascending: true });
+
+      if (sectionsError || fieldsError) {
+        showError(`Failed to load current form content: ${sectionsError?.message || fieldsError?.message}`);
+        await supabase.from('forms').delete().eq('id', newTemplateFormData.id);
+        return false;
+      }
+
+      const oldSectionIdMap = new Map<string, string>();
+      const newSectionsToInsert = currentSections.map(section => {
+        const newSectionId = crypto.randomUUID();
+        oldSectionIdMap.set(section.id, newSectionId);
+        return {
+          id: newSectionId,
+          form_id: newTemplateFormData.id,
+          name: section.name,
+          order: section.order,
+          description: section.description,
+          tooltip: section.tooltip,
+          last_edited_by_user_id: user.id,
+          last_edited_at: now,
+        };
+      });
+
+      const newFieldsToInsert = currentFields.map(field => ({
+        id: crypto.randomUUID(),
+        form_id: newTemplateFormData.id,
+        section_id: field.section_id ? oldSectionIdMap.get(field.section_id) : null,
+        label: field.label,
+        field_type: field.field_type,
+        options: field.options,
+        is_required: field.is_required,
+        order: field.order,
+        display_rules: field.display_rules,
+        description: field.description,
+        tooltip: field.tooltip,
+        placeholder: field.placeholder,
+        last_edited_by_user_id: user.id,
+        last_edited_at: now,
+      }));
+
+      const { error: insertSectionsError } = await supabase.from('form_sections').insert(newSectionsToInsert);
+      const { error: insertFieldsError } = await supabase.from('form_fields').insert(newFieldsToInsert);
+
+      if (insertSectionsError || insertFieldsError) {
+        showError(`Failed to copy form content to template: ${insertSectionsError?.message || insertFieldsError?.message}`);
+        await supabase.from('forms').delete().eq('id', newTemplateFormData.id);
+        return false;
+      }
+
+      return true;
+    } catch (err: any) {
+      showError("An unexpected error occurred: " + err.message);
+      return false;
+    }
+  };
+
   return {
     handleAddSection,
     handleDeleteSection,
@@ -272,5 +369,6 @@ export const useFormBuilderActions = ({
     handleUpdateFieldLabel,
     handleUpdateFormStatus,
     handleUpdateFormDetails,
+    handleSaveAsTemplate,
   };
 };
