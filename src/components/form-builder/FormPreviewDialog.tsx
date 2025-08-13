@@ -72,13 +72,15 @@ const FormPreviewDialog = ({
         initialResponses[field.id] = [];
       } else if (field.field_type === 'number') {
         initialResponses[field.id] = undefined;
+      } else if (field.field_type === 'rating') {
+        initialResponses[field.id] = field.rating_min_value ?? 1;
       } else {
         initialResponses[field.id] = '';
       }
     });
     form.reset(initialResponses);
     setCurrentResponses(initialResponses);
-  }, [formFields, form]);
+  }, [formFields, form]); // Depend on formFields to re-initialize when structure changes
 
   // Filter fields based on conditional logic for display in preview
   const displayedFormFields = formFields.filter(field =>

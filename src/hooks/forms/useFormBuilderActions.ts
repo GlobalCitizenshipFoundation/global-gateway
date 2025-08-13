@@ -6,7 +6,7 @@ import { useSession } from '@/contexts/auth/SessionContext';
 interface UseFormBuilderActionsProps {
   formId: string | undefined;
   setSections: React.Dispatch<React.SetStateAction<FormSection[]>>;
-  setFields: React.Dispatch<React.SetStateAction<FormField[]>>; // Fixed: React.ReactAction to React.SetStateAction
+  setFields: React.Dispatch<React.SetStateAction<FormField[]>>;
   fetchData: () => Promise<void>;
 }
 
@@ -282,8 +282,8 @@ export const useFormBuilderActions = ({
       updatePayload.rating_max_label = null;
     }
 
-    setFields((prevFields: FormField[]) => // Explicitly type prevFields
-      prevFields.map((f: FormField) => // Explicitly type f
+    setFields(prevFields =>
+      prevFields.map(f =>
         f.id === fieldId
           ? { ...f, ...(updatePayload as FormField) } // Merge all updated properties
           : f

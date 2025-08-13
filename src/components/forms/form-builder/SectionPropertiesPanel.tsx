@@ -28,7 +28,7 @@ type EditFormSectionValues = z.infer<typeof editFormSectionSchema>;
 
 interface SectionPropertiesPanelProps {
   section: FormSection;
-  onSave: (sectionId: string, values: { name: string; description?: string | null; tooltip?: string | null; }) => Promise<void>; // Updated return type to Promise<void> and made description/tooltip optional
+  onSave: (sectionId: string, values: { name: string; description?: string | null; tooltip?: string | null; }) => Promise<void>;
   onClose: () => void;
 }
 

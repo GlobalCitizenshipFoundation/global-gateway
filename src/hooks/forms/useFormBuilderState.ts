@@ -32,6 +32,7 @@ export const useFormBuilderState = (initialFormId?: string) => {
 
   // UI interaction states
   const [selectedField, setSelectedField] = useState<FormField | null>(null); // New: for properties panel
+  const [selectedSection, setSelectedSection] = useState<FormSection | null>(null); // New: for section properties panel
   const [isSaveAsTemplateDialogOpen, setIsSaveAsTemplateDialogOpen] = useState(false);
   const [newTemplateName, setNewTemplateName] = useState('');
   const [isSavingTemplate, setIsSavingTemplate] = useState(false);
@@ -171,6 +172,7 @@ export const useFormBuilderState = (initialFormId?: string) => {
     isUpdatingStatus, setIsUpdatingStatus,
     showSavedConfirmation, setShowSavedConfirmation,
     selectedField, setSelectedField, // New: Expose selectedField
+    selectedSection, setSelectedSection, // New: Expose selectedSection
     isSaveAsTemplateDialogOpen, setIsSaveAsTemplateDialogOpen,
     newTemplateName, setNewTemplateName,
     isSavingTemplate, setIsSavingTemplate,
