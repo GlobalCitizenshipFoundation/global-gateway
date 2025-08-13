@@ -5,22 +5,22 @@ import { Profile } from '@/types'; // Import the Profile type
 
 interface SessionContextValue {
   session: Session | null;
-  user: User | null;
-  profile: Profile | null; // Add profile to the context
+  user: User | null; // Actual logged-in user
+  profile: Profile | null; // Actual logged-in user's profile
   isLoading: boolean;
-  impersonatingAsProfile: Profile | null; // New: Profile of the user being impersonated
-  startImpersonation: (userId: string) => Promise<void>; // New: Function to start impersonation
-  stopImpersonation: () => void; // New: Function to stop impersonation
+  impersonatingAsProfile: Profile | null; // Profile of the user being impersonated
+  startImpersonation: (userId: string) => Promise<void>;
+  stopImpersonation: () => void;
 }
 
 const SessionContext = createContext<SessionContextValue>({
   session: null,
   user: null,
-  profile: null, // Default profile to null
+  profile: null,
   isLoading: true,
-  impersonatingAsProfile: null, // Default impersonated profile to null
-  startImpersonation: async () => {}, // Dummy function
-  stopImpersonation: () => {}, // Dummy function
+  impersonatingAsProfile: null,
+  startImpersonation: async () => {},
+  stopImpersonation: () => {},
 });
 
 export const useSession = () => useContext(SessionContext);
@@ -28,8 +28,8 @@ export const useSession = () => useContext(SessionContext);
 export const SessionContextProvider = ({ children }: { children: React.ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
-  const [profile, setProfile] = useState<Profile | null>(null); // State for actual user's profile
-  const [impersonatingAsProfile, setImpersonatingAsProfile] = useState<Profile | null>(null); // State for impersonated user's profile
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [impersonatingAsProfile, setImpersonatingAsProfile] = useState<Profile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchProfile = async (userId: string) => {
@@ -39,7 +39,7 @@ export const SessionContextProvider = ({ children }: { children: React.ReactNode
       .eq('id', userId)
       .single();
     
-    if (profileError && profileError.code !== 'PGRST116') { // Ignore "No rows found" error
+    if (profileError && profileError.code !== 'PGRST116') {
       console.error("Error fetching profile:", profileError);
       return null;
     }
@@ -54,21 +54,24 @@ export const SessionContextProvider = ({ children }: { children: React.ReactNode
       return;
     }
     localStorage.setItem('impersonatedUserId', userId);
-    const impersonated = await fetchProfile(userId);
-    setImpersonatingAsProfile(impersonated);
+    window.location.reload(); // Reload to apply impersonation context
   };
 
   const stopImpersonation = () => {
     localStorage.removeItem('impersonatedUserId');
-    setImpersonatingAsProfile(null);
-    window.location.reload(); // Reload to ensure full state reset
+    window.location.reload(); // Reload to clear impersonation context
   };
 
   useEffect(() => {
     const setData = async () => {
+      setIsLoading(true);
       const { data: { session: currentSession }, error } = await supabase.auth.getSession();
       if (error) {
         console.error("Error getting session:", error);
+        setSession(null);
+        setUser(null);
+        setProfile(null);
+        setImpersonatingAsProfile(null);
         setIsLoading(false);
         return;
       }
@@ -84,12 +87,15 @@ export const SessionContextProvider = ({ children }: { children: React.ReactNode
         setProfile(null);
       }
 
-      // Check for impersonation if the actual user is an admin
+      // Handle impersonation logic
       if (actualProfile?.role === 'super_admin') {
         const storedImpersonatedUserId = localStorage.getItem('impersonatedUserId');
-        if (storedImpersonatedUserId) {
+        if (storedImpersonatedUserId && storedImpersonatedUserId !== currentSession?.user?.id) {
           const impersonated = await fetchProfile(storedImpersonatedUserId);
           setImpersonatingAsProfile(impersonated);
+        } else {
+          setImpersonatingAsProfile(null);
+          localStorage.removeItem('impersonatedUserId'); // Clear if impersonating self or invalid
         }
       } else {
         // If not super_admin, ensure no impersonation is active
@@ -102,32 +108,12 @@ export const SessionContextProvider = ({ children }: { children: React.ReactNode
     setData();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, currentSession) => {
-      setSession(currentSession);
-      setUser(currentSession?.user ?? null);
-
-      let actualProfile: Profile | null = null;
-      if (currentSession?.user) {
-        actualProfile = await fetchProfile(currentSession.user.id);
-        setProfile(actualProfile);
-      } else {
-        setProfile(null);
-      }
-
-      // Re-check impersonation on auth state change
-      if (actualProfile?.role === 'super_admin') {
-        const storedImpersonatedUserId = localStorage.getItem('impersonatedUserId');
-        if (storedImpersonatedUserId) {
-          const impersonated = await fetchProfile(storedImpersonatedUserId);
-          setImpersonatingAsProfile(impersonated);
-        }
-      } else {
-        localStorage.removeItem('impersonatedUserId');
-        setImpersonatingAsProfile(null);
-      }
+      // This callback fires on auth state changes, so re-run setData to ensure consistency
+      setData();
     });
 
     return () => subscription.unsubscribe();
-  }, [user?.id]); // Re-run effect if actual user ID changes
+  }, []); // Empty dependency array means this runs once on mount
 
   const value = {
     session,

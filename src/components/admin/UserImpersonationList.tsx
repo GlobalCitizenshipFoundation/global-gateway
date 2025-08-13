@@ -9,14 +9,21 @@ import { showError } from "@/utils/toast";
 import { useSession } from "@/contexts/SessionContext";
 import { Badge } from "@/components/ui/badge";
 
+// Define a specific type for users displayed in the impersonation list
+type ImpersonationUser = Profile & {
+  full_name: string | null;
+  users: { email: string | null } | null;
+};
+
 const UserImpersonationList = () => {
-  const { user, profile, startImpersonation, impersonatingAsProfile } = useSession();
-  const [users, setUsers] = useState<Profile[]>([]);
+  const { user, profile, startImpersonation, stopImpersonation, impersonatingAsProfile } = useSession();
+  const [users, setUsers] = useState<ImpersonationUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchUsers = async () => {
+      // Only super_admin can view this list
       if (profile?.role !== 'super_admin') {
         setError("You do not have permission to view this page.");
         setLoading(false);
@@ -26,12 +33,16 @@ const UserImpersonationList = () => {
       setLoading(true);
       setError(null);
 
+      // Fetch all profiles and join with auth.users to get email
       const { data, error } = await supabase
         .from('profiles')
         .select(`
           id,
           first_name,
+          middle_name,
           last_name,
+          avatar_url,
+          updated_at,
           role,
           users ( email )
         `)
@@ -41,17 +52,22 @@ const UserImpersonationList = () => {
         showError("Failed to fetch users: " + error.message);
         setError(error.message);
       } else if (data) {
-        const formattedUsers = data.map(p => ({
-          ...p,
-          users: Array.isArray(p.users) ? p.users[0] : p.users,
-          full_name: [p.first_name, p.last_name].filter(Boolean).join(' ').trim(),
-        }));
-        setUsers(formattedUsers as Profile[]);
+        const formattedUsers = data.map(p => {
+          // Ensure 'users' is treated as a single object or null, not an array
+          const userEmailData = (p.users && Array.isArray(p.users)) ? p.users[0] : p.users;
+          
+          return {
+            ...p,
+            full_name: [p.first_name, p.middle_name, p.last_name].filter(Boolean).join(' ').trim(),
+            users: userEmailData,
+          };
+        });
+        setUsers(formattedUsers as ImpersonationUser[]);
       }
       setLoading(false);
     };
     fetchUsers();
-  }, [profile]);
+  }, [profile]); // Re-fetch if the actual user's profile changes
 
   if (loading) {
     return (
@@ -79,6 +95,7 @@ const UserImpersonationList = () => {
     return <div className="text-center text-destructive">Error: {error}</div>;
   }
 
+  // Render access denied message if not super_admin
   if (profile?.role !== 'super_admin') {
     return <div className="text-center text-destructive">Access Denied: You must be a Super Admin to view this feature.</div>;
   }
@@ -121,6 +138,7 @@ const UserImpersonationList = () => {
                   <Button
                     size="sm"
                     onClick={() => startImpersonation(u.id)}
+                    // Disable if already impersonating this user, or if it's the actual logged-in user
                     disabled={impersonatingAsProfile?.id === u.id || user?.id === u.id}
                   >
                     {impersonatingAsProfile?.id === u.id ? 'Impersonating' : (user?.id === u.id ? 'Yourself' : 'Impersonate')}

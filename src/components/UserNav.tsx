@@ -40,6 +40,7 @@ const UserNav = () => {
     }
   };
 
+  // Determine which profile to display in the UI
   const displayProfile = impersonatingAsProfile || profile;
   const displayFullName = displayProfile?.first_name && displayProfile?.last_name 
     ? `${displayProfile.first_name} ${displayProfile.last_name}` 
@@ -70,7 +71,7 @@ const UserNav = () => {
           <div className="flex flex-col space-y-1">
             <p className="text-sm font-medium leading-none">{displayFullName}</p>
             <p className="text-xs leading-none text-muted-foreground">
-              {user?.email}
+              {user?.email} {/* Always show actual user's email */}
             </p>
             {impersonatingAsProfile && (
               <p className="text-xs leading-none text-green-500 flex items-center gap-1 mt-1">
@@ -89,6 +90,7 @@ const UserNav = () => {
           </DropdownMenuItem>
         </DropdownMenuGroup>
         
+        {/* Use the profile of the user being impersonated for navigation links */}
         {displayProfile && creatorRoles.includes(displayProfile.role) && (
           <>
             <DropdownMenuSeparator />

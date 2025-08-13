@@ -98,7 +98,7 @@ This section details the updated hierarchy for the internal team, from most rest
 *   **Top-Level User Management:** Can manage any user, including other Admins and Super Admins.
 *   **Platform Configuration:** Manages billing, security, and integrations.
 *   **Account Deletion:** The only role that can process account deletion requests.
-*   **Impersonation:** Can temporarily view the platform as any other user role for testing and debugging.
+*   **Impersonation:** Can temporarily view the platform as any other user role for testing and debugging. This feature allows a Super Admin to switch their active session to simulate the experience of another user, providing a powerful tool for troubleshooting and understanding user-specific issues without needing their credentials.
 
 **Key Restrictions:**
 *   None.
