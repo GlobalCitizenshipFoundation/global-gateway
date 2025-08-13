@@ -134,14 +134,14 @@ const SubmissionDetailPage = () => {
       // Fetch all possible stages for the program
       const { data: stagesData, error: stagesError } = await supabase
         .from('program_stages')
-        .select('id, name, order, program_id, created_at')
+        .select('id, name, order, program_id, created_at, email_template_id') // Added email_template_id
         .eq('program_id', programId)
         .order('order', { ascending: true });
       
       if (stagesError) {
         showError("Could not fetch program stages.");
       } else {
-        setProgramStages(stagesData || []);
+        setProgramStages(stagesData as ProgramStage[]);
       }
 
       setLoading(false);
@@ -215,10 +215,10 @@ const SubmissionDetailPage = () => {
         <CardHeader>
           <div className="flex justify-between items-start">
             <div>
-              <CardTitle className="text-2xl">{submission.full_name}</CardTitle>
-              <CardDescription>{submission.email}</CardDescription>
+              <CardTitle className="text-2xl">{submission?.full_name}</CardTitle>
+              <CardDescription>{submission?.email}</CardDescription>
             </div>
-            <Badge variant="secondary">{submission.program_stages?.name}</Badge>
+            <Badge variant="secondary">{submission?.program_stages?.name}</Badge>
           </div>
         </CardHeader>
         <CardContent>
@@ -255,7 +255,7 @@ const SubmissionDetailPage = () => {
           </div>
         </CardContent>
         <CardFooter className="flex justify-end items-center gap-4 bg-muted/50 p-4">
-          {submission.programs?.allow_pdf_download && (
+          {submission?.programs?.allow_pdf_download && (
             <ApplicationPdfViewer
               applicationId={submission.id}
               programTitle={submission.programs?.title || 'Application'}
@@ -281,7 +281,7 @@ const SubmissionDetailPage = () => {
               </SelectContent>
             </Select>
           </div>
-          <Button onClick={handleStageUpdate} disabled={updating || submission.stage_id === selectedStage}>
+          <Button onClick={handleStageUpdate} disabled={updating || submission?.stage_id === selectedStage}>
             {updating ? 'Updating...' : 'Update Stage'}
           </Button>
         </CardFooter>
