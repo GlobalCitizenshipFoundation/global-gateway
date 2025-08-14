@@ -28,10 +28,11 @@ const editWorkflowStageSchema = z.object({
   form_id: z.string().nullable().optional(),
   email_template_id: z.string().nullable().optional(),
   evaluation_template_id: z.string().nullable().optional(),
-  anonymize_identity: z.boolean().optional(), // New
+  anonymize_identity: z.boolean().optional(),
   decision_options: z.array(z.object({
     name: z.string().min(1, "Outcome name cannot be empty."),
     email_template_id: z.string().nullable().optional(),
+    icon: z.string().nullable().optional(),
   })).optional(),
   status_message: z.string().optional(),
   status_tag: z.string().optional(),
@@ -78,7 +79,7 @@ export const WorkflowStagePropertiesPanel = ({
 
   useEffect(() => {
     if (stage) {
-      let decision_options: { name: string; email_template_id: string | null }[] | undefined = undefined;
+      let decision_options: { name: string; email_template_id: string | null; icon: string | null; }[] | undefined = undefined;
       let status_message: string | undefined = undefined;
       let status_tag: string | undefined = undefined;
       let status_custom_tag: string | undefined = undefined;
@@ -90,7 +91,7 @@ export const WorkflowStagePropertiesPanel = ({
         try {
           const config = JSON.parse(stage.description);
           if (Array.isArray(config.outcomes)) {
-            decision_options = config.outcomes.map((o: any) => ({ name: o.name || '', email_template_id: o.email_template_id || null }));
+            decision_options = config.outcomes.map((o: any) => ({ name: o.name || '', email_template_id: o.email_template_id || null, icon: o.icon || null }));
             standard_description = '';
           }
         } catch (e) { /* Not valid JSON */ }
@@ -127,7 +128,7 @@ export const WorkflowStagePropertiesPanel = ({
         email_template_id: stage.email_template_id || null,
         evaluation_template_id: stage.evaluation_template_id || null,
         anonymize_identity: anonymize_identity || false,
-        decision_options: decision_options || [{ name: 'Accepted', email_template_id: null }, { name: 'Declined', email_template_id: null }],
+        decision_options: decision_options || [{ name: 'Accepted', email_template_id: null, icon: 'CheckCircle' }, { name: 'Declined', email_template_id: null, icon: 'XCircle' }],
         status_message: status_message || '',
         status_tag: status_tag || 'Info',
         status_custom_tag: status_custom_tag || '',

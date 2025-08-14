@@ -17,13 +17,13 @@ import { KanbanColumn } from "@/components/workflow/KanbanColumn";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowLeft } from "lucide-react";
 import { showError, showSuccess } from "@/utils/toast";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { shouldFieldBeDisplayed, formatResponseValue } from "@/utils/forms/formFieldUtils";
 import DOMPurify from 'dompurify';
 import { sendEmailByTemplateId } from "@/utils/emailSender";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import DynamicIcon from "@/components/common/DynamicIcon";
 
 type SubmissionDetail = {
   id: string;
@@ -47,6 +47,7 @@ type ResponseWithField = {
 type DecisionOutcome = {
   name: string;
   email_template_id: string | null;
+  icon: string | null;
 };
 
 const PipelineViewPage = () => {
@@ -334,6 +335,7 @@ const PipelineViewPage = () => {
                   <CardContent className="grid grid-cols-2 gap-2">
                     {decisionOutcomes.map(outcome => (
                       <Button key={outcome.name} onClick={() => handleMakeDecision(outcome)} disabled={isMakingDecision}>
+                        {outcome.icon && <DynamicIcon name={outcome.icon} className="mr-2 h-4 w-4" />}
                         {outcome.name}
                       </Button>
                     ))}
@@ -354,9 +356,7 @@ const PipelineViewPage = () => {
                               <span className="ml-2 text-xs text-muted-foreground italic">(Hidden by logic)</span>
                             )}
                           </dt>
-                          {sanitizedDescription && (
-                            <dd className="text-sm text-muted-foreground mt-1"><div dangerouslySetInnerHTML={{ __html: sanitizedDescription }} className="prose max-w-none" /></dd>
-                          )}
+                          {sanitizedDescription && <dd className="text-sm text-muted-foreground mt-1"><div dangerouslySetInnerHTML={{ __html: sanitizedDescription }} className="prose max-w-none" /></dd>}
                           {res.form_fields?.tooltip && (
                             <dd className="text-xs text-muted-foreground mt-1">Tooltip: {res.form_fields.tooltip}</dd>
                           )}

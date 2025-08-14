@@ -19,9 +19,9 @@ import { RadioGroup, RadioGroupItem } from "../ui/radio-group";
 import { Label } from "../ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import { Input } from "../ui/input";
-import { Info, CheckCircle, XCircle, Clock, Pencil, ArrowRight, Wrench } from "lucide-react";
-import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
+import { Info } from "lucide-react";
 import { cn } from "@/lib/utils";
+import DynamicIcon from "../common/DynamicIcon";
 
 interface DynamicReviewFormProps {
   criteria: EvaluationCriterion[];
@@ -29,15 +29,6 @@ interface DynamicReviewFormProps {
   isSubmitting: boolean;
   isPreview?: boolean;
 }
-
-const statusOptions = [
-  { label: 'Accept', value: 'Accept', icon: <CheckCircle className="h-4 w-4 mr-2" /> },
-  { label: 'Decline', value: 'Decline', icon: <XCircle className="h-4 w-4 mr-2" /> },
-  { label: 'Waitlist / Hold', value: 'Waitlist / Hold', icon: <Clock className="h-4 w-4 mr-2" /> },
-  { label: 'Needs Revision', value: 'Needs Revision / Resubmission', icon: <Pencil className="h-4 w-4 mr-2" /> },
-  { label: 'Advance', value: 'Advance to Next Stage', icon: <ArrowRight className="h-4 w-4 mr-2" /> },
-  { label: 'Custom', value: 'Custom', icon: <Wrench className="h-4 w-4 mr-2" /> },
-];
 
 export const DynamicReviewForm = ({ criteria, onSubmit, isSubmitting, isPreview = false }: DynamicReviewFormProps) => {
   const formSchemaObject = criteria.reduce((acc, criterion) => {
@@ -126,25 +117,14 @@ export const DynamicReviewForm = ({ criteria, onSubmit, isSubmitting, isPreview 
                             <div className="text-center font-semibold text-lg text-primary mt-1">{field.value as number}</div>
                           </div>
                         )}
-                        {criterion.criterion_type === 'repeater_buttons' && (
+                        {(criterion.criterion_type === 'repeater_buttons' || criterion.criterion_type === 'status') && (
                           <RadioGroup onValueChange={field.onChange} value={String(field.value || '')} className="flex flex-wrap gap-2">
                             {criterion.options?.map(opt => (
                               <div key={opt.label}>
                                 <RadioGroupItem value={String(opt.value || opt.label)} id={`${field.name}-${opt.label}`} className="sr-only" />
                                 <Label htmlFor={`${field.name}-${opt.label}`} className={cn("inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 cursor-pointer px-4 py-2", field.value === (opt.value || opt.label) ? 'bg-primary text-primary-foreground hover:bg-primary/90' : 'border border-input bg-background hover:bg-accent hover:text-accent-foreground')}>
+                                  {opt.icon && <DynamicIcon name={opt.icon} className="mr-2 h-4 w-4" />}
                                   {opt.label}
-                                </Label>
-                              </div>
-                            ))}
-                          </RadioGroup>
-                        )}
-                        {criterion.criterion_type === 'status' && (
-                          <RadioGroup onValueChange={field.onChange} value={String(field.value || '')} className="flex flex-wrap gap-2">
-                            {statusOptions.map(opt => (
-                              <div key={opt.label}>
-                                <RadioGroupItem value={opt.value} id={`${field.name}-${opt.label}`} className="sr-only" />
-                                <Label htmlFor={`${field.name}-${opt.label}`} className={cn("inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 cursor-pointer px-4 py-2", field.value === opt.value ? 'bg-primary text-primary-foreground hover:bg-primary/90' : 'border border-input bg-background hover:bg-accent hover:text-accent-foreground')}>
-                                  {opt.icon}{opt.label}
                                 </Label>
                               </div>
                             ))}

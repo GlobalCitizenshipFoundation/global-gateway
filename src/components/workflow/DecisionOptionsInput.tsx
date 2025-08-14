@@ -2,9 +2,10 @@ import { useFieldArray, useFormContext } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Trash2 } from "lucide-react";
-import { FormField, FormItem, FormControl, FormMessage } from "@/components/ui/form";
+import { FormField, FormItem, FormControl, FormMessage, FormLabel } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { EmailTemplate } from "@/types";
+import { IconPicker } from "./IconPicker";
 
 interface DecisionOptionsInputProps {
   emailTemplates: EmailTemplate[];
@@ -27,8 +28,25 @@ export const DecisionOptionsInput = ({ emailTemplates }: DecisionOptionsInputPro
               name={`decision_options.${index}.name`}
               render={({ field }) => (
                 <FormItem>
+                  <FormLabel className="sr-only">Outcome Name</FormLabel>
                   <FormControl>
                     <Input {...field} placeholder={`Outcome ${index + 1}`} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={control}
+              name={`decision_options.${index}.icon`}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="sr-only">Icon</FormLabel>
+                  <FormControl>
+                    <IconPicker
+                      value={field.value}
+                      onChange={field.onChange}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -39,6 +57,7 @@ export const DecisionOptionsInput = ({ emailTemplates }: DecisionOptionsInputPro
               name={`decision_options.${index}.email_template_id`}
               render={({ field }) => (
                 <FormItem>
+                  <FormLabel className="sr-only">Email Template</FormLabel>
                   <Select onValueChange={(value) => field.onChange(value === '__none__' ? null : value)} value={field.value || ''}>
                     <FormControl>
                       <SelectTrigger>
@@ -67,7 +86,7 @@ export const DecisionOptionsInput = ({ emailTemplates }: DecisionOptionsInputPro
         variant="outline"
         size="sm"
         className="mt-2"
-        onClick={() => append({ name: "", email_template_id: null })}
+        onClick={() => append({ name: "", email_template_id: null, icon: null })}
       >
         Add Outcome
       </Button>

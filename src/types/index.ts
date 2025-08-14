@@ -243,7 +243,7 @@ export type EvaluationCriterion = {
   description: string | null;
   criterion_type: 'numerical_score' | 'number_scale' | 'single_select' | 'short_text' | 'long_text' | 'repeater_buttons' | 'status';
   is_public: boolean;
-  options: { label: string; value: string | number | null }[] | null;
+  options: { label: string; value: string | number | null; icon?: string | null; }[] | null;
   min_score: number | null;
   max_score: number | null;
   min_label: string | null;
