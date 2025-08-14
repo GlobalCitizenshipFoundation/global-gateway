@@ -84,7 +84,7 @@ const LayoutWithSidebar = ({ children }: LayoutWithSidebarProps) => {
           className={cn(
             "flex flex-col flex-grow overflow-x-hidden",
             // Apply margin-right only on desktop based on sidebar state
-            !isMobile && (isCollapsed ? "mr-16" : "mr-56")
+            !isMobile && (isCollapsed ? "mr-[var(--sidebar-width-collapsed)]" : "mr-[var(--sidebar-width-expanded)]")
           )}
         >
           {/* Header always renders, passes mobile state and menu toggle */}
@@ -98,9 +98,12 @@ const LayoutWithSidebar = ({ children }: LayoutWithSidebarProps) => {
         {/* SheetContent (mobile sidebar) - Only visible on mobile */}
         {isMobile && (
           <SheetContent side="right" className="w-64 p-0 flex flex-col bg-sidebar border-l border-sidebar-border">
-            {/* Removed the explicit SheetClose button here */}
             <div className="flex items-center justify-start p-4 h-16 border-b border-sidebar-border">
-              {/* This div can be kept for spacing/border if needed, but the close button is gone */}
+              <SheetClose asChild>
+                <Button variant="ghost" size="icon">
+                  <X className="h-5 w-5" />
+                </Button>
+              </SheetClose>
             </div>
             {renderMobileNavigation(() => setIsMobileMenuOpen(false))}
             <div className="p-4 border-t border-sidebar-border flex flex-col items-center space-y-2">
