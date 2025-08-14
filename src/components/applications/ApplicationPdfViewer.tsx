@@ -19,6 +19,7 @@ interface ApplicationPdfViewerProps {
   allResponses: { value: string | null; form_fields: FormField | null; }[];
   allFormFields: FormField[];
   formSections: FormSection[];
+  isAnonymizedView?: boolean;
 }
 
 const ApplicationPdfViewer = ({
@@ -31,6 +32,7 @@ const ApplicationPdfViewer = ({
   allResponses,
   allFormFields,
   formSections,
+  isAnonymizedView = false,
 }: ApplicationPdfViewerProps) => {
   const pdfContentRef = useRef<HTMLDivElement>(null);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -75,7 +77,10 @@ const ApplicationPdfViewer = ({
         heightLeft -= pageHeight;
       }
 
-      pdf.save(`Application_${applicantFullName.replace(/\s/g, '_')}_${applicationId.substring(0, 8)}.pdf`);
+      const fileName = isAnonymizedView
+        ? `Application_Review_${applicationId.substring(0, 8)}.pdf`
+        : `Application_${applicantFullName.replace(/\s/g, '_')}_${applicationId.substring(0, 8)}.pdf`;
+      pdf.save(fileName);
       showSuccess("PDF generated successfully!");
     } catch (error) {
       console.error("Error generating PDF:", error);
@@ -117,7 +122,11 @@ const ApplicationPdfViewer = ({
 
       <div ref={pdfContentRef} className="p-8 bg-white text-gray-900 hidden-for-pdf-capture" style={{ width: '210mm', minHeight: '297mm', boxSizing: 'border-box', fontFamily: 'Arial, sans-serif', fontSize: '10pt' }}>
         <h1 style={{ fontSize: '20pt', fontWeight: 'bold', marginBottom: '10px' }}>{programTitle} Application</h1>
-        <p style={{ fontSize: '12pt', color: '#555', marginBottom: '20px' }}>Submitted by {applicantFullName} ({applicantEmail}) on {new Date(submittedDate).toLocaleDateString()}</p>
+        {isAnonymizedView ? (
+          <p style={{ fontSize: '12pt', color: '#555', marginBottom: '20px' }}>Applicant ID: {applicationId.substring(0, 8)}... (Submitted on {new Date(submittedDate).toLocaleDateString()})</p>
+        ) : (
+          <p style={{ fontSize: '12pt', color: '#555', marginBottom: '20px' }}>Submitted by {applicantFullName} ({applicantEmail}) on {new Date(submittedDate).toLocaleDateString()}</p>
+        )}
         <p style={{ fontSize: '12pt', color: '#555', marginBottom: '20px' }}>Current Stage: {currentStageName}</p>
 
         <Separator style={{ margin: '20px 0', borderTop: '1px solid #eee' }} />
@@ -142,13 +151,14 @@ const ApplicationPdfViewer = ({
                 {fieldsInSection.map(field => {
                   const response = displayedResponses.find(res => res.form_fields?.id === field.id);
                   if (!response) return null;
+                  const isAnonymized = isAnonymizedView && response.form_fields?.is_anonymized;
                   const sanitizedFieldDescription = field.description ? DOMPurify.sanitize(field.description, { USE_PROFILES: { html: true } }) : null;
                   return (
                     <div key={field.id} style={{ marginBottom: '15px' }}>
                       <dt style={{ fontWeight: 'bold', fontSize: '11pt', marginBottom: '3px' }}>{field.label}</dt>
                       {sanitizedFieldDescription && <dd style={{ fontSize: '9pt', color: '#666', marginBottom: '3px' }}><div dangerouslySetInnerHTML={{ __html: sanitizedFieldDescription }} /></dd>}
                       <dd style={{ fontSize: '10pt', color: '#333', whiteSpace: 'pre-wrap' }}>
-                        {formatResponseValue(response.value, field.field_type)}
+                        {isAnonymized ? <span style={{ fontStyle: 'italic', color: '#666' }}>[Anonymized]</span> : formatResponseValue(response.value, field.field_type)}
                       </dd>
                     </div>
                   );
@@ -165,13 +175,14 @@ const ApplicationPdfViewer = ({
               {uncategorizedFields.map(field => {
                 const response = displayedResponses.find(res => res.form_fields?.id === field.id);
                 if (!response) return null;
+                const isAnonymized = isAnonymizedView && response.form_fields?.is_anonymized;
                 const sanitizedFieldDescription = field.description ? DOMPurify.sanitize(field.description, { USE_PROFILES: { html: true } }) : null;
                 return (
                   <div key={field.id} style={{ marginBottom: '15px' }}>
                     <dt style={{ fontWeight: 'bold', fontSize: '11pt', marginBottom: '3px' }}>{field.label}</dt>
                     {sanitizedFieldDescription && <dd style={{ fontSize: '9pt', color: '#666', marginBottom: '3px' }}><div dangerouslySetInnerHTML={{ __html: sanitizedFieldDescription }} /></dd>}
                     <dd style={{ fontSize: '10pt', color: '#333', whiteSpace: 'pre-wrap' }}>
-                      {formatResponseValue(response.value, field.field_type)}
+                      {isAnonymized ? <span style={{ fontStyle: 'italic', color: '#666' }}>[Anonymized]</span> : formatResponseValue(response.value, field.field_type)}
                     </dd>
                   </div>
                 );

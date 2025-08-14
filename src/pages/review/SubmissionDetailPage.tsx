@@ -70,6 +70,8 @@ const SubmissionDetailPage = () => {
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const isReviewer = useMemo(() => profile?.role === 'reviewer', [profile]);
+
   const fetchSubmissionDetails = useCallback(async () => {
     if (!submissionId || !programId) return;
     setLoading(true);
@@ -241,8 +243,8 @@ const SubmissionDetailPage = () => {
           <CardHeader>
             <div className="flex justify-between items-start">
               <div>
-                <CardTitle className="text-2xl">{submission?.full_name}</CardTitle>
-                <CardDescription>{submission?.email}</CardDescription>
+                <CardTitle className="text-2xl">{isReviewer ? `Applicant ID: ${submission?.id.substring(0, 8)}...` : submission?.full_name}</CardTitle>
+                <CardDescription>{isReviewer ? 'Information hidden to ensure fair review' : submission?.email}</CardDescription>
               </div>
               <Badge variant="secondary">{submission?.program_stages?.name}</Badge>
             </div>
@@ -255,11 +257,14 @@ const SubmissionDetailPage = () => {
                   {displayedResponses.length > 0 ? (
                     displayedResponses.map((res, index) => {
                       const sanitizedDescription = res.form_fields?.description ? DOMPurify.sanitize(res.form_fields.description, { USE_PROFILES: { html: true } }) : null;
+                      const isAnonymized = isReviewer && res.form_fields?.is_anonymized;
                       return (
                         <div key={index}>
                           <dt className="font-medium text-sm">{res.form_fields?.label || 'Untitled Question'}</dt>
                           {sanitizedDescription && <dd className="text-sm text-muted-foreground mt-1"><div dangerouslySetInnerHTML={{ __html: sanitizedDescription }} className="prose max-w-none" /></dd>}
-                          <dd className="text-muted-foreground whitespace-pre-wrap mt-1">{formatResponseValue(res.value, res.form_fields?.field_type || null)}</dd>
+                          <dd className="text-muted-foreground whitespace-pre-wrap mt-1">
+                            {isAnonymized ? <span className="italic text-gray-500">[Anonymized]</span> : formatResponseValue(res.value, res.form_fields?.field_type || null)}
+                          </dd>
                         </div>
                       );
                     })
@@ -282,6 +287,7 @@ const SubmissionDetailPage = () => {
                 allResponses={allResponses}
                 allFormFields={allFormFieldsForLogic}
                 formSections={allFormSections}
+                isAnonymizedView={isReviewer}
               />
             )}
             <div className="flex items-center gap-2">
