@@ -53,21 +53,26 @@ export const validateWorkflowStage = (stage: WorkflowStage, allStages: WorkflowS
       if (!stage.evaluation_template_id) {
         return { isValid: false, message: 'An evaluation rubric must be selected for this stage.' };
       }
-      let reviewFormSourceStageOrder: number | undefined | null = null;
+      let reviewFormSourceStageOrder: number | null = null;
       try {
         const config = JSON.parse(stage.description || '{}');
-        reviewFormSourceStageOrder = config.review_form_source_stage_order;
+        if (typeof config.review_form_source_stage_order === 'number') {
+          reviewFormSourceStageOrder = config.review_form_source_stage_order;
+        }
       } catch (e) {
-        return { isValid: false, message: 'Review stage configuration is invalid or incomplete.' };
+        return { isValid: false, message: 'Review stage configuration is invalid or incomplete (description is not valid JSON).' };
       }
 
       if (reviewFormSourceStageOrder === null || reviewFormSourceStageOrder === undefined) {
         return { isValid: false, message: 'A form to review must be selected.' };
       }
-      // Only check if the selected source stage actually exists and is a form stage
+
       const sourceStage = allStages.find(s => s.order_index === reviewFormSourceStageOrder);
-      if (!sourceStage || sourceStage.step_type !== 'form') {
-        return { isValid: false, message: "The selected form to review must be a valid 'Form' stage." };
+      if (!sourceStage) {
+        return { isValid: false, message: `The selected form to review (Stage ${reviewFormSourceStageOrder}) does not exist.` };
+      }
+      if (sourceStage.step_type !== 'form') {
+        return { isValid: false, message: `The selected form to review ('${sourceStage.name}') is not a 'Form' stage.` };
       }
       break;
 
