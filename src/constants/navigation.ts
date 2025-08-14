@@ -1,7 +1,7 @@
 export const NAVIGATION_ITEMS = [
   {
     links: [
-      { label: "Home", path: "/", icon: "House" }, // Changed icon from "Home" to "House"
+      { label: "Home", path: "/", icon: "Home" }, // Changed icon from "House" to "Home"
       { label: "My Submissions", path: "/dashboard", icon: "FileText", roles: ["applicant", "reviewer", "lead_reviewer", "creator", "admin", "super_admin"] },
     ],
   },

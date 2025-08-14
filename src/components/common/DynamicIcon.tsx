@@ -26,7 +26,9 @@ export const availableIcons = {
   Handshake: icons.Handshake,
   Heart: icons.Heart,
   HelpCircle: icons.HelpCircle,
+  Home: icons.Home, // Added Home icon
   Hourglass: icons.Hourglass,
+  House: icons.House, // Existing House icon
   Inbox: icons.Inbox,
   Info: icons.Info,
   Key: icons.Key,
