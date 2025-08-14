@@ -30,10 +30,10 @@ const DesktopSidebar = ({ isCollapsed, toggleCollapse }: DesktopSidebarProps) =>
   return (
     <div
       className={cn(
-        "flex flex-col bg-sidebar border-l border-sidebar-border transition-all duration-200 ease-in-out",
-        isCollapsed ? "w-[var(--sidebar-width-collapsed)]" : "w-[var(--sidebar-width-expanded)]"
+        "flex flex-col bg-sidebar border-l border-sidebar-border transition-all duration-200 ease-in-out flex-shrink-0", // Added flex-shrink-0
+        isCollapsed ? "w-16" : "w-56" // Using w-16 (64px) and w-56 (224px) directly
       )}
-      style={{ '--sidebar-width-expanded': '220px', '--sidebar-width-collapsed': '60px' } as React.CSSProperties}
+      // Removed style prop for CSS variables
     >
       <div className="flex items-center justify-end p-4 h-16 border-b border-sidebar-border">
         <Button
@@ -54,7 +54,7 @@ const DesktopSidebar = ({ isCollapsed, toggleCollapse }: DesktopSidebarProps) =>
         {filteredNavigationItems.map((section, sectionIndex) => (
           <div key={sectionIndex} className="space-y-1">
             {!isCollapsed && (
-              <h3 className="px-2 py-1 text-sm font-semibold text-sidebar-foreground/70 text-right"> {/* Added text-right */}
+              <h3 className="px-2 py-1 text-sm font-semibold text-sidebar-foreground/70 text-right">
                 {section.title}
               </h3>
             )}
@@ -63,7 +63,7 @@ const DesktopSidebar = ({ isCollapsed, toggleCollapse }: DesktopSidebarProps) =>
                 key={item.path}
                 variant="ghost"
                 className={cn(
-                  "w-full justify-end", // Changed justify-start to justify-end
+                  "w-full justify-end", // Keep justify-end for right alignment
                   isCollapsed ? "px-2 py-2" : "px-3 py-2",
                   location.pathname === item.path
                     ? "bg-sidebar-accent text-sidebar-accent-foreground"
@@ -72,8 +72,8 @@ const DesktopSidebar = ({ isCollapsed, toggleCollapse }: DesktopSidebarProps) =>
                 asChild
               >
                 <Link to={item.path}>
-                  {!isCollapsed && <span className="whitespace-nowrap text-right">{item.label}</span>} {/* Added text-right */}
-                  <DynamicIcon name={item.icon} className={cn("h-5 w-5", !isCollapsed && "ml-2")} /> {/* Changed mr-2 to ml-2 */}
+                  {!isCollapsed && <span className="whitespace-nowrap text-right">{item.label}</span>}
+                  <DynamicIcon name={item.icon} className={cn("h-5 w-5", !isCollapsed && "ml-2")} />
                 </Link>
               </Button>
             ))}
@@ -81,8 +81,8 @@ const DesktopSidebar = ({ isCollapsed, toggleCollapse }: DesktopSidebarProps) =>
         ))}
       </nav>
 
-      <div className="p-4 border-t border-sidebar-border flex flex-col items-center space-y-2">
-        <div className="flex w-full justify-center">
+      <div className="p-4 border-t border-sidebar-border flex flex-col items-end space-y-2"> {/* Changed items-center to items-end */}
+        <div className="flex w-full justify-end"> {/* Changed justify-center to justify-end */}
           <ThemeToggle isCollapsed={isCollapsed} />
         </div>
       </div>

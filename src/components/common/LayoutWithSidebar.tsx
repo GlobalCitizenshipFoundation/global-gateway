@@ -18,7 +18,7 @@ interface LayoutWithSidebarProps {
 }
 
 const LayoutWithSidebar = ({ children }: LayoutWithSidebarProps) => {
-  const [isCollapsed, setIsCollapsed] = useState(true); // Set to true for collapsed by default
+  const [isCollapsed, setIsCollapsed] = useState(true);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const location = useLocation();
   const { profile } = useSession();
@@ -42,7 +42,7 @@ const LayoutWithSidebar = ({ children }: LayoutWithSidebarProps) => {
     <nav className="flex-grow overflow-y-auto p-2 space-y-2">
       {filteredNavigationItems.map((section, sectionIndex) => (
         <div key={sectionIndex} className="space-y-1">
-          {section.title && ( // Conditionally render title
+          {section.title && (
             <h3 className="px-2 py-1 text-sm font-semibold text-sidebar-foreground/70">
               {section.title}
             </h3>
@@ -100,7 +100,7 @@ const LayoutWithSidebar = ({ children }: LayoutWithSidebarProps) => {
         <DesktopSidebar isCollapsed={isCollapsed} toggleCollapse={toggleCollapse} />
       )}
 
-      <div className="flex flex-col flex-grow">
+      <div className="flex flex-col flex-grow overflow-x-hidden"> {/* Added overflow-x-hidden */}
         <Header />
         <main className="flex-grow transition-all duration-200 ease-in-out">
           {children}
