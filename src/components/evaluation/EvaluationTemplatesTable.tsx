@@ -18,19 +18,21 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { EvaluationTemplate } from "@/types";
 import { MoreHorizontal } from "lucide-react";
+import { Badge } from "../ui/badge";
 
 interface EvaluationTemplatesTableProps {
   templates: EvaluationTemplate[];
   onDelete: (template: EvaluationTemplate) => void;
+  onUpdateStatus: (templateId: string, newStatus: 'draft' | 'published') => void;
 }
 
-export const EvaluationTemplatesTable = ({ templates, onDelete }: EvaluationTemplatesTableProps) => {
+export const EvaluationTemplatesTable = ({ templates, onDelete, onUpdateStatus }: EvaluationTemplatesTableProps) => {
   return (
     <Table>
       <TableHeader>
         <TableRow>
           <TableHead>Template Name</TableHead>
-          <TableHead className="hidden md:table-cell">Description</TableHead>
+          <TableHead>Status</TableHead>
           <TableHead className="hidden md:table-cell">Last Modified</TableHead>
           <TableHead className="text-right">Actions</TableHead>
         </TableRow>
@@ -43,9 +45,13 @@ export const EvaluationTemplatesTable = ({ templates, onDelete }: EvaluationTemp
                 {template.name}
               </Link>
             </TableCell>
-            <TableCell className="hidden md:table-cell truncate max-w-xs">{template.description}</TableCell>
+            <TableCell>
+              <Badge variant={template.status === 'published' ? 'default' : 'secondary'}>
+                {template.status.charAt(0).toUpperCase() + template.status.slice(1)}
+              </Badge>
+            </TableCell>
             <TableCell className="hidden md:table-cell">
-              {new Date(template.updated_at).toLocaleString()}
+              {new Date(template.last_edited_at || template.updated_at).toLocaleString()}
             </TableCell>
             <TableCell className="text-right">
               <DropdownMenu>
@@ -60,6 +66,16 @@ export const EvaluationTemplatesTable = ({ templates, onDelete }: EvaluationTemp
                   <DropdownMenuItem asChild>
                     <Link to={`/creator/evaluation-templates/${template.id}/edit`}>Edit Template</Link>
                   </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  {template.status === 'draft' ? (
+                    <DropdownMenuItem onClick={() => onUpdateStatus(template.id, 'published')}>
+                      Publish
+                    </DropdownMenuItem>
+                  ) : (
+                    <DropdownMenuItem onClick={() => onUpdateStatus(template.id, 'draft')}>
+                      Unpublish
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
                     className="text-destructive focus:text-destructive"

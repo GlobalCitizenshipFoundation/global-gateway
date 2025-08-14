@@ -165,6 +165,8 @@ export const WorkflowStagePropertiesPanel = ({
     s.step_type === 'form' && index < currentStageIndex
   );
 
+  const publishedEvaluationTemplates = evaluationTemplates.filter(t => t.status === 'published');
+
   return (
     <div className="p-6 h-full overflow-y-auto bg-background border-l">
       <div className="flex justify-between items-center mb-6">
@@ -232,13 +234,13 @@ export const WorkflowStagePropertiesPanel = ({
                     </FormControl>
                     <SelectContent>
                       <SelectItem value="__none__">No scorecard attached</SelectItem>
-                      {evaluationTemplates.map(template => (
+                      {publishedEvaluationTemplates.map(template => (
                         <SelectItem key={template.id} value={template.id}>{template.name}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                   <FormDescription>
-                    This scorecard will be used by reviewers at this stage.
+                    Only published scorecards are available. This scorecard will be used by reviewers at this stage.
                   </FormDescription>
                   <FormMessage />
                 </FormItem>

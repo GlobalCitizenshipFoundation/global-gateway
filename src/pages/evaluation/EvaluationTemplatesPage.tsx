@@ -11,7 +11,7 @@ import { EvaluationTemplate } from "../../types";
 
 const EvaluationTemplatesPage = () => {
   const { templates, loading, error, fetchTemplates } = useEvaluationTemplatesData();
-  const { isSubmitting, handleCreateTemplate, handleDeleteTemplate } = useEvaluationTemplateActions({ fetchTemplates });
+  const { isSubmitting, handleCreateTemplate, handleDeleteTemplate, handleUpdateTemplateStatus } = useEvaluationTemplateActions({ fetchTemplates });
 
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<EvaluationTemplate | null>(null);
@@ -77,6 +77,7 @@ const EvaluationTemplatesPage = () => {
             <EvaluationTemplatesTable
               templates={templates}
               onDelete={openDeleteDialog}
+              onUpdateStatus={handleUpdateTemplateStatus}
             />
           </CardContent>
         </Card>

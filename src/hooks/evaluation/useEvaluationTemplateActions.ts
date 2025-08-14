@@ -4,6 +4,7 @@ import { useSession } from '@/contexts/auth/SessionContext';
 import { showError, showSuccess } from '@/utils/toast';
 import { useNavigate } from 'react-router-dom';
 import { EvaluationTemplate } from '@/types';
+import { isEvaluationTemplatePublishable } from '@/utils/evaluation/evaluationValidation';
 
 interface UseEvaluationTemplateActionsProps {
   fetchTemplates?: () => void;
@@ -26,6 +27,9 @@ export const useEvaluationTemplateActions = ({ fetchTemplates }: UseEvaluationTe
         user_id: user.id,
         name: "New Evaluation Template",
         description: "A brief description of what this template is for.",
+        status: 'draft',
+        last_edited_by_user_id: user.id,
+        last_edited_at: new Date().toISOString(),
       })
       .select('id')
       .single();
@@ -54,9 +58,51 @@ export const useEvaluationTemplateActions = ({ fetchTemplates }: UseEvaluationTe
     }
   };
 
+  const handleUpdateTemplateStatus = async (templateId: string, newStatus: 'draft' | 'published') => {
+    if (!user) return;
+
+    if (newStatus === 'published') {
+      const { data: criteria, error: criteriaError } = await supabase
+        .from('evaluation_criteria')
+        .select('*')
+        .eq('template_id', templateId);
+
+      if (criteriaError) {
+        showError("Could not verify template criteria before publishing.");
+        return;
+      }
+
+      const { publishable, errors } = isEvaluationTemplatePublishable(criteria);
+      if (!publishable) {
+        const errorMessages = Array.from(errors.values()).join('\n');
+        showError(`Cannot publish template. Please fix the following issues:\n${errorMessages}`, {
+          duration: 10000,
+        });
+        return;
+      }
+    }
+
+    const { error } = await supabase
+      .from('evaluation_templates')
+      .update({ 
+        status: newStatus,
+        last_edited_by_user_id: user.id,
+        last_edited_at: new Date().toISOString(),
+      })
+      .eq('id', templateId);
+
+    if (error) {
+      showError(`Failed to update status: ${error.message}`);
+    } else {
+      showSuccess(`Template status updated to "${newStatus}".`);
+      if (fetchTemplates) fetchTemplates();
+    }
+  };
+
   return { 
     isSubmitting, 
     handleCreateTemplate,
     handleDeleteTemplate,
+    handleUpdateTemplateStatus,
   };
 };

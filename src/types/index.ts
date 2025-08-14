@@ -220,6 +220,9 @@ export type EvaluationTemplate = {
   description: string | null;
   created_at: string;
   updated_at: string;
+  status: 'draft' | 'published';
+  last_edited_by_user_id: string | null;
+  last_edited_at: string | null;
 };
 
 export type EvaluationCriterion = {
