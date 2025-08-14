@@ -206,7 +206,7 @@ const FormBuilderPage = () => {
                   setNewFieldSectionId={setNewFieldSectionId}
                   newFieldDescription={newFieldDescription}
                   setNewFieldDescription={setNewFieldDescription}
-                  newFieldTooltip={setNewFieldTooltip}
+                  newFieldTooltip={newFieldTooltip}
                   setNewFieldTooltip={setNewFieldTooltip}
                   newFieldPlaceholder={newFieldPlaceholder}
                   setNewFieldPlaceholder={setNewFieldPlaceholder}

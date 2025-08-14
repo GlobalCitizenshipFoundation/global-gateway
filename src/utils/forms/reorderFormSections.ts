@@ -37,13 +37,24 @@ export const reorderFormSections = (
   }));
 
   // Prepare batch update for Supabase, only including sections whose order has changed
-  const updatesToSend: { id: string; order: number; }[] = updatedSections.filter(s => {
+  const updatesToSend: FormSection[] = updatedSections.filter(s => {
     const originalSection = currentSections.find(orig => orig.id === s.id);
+    // Only include sections that actually changed order
     return originalSection && originalSection.order !== s.order;
-  }).map(s => ({
-    id: s.id,
-    order: s.order,
-  }));
+  }).map(s => {
+    // Find the original section to ensure all its properties are carried over
+    const originalSection = currentSections.find(orig => orig.id === s.id);
+    if (!originalSection) {
+      // This should ideally not happen if the filter above is correct
+      console.warn(`Original section not found for ID: ${s.id}`);
+      return s; // Fallback to sending the current state of 's'
+    }
+    // Return the full updated section object
+    return {
+      ...originalSection, // Spread all original properties
+      order: s.order, // Override with new order
+    };
+  });
 
   return { updatedSections, updatesToSend };
 };

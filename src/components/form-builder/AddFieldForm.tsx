@@ -25,6 +25,7 @@ interface AddFieldFormProps {
   isSubmitting: boolean;
   handleAddField: (e: React.FormEvent) => void;
   sections: FormSection[];
+  isAddingField: boolean; // Added this prop
 }
 
 export const AddFieldForm = ({
@@ -45,6 +46,7 @@ export const AddFieldForm = ({
   isSubmitting,
   handleAddField,
   sections,
+  isAddingField, // Destructure the new prop
 }: AddFieldFormProps) => {
   const showPlaceholder = ['text', 'textarea', 'email', 'phone', 'number'].includes(newFieldType);
 

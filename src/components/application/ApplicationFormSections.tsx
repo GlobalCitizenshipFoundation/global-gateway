@@ -26,15 +26,8 @@ const ApplicationFormSections = ({
     <>
       {formSections.map(section => {
         const fieldsInSection = getFieldsForSection(section.id);
-        const hasVisibleDescription = section.description && DOMPurify.sanitize(section.description, { ALLOWED_TAGS: [] }).trim() !== '';
-        const hasTooltip = section.tooltip && section.tooltip.trim() !== '';
-
-        // If the section has no fields and no visible content in its header, don't render it.
-        if (fieldsInSection.length === 0 && !hasVisibleDescription && !hasTooltip) {
-          return null;
-        }
-
         const sanitizedDescription = section.description ? DOMPurify.sanitize(section.description, { USE_PROFILES: { html: true } }) : null;
+        const hasTooltip = section.tooltip && section.tooltip.trim() !== '';
 
         return (
           <Card key={section.id} className="mb-6">
@@ -58,13 +51,15 @@ const ApplicationFormSections = ({
                 </CardDescription>
               )}
             </CardHeader>
-            {fieldsInSection.length > 0 && (
-              <CardContent className="grid gap-6">
-                {fieldsInSection.map(field => (
+            <CardContent className="grid gap-6">
+              {fieldsInSection.length > 0 ? (
+                fieldsInSection.map(field => (
                   <FormFieldRenderer key={field.id} field={field} submitting={submitting} />
-                ))}
-              </CardContent>
-            )}
+                ))
+              ) : (
+                <p className="text-muted-foreground text-sm text-center py-4">No fields in this section.</p>
+              )}
+            </CardContent>
           </Card>
         );
       })}
