@@ -231,6 +231,7 @@ export type EvaluationSection = {
   name: string;
   description: string | null;
   order: number;
+  is_public: boolean;
 };
 
 export type EvaluationCriterion = {

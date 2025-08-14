@@ -116,9 +116,9 @@ const EditEvaluationTemplatePage = () => {
     }
   };
 
-  const confirmDeleteSection = async (sectionId: string) => {
+  const confirmDeleteSection = async (sectionId: string, action: 'delete_criteria' | 'uncategorize_criteria') => {
     if (selectedSection?.id === sectionId) setSelectedSection(null);
-    const success = await actions.handleDeleteSection(sectionId);
+    const success = await actions.handleDeleteSection(sectionId, action);
     if (success) {
       fetchData();
       showSuccess("Section deleted.");

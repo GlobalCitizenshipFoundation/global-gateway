@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Plus } from "lucide-react";
-import { Textarea } from '../ui/textarea';
+import RichTextEditor from '../common/RichTextEditor';
 
 interface AddEvaluationSectionFormProps {
   onAddSection: (name: string, description: string | null) => Promise<void>;
@@ -33,11 +33,11 @@ export const AddEvaluationSectionForm = ({ onAddSection }: AddEvaluationSectionF
           onChange={e => setName(e.target.value)}
           disabled={isSubmitting}
         />
-        <Textarea
-          placeholder="Optional description for the section"
+        <RichTextEditor
           value={description}
-          onChange={e => setDescription(e.target.value)}
-          disabled={isSubmitting}
+          onChange={setDescription}
+          placeholder="Optional description for the section"
+          readOnly={isSubmitting}
         />
         <Button type="submit" disabled={isSubmitting || !name.trim()} className="w-full sm:w-auto self-end">
           <Plus className="mr-2 h-4 w-4" />

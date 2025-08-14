@@ -57,14 +57,20 @@ export const reorderEvaluationCriteria = (
     finalUpdatedCriteria = finalUpdatedCriteria.concat(updatedContainerCriteria);
   });
 
-  const updatesToSend: Partial<EvaluationCriterion>[] = finalUpdatedCriteria.filter(c => {
+  const updatesToSend: EvaluationCriterion[] = finalUpdatedCriteria.filter(c => {
     const originalCriterion = currentCriteria.find(orig => orig.id === c.id);
     return originalCriterion && (originalCriterion.order !== c.order || originalCriterion.section_id !== c.section_id);
-  }).map(c => ({
-    id: c.id,
-    order: c.order,
-    section_id: c.section_id,
-  }));
+  }).map(c => {
+    const originalCriterion = currentCriteria.find(orig => orig.id === c.id);
+    if (!originalCriterion) {
+      return c;
+    }
+    return {
+      ...originalCriterion,
+      order: c.order,
+      section_id: c.section_id,
+    };
+  });
 
   return { updatedCriteria: finalUpdatedCriteria, updatesToSend };
 };

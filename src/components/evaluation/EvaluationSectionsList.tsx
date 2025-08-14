@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CriterionCard } from "./CriterionCard";
 import { EvaluationCriterion, EvaluationSection } from "@/types";
-import { GripVertical, Trash2, Pencil, Plus } from "lucide-react";
+import { GripVertical, Trash2, Pencil, Plus, Eye } from "lucide-react";
 import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { useDroppable } from "@dnd-kit/core";
 import { cn } from "@/lib/utils";
@@ -11,6 +11,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { useState } from "react";
 import DOMPurify from 'dompurify';
+import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 
 interface EvaluationSectionsListProps {
   sections: EvaluationSection[];
@@ -18,7 +19,7 @@ interface EvaluationSectionsListProps {
   loading: boolean;
   validationErrors: Map<string, string>;
   getCriteriaForSection: (sectionId: string | null) => EvaluationCriterion[];
-  onDeleteSection: (sectionId: string) => Promise<void>;
+  onDeleteSection: (sectionId: string, action: 'delete_criteria' | 'uncategorize_criteria') => Promise<void>;
   onDeleteCriterion: (criterionId: string) => void;
   onEditCriterion: (criterion: EvaluationCriterion) => void;
   onEditSection: (section: EvaluationSection) => void;
@@ -39,7 +40,17 @@ const SortableAccordionItem = ({ section, children, confirmDeleteSection, onQuic
     <AccordionItem key={section.id} value={section.id} ref={setNodeRef} style={style} className={cn("rounded-md border mb-2", isDragging && "opacity-50")}>
       <div className="flex items-center justify-between w-full pr-4">
         <Button variant="ghost" size="icon" className="cursor-grab" {...attributes} {...listeners}><GripVertical className="h-5 w-5 text-muted-foreground" /></Button>
-        <AccordionTrigger className="flex-grow"><span className="font-semibold">{section.name}</span></AccordionTrigger>
+        <AccordionTrigger className="flex-grow">
+          <div className="flex items-center gap-2">
+            <span className="font-semibold">{section.name}</span>
+            {section.is_public && (
+              <Tooltip>
+                <TooltipTrigger asChild><Eye className="h-4 w-4 text-blue-500" /></TooltipTrigger>
+                <TooltipContent><p>This section is public.</p></TooltipContent>
+              </Tooltip>
+            )}
+          </div>
+        </AccordionTrigger>
         <div className="flex items-center gap-2">
           <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); onEditSection(section); }}><Pencil className="h-4 w-4 text-muted-foreground" /></Button>
           <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); onQuickAddCriterion(section.id); }}><Plus className="h-4 w-4 text-primary" /></Button>
@@ -63,13 +74,15 @@ export const EvaluationSectionsList = ({ sections, criteria, loading, validation
     setIsSectionDeleteDialogOpen(true);
   };
 
-  const executeDeleteSection = async () => {
+  const executeDeleteSection = async (action: 'delete_criteria' | 'uncategorize_criteria') => {
     if (sectionToDelete) {
-      await onDeleteSection(sectionToDelete.id);
+      await onDeleteSection(sectionToDelete.id, action);
       setSectionToDelete(null);
       setIsSectionDeleteDialogOpen(false);
     }
   };
+
+  const criteriaInSectionCount = sectionToDelete ? getCriteriaForSection(sectionToDelete.id).length : 0;
 
   return (
     <div className="space-y-6">
@@ -97,12 +110,17 @@ export const EvaluationSectionsList = ({ sections, criteria, loading, validation
       <AlertDialog open={isSectionDeleteDialogOpen} onOpenChange={setIsSectionDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-            <AlertDialogDescription>This will delete the section "{sectionToDelete?.name}". All criteria within it will become uncategorized.</AlertDialogDescription>
+            <AlertDialogTitle>Delete Section "{sectionToDelete?.name}"?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This section contains {criteriaInSectionCount} criteria. This action cannot be undone.
+            </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
+          <AlertDialogFooter className="sm:justify-between">
             <AlertDialogCancel onClick={() => setSectionToDelete(null)}>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={executeDeleteSection}>Continue</AlertDialogAction>
+            <div className="flex flex-col-reverse sm:flex-row sm:gap-2">
+              <Button variant="outline" onClick={() => executeDeleteSection('uncategorize_criteria')}>Delete Section Only</Button>
+              <AlertDialogAction onClick={() => executeDeleteSection('delete_criteria')} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Delete Section & Criteria</AlertDialogAction>
+            </div>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

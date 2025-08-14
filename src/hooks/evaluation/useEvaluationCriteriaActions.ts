@@ -111,15 +111,22 @@ export const useEvaluationCriteriaActions = ({ templateId, setCriteria, setSecti
     const { data: existingSections, error: fetchError } = await supabase.from('evaluation_sections').select('order').eq('template_id', templateId);
     if (fetchError) { showError("Could not determine order for new section."); return null; }
     const nextOrder = existingSections.length > 0 ? Math.max(...existingSections.map(s => s.order)) + 1 : 1;
-    const { data, error } = await supabase.from('evaluation_sections').insert({ template_id: templateId, name, description, order: nextOrder }).select().single();
+    const { data, error } = await supabase.from('evaluation_sections').insert({ template_id: templateId, name, description, order: nextOrder, is_public: false }).select().single();
     if (error) { showError(`Failed to add section: ${error.message}`); return null; }
     setSections(prev => [...prev, data as EvaluationSection]);
     return data as EvaluationSection;
   };
 
-  const handleDeleteSection = async (sectionId: string) => {
-    const { error } = await supabase.from('evaluation_sections').delete().eq('id', sectionId);
-    if (error) { showError(`Failed to delete section: ${error.message}`); return false; }
+  const handleDeleteSection = async (sectionId: string, action: 'delete_criteria' | 'uncategorize_criteria') => {
+    const { error } = await supabase.rpc('delete_evaluation_section_with_criteria_handling', {
+      p_section_id: sectionId,
+      p_action: action,
+    });
+
+    if (error) {
+      showError(`Failed to delete section: ${error.message}`);
+      return false;
+    }
     return true;
   };
 
