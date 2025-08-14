@@ -38,6 +38,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { WorkflowTemplate } from "@/types";
 import { useSession } from "@/contexts/auth/SessionContext";
+import { copyWorkflowStages } from "@/utils/programs/copyWorkflowStages"; // Import the utility
 
 const programFormSchema = z.object({
   title: z.string().min(5, {
@@ -51,7 +52,7 @@ const programFormSchema = z.object({
   }),
   submission_button_text: z.string().optional().nullable(),
   allow_pdf_download: z.boolean().optional(),
-  workflow_template_id: z.string().optional().nullable(),
+  workflow_template_id: z.string().nullable().optional(),
 });
 
 type ProgramFormValues = z.infer<typeof programFormSchema>;
@@ -64,6 +65,7 @@ const EditProgramPage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formId, setFormId] = useState<string | null>(null);
   const [workflowTemplates, setWorkflowTemplates] = useState<WorkflowTemplate[]>([]);
+  const [originalWorkflowTemplateId, setOriginalWorkflowTemplateId] = useState<string | null>(null); // To track changes
 
   const form = useForm<ProgramFormValues>({
     resolver: zodResolver(programFormSchema),
@@ -92,6 +94,7 @@ const EditProgramPage = () => {
           workflow_template_id: data.workflow_template_id || null,
         });
         setFormId(data.form_id);
+        setOriginalWorkflowTemplateId(data.workflow_template_id || null); // Ensure it's string | null
       }
 
       const { data: wfData, error: wfError } = await supabase
@@ -129,6 +132,32 @@ const EditProgramPage = () => {
     if (error) {
       showError(`Failed to update program: ${error.message}`);
     } else {
+      // Handle workflow template change
+      if (values.workflow_template_id !== originalWorkflowTemplateId) {
+        // Delete existing program stages for this program
+        const { error: deleteStagesError } = await supabase
+          .from('program_stages')
+          .delete()
+          .eq('program_id', programId!);
+
+        if (deleteStagesError) {
+          showError(`Program updated, but failed to clear old workflow stages: ${deleteStagesError.message}`);
+          setIsSubmitting(false);
+          return;
+        }
+
+        // If a new template is selected, copy its stages
+        if (values.workflow_template_id && user) {
+          const workflowCopySuccess = await copyWorkflowStages(values.workflow_template_id, programId!, user.id);
+          if (!workflowCopySuccess) {
+            showError("Program updated, but failed to copy new workflow stages from template.");
+            setIsSubmitting(false);
+            return;
+          }
+        }
+        setOriginalWorkflowTemplateId(values.workflow_template_id || null); // Update original ID
+      }
+
       showSuccess("Program updated successfully!");
       navigate("/creator/dashboard");
     }

@@ -30,13 +30,13 @@ export type ProgramStage = {
   id: string;
   program_id: string;
   name: string;
-  order: number;
+  order: number; // Changed from order_index to order
   created_at: string;
   step_type: 'form' | 'screening' | 'review' | 'resubmission' | 'decision' | 'email' | 'scheduling' | 'status' | 'recommendation';
-  description: string | null;
+  description: string | null; // This will now store JSON for complex types
   form_id: string | null;
   email_template_id: string | null;
-  evaluation_template_id: string | null; // New
+  evaluation_template_id: string | null;
 };
 
 export type Application = {
@@ -146,20 +146,20 @@ export type WorkflowTemplate = {
   last_edited_at: string | null;
 };
 
-export type WorkflowStage = {
+export type WorkflowStage = { // This type represents workflow_steps table
   id: string;
   workflow_template_id: string;
   name: string;
   description: string | null;
   step_type: 'form' | 'screening' | 'review' | 'resubmission' | 'decision' | 'email' | 'scheduling' | 'status' | 'recommendation';
-  order_index: number;
+  order_index: number; // This is the column name in workflow_steps
   created_at: string;
   updated_at: string;
   last_edited_by_user_id: string | null;
   last_edited_at: string | null;
   form_id: string | null;
   email_template_id: string | null;
-  evaluation_template_id: string | null; // New
+  evaluation_template_id: string | null;
 };
 
 export type RecommendationStageConfig = {
@@ -252,7 +252,7 @@ export type EvaluationCriterion = {
   description: string | null;
   criterion_type: 'numerical_score' | 'number_scale' | 'single_select' | 'short_text' | 'long_text' | 'repeater_buttons' | 'status';
   is_public: boolean;
-  options: { label: string; value: string | number | null; icon?: string | null; }[] | null;
+  options: { label: string; value: string | number | null; icon?: string | null; }[] | null; // Added icon
   min_score: number | null;
   max_score: number | null;
   min_label: string | null;

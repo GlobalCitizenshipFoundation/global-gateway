@@ -38,6 +38,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Form as FormType, WorkflowTemplate } from "@/types";
 import { Label } from "@/components/ui/label";
 import { DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
+import { copyWorkflowStages } from "@/utils/programs/copyWorkflowStages"; // Import the new utility
 
 const programFormSchema = z.object({
   title: z.string().min(5, {
@@ -147,18 +148,18 @@ const CreateProgramPage = () => {
 
       const { data: templateSections, error: sectionsError } = await supabase
         .from('form_sections')
-        .select('*')
+        .select('id, form_id, name, order, created_at, last_edited_by_user_id, last_edited_at, description, tooltip') // Explicitly select all columns
         .eq('form_id', values.formTemplateId)
         .order('order', { ascending: true });
 
       const { data: templateFields, error: fieldsError } = await supabase
         .from('form_fields')
-        .select('id, form_id, section_id, label, field_type, options, is_required, order, display_rules, description, tooltip, placeholder, last_edited_by_user_id, last_edited_at')
+        .select('id, form_id, section_id, label, field_type, options, is_required, order, display_rules, display_rules_logic_type, description, tooltip, placeholder, last_edited_by_user_id, last_edited_at, date_min, date_max, date_allow_past, date_allow_future, rating_min_value, rating_max_value, rating_min_label, rating_max_label, is_anonymized') // Explicitly select all columns
         .eq('form_id', values.formTemplateId)
         .order('order', { ascending: true });
 
       if (sectionsError || fieldsError) {
-        showError(`Failed to load template content: ${sectionsError?.message || fieldsError?.message}`);
+        showError(`Failed to load template content: ${sectionsError?.message || fieldsError?.message || 'Unknown error'}`);
         await supabase.from('forms').delete().eq('id', newFormId);
         setIsSubmitting(false);
         return;
@@ -188,20 +189,30 @@ const CreateProgramPage = () => {
         field_type: field.field_type,
         options: field.options,
         is_required: field.is_required,
+        is_anonymized: field.is_anonymized,
         order: field.order,
         display_rules: field.display_rules,
+        display_rules_logic_type: field.display_rules_logic_type,
         description: field.description,
         tooltip: field.tooltip,
         placeholder: field.placeholder,
         last_edited_by_user_id: user.id,
         last_edited_at: now,
+        date_min: field.date_min,
+        date_max: field.date_max,
+        date_allow_past: field.date_allow_past,
+        date_allow_future: field.date_allow_future,
+        rating_min_value: field.rating_min_value,
+        rating_max_value: field.rating_max_value,
+        rating_min_label: field.rating_min_label,
+        rating_max_label: field.rating_max_label,
       }));
 
       const { error: insertSectionsError } = await supabase.from('form_sections').insert(newSectionsToInsert);
       const { error: insertFieldsError } = await supabase.from('form_fields').insert(newFieldsToInsert);
 
       if (insertSectionsError || insertFieldsError) {
-        showError(`Failed to copy template content: ${insertSectionsError?.message || insertFieldsError?.message}`);
+        showError(`Failed to copy template content: ${insertSectionsError?.message || insertFieldsError?.message || 'Unknown error'}`);
         await supabase.from('forms').delete().eq('id', newFormId);
         setIsSubmitting(false);
         return;
@@ -242,38 +253,16 @@ const CreateProgramPage = () => {
       setIsSubmitting(false);
     } else {
       if (values.workflowTemplateId) {
-        const { data: stepsToCopy, error: stepsError } = await supabase
-          .from('workflow_steps')
-          .select('name, order_index, step_type, description, form_id, email_template_id, evaluation_template_id')
-          .eq('workflow_template_id', values.workflowTemplateId)
-          .order('order_index', { ascending: true });
-
-        if (stepsError) {
-          showError(`Program created, but failed to copy workflow steps: ${stepsError.message}`);
-        } else if (stepsToCopy && stepsToCopy.length > 0) {
-          const newStages = stepsToCopy.map(step => ({
-            program_id: programData.id,
-            name: step.name,
-            order: step.order_index,
-            step_type: step.step_type,
-            description: step.description,
-            form_id: step.form_id,
-            email_template_id: step.email_template_id,
-            evaluation_template_id: step.evaluation_template_id,
-          }));
-
-          const { error: insertStagesError } = await supabase
-            .from('program_stages')
-            .insert(newStages);
-
-          if (insertStagesError) {
-            showError(`Program created, but failed to insert workflow stages: ${insertStagesError.message}`);
-          }
+        const workflowCopySuccess = await copyWorkflowStages(values.workflowTemplateId, programData.id, user.id);
+        if (!workflowCopySuccess) {
+          showError("Program created, but failed to copy workflow stages from template.");
+          // Optionally, you might want to delete the program here if workflow is critical
         }
       }
       showSuccess("Program created successfully!");
       navigate(`/creator/dashboard`);
     }
+    setIsSubmitting(false);
   }
 
   return (
