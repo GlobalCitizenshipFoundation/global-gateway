@@ -19,7 +19,8 @@ import RichTextEditor from "@/components/common/RichTextEditor";
 import { X, AlertTriangle } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import ConditionalLogicBuilder from '@/components/forms/ConditionalLogicBuilder';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import React from "react"; // Explicit React import
 
 const editFormSectionSchema = z.object({
   name: z.string().min(1, { message: "Section name cannot be empty." }),

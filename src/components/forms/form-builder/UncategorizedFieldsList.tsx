@@ -3,6 +3,7 @@ import { FormField } from "@/types";
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { useDroppable } from "@dnd-kit/core";
 import { cn } from "@/lib/utils";
+import React from "react"; // Explicit React import
 
 interface UncategorizedFieldsListProps {
   uncategorizedFields: FormField[];
@@ -29,9 +30,9 @@ export const UncategorizedFieldsList = ({
   return (
     <DroppableContainer id="uncategorized-fields-droppable-area" className="mt-6 border-t pt-6 rounded-md border">
       <h3 className="text-lg font-medium mb-4 px-2">Uncategorized Fields</h3>
-      <SortableContext items={uncategorizedFields.map(f => f.id)} strategy={verticalListSortingStrategy}>
+      <SortableContext items={uncategorizedFields.map((f: FormField) => f.id)} strategy={verticalListSortingStrategy}>
         <ul className="space-y-2 p-2 min-h-[50px]">
-          {uncategorizedFields.map(field => (
+          {uncategorizedFields.map((field: FormField) => (
             <FormFieldItem
               key={field.id}
               field={field}

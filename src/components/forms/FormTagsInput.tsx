@@ -9,6 +9,7 @@ import { TagDisplay } from "@/components/tags/TagDisplay";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
+import React from "react"; // Explicit React import
 
 interface FormTagsInputProps {
   formId: string | undefined;
@@ -25,12 +26,12 @@ export const FormTagsInput = ({
   onTagsChange,
   loading,
 }: FormTagsInputProps) => {
-  const [open, setOpen] = useState(false);
-  const [searchTerm, setSearchTerm] = useState("");
+  const [open, setOpen] = useState<boolean>(false);
+  const [searchTerm, setSearchTerm] = useState<string>("");
 
   const handleSelectTag = (tagId: string) => {
     const newValue = currentTags.includes(tagId)
-      ? currentTags.filter((item) => item !== tagId)
+      ? currentTags.filter((item: string) => item !== tagId)
       : [...currentTags, tagId];
     onTagsChange(newValue);
   };
@@ -64,7 +65,7 @@ export const FormTagsInput = ({
               {currentTags.length > 0 ? (
                 <div className="flex flex-wrap gap-1">
                   {currentTags.map((tagId: string) => {
-                    const tag = allAvailableTags.find(t => t.id === tagId);
+                    const tag = allAvailableTags.find((t: TagType) => t.id === tagId);
                     return tag ? <TagDisplay key={tag.id} tag={tag} /> : null;
                   })}
                 </div>

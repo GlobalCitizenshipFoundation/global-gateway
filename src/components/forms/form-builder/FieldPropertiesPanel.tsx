@@ -11,6 +11,7 @@ import { X } from "lucide-react";
 import { BasicProperties } from './field-properties/BasicProperties';
 import { DateProperties } from './field-properties/DateProperties';
 import { RatingProperties } from './field-properties/RatingProperties';
+import React from "react"; // Explicit React import
 
 const editFormFieldSchema = z.object({
   label: z.string().min(1, { message: "Label cannot be empty." }),
@@ -26,8 +27,8 @@ const editFormFieldSchema = z.object({
   date_max: z.string().nullable().optional(),
   date_allow_past: z.boolean().optional(),
   date_allow_future: z.boolean().optional(),
-  rating_min_value: z.preprocess((val) => (val === '' ? null : Number(val)), z.number().nullable().optional()),
-  rating_max_value: z.preprocess((val) => (val === '' ? null : Number(val)), z.number().nullable().optional()),
+  rating_min_value: z.preprocess((val: any) => (val === '' ? null : Number(val)), z.number().nullable().optional()),
+  rating_max_value: z.preprocess((val: any) => (val === '' ? null : Number(val)), z.number().nullable().optional()),
   rating_min_label: z.string().nullable().optional(),
   rating_max_label: z.string().nullable().optional(),
 });

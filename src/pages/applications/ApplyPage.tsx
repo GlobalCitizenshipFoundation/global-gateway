@@ -17,6 +17,7 @@ import { ApplicantInfoCard } from "@/components/applications/ApplicantInfoCard";
 import ApplicationFormSections from "@/components/application/ApplicationFormSections";
 import { useState, useEffect } from "react";
 import DOMPurify from 'dompurify';
+import { FormField } from "@/types"; // Import FormField for type casting
 
 type DynamicFormValues = Record<string, string | string[] | number | undefined | null>;
 
@@ -24,19 +25,19 @@ const ApplyPage = () => {
   const {
     program,
     formSections,
-    formFields, // All form fields for logic evaluation
+    formFields,
     loading,
     profileFullName,
     profileEmail,
     form,
-    displayedFormFields, // Fields displayed after their own logic
+    displayedFormFields,
     user,
     programId,
     applicationForm,
-    currentResponses, // Current responses for section logic
+    currentResponses,
   } = useApplicationForm();
 
-  const [submitting, setSubmitting] = useState(false);
+  const [submitting, setSubmitting] = useState<boolean>(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -47,7 +48,7 @@ const ApplyPage = () => {
   }, [loading, program, applicationForm, navigate, programId]);
 
 
-  const onSubmit = async (values: DynamicFormValues) => {
+  const onSubmit = async (values: DynamicFormValues): Promise<void> => {
     if (!user || !program || !applicationForm || applicationForm.status !== 'published') {
       showError("Cannot submit: form is not published or data is missing.");
       return;
@@ -61,18 +62,17 @@ const ApplyPage = () => {
       return;
     }
 
-    // Explicitly type appData to avoid 'never' inference
     const { data: appData, error: appError } = await supabase.from('applications').insert({
       program_id: program.id,
       user_id: user.id,
       full_name: profileFullName,
       email: profileEmail,
       stage_id: firstStage.id,
-    }).select('id').single() as { data: { id: string } | null, error: any }; // Cast to expected type
+    }).select('id').single();
 
     if (appError || !appData) {
-      showError(`Submission failed: ${appData?.id ? 'Failed to save responses.' : appError.message}`);
-      if (appData?.id) {
+      showError(`Submission failed: ${appData ? 'Failed to save responses.' : appError.message}`);
+      if (appData) { // Check if appData is not null/undefined before accessing id
         await supabase.from('applications').delete().eq('id', appData.id);
       }
       setSubmitting(false);
@@ -143,8 +143,8 @@ const ApplyPage = () => {
               <ApplicationFormSections
                 formSections={formSections}
                 displayedFormFields={displayedFormFields}
-                allFormFields={formFields} // Pass all fields for section logic
-                currentResponses={currentResponses} // Pass current responses for section logic
+                allFormFields={formFields}
+                currentResponses={currentResponses}
                 submitting={submitting}
               />
 

@@ -1,8 +1,10 @@
 import { useSession } from '@/contexts/auth/SessionContext';
 import { Navigate, Outlet } from 'react-router-dom';
 import { Skeleton } from '@/components/ui/skeleton';
+import React from 'react'; // Explicit React import
+import { Profile } from '@/types'; // Import Profile type
 
-const CREATOR_ROLES = ['creator', 'admin', 'super_admin'];
+const CREATOR_ROLES: Profile['role'][] = ['creator', 'admin', 'super_admin'];
 
 const CreatorProtectedRoute = () => {
   const { session, profile, isLoading } = useSession();

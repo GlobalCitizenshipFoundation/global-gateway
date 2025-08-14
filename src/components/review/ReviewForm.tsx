@@ -13,6 +13,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Slider } from "@/components/ui/slider";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import React from "react"; // Explicit React import
 
 const reviewFormSchema = z.object({
   score: z.number().min(1).max(10),
@@ -54,8 +55,8 @@ export const ReviewForm = ({ onSubmit, isSubmitting }: ReviewFormProps) => {
                       min={1}
                       max={10}
                       step={1}
-                      value={[field.value]}
-                      onValueChange={(val) => field.onChange(val[0])}
+                      value={[field.value as number]}
+                      onValueChange={(val: number[]) => field.onChange(val[0])}
                       disabled={isSubmitting}
                     />
                   </FormControl>

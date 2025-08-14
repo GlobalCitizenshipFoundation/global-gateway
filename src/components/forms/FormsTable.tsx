@@ -16,13 +16,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Form as FormType } from "@/types";
+import { Form as FormType, Tag as TagType } from "@/types"; // Import TagType
 import { MoreHorizontal } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { TagDisplay } from "@/components/tags/TagDisplay"; // Import TagDisplay
+import { TagDisplay } from "@/components/tags/TagDisplay";
+import React from "react"; // Explicit React import
 
 interface FormsTableProps {
   forms: FormType[];
@@ -35,9 +36,9 @@ export const FormsTable = ({ forms, onUpdateStatus, onSaveAsTemplate, onDelete }
   const [userNames, setUserNames] = useState<Map<string, string>>(new Map());
 
   useEffect(() => {
-    const fetchUserNames = async () => {
+    const fetchUserNames = async (): Promise<void> => {
       const uniqueUserIds = new Set<string>();
-      forms.forEach(form => {
+      forms.forEach((form: FormType) => {
         if (form.user_id && !userNames.has(form.user_id)) {
           uniqueUserIds.add(form.user_id);
         }
@@ -56,7 +57,7 @@ export const FormsTable = ({ forms, onUpdateStatus, onSaveAsTemplate, onDelete }
           console.error("Error fetching user names for forms table:", error);
         } else if (data) {
           const newNames = new Map(userNames);
-          data.forEach(profile => {
+          data.forEach((profile: any) => {
             const fullName = [profile.first_name, profile.last_name].filter(Boolean).join(' ').trim();
             newNames.set(profile.id, fullName || 'Unknown User');
           });
@@ -67,7 +68,7 @@ export const FormsTable = ({ forms, onUpdateStatus, onSaveAsTemplate, onDelete }
     if (forms.length > 0) {
       fetchUserNames();
     }
-  }, [forms]);
+  }, [forms, userNames]);
 
   return (
     <Table>
@@ -78,12 +79,12 @@ export const FormsTable = ({ forms, onUpdateStatus, onSaveAsTemplate, onDelete }
           <TableHead className="hidden lg:table-cell">Publishing Status</TableHead>
           <TableHead className="hidden xl:table-cell">Created</TableHead>
           <TableHead className="hidden 2xl:table-cell">Last Updated</TableHead>
-          <TableHead className="hidden 2xl:table-cell">Tags</TableHead> {/* New Table Head for Tags */}
+          <TableHead className="hidden 2xl:table-cell">Tags</TableHead>
           <TableHead className="text-right">Actions</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
-        {forms.length > 0 ? forms.map((form) => (
+        {forms.length > 0 ? forms.map((form: FormType) => (
           <TableRow key={form.id} className={cn(form.is_template && "bg-blue-50/50 dark:bg-blue-950/20")}>
             <TableCell className="font-medium">
               <Link to={`/creator/forms/${form.id}/edit`} className="hover:underline">
@@ -100,7 +101,7 @@ export const FormsTable = ({ forms, onUpdateStatus, onSaveAsTemplate, onDelete }
             </TableCell>
             <TableCell className="hidden xl:table-cell">
               {new Date(form.created_at).toLocaleDateString()}
-              {form.user_id && ( // Assuming user_id is the creator
+              {form.user_id && (
                 <div className="text-xs text-muted-foreground">
                   By: {userNames.get(form.user_id) || 'Loading...'}
                 </div>
@@ -114,10 +115,10 @@ export const FormsTable = ({ forms, onUpdateStatus, onSaveAsTemplate, onDelete }
                 </div>
               )}
             </TableCell>
-            <TableCell className="hidden 2xl:table-cell"> {/* New Table Cell for Tags */}
+            <TableCell className="hidden 2xl:table-cell">
               <div className="flex flex-wrap gap-1">
                 {form.tags && form.tags.length > 0 ? (
-                  form.tags.map(tag => (
+                  form.tags.map((tag: TagType) => (
                     <TagDisplay key={tag.id} tag={tag} />
                   ))
                 ) : (
@@ -169,7 +170,7 @@ export const FormsTable = ({ forms, onUpdateStatus, onSaveAsTemplate, onDelete }
           </TableRow>
         )) : (
           <TableRow>
-            <TableCell colSpan={7} className="text-center h-24"> {/* Adjusted colspan */}
+            <TableCell colSpan={7} className="text-center h-24">
               You haven't created any forms or templates yet.
             </TableCell>
           </TableRow>

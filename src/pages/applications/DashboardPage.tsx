@@ -24,22 +24,23 @@ import ApplicationPdfViewer from "@/components/applications/ApplicationPdfViewer
 import { ApplicationStatusAlert } from "@/components/application/ApplicationStatusAlert";
 import { Button } from "@/components/ui/button";
 import { ApplicationStageStatus } from "@/components/application/ApplicationStageStatus";
+import React from "react"; // Explicit React import
 
 const DashboardPage = () => {
   const { user } = useSession();
   const [applications, setApplications] = useState<UserApplication[]>([]);
   const [allFormFields, setAllFormFields] = useState<FormField[]>([]);
   const [allFormSections, setAllFormSections] = useState<FormSection[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchApplications = async () => {
+    const fetchApplications = async (): Promise<void> => {
       if (!user) return;
       setLoading(true);
       setError(null);
 
-      const { data, error } = await supabase
+      const { data, error: fetchError } = await supabase
         .from('applications')
         .select(`
           id,
@@ -54,24 +55,24 @@ const DashboardPage = () => {
         .eq('user_id', user.id)
         .order('submitted_date', { ascending: false });
 
-      if (error) {
-        setError(error.message);
-        console.error("Error fetching applications:", error);
+      if (fetchError) {
+        setError(fetchError.message);
+        console.error("Error fetching applications:", fetchError);
       } else if (data) {
-        const formattedData = data.map(app => ({
+        const formattedData = data.map((app: any) => ({
           ...app,
           programs: Array.isArray(app.programs) ? app.programs[0] : app.programs,
           program_stages: Array.isArray(app.program_stages) ? app.program_stages[0] : app.program_stages,
         }));
         setApplications(formattedData as UserApplication[]);
 
-        const uniqueFormIds = [...new Set(formattedData.map(app => app.programs?.form_id).filter(Boolean))];
+        const uniqueFormIds = [...new Set(formattedData.map((app: any) => app.programs?.form_id).filter(Boolean))];
 
         if (uniqueFormIds.length > 0) {
           const { data: fieldsData, error: fieldsError } = await supabase
             .from('form_fields')
             .select('*')
-            .in('form_id', uniqueFormIds)
+            .in('form_id', uniqueFormIds as string[])
             .order('order', { ascending: true });
 
           if (fieldsError) {
@@ -83,7 +84,7 @@ const DashboardPage = () => {
           const { data: sectionsData, error: sectionsError } = await supabase
             .from('form_sections')
             .select('*')
-            .in('form_id', uniqueFormIds)
+            .in('form_id', uniqueFormIds as string[])
             .order('order', { ascending: true });
 
           if (sectionsError) {
@@ -99,7 +100,7 @@ const DashboardPage = () => {
     fetchApplications();
   }, [user]);
 
-  const fetchApplicationResponses = async (applicationId: string) => {
+  const fetchApplicationResponses = async (applicationId: string): Promise<{ value: string | null; form_fields: FormField | null; }[]> => {
     const { data, error } = await supabase
       .from('application_responses')
       .select(`value, form_fields ( id, label, field_type, options, is_required, order, display_rules, help_text, description, tooltip )`)
@@ -109,7 +110,7 @@ const DashboardPage = () => {
       console.error("Error fetching application responses for PDF:", error);
       return [];
     }
-    return data.map(res => ({
+    return data.map((res: any) => ({
       ...res,
       form_fields: Array.isArray(res.form_fields) ? res.form_fields[0] : res.form_fields
     }));
@@ -125,11 +126,15 @@ const DashboardPage = () => {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {Array.from({ length: 3 }).map((_, i) => (
+              {Array.from({ length: 3 }).map((_: any, i: number) => (
                 <div key={i} className="flex justify-between items-center">
-                  <Skeleton className="h-5 w-1/2" />
+                  <div className="w-1/3">
+                    <Skeleton className="h-5 w-3/4 mb-1" />
+                    <Skeleton className="h-4 w-full" />
+                  </div>
                   <Skeleton className="h-5 w-24" />
-                  <Skeleton className="h-6 w-28" />
+                  <Skeleton className="h-5 w-24" />
+                  <Skeleton className="h-9 w-20" />
                 </div>
               ))}
             </div>
@@ -163,7 +168,7 @@ const DashboardPage = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {applications.length > 0 ? applications.map((app) => (
+              {applications.length > 0 ? applications.map((app: UserApplication) => (
                 <TableRow key={app.id}>
                   <TableCell>
                     <Link to={`/programs/${app.program_id}`} className="font-medium hover:underline">
@@ -189,13 +194,13 @@ const DashboardPage = () => {
                       <ApplicationPdfViewer
                         applicationId={app.id}
                         programTitle={app.programs?.title || 'Application'}
-                        applicantFullName={user?.user_metadata?.full_name || user?.email || 'Applicant'}
+                        applicantFullName={user?.user_metadata?.full_name as string || user?.email || 'Applicant'}
                         applicantEmail={user?.email || 'N/A'}
                         submittedDate={app.submitted_date}
                         currentStageName={app.program_stages?.name || 'N/A'}
                         allResponses={[]}
-                        allFormFields={allFormFields.filter(f => f.form_id === app.programs?.form_id)}
-                        formSections={allFormSections.filter(s => s.form_id === app.programs?.form_id)}
+                        allFormFields={allFormFields.filter((f: FormField) => f.form_id === app.programs?.form_id)}
+                        formSections={allFormSections.filter((s: FormSection) => s.form_id === app.programs?.form_id)}
                       />
                     ) : null}
                   </TableCell>

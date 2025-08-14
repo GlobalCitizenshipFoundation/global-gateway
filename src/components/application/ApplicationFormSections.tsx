@@ -1,42 +1,41 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { FormField, FormSection } from "@/types";
+import { FormField, FormSection, DisplayRule } from "@/types";
 import FormFieldRenderer from "./FormFieldRenderer";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Info } from "lucide-react";
 import DOMPurify from 'dompurify';
-import { shouldFieldBeDisplayed, evaluateRule } from '@/utils/forms/formFieldUtils'; // Import evaluateRule
+import { shouldFieldBeDisplayed, evaluateRule } from '@/utils/forms/formFieldUtils';
 
 interface ApplicationFormSectionsProps {
   formSections: FormSection[];
-  displayedFormFields: FormField[]; // These are the fields that are currently displayed based on their own logic
-  allFormFields: FormField[]; // All fields, including hidden ones, for conditional logic evaluation
-  currentResponses: Record<string, any>; // Current form responses for conditional logic evaluation
+  displayedFormFields: FormField[];
+  allFormFields: FormField[];
+  currentResponses: Record<string, any>;
   submitting: boolean;
 }
 
 const ApplicationFormSections = ({
   formSections,
   displayedFormFields,
-  allFormFields, // Passed for conditional logic evaluation
-  currentResponses, // Passed for conditional logic evaluation
+  allFormFields,
+  currentResponses,
   submitting,
 }: ApplicationFormSectionsProps) => {
-  const getFieldsForSection = (sectionId: string | null) => {
-    return displayedFormFields.filter(field => field.section_id === sectionId).sort((a, b) => a.order - b.order);
+  const getFieldsForSection = (sectionId: string | null): FormField[] => {
+    return displayedFormFields.filter((field: FormField) => field.section_id === sectionId).sort((a: FormField, b: FormField) => a.order - b.order);
   };
 
-  // Function to determine if a section should be displayed
   const shouldSectionBeDisplayed = (section: FormSection): boolean => {
-    if (!section.display_rules || section.display_rules.length === 0) {
-      return true; // No rules, always display
+    if (!section.display_rules || (section.display_rules as DisplayRule[]).length === 0) {
+      return true;
     }
 
     const logicType = section.display_rules_logic_type || 'AND';
 
     if (logicType === 'AND') {
-      return section.display_rules.every(rule => evaluateRule(rule, currentResponses, allFormFields));
-    } else { // OR logic
-      return section.display_rules.some(rule => evaluateRule(rule, currentResponses, allFormFields));
+      return (section.display_rules as DisplayRule[]).every((rule: DisplayRule) => evaluateRule(rule, currentResponses, allFormFields));
+    } else {
+      return (section.display_rules as DisplayRule[]).some((rule: DisplayRule) => evaluateRule(rule, currentResponses, allFormFields));
     }
   };
 
@@ -44,8 +43,7 @@ const ApplicationFormSections = ({
 
   return (
     <>
-      {formSections.map(section => {
-        // Only render the section if its display rules are met
+      {formSections.map((section: FormSection) => {
         if (!shouldSectionBeDisplayed(section)) {
           return null;
         }
@@ -78,7 +76,7 @@ const ApplicationFormSections = ({
             </CardHeader>
             <CardContent className="grid gap-6">
               {fieldsInSection.length > 0 ? (
-                fieldsInSection.map(field => (
+                fieldsInSection.map((field: FormField) => (
                   <FormFieldRenderer key={field.id} field={field} submitting={submitting} />
                 ))
               ) : null}
@@ -94,7 +92,7 @@ const ApplicationFormSections = ({
             <CardDescription>Fields not assigned to a specific section.</CardDescription>
           </CardHeader>
           <CardContent className="grid gap-6">
-            {uncategorizedFields.map(field => (
+            {uncategorizedFields.map((field: FormField) => (
               <FormFieldRenderer key={field.id} field={field} submitting={submitting} />
             ))}
           </CardContent>

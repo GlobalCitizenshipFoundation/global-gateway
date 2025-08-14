@@ -1,8 +1,10 @@
 import { useSession } from '@/contexts/auth/SessionContext';
 import { Navigate, Outlet } from 'react-router-dom';
 import { Skeleton } from '@/components/ui/skeleton';
+import React from 'react'; // Explicit React import
+import { Profile } from '@/types'; // Import Profile type
 
-const ADMIN_ROLES = ['admin', 'super_admin'];
+const ADMIN_ROLES: Profile['role'][] = ['admin', 'super_admin'];
 
 const AdminProtectedRoute = () => {
   const { session, profile, isLoading } = useSession();

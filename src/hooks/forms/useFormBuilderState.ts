@@ -5,12 +5,12 @@ import { useFormBuilderLoader } from './useFormBuilderLoader';
 import { useFormDetailsState } from './useFormDetailsState';
 import { useFormContentState } from './useFormContentState';
 import { useFormBuilderUIState } from './useFormBuilderUIState';
+import React from 'react'; // Explicit React import
 
 export const useFormBuilderState = (initialFormId?: string) => {
   const { formId: paramFormId } = useParams<{ formId: string }>();
   const currentFormId = initialFormId || paramFormId;
 
-  // 1. Use the loader hook to fetch initial data
   const {
     formDetails: initialFormDetails,
     sections: initialSections,
@@ -20,12 +20,10 @@ export const useFormBuilderState = (initialFormId?: string) => {
     fetchData,
   } = useFormBuilderLoader(currentFormId);
 
-  // 2. Compose state from specialized hooks
   const formDetails = useFormDetailsState(initialFormDetails);
   const formContent = useFormContentState(initialSections, initialFields);
   const formUI = useFormBuilderUIState();
 
-  // Sync initial data to composed states once loaded
   useEffect(() => {
     if (!loading && initialFormDetails) {
       formDetails.setFormName(initialFormDetails.name);
@@ -39,7 +37,6 @@ export const useFormBuilderState = (initialFormId?: string) => {
       formContent.setSections(initialSections);
       formContent.setFields(initialFields);
 
-      // Reset UI states on initial load or re-fetch
       formUI.setHasUnsavedChanges(false);
       formUI.setLastSavedTimestamp(initialFormDetails.last_edited_at ? new Date(initialFormDetails.last_edited_at) : null);
       formUI.setIsAutoSaving(false);
@@ -63,15 +60,14 @@ export const useFormBuilderState = (initialFormId?: string) => {
       formUI.setNewFieldPlaceholder('');
       formUI.setIsAddingField(false);
     }
-  }, [loading, initialFormDetails, initialSections, initialFields]); // Depend on initial data and loading state
+  }, [loading, initialFormDetails, initialSections, initialFields, formDetails, formContent, formUI]);
 
   return {
     formId: currentFormId,
     loading,
     error,
-    fetchData, // Expose fetchData to trigger re-load from parent
+    fetchData,
 
-    // Composed form details state
     formName: formDetails.formName,
     setFormName: formDetails.setFormName,
     formDescription: formDetails.formDescription,
@@ -87,7 +83,6 @@ export const useFormBuilderState = (initialFormId?: string) => {
     formTags: formDetails.formTags,
     setFormTags: formDetails.setFormTags,
 
-    // Composed form content state
     sections: formContent.sections,
     setSections: formContent.setSections,
     fields: formContent.fields,
@@ -96,7 +91,6 @@ export const useFormBuilderState = (initialFormId?: string) => {
     setNewFieldSectionId: formContent.setNewFieldSectionId,
     getFieldsForSection: formContent.getFieldsForSection,
 
-    // Composed UI state
     isAutoSaving: formUI.isAutoSaving,
     setIsAutoSaving: formUI.setIsAutoSaving,
     lastSavedTimestamp: formUI.lastSavedTimestamp,

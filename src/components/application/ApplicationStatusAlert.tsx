@@ -2,6 +2,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Terminal } from "lucide-react";
 import { ProgramStage } from "@/types";
 import DOMPurify from 'dompurify';
+import React from "react"; // Explicit React import
 
 interface ApplicationStatusAlertProps {
   stage: {

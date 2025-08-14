@@ -10,6 +10,7 @@ import { Link, useParams } from "react-router-dom";
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import React from "react"; // Explicit React import
 
 const SortableStageItem = ({ stage, onDelete }: { stage: ProgramStage; onDelete: (stageId: string) => void; }) => {
   const {
@@ -45,12 +46,12 @@ const SortableStageItem = ({ stage, onDelete }: { stage: ProgramStage; onDelete:
 const ManageWorkflowPage = () => {
   const { programId } = useParams<{ programId: string }>();
   const [stages, setStages] = useState<ProgramStage[]>([]);
-  const [programTitle, setProgramTitle] = useState('');
-  const [newStageName, setNewStageName] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [programTitle, setProgramTitle] = useState<string>('');
+  const [newStageName, setNewStageName] = useState<string>('');
+  const [loading, setLoading] = useState<boolean>(true);
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
-  const fetchWorkflow = useCallback(async () => {
+  const fetchWorkflow = useCallback(async (): Promise<void> => {
     if (!programId) return;
     setLoading(true);
 
@@ -76,7 +77,7 @@ const ManageWorkflowPage = () => {
     if (stagesError) {
       showError("Could not fetch workflow stages.");
     } else {
-      setStages(stagesData || []);
+      setStages(stagesData as ProgramStage[]);
     }
     setLoading(false);
   }, [programId]);
@@ -85,12 +86,12 @@ const ManageWorkflowPage = () => {
     fetchWorkflow();
   }, [fetchWorkflow]);
 
-  const handleAddStage = async (e: React.FormEvent) => {
+  const handleAddStage = async (e: React.FormEvent): Promise<void> => {
     e.preventDefault();
     if (!newStageName.trim() || !programId) return;
 
     setIsSubmitting(true);
-    const nextOrder = stages.length > 0 ? Math.max(...stages.map(s => s.order)) + 1 : 1;
+    const nextOrder = stages.length > 0 ? Math.max(...stages.map((s: ProgramStage) => s.order)) + 1 : 1;
 
     const { data, error } = await supabase
       .from('program_stages')
@@ -105,14 +106,14 @@ const ManageWorkflowPage = () => {
     if (error) {
       showError(`Failed to add stage: ${error.message}`);
     } else if (data) {
-      setStages([...stages, data]);
+      setStages([...stages, data as ProgramStage]);
       setNewStageName('');
       showSuccess("Stage added successfully.");
     }
     setIsSubmitting(false);
   };
 
-  const handleDeleteStage = async (stageId: string) => {
+  const handleDeleteStage = async (stageId: string): Promise<void> => {
     const { error } = await supabase
       .from('program_stages')
       .delete()
@@ -121,7 +122,7 @@ const ManageWorkflowPage = () => {
     if (error) {
       showError(`Failed to delete stage: ${error.message}`);
     } else {
-      setStages(stages.filter(s => s.id !== stageId));
+      setStages(stages.filter((s: ProgramStage) => s.id !== stageId));
       showSuccess("Stage deleted successfully.");
     }
   };
@@ -131,15 +132,15 @@ const ManageWorkflowPage = () => {
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   );
 
-  const handleDragEnd = async (event: DragEndEvent) => {
+  const handleDragEnd = async (event: DragEndEvent): Promise<void> => {
     const { active, over } = event;
     if (over && active.id !== over.id) {
-      const oldIndex = stages.findIndex(s => s.id === active.id);
-      const newIndex = stages.findIndex(s => s.id === over.id);
+      const oldIndex = stages.findIndex((s: ProgramStage) => s.id === active.id);
+      const newIndex = stages.findIndex((s: ProgramStage) => s.id === over.id);
       const newOrderedStages = arrayMove(stages, oldIndex, newIndex);
       setStages(newOrderedStages);
 
-      const updates = newOrderedStages.map((stage, index) => ({
+      const updates = newOrderedStages.map((stage: ProgramStage, index: number) => ({
         id: stage.id,
         order: index + 1,
       }));
@@ -175,8 +176,8 @@ const ManageWorkflowPage = () => {
             ) : stages.length > 0 ? (
               <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
                 <ul className="space-y-4">
-                  <SortableContext items={stages.map(s => s.id)} strategy={verticalListSortingStrategy}>
-                    {stages.map(stage => (
+                  <SortableContext items={stages.map((s: ProgramStage) => s.id)} strategy={verticalListSortingStrategy}>
+                    {stages.map((stage: ProgramStage) => (
                       <SortableStageItem key={stage.id} stage={stage} onDelete={handleDeleteStage} />
                     ))}
                   </SortableContext>
@@ -192,7 +193,7 @@ const ManageWorkflowPage = () => {
               <Input
                 placeholder="e.g., Final Review"
                 value={newStageName}
-                onChange={e => setNewStageName(e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewStageName(e.target.value)}
                 disabled={isSubmitting}
               />
               <Button type="submit" disabled={isSubmitting || !newStageName.trim()}>

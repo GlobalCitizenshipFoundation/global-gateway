@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 import { FormField, FormSection, Form as FormType, Tag as TagType } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { showError } from '@/utils/toast';
+import React from 'react'; // Explicit React import
 
 export interface FormBuilderData {
   formDetails: FormType | null;
@@ -20,10 +21,10 @@ export const useFormBuilderLoader = (initialFormId?: string): FormBuilderData =>
   const [formDetails, setFormDetails] = useState<FormType | null>(null);
   const [sections, setSections] = useState<FormSection[]>([]);
   const [fields, setFields] = useState<FormField[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchData = useCallback(async () => {
+  const fetchData = useCallback(async (): Promise<void> => {
     if (!currentFormId) {
       setLoading(false);
       setError("Form ID is missing.");
@@ -33,24 +34,26 @@ export const useFormBuilderLoader = (initialFormId?: string): FormBuilderData =>
     setError(null);
 
     try {
-      // Fetch form details and its associated tags
+      type FetchedFormData = FormType & {
+        form_tags: Array<{ tags: TagType | null }>;
+      };
+
       const { data: formData, error: formError } = await supabase
         .from('forms')
         .select('*, form_tags(tags(*))')
         .eq('id', currentFormId)
-        .single();
+        .single() as { data: FetchedFormData | null, error: any };
       
       if (formError) {
         throw new Error("Could not fetch form details: " + formError.message);
       }
       
       const formattedFormDetails: FormType = {
-        ...formData,
-        tags: formData.form_tags.map((ft: { tags: TagType | null }) => ft.tags).filter((tag: TagType | null): tag is TagType => tag !== null),
+        ...formData!, // Use non-null assertion as error is thrown if null
+        tags: formData!.form_tags.map((ft: { tags: TagType | null }) => ft.tags).filter((tag: TagType | null): tag is TagType => tag !== null),
       };
       setFormDetails(formattedFormDetails);
 
-      // Fetch sections for the form
       const { data: sectionsData, error: sectionsError } = await supabase
         .from('form_sections')
         .select('*, description, tooltip, display_rules, display_rules_logic_type')
@@ -60,9 +63,8 @@ export const useFormBuilderLoader = (initialFormId?: string): FormBuilderData =>
       if (sectionsError) {
         throw new Error("Could not fetch form sections: " + sectionsError.message);
       }
-      setSections(sectionsData || []);
+      setSections(sectionsData as FormSection[] || []);
 
-      // Fetch fields for the form
       const { data: fieldsData, error: fieldsError } = await supabase
         .from('form_fields')
         .select('id, form_id, section_id, label, field_type, options, is_required, order, display_rules, display_rules_logic_type, description, tooltip, placeholder, last_edited_by_user_id, last_edited_at, date_min, date_max, date_allow_past, date_allow_future, rating_min_value, rating_max_value, rating_min_label, rating_max_label, is_anonymized')
@@ -72,7 +74,7 @@ export const useFormBuilderLoader = (initialFormId?: string): FormBuilderData =>
       if (fieldsError) {
         throw new Error("Could not fetch form fields: " + fieldsError.message);
       }
-      setFields(fieldsData as FormField[]);
+      setFields(fieldsData as FormField[] || []);
 
     } catch (err: any) {
       console.error("Error in useFormBuilderLoader:", err);

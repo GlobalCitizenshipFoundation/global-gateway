@@ -5,6 +5,7 @@ import { useSession } from '@/contexts/auth/SessionContext';
 import { Navigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { useTheme } from 'next-themes';
+import React from 'react'; // Explicit React import
 
 const LoginPage = () => {
   const { session } = useSession();

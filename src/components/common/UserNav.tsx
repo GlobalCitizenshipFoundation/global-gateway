@@ -13,14 +13,15 @@ import { useSession } from "@/contexts/auth/SessionContext";
 import { supabase } from "@/integrations/supabase/client";
 import { showError, showSuccess } from "@/utils/toast";
 import { cn } from "@/lib/utils";
-import DynamicIcon from "./DynamicIcon"; // Import DynamicIcon
-import { Badge } from "@/components/ui/badge"; // Import Badge
+import DynamicIcon from "./DynamicIcon";
+import { Badge } from "@/components/ui/badge";
+import React from "react"; // Explicit React import
 
 const UserNav = () => {
-  const { user, profile } = useSession(); // Get profile for role
+  const { user, profile } = useSession();
   const navigate = useNavigate();
 
-  const handleLogout = async () => {
+  const handleLogout = async (): Promise<void> => {
     const { error } = await supabase.auth.signOut();
     if (error) {
       showError("Failed to log out: " + error.message);
@@ -30,9 +31,9 @@ const UserNav = () => {
     }
   };
 
-  const firstName = user?.user_metadata?.first_name;
-  const middleName = user?.user_metadata?.middle_name;
-  const lastName = user?.user_metadata?.last_name;
+  const firstName = user?.user_metadata?.first_name as string | undefined;
+  const middleName = user?.user_metadata?.middle_name as string | undefined;
+  const lastName = user?.user_metadata?.last_name as string | undefined;
 
   const fullName = [firstName, middleName, lastName].filter(Boolean).join(' ').trim();
   const userRole = profile?.role;
@@ -43,11 +44,11 @@ const UserNav = () => {
         <Button
           variant="ghost"
           className={cn(
-            "relative h-8 flex items-center justify-center px-2 py-2", // Adjusted padding
-            "hover:bg-accent hover:text-accent-foreground" // Use general accent for header
+            "relative h-8 flex items-center justify-center px-2 py-2",
+            "hover:bg-accent hover:text-accent-foreground"
           )}
         >
-          <DynamicIcon name="Handshake" className="h-5 w-5 mr-2" /> {/* Handwave icon */}
+          <DynamicIcon name="Handshake" className="h-5 w-5 mr-2" />
           <div className="flex-grow text-left">
             <p className="text-sm font-medium leading-none">Hi, {fullName || 'User'}</p>
             {userRole && (

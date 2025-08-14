@@ -13,7 +13,7 @@ import DOMPurify from 'dompurify';
  */
 export const evaluateRule = (rule: DisplayRule, currentResponsesMap: Record<string, any>, allFormFields: FormField[]): boolean => {
   const triggerFieldResponse = currentResponsesMap[rule.field_id];
-  const triggerField = allFormFields.find(f => f.id === rule.field_id);
+  const triggerField = allFormFields.find((f: FormField) => f.id === rule.field_id);
 
   if (!triggerField) return false; // Trigger field not found
 
@@ -70,11 +70,11 @@ export const evaluateRule = (rule: DisplayRule, currentResponsesMap: Record<stri
     case 'is_after':
       return normalizedResponse instanceof Date && ruleValue instanceof Date && normalizedResponse > ruleValue;
     case 'contains_all_of':
-      return Array.isArray(rule.value) && Array.isArray(normalizedResponse) && rule.value.every(val => normalizedResponse.includes(val));
+      return Array.isArray(rule.value) && Array.isArray(normalizedResponse) && (rule.value as string[]).every((val: string) => (normalizedResponse as string[]).includes(val));
     case 'contains_any_of':
-      return Array.isArray(rule.value) && Array.isArray(normalizedResponse) && rule.value.some(val => normalizedResponse.includes(val));
+      return Array.isArray(rule.value) && Array.isArray(normalizedResponse) && (rule.value as string[]).some((val: string) => (normalizedResponse as string[]).includes(val));
     case 'contains_none_of':
-      return Array.isArray(rule.value) && Array.isArray(normalizedResponse) && !rule.value.some(val => normalizedResponse.includes(val));
+      return Array.isArray(rule.value) && Array.isArray(normalizedResponse) && !(rule.value as string[]).some((val: string) => (normalizedResponse as string[]).includes(val));
     default:
       return false;
   }
@@ -88,16 +88,16 @@ export const evaluateRule = (rule: DisplayRule, currentResponsesMap: Record<stri
  * @returns True if the field should be displayed, false otherwise.
  */
 export const shouldFieldBeDisplayed = (field: FormField, currentResponsesMap: Record<string, any>, allFormFields: FormField[]): boolean => {
-  if (!field.display_rules || field.display_rules.length === 0) {
+  if (!field.display_rules || (field.display_rules as DisplayRule[]).length === 0) {
     return true; // No rules, always display
   }
 
   const logicType = field.display_rules_logic_type || 'AND';
 
   if (logicType === 'AND') {
-    return field.display_rules.every(rule => evaluateRule(rule, currentResponsesMap, allFormFields));
+    return (field.display_rules as DisplayRule[]).every((rule: DisplayRule) => evaluateRule(rule, currentResponsesMap, allFormFields));
   } else { // OR logic
-    return field.display_rules.some(rule => evaluateRule(rule, currentResponsesMap, allFormFields));
+    return (field.display_rules as DisplayRule[]).some((rule: DisplayRule) => evaluateRule(rule, currentResponsesMap, allFormFields));
   }
 };
 

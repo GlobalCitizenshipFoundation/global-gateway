@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Form as FormType } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
+import React from 'react'; // Explicit React import
 
 interface FormDetailsState {
   formName: string;
@@ -15,22 +16,21 @@ interface FormDetailsState {
   setFormLastEditedByUserId: (userId: string | null) => void;
   lastEditedByUserName: string | null;
   isTemplate: boolean;
-  setIsTemplate: (isTemplate: boolean) => void; // Added setter
+  setIsTemplate: (isTemplate: boolean) => void;
   formTags: FormType['tags'];
   setFormTags: (tags: FormType['tags']) => void;
 }
 
 export const useFormDetailsState = (initialFormDetails: FormType | null): FormDetailsState => {
-  const [formName, setFormName] = useState(initialFormDetails?.name || '');
+  const [formName, setFormName] = useState<string>(initialFormDetails?.name || '');
   const [formDescription, setFormDescription] = useState<string | null>(initialFormDetails?.description || null);
   const [formStatus, setFormStatus] = useState<'draft' | 'published'>(initialFormDetails?.status || 'draft');
   const [formLastEditedAt, setFormLastEditedAt] = useState<string | null>(initialFormDetails?.last_edited_at || null);
   const [formLastEditedByUserId, setFormLastEditedByUserId] = useState<string | null>(initialFormDetails?.last_edited_by_user_id || null);
   const [lastEditedByUserName, setLastEditedByUserName] = useState<string | null>(null);
-  const [isTemplate, setIsTemplate] = useState(initialFormDetails?.is_template || false);
+  const [isTemplate, setIsTemplate] = useState<boolean>(initialFormDetails?.is_template || false);
   const [formTags, setFormTags] = useState<FormType['tags']>(initialFormDetails?.tags || []);
 
-  // Sync initial data when it becomes available
   useEffect(() => {
     if (initialFormDetails) {
       setFormName(initialFormDetails.name);
@@ -43,9 +43,8 @@ export const useFormDetailsState = (initialFormDetails: FormType | null): FormDe
     }
   }, [initialFormDetails]);
 
-  // Fetch last edited by user's full name
   useEffect(() => {
-    const fetchUserName = async () => {
+    const fetchUserName = async (): Promise<void> => {
       if (formLastEditedByUserId) {
         const { data, error } = await supabase
           .from('profiles')
@@ -73,7 +72,7 @@ export const useFormDetailsState = (initialFormDetails: FormType | null): FormDe
     formLastEditedByUserId, setFormLastEditedByUserId,
     lastEditedByUserName,
     isTemplate,
-    setIsTemplate, // Expose setter
+    setIsTemplate,
     formTags, setFormTags,
   };
 };

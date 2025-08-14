@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { FormField, FormSection } from '@/types';
+import React from 'react'; // Explicit React import
 
 interface FormBuilderUIState {
   isAutoSaving: boolean;
@@ -49,32 +50,32 @@ interface FormBuilderUIState {
 }
 
 export const useFormBuilderUIState = (): FormBuilderUIState => {
-  const [isAutoSaving, setIsAutoSaving] = useState(false);
+  const [isAutoSaving, setIsAutoSaving] = useState<boolean>(false);
   const [lastSavedTimestamp, setLastSavedTimestamp] = useState<Date | null>(null);
-  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
-  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
-  const [showSavedConfirmation, setShowSavedConfirmation] = useState(false);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState<boolean>(false);
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState<boolean>(false);
+  const [showSavedConfirmation, setShowSavedConfirmation] = useState<boolean>(false);
 
   const [selectedField, setSelectedField] = useState<FormField | null>(null);
   const [selectedSection, setSelectedSection] = useState<FormSection | null>(null);
 
-  const [isSaveAsTemplateDialogOpen, setIsSaveAsTemplateDialogOpen] = useState(false);
-  const [newTemplateName, setNewTemplateName] = useState('');
-  const [isSavingTemplate, setIsSavingTemplate] = useState(false);
-  const [isFormPreviewOpen, setIsFormPreviewOpen] = useState(false);
+  const [isSaveAsTemplateDialogOpen, setIsSaveAsTemplateDialogOpen] = useState<boolean>(false);
+  const [newTemplateName, setNewTemplateName] = useState<string>('');
+  const [isSavingTemplate, setIsSavingTemplate] = useState<boolean>(false);
+  const [isFormPreviewOpen, setIsFormPreviewOpen] = useState<boolean>(false);
 
-  const [newSectionName, setNewSectionName] = useState('');
-  const [newSectionDescription, setNewSectionDescription] = useState('');
-  const [newSectionTooltip, setNewSectionTooltip] = useState('');
-  const [isAddingSection, setIsAddingSection] = useState(false);
+  const [newSectionName, setNewSectionName] = useState<string>('');
+  const [newSectionDescription, setNewSectionDescription] = useState<string>('');
+  const [newSectionTooltip, setNewSectionTooltip] = useState<string>('');
+  const [isAddingSection, setIsAddingSection] = useState<boolean>(false);
 
-  const [newFieldLabel, setNewFieldLabel] = useState('');
+  const [newFieldLabel, setNewFieldLabel] = useState<string>('');
   const [newFieldType, setNewFieldType] = useState<FormField['field_type']>('text');
-  const [newFieldOptions, setNewFieldOptions] = useState('');
-  const [newFieldDescription, setNewFieldDescription] = useState('');
-  const [newFieldTooltip, setNewFieldTooltip] = useState('');
-  const [newFieldPlaceholder, setNewFieldPlaceholder] = useState('');
-  const [isAddingField, setIsAddingField] = useState(false);
+  const [newFieldOptions, setNewFieldOptions] = useState<string>('');
+  const [newFieldDescription, setNewFieldDescription] = useState<string>('');
+  const [newFieldTooltip, setNewFieldTooltip] = useState<string>('');
+  const [newFieldPlaceholder, setNewFieldPlaceholder] = useState<string>('');
+  const [isAddingField, setIsAddingField] = useState<boolean>(false);
 
   return {
     isAutoSaving, setIsAutoSaving,
