@@ -20,6 +20,7 @@ import { ArrowLeft } from "lucide-react";
 import { useEffect, useState, useMemo, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
+import { showError, showSuccess } from "@/utils/toast";
 import { ProgramStage, FormField, FormSection, ApplicationReview, EvaluationCriterion } from "@/types";
 import { shouldFieldBeDisplayed, formatResponseValue } from "@/utils/forms/formFieldUtils";
 import ApplicationPdfViewer from "@/components/applications/ApplicationPdfViewer";
@@ -30,9 +31,8 @@ import { useSession } from "@/contexts/auth/SessionContext";
 import { ReviewerAssignment } from "@/components/review/ReviewerAssignment";
 import { YourReviewCard } from "@/components/review/YourReviewCard";
 import { DynamicReviewForm } from "@/components/review/DynamicReviewForm";
-import { useFormLoader, DynamicFormValues } from "@/hooks/forms/useFormLoader";
-import ApplicationFormSections from "@/components/application/ApplicationFormSections";
-import React from "react"; // Explicit React import
+import { useFormLoader, DynamicFormValues } from "@/hooks/forms/useFormLoader"; // Import useFormLoader
+import ApplicationFormSections from "@/components/application/ApplicationFormSections"; // Import ApplicationFormSections
 
 type SubmissionDetail = {
   id: string;
@@ -65,29 +65,30 @@ const SubmissionDetailPage = () => {
   const [reviews, setReviews] = useState<ApplicationReview[]>([]);
   const [evaluationCriteria, setEvaluationCriteria] = useState<EvaluationCriterion[]>([]);
   const [selectedStage, setSelectedStage] = useState<string>('');
-  const [loadingPage, setLoadingPage] = useState<boolean>(true);
-  const [updating, setUpdating] = useState<boolean>(false);
-  const [isSubmittingReview, setIsSubmittingReview] = useState<boolean>(false);
+  const [loadingPage, setLoadingPage] = useState(true); // Overall page loading
+  const [updating, setUpdating] = useState(false);
+  const [isSubmittingReview, setIsSubmittingReview] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const [initialResponses, setInitialResponses] = useState<DynamicFormValues>({});
   const [targetFormIdForResponses, setTargetFormIdForResponses] = useState<string | undefined>(undefined);
 
+  // Use the new form loader hook for application responses
   const {
-    program: loadedProgram,
+    program: loadedProgram, // Renamed to avoid conflict with local 'program' state
     applicationForm,
     formSections,
-    formFields,
+    formFields, // All form fields for logic evaluation
     loading: formLoaderLoading,
     error: formLoaderError,
-    form: formLoaderInstance,
+    form: formLoaderInstance, // Renamed to avoid conflict with local 'form' state
     currentResponses: formLoaderCurrentResponses,
-    displayedFormFields: formLoaderDisplayedFormFields,
+    displayedFormFields: formLoaderDisplayedFormFields, // Fields displayed after their own logic
   } = useFormLoader({ programId, formId: targetFormIdForResponses, initialResponses });
 
-  const [stages, setStages] = useState<ProgramStage[]>([]);
+  const [stages, setStages] = useState<ProgramStage[]>([]); // Define stages state here
 
-  const fetchSubmissionDetails = useCallback(async (): Promise<void> => {
+  const fetchSubmissionDetails = useCallback(async () => {
     if (!submissionId || !programId) {
       setLoadingPage(false);
       return;
@@ -123,8 +124,8 @@ const SubmissionDetailPage = () => {
     }
     const formattedSubmissionData: SubmissionDetail = {
       ...submissionData,
-      programs: submissionData.programs as SubmissionDetail['programs'],
-      program_stages: submissionData.program_stages as SubmissionDetail['program_stages'],
+      programs: submissionData.programs as unknown as SubmissionDetail['programs'],
+      program_stages: submissionData.program_stages as unknown as SubmissionDetail['program_stages'],
     };
     setSubmission(formattedSubmissionData);
     setSelectedStage(formattedSubmissionData.stage_id);
@@ -147,24 +148,26 @@ const SubmissionDetailPage = () => {
       setEvaluationCriteria([]);
     }
 
+    // Set the stages state here
     if (stagesError) {
       showError("Could not load program stages.");
     } else {
-      setStages(stagesData as ProgramStage[] || []);
+      setStages(stagesData || []);
     }
 
+    // Determine which form to load for responses based on stage type
     let formIdForLoader: string | null = formattedSubmissionData.programs?.form_id || null;
     if (formattedSubmissionData.program_stages?.step_type === 'review' && formattedSubmissionData.program_stages.description) {
       try {
         const config = JSON.parse(formattedSubmissionData.program_stages.description);
         const reviewFormSourceStageOrder = config.review_form_source_stage_order;
         if (typeof reviewFormSourceStageOrder === 'number') {
-          const sourceStage = (stagesData as ProgramStage[]).find((s: ProgramStage) => s.order === reviewFormSourceStageOrder);
+          const sourceStage = (stagesData as ProgramStage[]).find(s => s.order === reviewFormSourceStageOrder);
           if (sourceStage) {
             formIdForLoader = sourceStage.form_id;
           }
         }
-      } catch (e: any) {
+      } catch (e) {
         console.error("Error parsing review stage description:", e);
         showError("Invalid review stage configuration.");
         formIdForLoader = null;
@@ -176,27 +179,24 @@ const SubmissionDetailPage = () => {
       showError("Could not load application responses.");
     } else if (responsesData) {
       const initialValues: DynamicFormValues = {};
-      responsesData.forEach((res: { value: string | null; form_fields: FormField | null; }) => {
+      responsesData.forEach(res => {
         const field = Array.isArray(res.form_fields) ? res.form_fields[0] : res.form_fields;
         if (field && res.value !== null) {
-          let parsedValue: any = res.value;
           if (field.field_type === 'checkbox') {
-            try { parsedValue = JSON.parse(res.value); } catch { parsedValue = []; }
+            try { initialValues[field.id] = JSON.parse(res.value); } catch { initialValues[field.id] = []; }
           } else if (field.field_type === 'number' || field.field_type === 'rating') {
-            parsedValue = parseFloat(res.value);
-            if (isNaN(parsedValue)) parsedValue = undefined;
+            initialValues[field.id] = parseFloat(res.value);
           } else {
-            parsedValue = res.value;
+            initialValues[field.id] = res.value;
           }
-          initialValues[field.id] = parsedValue;
         }
       });
-      formLoaderInstance.reset(initialValues);
+      formLoaderInstance.reset(initialValues); // Use formLoaderInstance to reset the form
       setInitialResponses(initialValues);
     }
     
     setLoadingPage(false);
-  }, [programId, submissionId, formLoaderInstance]);
+  }, [programId, submissionId, formLoaderInstance]); // Added formLoaderInstance to dependencies
 
   useEffect(() => {
     fetchSubmissionDetails();
@@ -214,21 +214,25 @@ const SubmissionDetailPage = () => {
   }, [isReviewer, submission]);
 
   const displayedResponsesForPdf = useMemo(() => {
-    return formLoaderDisplayedFormFields.filter((field: FormField) => {
+    // Use formLoaderDisplayedFormFields which already applies conditional logic
+    // and filter by anonymization status if current user is a reviewer
+    return formLoaderDisplayedFormFields.filter(field => {
       if (isReviewer && field.is_anonymized) return false;
       return true;
-    }).map((field: FormField) => {
+    }).map(field => {
+      // Find the corresponding value from formLoaderCurrentResponses
       const value = formLoaderCurrentResponses[field.id];
       return { form_fields: field, value: value !== undefined && value !== null ? String(value) : null };
     });
   }, [formLoaderDisplayedFormFields, formLoaderCurrentResponses, isReviewer]);
 
-  const handleStageUpdate = async (): Promise<void> => {
+  const handleStageUpdate = async () => {
     if (!submission || !selectedStage || submission.stage_id === selectedStage) return;
     setUpdating(true);
 
+    // Use the local stages state, not loadedProgram.program_stages
     const newStage = stages.find((s: ProgramStage) => s.id === selectedStage); 
-    let newStageStatus: string = 'Completed';
+    let newStageStatus = 'Completed';
     if (newStage?.step_type === 'resubmission') {
       newStageStatus = 'Awaiting Resubmission';
     } else if (newStage?.step_type === 'form') {
@@ -246,11 +250,11 @@ const SubmissionDetailPage = () => {
     setUpdating(false);
   };
 
-  const handleReviewSubmit = async (values: Record<string, any>): Promise<void> => {
+  const handleReviewSubmit = async (values: Record<string, any>) => {
     if (!user || !submission) return;
     setIsSubmittingReview(true);
 
-    const scores = evaluationCriteria.map((criterion: EvaluationCriterion) => ({
+    const scores = evaluationCriteria.map(criterion => ({
       criterion_id: criterion.id,
       value: String(values[criterion.id]),
     }));
@@ -276,7 +280,7 @@ const SubmissionDetailPage = () => {
 
   const userReview = useMemo(() => {
     if (!user || !reviews) return null;
-    return reviews.find((r: ApplicationReview) => r.reviewer_id === user.id) || null;
+    return reviews.find(r => r.reviewer_id === user.id) || null;
   }, [reviews, user]);
 
   const isManager = useMemo(() => {
@@ -296,7 +300,7 @@ const SubmissionDetailPage = () => {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {Array.from({ length: 3 }).map((_: any, i: number) => (
+              {Array.from({ length: 3 }).map((_, i) => (
                 <div key={i} className="flex justify-between items-center">
                   <div className="w-1/3">
                     <Skeleton className="h-5 w-3/4 mb-1" />
@@ -341,10 +345,10 @@ const SubmissionDetailPage = () => {
                 <h3 className="font-semibold text-lg mb-4">Application Responses</h3>
                 <ApplicationFormSections
                   formSections={formSections}
-                  displayedFormFields={formLoaderDisplayedFormFields}
-                  allFormFields={formFields}
-                  currentResponses={formLoaderCurrentResponses}
-                  submitting={false}
+                  displayedFormFields={formLoaderDisplayedFormFields} // Use fields filtered by their own logic
+                  allFormFields={formFields} // Pass all fields for section logic
+                  currentResponses={formLoaderCurrentResponses} // Pass current responses for section logic
+                  submitting={false} // Not submitting the form here
                 />
               </div>
             </div>
@@ -359,8 +363,8 @@ const SubmissionDetailPage = () => {
                   applicantEmail={submission.email || 'N/A'}
                   submittedDate={submission.submitted_date}
                   currentStageName={submission.program_stages?.name || 'N/A'}
-                  allResponses={displayedResponsesForPdf}
-                  allFormFields={formFields}
+                  allResponses={displayedResponsesForPdf} // Pass filtered responses for PDF
+                  allFormFields={formFields} // Pass all fields for logic evaluation in PDF
                   formSections={formSections}
                 />
               )}

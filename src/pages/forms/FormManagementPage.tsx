@@ -9,22 +9,21 @@ import { DeleteFormDialog } from "@/components/forms/DeleteFormDialog";
 import { CreateFormFromTemplateDialog } from "@/components/forms/CreateFormFromTemplateDialog";
 import { SaveAsTemplateDialog } from "@/components/forms/SaveAsTemplateDialog";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useState, useMemo } from "react";
-import { Form as FormType, Tag as TagType } from "@/types";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useTagsData } from "@/hooks/tags/useTagsData";
-import { TagDisplay } from "@/components/tags/TagDisplay";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
-import { Check, ChevronsUpDown } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import React from "react"; // Explicit React import
+import { useState, useMemo } from "react"; // Import useMemo
+import { Form as FormType, Tag as TagType } from "@/types"; // Import TagType
+import { Input } from "@/components/ui/input"; // Import Input
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"; // Import Select components
+import { useTagsData } from "@/hooks/tags/useTagsData"; // Import useTagsData
+import { TagDisplay } from "@/components/tags/TagDisplay"; // Import TagDisplay
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"; // Import Popover
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"; // Import Command components
+import { Check, ChevronsUpDown } from "lucide-react"; // Import icons
+import { cn } from "@/lib/utils"; // Import cn
+import { ScrollArea } from "@/components/ui/scroll-area"; // Import ScrollArea
 
 const FormManagementPage = () => {
   const { forms, setForms, templates, setTemplates, loading, error } = useFormsData();
-  const { tags: allAvailableTags, loading: loadingTags } = useTagsData();
+  const { tags: allAvailableTags, loading: loadingTags } = useTagsData(); // Fetch all tags
   const {
     isDeleteDialogOpen, setIsDeleteDialogOpen, selectedForm, setSelectedForm, handleDeleteForm,
     isCreateFromTemplateDialogOpen, setIsCreateFromTemplateDialogOpen, selectedTemplateId, setSelectedTemplateId, newFormName, setNewFormName, isCreatingForm, handleCreateBlankForm, handleCreateFormFromTemplate,
@@ -32,12 +31,12 @@ const FormManagementPage = () => {
     handleUpdateFormStatus,
   } = useFormManagementActions({ setForms, setTemplates, templates });
 
-  const [searchTerm, setSearchTerm] = useState<string>('');
+  const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState<'all' | 'form' | 'template'>('all');
-  const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
+  const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]); // New state for tag filter
   const [sortBy, setSortBy] = useState<'name' | 'created_at' | 'updated_at'>('updated_at');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
-  const [isTagFilterOpen, setIsTagFilterOpen] = useState<boolean>(false);
+  const [isTagFilterOpen, setIsTagFilterOpen] = useState(false); // State for tag filter popover
 
   const openCreateDialog = () => {
     setSelectedTemplateId(null);
@@ -47,25 +46,26 @@ const FormManagementPage = () => {
 
   const handleTagFilterChange = (tagId: string) => {
     setSelectedTagIds(prev =>
-      prev.includes(tagId) ? prev.filter((id: string) => id !== tagId) : [...prev, tagId]
+      prev.includes(tagId) ? prev.filter(id => id !== tagId) : [...prev, tagId]
     );
   };
 
   const filteredAndSortedForms = useMemo(() => {
-    let filtered = forms.filter((form: FormType) => {
+    let filtered = forms.filter(form => {
       const matchesSearch = form.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                             (form.description && form.description.toLowerCase().includes(searchTerm.toLowerCase()));
       const matchesType = filterType === 'all' ||
                           (filterType === 'form' && !form.is_template) ||
                           (filterType === 'template' && form.is_template);
       
+      // New: Filter by selected tags
       const matchesTags = selectedTagIds.length === 0 ||
-                          (form.tags && selectedTagIds.every((tagId: string) => form.tags?.some((formTag: TagType) => formTag.id === tagId)));
+                          (form.tags && selectedTagIds.every(tagId => form.tags?.some(formTag => formTag.id === tagId)));
 
       return matchesSearch && matchesType && matchesTags;
     });
 
-    filtered.sort((a: FormType, b: FormType) => {
+    filtered.sort((a, b) => {
       let compareA: any;
       let compareB: any;
 
@@ -75,7 +75,7 @@ const FormManagementPage = () => {
       } else if (sortBy === 'created_at') {
         compareA = new Date(a.created_at).getTime();
         compareB = new Date(b.created_at).getTime();
-      } else {
+      } else { // updated_at
         compareA = new Date(a.last_edited_at || a.updated_at).getTime();
         compareB = new Date(b.last_edited_at || b.updated_at).getTime();
       }
@@ -101,7 +101,7 @@ const FormManagementPage = () => {
         <Card>
           <CardContent className="p-6">
             <div className="space-y-4">
-              {Array.from({ length: 3 }).map((_: any, i: number) => (
+              {Array.from({ length: 3 }).map((_, i) => (
                 <div key={i} className="flex justify-between items-center">
                   <Skeleton className="h-5 w-1/3" />
                   <Skeleton className="h-5 w-24" />
@@ -142,7 +142,7 @@ const FormManagementPage = () => {
           <Input
             placeholder="Search forms by name or description..."
             value={searchTerm}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)}
+            onChange={(e) => setSearchTerm(e.target.value)}
             className="flex-grow"
           />
           <Select value={filterType} onValueChange={(value: 'all' | 'form' | 'template') => setFilterType(value)}>
@@ -166,8 +166,8 @@ const FormManagementPage = () => {
               >
                 {selectedTagIds.length > 0 ? (
                   <div className="flex flex-wrap gap-1">
-                    {selectedTagIds.map((tagId: string) => {
-                      const tag = allAvailableTags.find((t: TagType) => t.id === tagId);
+                    {selectedTagIds.map(tagId => {
+                      const tag = allAvailableTags.find(t => t.id === tagId);
                       return tag ? <TagDisplay key={tag.id} tag={tag} /> : null;
                     })}
                   </div>
@@ -179,16 +179,12 @@ const FormManagementPage = () => {
             </PopoverTrigger>
             <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
               <Command>
-                <CommandInput
-                  placeholder="Search tags..."
-                  value={searchTerm}
-                  onValueChange={setSearchTerm}
-                />
+                <CommandInput placeholder="Search tags..." />
                 <CommandList>
                   <CommandEmpty>No tags found.</CommandEmpty>
                   <CommandGroup>
                     <ScrollArea className="h-48">
-                      {allAvailableTags.filter((tag: TagType) => tag.applicable_to.includes('forms')).map((tag: TagType) => (
+                      {allAvailableTags.filter(tag => tag.applicable_to.includes('forms')).map(tag => (
                         <CommandItem
                           key={tag.id}
                           value={tag.name}

@@ -2,16 +2,16 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Plus } from "lucide-react";
 import { Label } from "@/components/ui/label";
-import RichTextEditor from "@/components/common/RichTextEditor";
+import RichTextEditor from "@/components/common/RichTextEditor"; // Updated import path
 
 interface AddSectionFormProps {
   newSectionName: string;
   setNewSectionName: (name: string) => void;
-  newSectionDescription: string;
-  setNewSectionDescription: (description: string) => void;
-  newSectionTooltip: string;
-  setNewSectionTooltip: (tooltip: string) => void;
-  isSubmitting: boolean; // Renamed from isAddingSection for clarity in this component
+  newSectionDescription: string; // New
+  setNewSectionDescription: (description: string) => void; // New
+  newSectionTooltip: string; // New
+  setNewSectionTooltip: (tooltip: string) => void; // New
+  isSubmitting: boolean;
   handleAddSection: (e: React.FormEvent) => void;
 }
 

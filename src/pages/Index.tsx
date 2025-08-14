@@ -5,30 +5,29 @@ import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardHeader, CardContent, CardFooter } from "@/components/ui/card";
-import React from "react"; // Explicit React import
 
 const Index = () => {
-  const [searchTerm, setSearchTerm] = useState<string>("");
+  const [searchTerm, setSearchTerm] = useState("");
   const [programs, setPrograms] = useState<Program[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchPrograms = async (): Promise<void> => {
+    const fetchPrograms = async () => {
       setLoading(true);
       setError(null);
 
-      const { data, error: fetchError } = await supabase
+      const { data, error } = await supabase
         .from("programs")
         .select("id, title, description, deadline, status, created_at, updated_at") // Fetch all fields needed for Program type
         .eq('status', 'published') // Only show published programs
         .order("created_at", { ascending: false });
 
-      if (fetchError) {
-        setError(fetchError.message);
-        console.error("Error fetching programs:", fetchError);
+      if (error) {
+        setError(error.message);
+        console.error("Error fetching programs:", error);
       } else if (data) {
-        const formattedPrograms = data.map((p: any) => ({
+        const formattedPrograms = data.map((p) => ({
           ...p,
           deadline: new Date(p.deadline),
         }));
@@ -41,7 +40,7 @@ const Index = () => {
   }, []);
 
   const filteredPrograms = useMemo(() => {
-    return programs.filter((program: Program) => {
+    return programs.filter((program) => {
       const lowerCaseSearch = searchTerm.toLowerCase();
       return (
         program.title.toLowerCase().includes(lowerCaseSearch) ||
@@ -66,7 +65,7 @@ const Index = () => {
         <Input
           placeholder="Search by title or description..."
           value={searchTerm}
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)}
+          onChange={(e) => setSearchTerm(e.target.value)}
           className="flex-grow"
         />
       </div>
@@ -74,7 +73,7 @@ const Index = () => {
       <section>
         {loading ? (
           <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-            {Array.from({ length: 6 }).map((_: any, i: number) => (
+            {Array.from({ length: 6 }).map((_, i) => (
               <Card key={i}>
                 <CardHeader>
                   <Skeleton className="h-6 w-3/4 mb-2" />
@@ -99,7 +98,7 @@ const Index = () => {
           </div>
         ) : filteredPrograms.length > 0 ? (
           <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-            {filteredPrograms.map((program: Program) => (
+            {filteredPrograms.map((program) => (
               <ProgramCard key={program.id} program={program} />
             ))}
           </div>

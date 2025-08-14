@@ -11,7 +11,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { RadioGroup, RadioGroupItem } => "@/components/ui/radio-group";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { CalendarIcon, Info } from "lucide-react";
@@ -24,13 +24,14 @@ import React from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import DOMPurify from 'dompurify';
-import { Slider } from "@/components/ui/slider";
+import { Slider } from "@/components/ui/slider"; // Import Slider
 
 interface FormFieldRendererProps {
   field: FormField;
   submitting: boolean;
 }
 
+// Explicitly define the type for dynamic form values
 type DynamicFormValues = Record<string, string | string[] | number | undefined | null>;
 
 const FormFieldRenderer = ({ field, submitting }: FormFieldRendererProps) => {
@@ -46,7 +47,7 @@ const FormFieldRenderer = ({ field, submitting }: FormFieldRendererProps) => {
       render={({ field: formHookField }) => (
         <FormItem className="grid gap-2">
           <div className="flex items-center gap-2">
-            <FormLabel htmlFor={field.id} className="text-lg font-semibold">
+            <FormLabel htmlFor={field.id} className="text-lg font-semibold"> {/* Adjusted typography */}
               {field.label}
               {field.is_required && <span className="text-destructive ml-1">*</span>}
             </FormLabel>
@@ -55,7 +56,7 @@ const FormFieldRenderer = ({ field, submitting }: FormFieldRendererProps) => {
                 <TooltipTrigger asChild>
                   <Info className="h-4 w-4 text-muted-foreground cursor-help" />
                 </TooltipTrigger>
-                <TooltipContent side="top" align="center">
+                <TooltipContent side="top" align="center"> {/* Removed forceMount */}
                   <p>{field.tooltip}</p>
                 </TooltipContent>
               </Tooltip>
@@ -86,7 +87,7 @@ const FormFieldRenderer = ({ field, submitting }: FormFieldRendererProps) => {
                   <SelectValue placeholder={field.placeholder || `Select an option`} />
                 </SelectTrigger>
                 <SelectContent>
-                  {(field.options || []).map((option: string, index: number) => (
+                  {(field.options as string[] || []).map((option, index) => (
                     <SelectItem key={index} value={option}>{option}</SelectItem>
                   ))}
                 </SelectContent>
@@ -101,7 +102,7 @@ const FormFieldRenderer = ({ field, submitting }: FormFieldRendererProps) => {
                 disabled={submitting}
                 className="space-y-2"
               >
-                {(field.options || []).map((option: string, index: number) => (
+                {(field.options as string[] || []).map((option, index) => (
                   <div key={index} className="flex items-center space-x-2">
                     <RadioGroupItem value={option} id={`${field.id}-${index}`} />
                     <Label htmlFor={`${field.id}-${index}`}>{option}</Label>
@@ -111,7 +112,7 @@ const FormFieldRenderer = ({ field, submitting }: FormFieldRendererProps) => {
             </FormControl>
           ) : field.field_type === 'checkbox' ? (
             <div className="space-y-2">
-              {(field.options || []).map((option: string, index: number) => (
+              {(field.options as string[] || []).map((option, index) => (
                 <FormFieldComponent
                   key={option}
                   control={control}
@@ -120,14 +121,14 @@ const FormFieldRenderer = ({ field, submitting }: FormFieldRendererProps) => {
                     <FormItem className="flex flex-row items-start space-x-3 space-y-0">
                       <FormControl>
                         <Checkbox
-                          checked={Array.isArray(checkboxField.value) && (checkboxField.value as string[]).includes(option)}
-                          onCheckedChange={(checked: boolean) => {
+                          checked={Array.isArray(checkboxField.value) && checkboxField.value.includes(option)}
+                          onCheckedChange={(checked) => {
                             const currentValues = Array.isArray(checkboxField.value) ? checkboxField.value : [];
                             return checked
                               ? checkboxField.onChange([...currentValues, option])
                               : checkboxField.onChange(
                                   currentValues.filter(
-                                    (value: string) => value !== option
+                                    (value) => value !== option
                                   )
                                 );
                           }}
@@ -153,7 +154,7 @@ const FormFieldRenderer = ({ field, submitting }: FormFieldRendererProps) => {
               />
             </FormControl>
           ) : field.field_type === 'date' ? (
-            <FormControl>
+            <FormControl> {/* Wrap Popover with FormControl */}
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
@@ -176,12 +177,12 @@ const FormFieldRenderer = ({ field, submitting }: FormFieldRendererProps) => {
                   <Calendar
                     mode="single"
                     selected={typeof formHookField.value === 'string' && formHookField.value ? new Date(formHookField.value) : undefined}
-                    onSelect={(date: Date | undefined) => formHookField.onChange(date ? date.toISOString() : '')}
+                    onSelect={(date) => formHookField.onChange(date ? date.toISOString() : '')}
                     initialFocus
                     // Apply date constraints
                     fromDate={field.date_allow_past ? undefined : new Date()}
                     toDate={field.date_allow_future ? undefined : new Date()}
-                    disabled={(date: Date) => {
+                    disabled={(date) => {
                       const minDate = field.date_min ? new Date(field.date_min) : null;
                       const maxDate = field.date_max ? new Date(field.date_max) : null;
                       if (minDate && date < minDate) return true;
@@ -235,7 +236,7 @@ const FormFieldRenderer = ({ field, submitting }: FormFieldRendererProps) => {
                   max={field.rating_max_value ?? 5}
                   step={1}
                   value={[Number(formHookField.value) || (field.rating_min_value ?? 1)]}
-                  onValueChange={(val: number[]) => formHookField.onChange(val[0])}
+                  onValueChange={(val) => formHookField.onChange(val[0])}
                   disabled={submitting}
                   className="w-full"
                 />

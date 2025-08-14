@@ -3,15 +3,14 @@ import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/contexts/auth/SessionContext";
 import { showError } from "@/utils/toast";
-import { useFormLoader, DynamicFormValues } from "@/hooks/forms/useFormLoader";
-import React from "react"; // Explicit React import
+import { useFormLoader, DynamicFormValues } from "@/hooks/forms/useFormLoader"; // Import new hook
 
 export const useApplicationForm = () => {
   const { programId } = useParams<{ programId: string }>();
   const { user } = useSession();
 
-  const [profileFullName, setProfileFullName] = useState<string>('');
-  const [profileEmail, setProfileEmail] = useState<string>('');
+  const [profileFullName, setProfileFullName] = useState('');
+  const [profileEmail, setProfileEmail] = useState('');
 
   // Use the new form loader hook
   const {
@@ -27,10 +26,10 @@ export const useApplicationForm = () => {
     getFieldsForSection,
   } = useFormLoader({ programId });
 
-  const [loadingProfile, setLoadingProfile] = useState<boolean>(true);
+  const [loadingProfile, setLoadingProfile] = useState(true);
 
   useEffect(() => {
-    const fetchProfile = async (): Promise<void> => {
+    const fetchProfile = async () => {
       if (!user) {
         setLoadingProfile(false);
         return;

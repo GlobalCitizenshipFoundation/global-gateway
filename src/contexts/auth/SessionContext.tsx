@@ -2,7 +2,6 @@ import { createContext, useContext, useEffect, useState } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { Profile } from '@/types';
-import React from 'react'; // Explicit React import
 
 interface SessionContextValue {
   session: Session | null;
@@ -24,10 +23,10 @@ export const SessionContextProvider = ({ children }: { children: React.ReactNode
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const getSessionAndProfile = async (): Promise<void> => {
+    const getSessionAndProfile = async () => {
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
       setSession(session);
       const currentUser = session?.user ?? null;
@@ -53,7 +52,7 @@ export const SessionContextProvider = ({ children }: { children: React.ReactNode
 
     getSessionAndProfile();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event: string, session: Session | null) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       setSession(session);
       const currentUser = session?.user ?? null;
       setUser(currentUser);

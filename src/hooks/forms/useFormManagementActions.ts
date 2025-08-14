@@ -3,33 +3,32 @@ import { supabase } from '@/integrations/supabase/client';
 import { useSession } from '@/contexts/auth/SessionContext';
 import { Form as FormType, FormField, FormSection } from '@/types';
 import { showError, showSuccess } from '@/utils/toast';
-import { useNavigate } from 'react-router-dom';
-import React from 'react'; // Explicit React import
+import { useNavigate } from 'react-router-dom'; // Import useNavigate
 
 interface UseFormManagementActionsProps {
   setForms: React.Dispatch<React.SetStateAction<FormType[]>>;
   setTemplates: React.Dispatch<React.SetStateAction<FormType[]>>;
-  templates: FormType[];
+  templates: FormType[]; // Pass templates for create from template logic
 }
 
 export const useFormManagementActions = ({ setForms, setTemplates, templates }: UseFormManagementActionsProps) => {
   const { user } = useSession();
-  const navigate = useNavigate();
+  const navigate = useNavigate(); // Initialize useNavigate
 
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState<boolean>(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedForm, setSelectedForm] = useState<FormType | null>(null);
 
-  const [isCreateFromTemplateDialogOpen, setIsCreateFromTemplateDialogOpen] = useState<boolean>(false);
+  const [isCreateFromTemplateDialogOpen, setIsCreateFromTemplateDialogOpen] = useState(false);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
-  const [newFormName, setNewFormName] = useState<string>('');
-  const [isCreatingForm, setIsCreatingForm] = useState<boolean>(false);
+  const [newFormName, setNewFormName] = useState('');
+  const [isCreatingForm, setIsCreatingForm] = useState(false);
 
-  const [isSaveAsTemplateDialogOpen, setIsSaveAsTemplateDialogOpen] = useState<boolean>(false);
+  const [isSaveAsTemplateDialogOpen, setIsSaveAsTemplateDialogOpen] = useState(false);
   const [templateFormToCopy, setTemplateFormToCopy] = useState<FormType | null>(null);
-  const [newTemplateName, setNewTemplateName] = useState<string>('');
-  const [isSavingTemplate, setIsSavingTemplate] = useState<boolean>(false);
+  const [newTemplateName, setNewTemplateName] = useState('');
+  const [isSavingTemplate, setIsSavingTemplate] = useState(false);
 
-  const handleDeleteForm = async (): Promise<void> => {
+  const handleDeleteForm = async () => {
     if (!selectedForm) return;
 
     const { error } = await supabase
@@ -41,17 +40,18 @@ export const useFormManagementActions = ({ setForms, setTemplates, templates }: 
       showError(`Failed to delete form: ${error.message}`);
     } else {
       showSuccess(`Form "${selectedForm.name}" deleted successfully.`);
-      setForms(prev => prev.filter((f: FormType) => f.id !== selectedForm.id));
-      setTemplates(prev => prev.filter((t: FormType) => t.id !== selectedForm.id));
+      setForms(prev => prev.filter(f => f.id !== selectedForm.id));
+      setTemplates(prev => prev.filter(t => t.id !== selectedForm.id));
     }
     setSelectedForm(null);
     setIsDeleteDialogOpen(false);
   };
 
-  const handleUpdateFormStatus = async (formId: string, newStatus: 'draft' | 'published'): Promise<void> => {
-    const originalForms = [...templates, ...templates];
-    setForms(prev => prev.map((f: FormType) => f.id === formId ? { ...f, status: newStatus, updated_at: new Date().toISOString() } : f));
-    setTemplates(prev => prev.map((f: FormType) => f.id === formId ? { ...f, status: newStatus, updated_at: new Date().toISOString() } : f));
+  const handleUpdateFormStatus = async (formId: string, newStatus: 'draft' | 'published') => {
+    const originalForms = [...templates, ...templates]; // Capture original state for rollback
+    // Optimistic update
+    setForms(prev => prev.map(f => f.id === formId ? { ...f, status: newStatus, updated_at: new Date().toISOString() } : f));
+    setTemplates(prev => prev.map(f => f.id === formId ? { ...f, status: newStatus, updated_at: new Date().toISOString() } : f));
 
 
     const { error } = await supabase
@@ -61,14 +61,14 @@ export const useFormManagementActions = ({ setForms, setTemplates, templates }: 
 
     if (error) {
       showError(`Failed to update form status: ${error.message}. Reverting.`);
-      setForms(originalForms.filter((f: FormType) => !f.is_template));
-      setTemplates(originalForms.filter((f: FormType) => f.is_template));
+      setForms(originalForms.filter(f => !f.is_template)); // Revert on error
+      setTemplates(originalForms.filter(f => f.is_template)); // Revert on error
     } else {
       showSuccess(`Form status updated to "${newStatus}".`);
     }
   };
 
-  const handleCreateBlankForm = async (): Promise<void> => {
+  const handleCreateBlankForm = async () => {
     if (!user) {
       showError("You must be logged in to create a form.");
       return;
@@ -90,19 +90,19 @@ export const useFormManagementActions = ({ setForms, setTemplates, templates }: 
     } else {
       showSuccess("Blank form created successfully! Redirecting to form builder.");
       setForms(prev => [...prev, { ...newFormData, user_id: user.id, name: "New Blank Form", is_template: false, status: 'draft', description: null, created_at: now, updated_at: now, last_edited_by_user_id: user.id, last_edited_at: now }]);
-      navigate(`/creator/forms/${newFormData.id}/edit`);
+      navigate(`/creator/forms/${newFormData.id}/edit`); // Use navigate
     }
     setIsCreatingForm(false);
   };
 
-  const handleCreateFormFromTemplate = async (): Promise<void> => {
+  const handleCreateFormFromTemplate = async () => {
     if (!user || !selectedTemplateId || !newFormName.trim()) {
       showError("Please select a template and provide a name for the new form.");
       return;
     }
     setIsCreatingForm(true);
 
-    const template = templates.find((t: FormType) => t.id === selectedTemplateId);
+    const template = templates.find(t => t.id === selectedTemplateId);
     if (!template) {
       showError("Selected template not found.");
       setIsCreatingForm(false);
@@ -128,25 +128,25 @@ export const useFormManagementActions = ({ setForms, setTemplates, templates }: 
 
     const { data: templateSections, error: sectionsError } = await supabase
       .from('form_sections')
-      .select('id, form_id, name, order, created_at, last_edited_by_user_id, last_edited_at, description, tooltip')
+      .select('*')
       .eq('form_id', selectedTemplateId)
       .order('order', { ascending: true });
 
     const { data: templateFields, error: fieldsError } = await supabase
       .from('form_fields')
-      .select('id, form_id, section_id, label, field_type, options, is_required, order, display_rules, display_rules_logic_type, description, tooltip, placeholder, last_edited_by_user_id, last_edited_at, date_min, date_max, date_allow_past, date_allow_future, rating_min_value, rating_max_value, rating_min_label, rating_max_label, is_anonymized')
+      .select('id, form_id, section_id, label, field_type, options, is_required, order, display_rules, description, tooltip, placeholder, last_edited_by_user_id, last_edited_at') // Explicitly select columns
       .eq('form_id', selectedTemplateId)
       .order('order', { ascending: true });
 
     if (sectionsError || fieldsError) {
-      showError(`Failed to load template content: ${sectionsError?.message || fieldsError?.message || 'Unknown error'}`);
+      showError(`Failed to load template content: ${sectionsError?.message || fieldsError?.message}`);
       await supabase.from('forms').delete().eq('id', newFormData.id);
       setIsCreatingForm(false);
       return;
     }
 
     const oldSectionIdMap = new Map<string, string>();
-    const newSectionsToInsert = (templateSections as FormSection[]).map((section: FormSection) => {
+    const newSectionsToInsert = templateSections.map(section => {
       const newSectionId = crypto.randomUUID();
       oldSectionIdMap.set(section.id, newSectionId);
       return {
@@ -154,14 +154,14 @@ export const useFormManagementActions = ({ setForms, setTemplates, templates }: 
         form_id: newFormData.id,
         name: section.name,
         order: section.order,
-        description: section.description,
-        tooltip: section.tooltip,
-        last_edited_by_user_id: user!.id,
+        description: section.description, // Copy section description
+        tooltip: section.tooltip, // Copy section tooltip
+        last_edited_by_user_id: user.id,
         last_edited_at: now,
       };
     });
 
-    const newFieldsToInsert = (templateFields as FormField[]).map((field: FormField) => ({
+    const newFieldsToInsert = templateFields.map(field => ({
       id: crypto.randomUUID(),
       form_id: newFormData.id,
       section_id: field.section_id ? oldSectionIdMap.get(field.section_id) : null,
@@ -174,7 +174,7 @@ export const useFormManagementActions = ({ setForms, setTemplates, templates }: 
       description: field.description,
       tooltip: field.tooltip,
       placeholder: field.placeholder,
-      last_edited_by_user_id: user!.id,
+      last_edited_by_user_id: user.id,
       last_edited_at: now,
     }));
 
@@ -182,7 +182,7 @@ export const useFormManagementActions = ({ setForms, setTemplates, templates }: 
     const { error: insertFieldsError } = await supabase.from('form_fields').insert(newFieldsToInsert);
 
     if (insertSectionsError || insertFieldsError) {
-      showError(`Failed to copy template content: ${insertSectionsError?.message || insertFieldsError?.message || 'Unknown error'}`);
+      showError(`Failed to copy template content: ${insertSectionsError?.message || insertFieldsError?.message}`);
       await supabase.from('forms').delete().eq('id', newFormData.id);
       setIsCreatingForm(false);
       return;
@@ -191,11 +191,11 @@ export const useFormManagementActions = ({ setForms, setTemplates, templates }: 
     showSuccess("Form created from template successfully! Redirecting to form builder.");
     setForms(prev => [...prev, { ...newFormData, user_id: user!.id, name: newFormName, is_template: false, status: 'draft', description: template.description, created_at: now, updated_at: now, last_edited_by_user_id: user!.id, last_edited_at: now }]);
     setIsCreateFromTemplateDialogOpen(false);
-    navigate(`/creator/forms/${newFormData.id}/edit`);
+    navigate(`/creator/forms/${newFormData.id}/edit`); // Use navigate
     setIsCreatingForm(false);
   };
 
-  const handleSaveAsTemplate = async (): Promise<void> => {
+  const handleSaveAsTemplate = async () => {
     if (!templateFormToCopy || !newTemplateName.trim()) {
       showError("Template name cannot be empty.");
       return;
@@ -220,7 +220,8 @@ export const useFormManagementActions = ({ setForms, setTemplates, templates }: 
       }).select('id').single();
 
       if (newTemplateFormError || !newTemplateFormData) {
-        throw new Error(`Failed to create template form: ${newTemplateFormError?.message}`);
+        showError(`Failed to create template form: ${newTemplateFormError?.message}`);
+        return;
       }
 
       const { data: currentSections, error: sectionsError } = await supabase
@@ -236,11 +237,13 @@ export const useFormManagementActions = ({ setForms, setTemplates, templates }: 
         .order('order', { ascending: true });
 
       if (sectionsError || fieldsError) {
-        throw new Error(`Failed to load current form content: ${sectionsError?.message || fieldsError?.message}`);
+        showError(`Failed to load current form content: ${sectionsError?.message || fieldsError?.message}`);
+        await supabase.from('forms').delete().eq('id', newTemplateFormData.id);
+        return;
       }
 
       const oldSectionIdMap = new Map<string, string>();
-      const newSectionsToInsert = (currentSections as FormSection[]).map((section: FormSection) => {
+      const newSectionsToInsert = currentSections.map(section => {
         const newSectionId = crypto.randomUUID();
         oldSectionIdMap.set(section.id, newSectionId);
         return {
@@ -248,14 +251,14 @@ export const useFormManagementActions = ({ setForms, setTemplates, templates }: 
           form_id: newTemplateFormData.id,
           name: section.name,
           order: section.order,
-          description: section.description,
-          tooltip: section.tooltip,
+          description: section.description, // Copy section description
+          tooltip: section.tooltip, // Copy section tooltip
           last_edited_by_user_id: user.id,
           last_edited_at: now,
         };
       });
 
-      const newFieldsToInsert = (currentFields as FormField[]).map((field: FormField) => ({
+      const newFieldsToInsert = currentFields.map(field => ({
         id: crypto.randomUUID(),
         form_id: newTemplateFormData.id,
         section_id: field.section_id ? oldSectionIdMap.get(field.section_id) : null,

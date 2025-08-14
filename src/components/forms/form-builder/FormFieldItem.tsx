@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { FormField } from '@/types';
-import { GripVertical, Trash2, Eye, Pencil, Info, Shield } from 'lucide-react';
+import { GripVertical, Trash2, Eye, Pencil, Info, Shield } from 'lucide-react'; // Import Shield icon
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
@@ -21,7 +21,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
-import React from 'react'; // Explicit React import
 
 interface FormFieldItemProps {
   field: FormField;
@@ -50,12 +49,12 @@ export const FormFieldItem = ({ field, onDelete, onToggleRequired, onSelectField
     transition,
   };
 
-  const hasLogic = field.display_rules && (field.display_rules as any[]).length > 0;
+  const hasLogic = field.display_rules && field.display_rules.length > 0;
   const hasTooltip = field.tooltip && field.tooltip.trim() !== '';
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState<boolean>(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
-  const [isEditingLabel, setIsEditingLabel] = useState<boolean>(false);
-  const [editedLabel, setEditedLabel] = useState<string>(field.label);
+  const [isEditingLabel, setIsEditingLabel] = useState(false);
+  const [editedLabel, setEditedLabel] = useState(field.label);
 
   const handleLabelDoubleClick = () => {
     setIsEditingLabel(true);
@@ -104,7 +103,6 @@ export const FormFieldItem = ({ field, onDelete, onToggleRequired, onSelectField
             ) : (
                 <span className="font-medium cursor-pointer" onDoubleClick={handleLabelDoubleClick}>
                     {field.label}
-                    {field.is_required && <span className="text-destructive ml-1">*</span>}
                 </span>
             )}
             <Badge variant="outline" className="ml-2 capitalize">{field.field_type}</Badge>
@@ -145,7 +143,7 @@ export const FormFieldItem = ({ field, onDelete, onToggleRequired, onSelectField
             <Switch
                 id={`required-${field.id}`}
                 checked={field.is_required}
-                onCheckedChange={(checked: boolean) => onToggleRequired(field.id, checked)}
+                onCheckedChange={(checked) => onToggleRequired(field.id, checked)}
             />
             <Label htmlFor={`required-${field.id}`}>Required</Label>
         </div>

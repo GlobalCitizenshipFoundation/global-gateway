@@ -26,24 +26,13 @@ export const useFormBuilderData = (initialFormId?: string) => { // Accept initia
     }
     setLoading(true);
 
-    // Define the expected type for the fetched form data, including nested tags
-    type FetchedFormData = {
-      name: string;
-      status: 'draft' | 'published';
-      description: string | null;
-      last_edited_at: string | null;
-      last_edited_by_user_id: string | null;
-      is_template: boolean;
-      form_tags: Array<{ tags: TagType | null }>; // Explicitly type the nested tags
-    };
-
-    // Fetch form details and its associated tags, casting the result to the defined type
+    // Fetch form details and its associated tags
     const { data: formData, error: formError } = await supabase
       .from('forms')
-      .select('name, status, description, last_edited_at, last_edited_by_user_id, is_template, form_tags(tags(*))')
+      .select('name, status, description, last_edited_at, last_edited_by_user_id, is_template, form_tags(tags(*))') // Fetch new columns and tags
       .eq('id', currentFormId)
-      .single() as { data: FetchedFormData | null, error: any }; // Cast the entire data object
-
+      .single();
+    
     if (formError) {
       showError("Could not fetch form details.");
       setFormName('');
@@ -53,16 +42,13 @@ export const useFormBuilderData = (initialFormId?: string) => { // Accept initia
       setFormLastEditedByUserId(null);
       setFormTags([]); // Reset tags on error
     } else {
-      // Add null check for formData before accessing its properties
-      if (formData) {
-        setFormName(formData.name);
-        setFormDescription(formData.description); // Set description
-        setFormStatus(formData.status);
-        setFormLastEditedAt(formData.last_edited_at);
-        setFormLastEditedByUserId(formData.last_edited_by_user_id);
-        // Map the nested tags and filter out any nulls, then cast to TagType[]
-        setFormTags(formData.form_tags.map(ft => ft.tags).filter((tag): tag is TagType => tag !== null) || []); // Set tags
-      }
+      setFormName(formData.name);
+      setFormDescription(formData.description); // Set description
+      setFormStatus(formData.status);
+      setFormLastEditedAt(formData.last_edited_at);
+      setFormLastEditedByUserId(formData.last_edited_by_user_id);
+      // Correctly map the fetched data to the FormTag type
+      setFormTags(formData.form_tags.map((ft: { tags: TagType | null }) => ft.tags).filter(Boolean) as TagType[] || []); // Set tags
     }
 
     // Fetch sections for the form, including new conditional logic fields

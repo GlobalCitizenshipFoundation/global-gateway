@@ -1,139 +1,196 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
-import { FormField, FormSection, Form as FormType, Tag as TagType } from '@/types';
-import { useFormBuilderLoader } from './useFormBuilderLoader';
-import { useFormDetailsState } from './useFormDetailsState';
-import { useFormContentState } from './useFormContentState';
-import { useFormBuilderUIState } from './useFormBuilderUIState';
-import React from 'react'; // Explicit React import
+import { FormField, FormSection, Form as FormType } from '@/types';
+import { supabase } from '@/integrations/supabase/client';
+import { showError } from '@/utils/toast';
 
 export const useFormBuilderState = (initialFormId?: string) => {
   const { formId: paramFormId } = useParams<{ formId: string }>();
   const currentFormId = initialFormId || paramFormId;
 
-  const {
-    formDetails: initialFormDetails,
-    sections: initialSections,
-    fields: initialFields,
-    loading,
-    error,
-    fetchData,
-  } = useFormBuilderLoader(currentFormId);
+  // Form details state
+  const [formName, setFormName] = useState('');
+  const [formDescription, setFormDescription] = useState<string | null>(null);
+  const [formStatus, setFormStatus] = useState<'draft' | 'published'>('draft');
+  const [formLastEditedAt, setFormLastEditedAt] = useState<string | null>(null);
+  const [formLastEditedByUserId, setFormLastEditedByUserId] = useState<string | null>(null);
+  const [lastEditedByUserName, setLastEditedByUserName] = useState<string | null>(null);
+  const [isTemplate, setIsTemplate] = useState(false); // New: is_template status
+  const [formTags, setFormTags] = useState<FormType['tags']>([]); // New: State for form tags
 
-  const formDetails = useFormDetailsState(initialFormDetails);
-  const formContent = useFormContentState(initialSections, initialFields);
-  const formUI = useFormBuilderUIState();
+  // Form content state
+  const [sections, setSections] = useState<FormSection[]>([]);
+  const [fields, setFields] = useState<FormField[]>([]);
+  const [newFieldSectionId, setNewFieldSectionId] = useState<string | null>(null);
+
+  // Loading and saving states
+  const [loading, setLoading] = useState(true);
+  const [isAutoSaving, setIsAutoSaving] = useState(false);
+  const [lastSavedTimestamp, setLastSavedTimestamp] = useState<Date | null>(null);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+  const [showSavedConfirmation, setShowSavedConfirmation] = useState(false);
+
+  // UI interaction states
+  const [selectedField, setSelectedField] = useState<FormField | null>(null); // New: for properties panel
+  const [selectedSection, setSelectedSection] = useState<FormSection | null>(null); // New: for section properties panel
+  const [isSaveAsTemplateDialogOpen, setIsSaveAsTemplateDialogOpen] = useState(false);
+  const [newTemplateName, setNewTemplateName] = useState('');
+  const [isSavingTemplate, setIsSavingTemplate] = useState(false);
+  const [isFormPreviewOpen, setIsFormPreviewOpen] = useState(false);
+
+  // New section/field input states
+  const [newSectionName, setNewSectionName] = useState('');
+  const [newSectionDescription, setNewSectionDescription] = useState(''); // New: Section description
+  const [newSectionTooltip, setNewSectionTooltip] = useState(''); // New: Section tooltip
+  const [isAddingSection, setIsAddingSection] = useState(false);
+  const [newFieldLabel, setNewFieldLabel] = useState('');
+  const [newFieldType, setNewFieldType] = useState<FormField['field_type']>('text');
+  const [newFieldOptions, setNewFieldOptions] = useState('');
+  // Removed newFieldHelpText
+  const [newFieldDescription, setNewFieldDescription] = useState('');
+  const [newFieldTooltip, setNewFieldTooltip] = useState('');
+  const [newFieldPlaceholder, setNewFieldPlaceholder] = useState('');
+  const [isAddingField, setIsAddingField] = useState(false);
+
+  const fetchData = useCallback(async () => {
+    if (!currentFormId) {
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+
+    const { data: formData, error: formError } = await supabase
+      .from('forms')
+      .select('name, status, description, last_edited_at, last_edited_by_user_id, is_template, form_tags(tags(*))') // Fetch is_template and form_tags
+      .eq('id', currentFormId)
+      .single();
+    
+    if (formError) {
+      showError("Could not fetch form details.");
+      setFormName('');
+      setFormDescription(null);
+      setFormStatus('draft');
+      setFormLastEditedAt(null);
+      setFormLastEditedByUserId(null);
+      setIsTemplate(false); // Reset is_template
+      setFormTags([]); // Reset formTags
+    } else {
+      setFormName(formData.name);
+      setFormDescription(formData.description);
+      setFormStatus(formData.status);
+      setFormLastEditedAt(formData.last_edited_at);
+      setFormLastEditedByUserId(formData.last_edited_by_user_id);
+      setIsTemplate(formData.is_template); // Set is_template
+      setFormTags(formData.form_tags.map((ft: any) => ft.tags) || []); // Set formTags
+    }
+
+    const { data: sectionsData, error: sectionsError } = await supabase
+      .from('form_sections')
+      .select('*, description, tooltip, display_rules, display_rules_logic_type') // Select new columns
+      .eq('form_id', currentFormId)
+      .order('order', { ascending: true });
+    
+    if (sectionsError) {
+      showError("Could not fetch form sections.");
+    } else {
+      setSections(sectionsData || []);
+    }
+
+    const { data: fieldsData, error: fieldsError } = await supabase
+      .from('form_fields')
+      .select('id, form_id, section_id, label, field_type, options, is_required, order, display_rules, display_rules_logic_type, description, tooltip, placeholder, last_edited_by_user_id, last_edited_at, date_min, date_max, date_allow_past, date_allow_future, rating_min_value, rating_max_value, rating_min_label, rating_max_label, is_anonymized') // Explicitly select all columns including new ones
+      .eq('form_id', currentFormId)
+      .order('order', { ascending: true });
+
+    if (fieldsError) {
+      showError("Could not fetch form fields.");
+    } else {
+      setFields(fieldsData as FormField[]);
+    }
+    setLoading(false);
+  }, [currentFormId]);
 
   useEffect(() => {
-    if (!loading && initialFormDetails) {
-      formDetails.setFormName(initialFormDetails.name);
-      formDetails.setFormDescription(initialFormDetails.description || null);
-      formDetails.setFormStatus(initialFormDetails.status);
-      formDetails.setFormLastEditedAt(initialFormDetails.last_edited_at || null);
-      formDetails.setFormLastEditedByUserId(initialFormDetails.last_edited_by_user_id || null);
-      formDetails.setFormTags(initialFormDetails.tags || []);
-      formDetails.setIsTemplate(initialFormDetails.is_template);
+    fetchData();
+  }, [fetchData]);
 
-      formContent.setSections(initialSections);
-      formContent.setFields(initialFields);
-
-      formUI.setHasUnsavedChanges(false);
-      formUI.setLastSavedTimestamp(initialFormDetails.last_edited_at ? new Date(initialFormDetails.last_edited_at) : null);
-      formUI.setIsAutoSaving(false);
-      formUI.setIsUpdatingStatus(false);
-      formUI.setShowSavedConfirmation(false);
-      formUI.setSelectedField(null);
-      formUI.setSelectedSection(null);
-      formUI.setIsSaveAsTemplateDialogOpen(false);
-      formUI.setNewTemplateName('');
-      formUI.setIsSavingTemplate(false);
-      formUI.setIsFormPreviewOpen(false);
-      formUI.setNewSectionName('');
-      formUI.setNewSectionDescription('');
-      formUI.setNewSectionTooltip('');
-      formUI.setIsAddingSection(false);
-      formUI.setNewFieldLabel('');
-      formUI.setNewFieldType('text');
-      formUI.setNewFieldOptions('');
-      formUI.setNewFieldDescription('');
-      formUI.setNewFieldTooltip('');
-      formUI.setNewFieldPlaceholder('');
-      formUI.setIsAddingField(false);
+  useEffect(() => {
+    if (sections.length > 0 && newFieldSectionId === null) {
+      setNewFieldSectionId(sections[0].id);
     }
-  }, [loading, initialFormDetails, initialSections, initialFields, formDetails, formContent, formUI]);
+  }, [sections, newFieldSectionId]);
+
+  // Sync local states with fetched data
+  useEffect(() => {
+    if (!loading) {
+      setHasUnsavedChanges(false);
+      setLastSavedTimestamp(formLastEditedAt ? new Date(formLastEditedAt) : null);
+    }
+  }, [loading, formLastEditedAt]);
+
+  // Fetch last edited by user's full name
+  useEffect(() => {
+    const fetchUserName = async () => {
+      if (formLastEditedByUserId) {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('first_name, last_name')
+          .eq('id', formLastEditedByUserId)
+          .single();
+        if (error) {
+          console.error("Error fetching last edited user name:", error);
+          setLastEditedByUserName(null);
+        } else if (data) {
+          setLastEditedByUserName([data.first_name, data.last_name].filter(Boolean).join(' ').trim() || 'Unknown User');
+        }
+      } else {
+        setLastEditedByUserName(null);
+      }
+    };
+    fetchUserName();
+  }, [formLastEditedByUserId]);
+
+  const getFieldsForSection = useCallback((sectionId: string | null) => {
+    return fields.filter(field => field.section_id === sectionId).sort((a, b) => a.order - b.order);
+  }, [fields]);
 
   return {
     formId: currentFormId,
-    loading,
-    error,
-    fetchData,
-
-    formName: formDetails.formName,
-    setFormName: formDetails.setFormName,
-    formDescription: formDetails.formDescription,
-    setFormDescription: formDetails.setFormDescription,
-    formStatus: formDetails.formStatus,
-    setFormStatus: formDetails.setFormStatus,
-    formLastEditedAt: formDetails.formLastEditedAt,
-    setFormLastEditedAt: formDetails.setFormLastEditedAt,
-    formLastEditedByUserId: formDetails.formLastEditedByUserId,
-    setFormLastEditedByUserId: formDetails.setFormLastEditedByUserId,
-    lastEditedByUserName: formDetails.lastEditedByUserName,
-    isTemplate: formDetails.isTemplate,
-    formTags: formDetails.formTags,
-    setFormTags: formDetails.setFormTags,
-
-    sections: formContent.sections,
-    setSections: formContent.setSections,
-    fields: formContent.fields,
-    setFields: formContent.setFields,
-    newFieldSectionId: formContent.newFieldSectionId,
-    setNewFieldSectionId: formContent.setNewFieldSectionId,
-    getFieldsForSection: formContent.getFieldsForSection,
-
-    isAutoSaving: formUI.isAutoSaving,
-    setIsAutoSaving: formUI.setIsAutoSaving,
-    lastSavedTimestamp: formUI.lastSavedTimestamp,
-    setLastSavedTimestamp: formUI.setLastSavedTimestamp,
-    hasUnsavedChanges: formUI.hasUnsavedChanges,
-    setHasUnsavedChanges: formUI.setHasUnsavedChanges,
-    isUpdatingStatus: formUI.isUpdatingStatus,
-    setIsUpdatingStatus: formUI.setIsUpdatingStatus,
-    showSavedConfirmation: formUI.showSavedConfirmation,
-    setShowSavedConfirmation: formUI.setShowSavedConfirmation,
-    selectedField: formUI.selectedField,
-    setSelectedField: formUI.setSelectedField,
-    selectedSection: formUI.selectedSection,
-    setSelectedSection: formUI.setSelectedSection,
-    isSaveAsTemplateDialogOpen: formUI.isSaveAsTemplateDialogOpen,
-    setIsSaveAsTemplateDialogOpen: formUI.setIsSaveAsTemplateDialogOpen,
-    newTemplateName: formUI.newTemplateName,
-    setNewTemplateName: formUI.setNewTemplateName,
-    isSavingTemplate: formUI.isSavingTemplate,
-    setIsSavingTemplate: formUI.setIsSavingTemplate,
-    isFormPreviewOpen: formUI.isFormPreviewOpen,
-    setIsFormPreviewOpen: formUI.setIsFormPreviewOpen,
-    newSectionName: formUI.newSectionName,
-    setNewSectionName: formUI.setNewSectionName,
-    newSectionDescription: formUI.newSectionDescription,
-    setNewSectionDescription: formUI.setNewSectionDescription,
-    newSectionTooltip: formUI.newSectionTooltip,
-    setNewSectionTooltip: formUI.setNewSectionTooltip,
-    isAddingSection: formUI.isAddingSection,
-    setIsAddingSection: formUI.setIsAddingSection,
-    newFieldLabel: formUI.newFieldLabel,
-    setNewFieldLabel: formUI.setNewFieldLabel,
-    newFieldType: formUI.newFieldType,
-    setNewFieldType: formUI.setNewFieldType,
-    newFieldOptions: formUI.newFieldOptions,
-    setNewFieldOptions: formUI.setNewFieldOptions,
-    newFieldDescription: formUI.newFieldDescription,
-    setNewFieldDescription: formUI.setNewFieldDescription,
-    newFieldTooltip: formUI.newFieldTooltip,
-    setNewFieldTooltip: formUI.setNewFieldTooltip,
-    newFieldPlaceholder: formUI.newFieldPlaceholder,
-    setNewFieldPlaceholder: formUI.setNewFieldPlaceholder,
-    isAddingField: formUI.isAddingField,
-    setIsAddingField: formUI.setIsAddingField,
+    formName, setFormName,
+    formDescription, setFormDescription,
+    formStatus, setFormStatus,
+    formLastEditedAt, setFormLastEditedAt,
+    formLastEditedByUserId, setFormLastEditedByUserId,
+    lastEditedByUserName,
+    isTemplate, // New: Expose isTemplate
+    sections, setSections,
+    fields, setFields,
+    loading, fetchData,
+    newFieldSectionId, setNewFieldSectionId,
+    getFieldsForSection,
+    isAutoSaving, setIsAutoSaving,
+    lastSavedTimestamp, setLastSavedTimestamp,
+    hasUnsavedChanges, setHasUnsavedChanges,
+    isUpdatingStatus, setIsUpdatingStatus,
+    showSavedConfirmation, setShowSavedConfirmation,
+    selectedField, setSelectedField, // New: Expose selectedField
+    selectedSection, setSelectedSection, // New: Expose selectedSection
+    isSaveAsTemplateDialogOpen, setIsSaveAsTemplateDialogOpen,
+    newTemplateName, setNewTemplateName,
+    isSavingTemplate, setIsSavingTemplate,
+    isFormPreviewOpen, setIsFormPreviewOpen,
+    newSectionName, setNewSectionName,
+    newSectionDescription, setNewSectionDescription, // New
+    newSectionTooltip, setNewSectionTooltip, // New
+    isAddingSection, setIsAddingSection,
+    newFieldLabel, setNewFieldLabel,
+    newFieldType, setNewFieldType,
+    newFieldOptions, setNewFieldOptions,
+    newFieldDescription, setNewFieldDescription,
+    newFieldTooltip, setNewFieldTooltip,
+    newFieldPlaceholder, setNewFieldPlaceholder,
+    isAddingField, setIsAddingField,
+    formTags, // New: Expose formTags
   };
 };

@@ -1,8 +1,8 @@
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { FormFieldItem } from "@/components/forms/form-builder/FormFieldItem";
-import { FormField, FormSection, DisplayRule } from "@/types";
+import { FormFieldItem } from "@/components/form-builder/FormFieldItem"; // Corrected import path
+import { FormField, FormSection } from "@/types";
 import { GripVertical, Trash2, Info, Plus, Pencil } from "lucide-react";
 import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { useDroppable } from "@dnd-kit/core";
@@ -21,11 +21,10 @@ import {
 import { useState } from "react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import DOMPurify from 'dompurify';
-import React from "react"; // Explicit React import
 
 interface FormSectionsListProps {
   sections: FormSection[];
-  fields: FormField[];
+  fields: FormField[]; // All fields for conditional logic evaluation
   loading: boolean;
   getFieldsForSection: (sectionId: string | null) => FormField[];
   handleDeleteSection: (sectionId: string, fieldAction: 'delete_fields' | 'uncategorize_fields' | 'move_to_section', targetSectionId?: string | null) => Promise<void>;
@@ -60,7 +59,7 @@ const SortableAccordionItem = ({ section, children, confirmDeleteSection, onQuic
 
   const hasTooltip = section.tooltip && section.tooltip.trim() !== '';
   const sanitizedDescription = section.description ? DOMPurify.sanitize(section.description, { USE_PROFILES: { html: true } }) : null;
-  const hasLogic = section.display_rules && (section.display_rules as DisplayRule[]).length > 0;
+  const hasLogic = section.display_rules && section.display_rules.length > 0; // Check for section logic
 
   return (
     <AccordionItem
@@ -68,7 +67,7 @@ const SortableAccordionItem = ({ section, children, confirmDeleteSection, onQuic
       value={section.id}
       ref={setNodeRef}
       style={style}
-      className={cn("rounded-md border mb-2", isDragging && "opacity-50", hasLogic && "border-l-4 border-blue-500")}
+      className={cn("rounded-md border mb-2", isDragging && "opacity-50", hasLogic && "border-l-4 border-blue-500")} // Add border for logic
     >
       <div className="flex items-center justify-between w-full pr-4">
         <Button variant="ghost" size="icon" className="cursor-grab" {...attributes} {...listeners}>
@@ -77,7 +76,7 @@ const SortableAccordionItem = ({ section, children, confirmDeleteSection, onQuic
         <AccordionTrigger className="flex-grow flex justify-between items-center pr-4">
           <div className="flex items-center gap-2">
             <span className="font-semibold">{section.name}</span>
-            {hasLogic && (
+            {hasLogic && ( // Display icon for section logic
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Info className="h-4 w-4 text-blue-500" />
@@ -100,9 +99,9 @@ const SortableAccordionItem = ({ section, children, confirmDeleteSection, onQuic
           </div>
         </AccordionTrigger>
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="icon" onClick={(e: React.MouseEvent) => { e.stopPropagation(); onSelectSection(section); }}><Pencil className="h-4 w-4 text-muted-foreground" /></Button>
-          <Button variant="ghost" size="icon" onClick={(e: React.MouseEvent) => { e.stopPropagation(); onQuickAddField(section.id); }}><Plus className="h-4 w-4 text-primary" /></Button>
-          <Button variant="ghost" size="icon" onClick={(e: React.MouseEvent) => { e.stopPropagation(); confirmDeleteSection(section); }}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+          <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); onSelectSection(section); }}><Pencil className="h-4 w-4 text-muted-foreground" /></Button>
+          <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); onQuickAddField(section.id); }}><Plus className="h-4 w-4 text-primary" /></Button>
+          <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); confirmDeleteSection(section); }}><Trash2 className="h-4 w-4 text-destructive" /></Button>
         </div>
       </div>
       <AccordionContent className="px-6 pb-4">
@@ -117,7 +116,7 @@ const SortableAccordionItem = ({ section, children, confirmDeleteSection, onQuic
 
 export const FormSectionsList = ({
   sections,
-  fields,
+  fields, // All fields for conditional logic evaluation
   loading,
   getFieldsForSection,
   handleDeleteSection,
@@ -129,14 +128,14 @@ export const FormSectionsList = ({
   onSelectSection,
 }: FormSectionsListProps) => {
   const [sectionToDelete, setSectionToDelete] = useState<FormSection | null>(null);
-  const [isSectionDeleteDialogOpen, setIsSectionDeleteDialogOpen] = useState<boolean>(false);
+  const [isSectionDeleteDialogOpen, setIsSectionDeleteDialogOpen] = useState(false);
 
   const confirmDeleteSection = (section: FormSection) => {
     setSectionToDelete(section);
     setIsSectionDeleteDialogOpen(true);
   };
 
-  const executeDeleteSection = async (action: 'delete_fields' | 'uncategorize_fields'): Promise<void> => {
+  const executeDeleteSection = async (action: 'delete_fields' | 'uncategorize_fields') => {
     if (sectionToDelete) {
       await handleDeleteSection(sectionToDelete.id, action, null);
       setSectionToDelete(null);
@@ -154,14 +153,14 @@ export const FormSectionsList = ({
         <Skeleton className="h-24 w-full" />
       ) : sections.length > 0 ? (
         <Accordion type="multiple" className="w-full">
-          <SortableContext items={sections.map((s: FormSection) => s.id)} strategy={verticalListSortingStrategy}>
-            {sections.map((section: FormSection) => (
+          <SortableContext items={sections.map(s => s.id)} strategy={verticalListSortingStrategy}>
+            {sections.map(section => (
               <SortableAccordionItem key={section.id} section={section} confirmDeleteSection={confirmDeleteSection} onQuickAddField={onQuickAddField} onSelectSection={onSelectSection}>
                 <DroppableContainer id={section.id} className="rounded-b-md">
-                  <SortableContext items={getFieldsForSection(section.id).map((f: FormField) => f.id)} strategy={verticalListSortingStrategy}>
+                  <SortableContext items={getFieldsForSection(section.id).map(f => f.id)} strategy={verticalListSortingStrategy}>
                     <ul className="space-y-2 p-2 min-h-[50px]">
                       {getFieldsForSection(section.id).length > 0 ? (
-                        getFieldsForSection(section.id).map((field: FormField) => (
+                        getFieldsForSection(section.id).map(field => (
                           <FormFieldItem
                             key={field.id}
                             field={field}

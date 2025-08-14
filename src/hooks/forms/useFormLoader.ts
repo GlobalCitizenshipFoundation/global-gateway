@@ -1,5 +1,4 @@
 import { useEffect, useState, useMemo, useCallback } from "react";
-import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Program, FormField, FormSection, Form as FormType } from "@/types";
 import { showError } from "@/utils/toast";
@@ -22,7 +21,7 @@ export const useFormLoader = ({ programId, formId: directFormId, initialResponse
   const [applicationForm, setApplicationForm] = useState<FormType | null>(null);
   const [formSections, setFormSections] = useState<FormSection[]>([]);
   const [formFields, setFormFields] = useState<FormField[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   // Determine the actual formId to use
@@ -35,7 +34,7 @@ export const useFormLoader = ({ programId, formId: directFormId, initialResponse
   // Dynamic Zod schema based on formFields
   const dynamicFormSchema = useMemo(() => {
     const schemaFields: { [key: string]: z.ZodTypeAny } = {};
-    formFields.forEach((field: FormField) => {
+    formFields.forEach(field => {
       let fieldSchema: z.ZodTypeAny;
 
       switch (field.field_type) {
@@ -44,7 +43,7 @@ export const useFormLoader = ({ programId, formId: directFormId, initialResponse
           break;
         case 'number':
           fieldSchema = z.string().regex(/^\d*$/, "Must be a valid number (or empty).")
-            .transform((s: string) => s === '' ? undefined : Number(s));
+            .transform(s => s === '' ? undefined : Number(s));
           break;
         case 'date':
           fieldSchema = z.string().datetime({ message: "Invalid date format." });
@@ -54,7 +53,7 @@ export const useFormLoader = ({ programId, formId: directFormId, initialResponse
           break;
         case 'rating':
           fieldSchema = z.preprocess(
-            (val: any) => (val === '' ? undefined : Number(val)),
+            (val) => (val === '' ? undefined : Number(val)),
             z.number()
               .min(field.rating_min_value ?? 1, `Must be at least ${field.rating_min_value ?? 1}`)
               .max(field.rating_max_value ?? 5, `Must be at most ${field.rating_max_value ?? 5}`)
@@ -68,7 +67,7 @@ export const useFormLoader = ({ programId, formId: directFormId, initialResponse
         if (field.field_type === 'checkbox') {
           fieldSchema = (fieldSchema as z.ZodArray<z.ZodString>).min(1, { message: "At least one option must be selected." });
         } else if (field.field_type === 'number' || field.field_type === 'rating') {
-          fieldSchema = (fieldSchema as z.ZodEffects<any, number | undefined, any>).refine((val: number | undefined) => val !== undefined, { message: "This field is required." });
+          fieldSchema = (fieldSchema as z.ZodEffects<any, number | undefined, any>).refine(val => val !== undefined, { message: "This field is required." });
         } else {
           fieldSchema = (fieldSchema as z.ZodString).min(1, { message: "This field is required." });
         }
@@ -93,7 +92,7 @@ export const useFormLoader = ({ programId, formId: directFormId, initialResponse
       if (initialResponses) return initialResponses;
 
       const defaults: DynamicFormValues = {};
-      formFields.forEach((field: FormField) => {
+      formFields.forEach(field => {
         if (field.field_type === 'checkbox') {
           defaults[field.id] = [];
         } else if (field.field_type === 'number') {
@@ -113,11 +112,7 @@ export const useFormLoader = ({ programId, formId: directFormId, initialResponse
   const currentResponses = watch();
 
   useEffect(() => {
-    const fetchData = async (): Promise<void> => {
-      if (!programId && !directFormId) {
-        setLoading(false);
-        return;
-      }
+    const fetchData = async () => {
       setLoading(true);
       setError(null);
 
@@ -165,7 +160,7 @@ export const useFormLoader = ({ programId, formId: directFormId, initialResponse
 
       const { data: sectionsData, error: sectionsError } = await supabase
         .from('form_sections')
-        .select('*, description, tooltip, display_rules, display_rules_logic_type')
+        .select('*, description, tooltip')
         .eq('form_id', currentForm.id)
         .order('order', { ascending: true });
 
@@ -182,7 +177,7 @@ export const useFormLoader = ({ programId, formId: directFormId, initialResponse
         setFormFields(fieldsData as FormField[]);
         // Reset form with initial responses or generated defaults
         const initialFormValues: DynamicFormValues = {};
-        (fieldsData as FormField[]).forEach((field: FormField) => {
+        fieldsData.forEach(field => {
           if (initialResponses && initialResponses[field.id] !== undefined) {
             initialFormValues[field.id] = initialResponses[field.id];
           } else if (field.field_type === 'checkbox') {
@@ -207,7 +202,7 @@ export const useFormLoader = ({ programId, formId: directFormId, initialResponse
   const displayedFormFields = useMemo(() => {
     const allFormFields = formFields;
 
-    const filtered = formFields.filter((field: FormField) => {
+    const filtered = formFields.filter(field => {
       const shouldDisplay = shouldFieldBeDisplayed(field, currentResponses, allFormFields);
       if (!shouldDisplay) {
         // Clear value if field is hidden by logic
@@ -233,7 +228,7 @@ export const useFormLoader = ({ programId, formId: directFormId, initialResponse
   }, [currentResponses, formFields, setValue]);
 
   const getFieldsForSection = useCallback((sectionId: string | null) => {
-    return displayedFormFields.filter((field: FormField) => field.section_id === sectionId).sort((a: FormField, b: FormField) => a.order - b.order);
+    return displayedFormFields.filter(field => field.section_id === sectionId).sort((a, b) => a.order - b.order);
   }, [displayedFormFields]);
 
   return {

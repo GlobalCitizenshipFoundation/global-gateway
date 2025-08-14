@@ -2,10 +2,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { FormField, FormSection } from "@/types";
-import { Plus, FileText, FolderOpen } from "lucide-react";
+import { Plus, FileText, FolderOpen } from "lucide-react"; // Import FileText and FolderOpen icons
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import RichTextEditor from "@/components/common/RichTextEditor";
+import RichTextEditor from "@/components/common/RichTextEditor"; // Updated import path
 
 interface AddFieldFormProps {
   newFieldLabel: string;
@@ -22,9 +22,10 @@ interface AddFieldFormProps {
   setNewFieldTooltip: (text: string) => void;
   newFieldPlaceholder: string;
   setNewFieldPlaceholder: (text: string) => void;
-  isAddingField: boolean;
+  // Removed isSubmitting: boolean; as it was redundant with isAddingField
   handleAddField: (e: React.FormEvent) => void;
   sections: FormSection[];
+  isAddingField: boolean; // This is the correct prop for submission state
 }
 
 export const AddFieldForm = ({
@@ -42,9 +43,10 @@ export const AddFieldForm = ({
   setNewFieldTooltip,
   newFieldPlaceholder,
   setNewFieldPlaceholder,
-  isAddingField,
+  // Removed isSubmitting from destructuring
   handleAddField,
   sections,
+  isAddingField, // Destructure the correct prop
 }: AddFieldFormProps) => {
   const showPlaceholder = ['text', 'textarea', 'email', 'phone', 'number'].includes(newFieldType);
 
@@ -56,7 +58,7 @@ export const AddFieldForm = ({
           placeholder="e.g., 'Your Personal Statement'"
           value={newFieldLabel}
           onChange={e => setNewFieldLabel(e.target.value)}
-          disabled={isAddingField}
+          disabled={isAddingField} // Use isAddingField for disabling
         />
         <div className="flex flex-col sm:flex-row gap-2">
           <div className="grid gap-2 w-full sm:w-[140px]">
@@ -87,7 +89,7 @@ export const AddFieldForm = ({
               placeholder="Comma-separated options, e.g., Yes, No"
               value={newFieldOptions}
               onChange={e => setNewFieldOptions(e.target.value)}
-              disabled={isAddingField}
+              disabled={isAddingField} // Use isAddingField for disabling
               className="flex-grow"
             />
           )}
@@ -97,7 +99,7 @@ export const AddFieldForm = ({
           <RichTextEditor
             value={newFieldDescription}
             onChange={setNewFieldDescription}
-            readOnly={isAddingField}
+            readOnly={isAddingField} // Use isAddingField for readOnly
             className="min-h-[60px]"
             placeholder="Optional: Add a description for this field (e.g., 'This section asks about your academic background.')"
           />
@@ -109,7 +111,7 @@ export const AddFieldForm = ({
             placeholder="e.g., 'What is a tooltip?'"
             value={newFieldTooltip}
             onChange={e => setNewFieldTooltip(e.target.value)}
-            disabled={isAddingField}
+            disabled={isAddingField} // Use isAddingField for disabling
           />
         </div>
         {showPlaceholder && (
@@ -120,7 +122,7 @@ export const AddFieldForm = ({
               placeholder="e.g., Enter your email address"
               value={newFieldPlaceholder}
               onChange={e => setNewFieldPlaceholder(e.target.value)}
-              disabled={isAddingField}
+              disabled={isAddingField} // Use isAddingField for disabling
             />
             <p className="text-sm text-muted-foreground mt-1">
               This text will appear inside the input field when it's empty.
@@ -134,7 +136,7 @@ export const AddFieldForm = ({
           <Select
             value={newFieldSectionId || 'none'}
             onValueChange={(value) => setNewFieldSectionId(value === 'none' ? null : value)}
-            disabled={isAddingField}
+            disabled={isAddingField} // Use isAddingField for disabling
           >
             <SelectTrigger id="new-field-section-id">
               <SelectValue placeholder="Assign to Section (Optional)" />

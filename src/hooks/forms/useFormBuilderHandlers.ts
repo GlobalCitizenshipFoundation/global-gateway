@@ -1,35 +1,42 @@
 import { useCallback, useRef } from 'react';
 import { useSession } from '@/contexts/auth/SessionContext';
 import { showError, showSuccess } from '@/utils/toast';
-import { DisplayRule, FormField, Form as FormType } from '@/types';
-import { useFormBuilderActions } from './useFormBuilderActions';
-import { useFormBuilderState } from './useFormBuilderState'; // Import the composed state hook
+import { FormField, DisplayRule, Form as FormType } from '@/types';
+import { useFormBuilderState } from '@/hooks/forms/useFormBuilderState';
+import { useFormBuilderActions } from '@/hooks/forms/useFormBuilderActions'; // Import the actions hook
 
 interface UseFormBuilderHandlersProps {
   state: ReturnType<typeof useFormBuilderState>;
+  // The properties 'performUpdateFormDetails' and 'performUpdateFormStatus'
+  // are no longer expected here as useFormBuilderHandlers now accesses
+  // them directly from useFormBuilderActions within this hook.
 }
 
 const AUTO_SAVE_DEBOUNCE_TIME = 2000; // 2 seconds
 const SAVED_CONFIRMATION_DISPLAY_TIME = 2000; // 2 seconds
 
-export const useFormBuilderHandlers = ({ state }: UseFormBuilderHandlersProps) => {
+export const useFormBuilderHandlers = ({
+  state,
+}: UseFormBuilderHandlersProps) => {
   const { user } = useSession();
   const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const savedConfirmationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const {
     formId,
-    formName,
-    formDescription,
-    formStatus,
-    setFormStatus,
-    setFormLastEditedAt,
-    setFormLastEditedByUserId,
-    setHasUnsavedChanges,
+    formName, setFormName,
+    formDescription, setFormDescription,
+    formStatus, setFormStatus,
+    sections, setSections,
+    fields, setFields,
+    fetchData,
     setIsAutoSaving,
     setLastSavedTimestamp,
+    setHasUnsavedChanges,
     setIsUpdatingStatus,
     setShowSavedConfirmation,
+    setFormLastEditedAt,
+    setFormLastEditedByUserId,
     setIsSaveAsTemplateDialogOpen,
     setNewTemplateName,
     setIsSavingTemplate,
@@ -46,15 +53,15 @@ export const useFormBuilderHandlers = ({ state }: UseFormBuilderHandlersProps) =
     newFieldTooltip, setNewFieldTooltip,
     newFieldPlaceholder, setNewFieldPlaceholder,
     isAddingField, setIsAddingField,
-    formTags, // Access formTags from state
-    fetchData, // Access fetchData from state
+    formTags, // New: Destructure formTags
   } = state;
 
+  // Initialize actions from the dedicated hook
   const {
     handleAddSection: performAddSection,
     handleDeleteSection: performDeleteSection,
     handleSaveEditedSection: performSaveEditedSection,
-    handleSaveSectionLogic: performSaveSectionLogic,
+    handleSaveSectionLogic: performSaveSectionLogic, // Destructure new action
     handleAddField: performAddField,
     handleDeleteField: performDeleteField,
     handleToggleRequired: performToggleRequired,
@@ -64,8 +71,8 @@ export const useFormBuilderHandlers = ({ state }: UseFormBuilderHandlersProps) =
     handleUpdateFormStatus: performUpdateFormStatus,
     handleUpdateFormDetails: performUpdateFormDetails,
     handleSaveAsTemplate: performSaveAsTemplate,
-    handleUpdateFormTags: performUpdateFormTags,
-  } = useFormBuilderActions({ formId, setSections: state.setSections, setFields: state.setFields, fetchData });
+    handleUpdateFormTags: performUpdateFormTags, // Destructure new action
+  } = useFormBuilderActions({ formId, setSections, setFields, fetchData });
 
   const showSavedFeedback = useCallback(() => {
     if (savedConfirmationTimeoutRef.current) {
@@ -345,7 +352,7 @@ export const useFormBuilderHandlers = ({ state }: UseFormBuilderHandlersProps) =
       setFormLastEditedAt(new Date().toISOString());
       setFormLastEditedByUserId(user.id);
       showSavedFeedback();
-      await fetchData(); // Re-fetch to update formTags state
+      fetchData(); // Re-fetch to update formTags state
     } else {
       showError("Failed to update form tags.");
     }
@@ -357,7 +364,7 @@ export const useFormBuilderHandlers = ({ state }: UseFormBuilderHandlersProps) =
     handleAddSection,
     handleDeleteSection,
     handleSaveEditedSection,
-    handleSaveSectionLogic,
+    handleSaveSectionLogic, // Expose new handler
     handleAddField,
     handleDeleteField,
     handleToggleRequired,
@@ -368,6 +375,6 @@ export const useFormBuilderHandlers = ({ state }: UseFormBuilderHandlersProps) =
     handleManualSaveDraft,
     handleSaveAsTemplate,
     handleOpenPreview,
-    handleUpdateFormTags,
+    handleUpdateFormTags, // Expose new handler
   };
 };

@@ -9,7 +9,6 @@ import { showError, showSuccess } from '@/utils/toast';
 import { Check, ChevronsUpDown, X } from 'lucide-react';
 import AvatarWithInitials from '../common/AvatarWithInitials';
 import { cn } from '@/lib/utils';
-import React from 'react'; // Explicit React import
 
 interface ReviewerAssignmentProps {
   applicationId: string;
@@ -20,11 +19,11 @@ type ReviewerProfile = Pick<Profile, 'id' | 'first_name' | 'last_name' | 'email'
 export const ReviewerAssignment = ({ applicationId }: ReviewerAssignmentProps) => {
   const [assignments, setAssignments] = useState<ApplicationAssignment[]>([]);
   const [potentialReviewers, setPotentialReviewers] = useState<ReviewerProfile[]>([]);
-  const [open, setOpen] = useState<boolean>(false);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchData = async (): Promise<void> => {
+    const fetchData = async () => {
       setLoading(true);
       const assignmentsPromise = supabase
         .from('application_assignments')
@@ -49,10 +48,10 @@ export const ReviewerAssignment = ({ applicationId }: ReviewerAssignmentProps) =
     fetchData();
   }, [applicationId]);
 
-  const assignedReviewerIds = useMemo(() => new Set(assignments.map((a: ApplicationAssignment) => a.reviewer_id)), [assignments]);
-  const unassignedReviewers = useMemo(() => potentialReviewers.filter((r: ReviewerProfile) => !assignedReviewerIds.has(r.id)), [potentialReviewers, assignedReviewerIds]);
+  const assignedReviewerIds = useMemo(() => new Set(assignments.map(a => a.reviewer_id)), [assignments]);
+  const unassignedReviewers = useMemo(() => potentialReviewers.filter(r => !assignedReviewerIds.has(r.id)), [potentialReviewers, assignedReviewerIds]);
 
-  const handleAddReviewer = async (reviewerId: string): Promise<void> => {
+  const handleAddReviewer = async (reviewerId: string) => {
     setOpen(false);
     const { data, error } = await supabase
       .from('application_assignments')
@@ -68,7 +67,7 @@ export const ReviewerAssignment = ({ applicationId }: ReviewerAssignmentProps) =
     }
   };
 
-  const handleRemoveReviewer = async (assignmentId: string): Promise<void> => {
+  const handleRemoveReviewer = async (assignmentId: string) => {
     const { error } = await supabase
       .from('application_assignments')
       .delete()
@@ -77,12 +76,12 @@ export const ReviewerAssignment = ({ applicationId }: ReviewerAssignmentProps) =
     if (error) {
       showError(`Failed to remove reviewer: ${error.message}`);
     } else {
-      setAssignments(prev => prev.filter((a: ApplicationAssignment) => a.id !== assignmentId));
+      setAssignments(prev => prev.filter(a => a.id !== assignmentId));
       showSuccess("Reviewer removed successfully.");
     }
   };
 
-  const getFullName = (profile: { first_name: string | null; last_name: string | null; email?: string | null; }) => {
+  const getFullName = (profile: any) => {
     return [profile?.first_name, profile?.last_name].filter(Boolean).join(' ').trim();
   };
 
@@ -94,12 +93,12 @@ export const ReviewerAssignment = ({ applicationId }: ReviewerAssignmentProps) =
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          {assignments.map((assignment: ApplicationAssignment) => (
+          {assignments.map(assignment => (
             <div key={assignment.id} className="flex items-center justify-between p-2 border rounded-md">
               <div className="flex items-center gap-3">
-                <AvatarWithInitials name={getFullName(assignment.profiles!)} src={assignment.profiles?.avatar_url} className="h-9 w-9" />
+                <AvatarWithInitials name={getFullName(assignment.profiles)} src={assignment.profiles?.avatar_url} className="h-9 w-9" />
                 <div>
-                  <p className="font-medium">{getFullName(assignment.profiles!)}</p>
+                  <p className="font-medium">{getFullName(assignment.profiles) || 'N/A'}</p>
                   <p className="text-sm text-muted-foreground">{assignment.profiles?.email}</p>
                 </div>
               </div>
@@ -124,7 +123,7 @@ export const ReviewerAssignment = ({ applicationId }: ReviewerAssignmentProps) =
               <CommandList>
                 <CommandEmpty>No reviewers found.</CommandEmpty>
                 <CommandGroup>
-                  {unassignedReviewers.map((reviewer: ReviewerProfile) => (
+                  {unassignedReviewers.map(reviewer => (
                     <CommandItem
                       key={reviewer.id}
                       value={`${getFullName(reviewer)} ${reviewer.email}`}

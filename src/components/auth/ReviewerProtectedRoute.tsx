@@ -1,10 +1,8 @@
 import { useSession } from '@/contexts/auth/SessionContext';
 import { Navigate, Outlet } from 'react-router-dom';
 import { Skeleton } from '@/components/ui/skeleton';
-import React from 'react'; // Explicit React import
-import { Profile } from '@/types'; // Import Profile type
 
-const REVIEWER_ROLES: Profile['role'][] = ['reviewer', 'lead_reviewer', 'admin', 'super_admin'];
+const REVIEWER_ROLES = ['reviewer', 'lead_reviewer', 'admin', 'super_admin'];
 
 const ReviewerProtectedRoute = () => {
   const { session, profile, isLoading } = useSession();

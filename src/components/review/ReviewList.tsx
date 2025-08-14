@@ -1,7 +1,6 @@
 import { ApplicationReview } from "@/types";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import AvatarWithInitials from "../common/AvatarWithInitials";
-import React from "react"; // Explicit React import
 
 interface ReviewListProps {
   reviews: ApplicationReview[];
@@ -21,7 +20,7 @@ export const ReviewList = ({ reviews }: ReviewListProps) => {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        {reviews.map((review: ApplicationReview) => (
+        {reviews.map(review => (
           <div key={review.id} className="p-4 border rounded-md">
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-3">
@@ -39,7 +38,7 @@ export const ReviewList = ({ reviews }: ReviewListProps) => {
               <div className="mt-4 pt-4 border-t">
                 <h4 className="font-semibold mb-2">Detailed Scores:</h4>
                 <dl className="space-y-2">
-                  {review.review_scores.map((score: any) => (
+                  {review.review_scores.map(score => (
                     <div key={score.id} className="flex justify-between text-sm">
                       <dt className="text-muted-foreground">{score.evaluation_criteria?.label || 'Criterion'}</dt>
                       <dd className="font-medium">{score.value}</dd>

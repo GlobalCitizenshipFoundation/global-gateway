@@ -1,18 +1,20 @@
-import { FormFieldItem } from "@/components/forms/form-builder/FormFieldItem";
+import { FormFieldItem } from "@/components/form-builder/FormFieldItem"; // Corrected import path
 import { FormField } from "@/types";
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { useDroppable } from "@dnd-kit/core";
 import { cn } from "@/lib/utils";
-import React from "react"; // Explicit React import
 
 interface UncategorizedFieldsListProps {
   uncategorizedFields: FormField[];
   handleDeleteField: (fieldId: string) => Promise<void>;
   handleToggleRequired: (fieldId: string, isRequired: boolean) => Promise<void>;
+  // Removed onEditLogic: (field: FormField) => void;
+  // Removed onEditField: (field: FormField) => void;
   onUpdateLabel: (fieldId: string, newLabel: string) => void;
   onSelectField: (field: FormField) => void;
 }
 
+// Helper component for droppable areas
 const DroppableContainer = ({ id, children, className }: { id: string; children: React.ReactNode; className?: string; }) => {
   const { setNodeRef, isOver } = useDroppable({ id });
   return <div ref={setNodeRef} className={cn(className, isOver && "ring-2 ring-blue-500 ring-offset-2")}>{children}</div>;
@@ -22,6 +24,8 @@ export const UncategorizedFieldsList = ({
   uncategorizedFields,
   handleDeleteField,
   handleToggleRequired,
+  // Removed onEditLogic,
+  // Removed onEditField,
   onUpdateLabel,
   onSelectField,
 }: UncategorizedFieldsListProps) => {
@@ -30,9 +34,9 @@ export const UncategorizedFieldsList = ({
   return (
     <DroppableContainer id="uncategorized-fields-droppable-area" className="mt-6 border-t pt-6 rounded-md border">
       <h3 className="text-lg font-medium mb-4 px-2">Uncategorized Fields</h3>
-      <SortableContext items={uncategorizedFields.map((f: FormField) => f.id)} strategy={verticalListSortingStrategy}>
+      <SortableContext items={uncategorizedFields.map(f => f.id)} strategy={verticalListSortingStrategy}>
         <ul className="space-y-2 p-2 min-h-[50px]">
-          {uncategorizedFields.map((field: FormField) => (
+          {uncategorizedFields.map(field => (
             <FormFieldItem
               key={field.id}
               field={field}

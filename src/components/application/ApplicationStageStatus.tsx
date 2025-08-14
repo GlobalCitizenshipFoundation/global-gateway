@@ -2,7 +2,6 @@ import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { ProgramStage } from "@/types";
 import { Info } from "lucide-react";
-import React from "react"; // Explicit React import
 
 interface ApplicationStageStatusProps {
   stageType: ProgramStage['step_type'] | undefined | null;

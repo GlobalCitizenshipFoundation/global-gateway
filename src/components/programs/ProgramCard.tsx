@@ -1,9 +1,8 @@
 import { Program } from "@/types";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Clock } from "lucide-react";
 import { Link } from "react-router-dom";
-import React from "react"; // Explicit React import
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card"; // Import all Card components
 
 interface ProgramCardProps {
   program: Program;
