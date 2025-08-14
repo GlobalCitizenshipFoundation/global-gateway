@@ -14,7 +14,8 @@ import {
 } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { WorkflowStage, Form as FormType, EmailTemplate, EvaluationTemplate } from "@/types";
-import { X } from "lucide-react";
+import { X, AlertTriangle } from "lucide-react"; // Import AlertTriangle
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"; // Import Alert components
 import { GeneralProperties } from './stage-properties/GeneralProperties';
 import { ReviewProperties } from './stage-properties/ReviewProperties';
 import { ResubmissionProperties } from './stage-properties/ResubmissionProperties';
@@ -25,10 +26,10 @@ import { FormAttachmentProperties } from './stage-properties/FormAttachmentPrope
 
 const editWorkflowStageSchema = z.object({
   name: z.string().min(1, { message: "Stage name cannot be empty." }),
-  description: z.string().nullable().optional(),
+  description: z.string().nullable().optional(), // Generic description, will be overridden for specific types
   step_type: z.enum(['form', 'screening', 'review', 'resubmission', 'decision', 'email', 'scheduling', 'status', 'recommendation']),
   form_id: z.string().nullable().optional(),
-  email_template_id: z.string().nullable().optional(),
+  email_template_id: z.string().nullable().optional(), // Generic email trigger
   evaluation_template_id: z.string().nullable().optional(),
   anonymize_identity: z.boolean().optional(),
   decision_options: z.array(z.object({
@@ -46,38 +47,44 @@ const editWorkflowStageSchema = z.object({
   rec_reminder_email_template_id: z.string().nullable().optional(),
   rec_reminder_intervals_days: z.string().optional(),
   rec_anonymize_recommender_identity: z.boolean().optional(),
-}).refine(data => {
+}).superRefine((data, ctx) => {
   if (data.step_type === 'status' && data.status_tag === 'Custom' && !data.status_custom_tag) {
-    return false;
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "Custom tag text is required when 'Custom' is selected.",
+      path: ['status_custom_tag'],
+    });
   }
   if (data.step_type === 'resubmission' && (data.resubmission_for_stage_order === null || data.resubmission_for_stage_order === undefined)) {
-    return false;
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "A target form stage must be selected for resubmission.",
+      path: ['resubmission_for_stage_order'],
+    });
   }
-  if (data.step_type === 'recommendation') {
-    if (!data.rec_form_id) return false;
-    if (data.rec_min_recommenders === null || data.rec_min_recommenders === undefined || data.rec_min_recommenders < 0) return false;
-    if (data.rec_max_recommenders === null || data.rec_max_recommenders === undefined || data.rec_max_recommenders < data.rec_min_recommenders) return false;
-  }
-  return true;
-}, {
-  message: "A target form stage must be selected for resubmission.",
-  path: ["resubmission_for_stage_order"],
-}).refine(data => {
   if (data.step_type === 'recommendation') {
     if (!data.rec_form_id) {
-      return false;
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "A recommendation form must be selected.",
+        path: ['rec_form_id'],
+      });
     }
     if (data.rec_min_recommenders === null || data.rec_min_recommenders === undefined || data.rec_min_recommenders < 0) {
-      return false;
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Minimum recommenders must be a non-negative number.",
+        path: ['rec_min_recommenders'],
+      });
     }
-    if (data.rec_max_recommenders === null || data.rec_max_recommenders === undefined || data.rec_max_recommenders < data.rec_min_recommenders) {
-      return false;
+    if (data.rec_max_recommenders === null || data.rec_max_recommenders === undefined || data.rec_max_recommenders < (data.rec_min_recommenders || 0)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Maximum recommenders must be a number greater than or equal to minimum.",
+        path: ['rec_max_recommenders'],
+      });
     }
   }
-  return true;
-}, {
-  message: "Recommendation stage requires a form, min/max recommenders, and valid ranges.",
-  path: ["rec_form_id"],
 });
 
 type EditWorkflowStageValues = z.infer<typeof editWorkflowStageSchema>;
@@ -256,6 +263,20 @@ export const WorkflowStagePropertiesPanel = ({
       
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4">
+          {/* Display general form errors if any */}
+          {!form.formState.isValid && form.formState.isSubmitted && (
+            <Alert variant="destructive">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertTitle>Validation Error</AlertTitle>
+              <AlertDescription>
+                Please correct the errors in the form before saving.
+                {form.formState.errors.root?.message && (
+                  <p className="mt-2">{form.formState.errors.root.message}</p>
+                )}
+              </AlertDescription>
+            </Alert>
+          )}
+
           <FormFieldComponent
             control={form.control}
             name="step_type"
@@ -285,6 +306,13 @@ export const WorkflowStagePropertiesPanel = ({
             )}
           />
 
+          {/* General Properties (Name and generic Description) */}
+          <GeneralProperties
+            form={form}
+            selectedStageType={selectedStageType}
+          />
+
+          {/* Review Specific Properties */}
           {selectedStageType === 'review' && (
             <ReviewProperties
               form={form}
@@ -292,12 +320,37 @@ export const WorkflowStagePropertiesPanel = ({
             />
           )}
 
-          <GeneralProperties
-            form={form}
-            emailTemplates={emailTemplates}
-            selectedStageType={selectedStageType}
-          />
+          {/* Generic Email Trigger (for stages that aren't 'email' type itself) */}
+          {selectedStageType !== 'email' && selectedStageType !== 'decision' && selectedStageType !== 'recommendation' && (
+            <FormFieldComponent
+              control={form.control}
+              name="email_template_id"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Trigger Email (Optional)</FormLabel>
+                  <Select onValueChange={(value) => field.onChange(value === '__none__' ? null : value)} value={field.value || ''}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Choose an email template" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="__none__">No email attached</SelectItem>
+                      {emailTemplates.map(template => (
+                        <SelectItem key={template.id} value={template.id}>{template.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormDescription>
+                    This email will be sent when an applicant reaches this stage.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
 
+          {/* Resubmission Specific Properties */}
           {selectedStageType === 'resubmission' && (
             <ResubmissionProperties
               form={form}
@@ -306,6 +359,7 @@ export const WorkflowStagePropertiesPanel = ({
             />
           )}
 
+          {/* Decision Specific Properties */}
           {selectedStageType === 'decision' && (
             <DecisionProperties
               form={form}
@@ -313,12 +367,14 @@ export const WorkflowStagePropertiesPanel = ({
             />
           )}
 
+          {/* Status Specific Properties */}
           {selectedStageType === 'status' && (
             <StatusProperties
               form={form}
             />
           )}
 
+          {/* Recommendation Specific Properties */}
           {selectedStageType === 'recommendation' && (
             <RecommendationProperties
               form={form}
@@ -327,6 +383,7 @@ export const WorkflowStagePropertiesPanel = ({
             />
           )}
 
+          {/* Form Attachment Properties (for 'form' and 'review' types) */}
           {['form', 'review'].includes(selectedStageType) && (
             <FormAttachmentProperties
               form={form}
