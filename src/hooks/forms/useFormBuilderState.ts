@@ -96,7 +96,7 @@ export const useFormBuilderState = (initialFormId?: string) => {
 
     const { data: fieldsData, error: fieldsError } = await supabase
       .from('form_fields')
-      .select('id, form_id, section_id, label, field_type, options, is_required, order, display_rules, display_rules_logic_type, description, tooltip, placeholder, last_edited_by_user_id, last_edited_at, date_min, date_max, date_allow_past, date_allow_future, rating_min_value, rating_max_value, rating_min_label, rating_max_label') // Explicitly select all columns including new ones
+      .select('id, form_id, section_id, label, field_type, options, is_required, order, display_rules, display_rules_logic_type, description, tooltip, placeholder, last_edited_by_user_id, last_edited_at, date_min, date_max, date_allow_past, date_allow_future, rating_min_value, rating_max_value, rating_min_label, rating_max_label, is_anonymized') // Explicitly select all columns including new ones
       .eq('form_id', currentFormId)
       .order('order', { ascending: true });
 

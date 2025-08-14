@@ -213,6 +213,7 @@ export const useFormBuilderHandlers = ({
     field_type: FormField['field_type'];
     options?: string;
     is_required: boolean;
+    is_anonymized: boolean;
     description?: string | null;
     tooltip?: string | null;
     placeholder?: string | null;

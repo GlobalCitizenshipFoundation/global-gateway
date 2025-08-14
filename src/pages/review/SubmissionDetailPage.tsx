@@ -46,6 +46,8 @@ type SubmissionDetail = {
   program_stages: {
     name: string;
     evaluation_template_id: string | null;
+    description: string | null;
+    step_type: ProgramStage['step_type'];
   } | null;
 };
 
@@ -77,7 +79,7 @@ const SubmissionDetailPage = () => {
 
     const submissionPromise = supabase
       .from('applications')
-      .select(`id, submitted_date, full_name, email, stage_id, programs(title, form_id, allow_pdf_download), program_stages(name, evaluation_template_id)`)
+      .select(`id, submitted_date, full_name, email, stage_id, programs(title, form_id, allow_pdf_download), program_stages(name, evaluation_template_id, description, step_type)`)
       .eq('id', submissionId)
       .single();
     
@@ -149,9 +151,24 @@ const SubmissionDetailPage = () => {
     fetchSubmissionDetails();
   }, [fetchSubmissionDetails]);
 
+  const isReviewer = useMemo(() => profile?.role === 'reviewer', [profile]);
+  const isIdentityAnonymized = useMemo(() => {
+    if (!isReviewer || !submission?.program_stages?.description) return false;
+    try {
+      const config = JSON.parse(submission.program_stages.description);
+      return !!config.anonymize_identity;
+    } catch {
+      return false;
+    }
+  }, [isReviewer, submission]);
+
   const displayedResponses = useMemo(() => {
+    const filteredResponses = isReviewer
+      ? allResponses.filter(res => !res.form_fields?.is_anonymized)
+      : allResponses;
+
     const currentResponsesMap: Record<string, any> = {};
-    allResponses.forEach(res => {
+    filteredResponses.forEach(res => {
       if (res.form_fields?.id && res.value !== null) {
         if (res.form_fields.field_type === 'checkbox') {
           try { currentResponsesMap[res.form_fields.id] = JSON.parse(res.value); } catch { currentResponsesMap[res.form_fields.id] = []; }
@@ -162,13 +179,13 @@ const SubmissionDetailPage = () => {
         }
       }
     });
-    return allResponses.map(res => {
+    return filteredResponses.map(res => {
       const field = res.form_fields;
       if (!field) return null;
       const wasDisplayed = shouldFieldBeDisplayed(field, currentResponsesMap, allFormFieldsForLogic);
       return { ...res, wasDisplayed };
     }).filter(Boolean) as (ResponseWithField & { wasDisplayed: boolean })[];
-  }, [allResponses, allFormFieldsForLogic]);
+  }, [allResponses, allFormFieldsForLogic, isReviewer]);
 
   const handleStageUpdate = async () => {
     if (!submission || !selectedStage || submission.stage_id === selectedStage) return;
@@ -241,8 +258,8 @@ const SubmissionDetailPage = () => {
           <CardHeader>
             <div className="flex justify-between items-start">
               <div>
-                <CardTitle className="text-2xl">{submission?.full_name}</CardTitle>
-                <CardDescription>{submission?.email}</CardDescription>
+                <CardTitle className="text-2xl">{isIdentityAnonymized ? '[Anonymized Applicant]' : submission?.full_name}</CardTitle>
+                <CardDescription>{isIdentityAnonymized ? '[Anonymized Email]' : submission?.email}</CardDescription>
               </div>
               <Badge variant="secondary">{submission?.program_stages?.name}</Badge>
             </div>
@@ -270,33 +287,35 @@ const SubmissionDetailPage = () => {
               </div>
             </div>
           </CardContent>
-          <CardFooter className="flex justify-end items-center gap-4 bg-muted/50 p-4">
-            {submission?.programs?.allow_pdf_download && submission && (
-              <ApplicationPdfViewer
-                applicationId={submission.id}
-                programTitle={submission.programs?.title || 'Application'}
-                applicantFullName={submission.full_name}
-                applicantEmail={submission.email}
-                submittedDate={submission.submitted_date}
-                currentStageName={submission.program_stages?.name || 'N/A'}
-                allResponses={allResponses}
-                allFormFields={allFormFieldsForLogic}
-                formSections={allFormSections}
-              />
-            )}
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-medium">Change Stage:</span>
-              <Select value={selectedStage} onValueChange={setSelectedStage}>
-                <SelectTrigger className="w-[180px]"><SelectValue placeholder="Select a stage" /></SelectTrigger>
-                <SelectContent>
-                  {programStages.map(stage => (<SelectItem key={stage.id} value={stage.id}>{stage.name}</SelectItem>))}
-                </SelectContent>
-              </Select>
-            </div>
-            <Button onClick={handleStageUpdate} disabled={updating || submission?.stage_id === selectedStage}>
-              {updating ? 'Updating...' : 'Update Stage'}
-            </Button>
-          </CardFooter>
+          {isManager && (
+            <CardFooter className="flex justify-end items-center gap-4 bg-muted/50 p-4">
+              {submission?.programs?.allow_pdf_download && submission && (
+                <ApplicationPdfViewer
+                  applicationId={submission.id}
+                  programTitle={submission.programs?.title || 'Application'}
+                  applicantFullName={submission.full_name}
+                  applicantEmail={submission.email}
+                  submittedDate={submission.submitted_date}
+                  currentStageName={submission.program_stages?.name || 'N/A'}
+                  allResponses={allResponses}
+                  allFormFields={allFormFieldsForLogic}
+                  formSections={allFormSections}
+                />
+              )}
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium">Change Stage:</span>
+                <Select value={selectedStage} onValueChange={setSelectedStage}>
+                  <SelectTrigger className="w-[180px]"><SelectValue placeholder="Select a stage" /></SelectTrigger>
+                  <SelectContent>
+                    {programStages.map(stage => (<SelectItem key={stage.id} value={stage.id}>{stage.name}</SelectItem>))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button onClick={handleStageUpdate} disabled={updating || submission?.stage_id === selectedStage}>
+                {updating ? 'Updating...' : 'Update Stage'}
+              </Button>
+            </CardFooter>
+          )}
         </Card>
       </div>
       <div className="lg:col-span-1 space-y-8">

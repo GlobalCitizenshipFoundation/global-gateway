@@ -19,6 +19,7 @@ import { WorkflowStage, Form as FormType, EmailTemplate, EvaluationTemplate } fr
 import { X } from "lucide-react";
 import { DecisionOptionsInput } from './DecisionOptionsInput';
 import RichTextEditor from '../common/RichTextEditor';
+import { Checkbox } from '../ui/checkbox';
 
 const editWorkflowStageSchema = z.object({
   name: z.string().min(1, { message: "Stage name cannot be empty." }),
@@ -26,7 +27,8 @@ const editWorkflowStageSchema = z.object({
   step_type: z.enum(['form', 'screening', 'review', 'resubmission', 'decision', 'email', 'scheduling', 'status']),
   form_id: z.string().nullable().optional(),
   email_template_id: z.string().nullable().optional(),
-  evaluation_template_id: z.string().nullable().optional(), // New
+  evaluation_template_id: z.string().nullable().optional(),
+  anonymize_identity: z.boolean().optional(), // New
   decision_options: z.array(z.object({
     name: z.string().min(1, "Outcome name cannot be empty."),
     email_template_id: z.string().nullable().optional(),
@@ -55,7 +57,7 @@ interface WorkflowStagePropertiesPanelProps {
   allStages: WorkflowStage[];
   forms: FormType[];
   emailTemplates: EmailTemplate[];
-  evaluationTemplates: EvaluationTemplate[]; // New
+  evaluationTemplates: EvaluationTemplate[];
   onSave: (stageId: string, values: Partial<WorkflowStage>) => void;
   onClose: () => void;
 }
@@ -65,7 +67,7 @@ export const WorkflowStagePropertiesPanel = ({
   allStages,
   forms,
   emailTemplates,
-  evaluationTemplates, // New
+  evaluationTemplates,
   onSave,
   onClose,
 }: WorkflowStagePropertiesPanelProps) => {
@@ -81,6 +83,7 @@ export const WorkflowStagePropertiesPanel = ({
       let status_tag: string | undefined = undefined;
       let status_custom_tag: string | undefined = undefined;
       let resubmission_for_stage_order: number | undefined | null = undefined;
+      let anonymize_identity: boolean | undefined = undefined;
       let standard_description = stage.description || '';
 
       if (stage.step_type === 'decision' && stage.description) {
@@ -108,6 +111,12 @@ export const WorkflowStagePropertiesPanel = ({
           resubmission_for_stage_order = config.resubmission_for_stage_order;
           standard_description = '';
         } catch (e) { /* Not valid JSON */ }
+      } else if (stage.step_type === 'review' && stage.description) {
+        try {
+          const config = JSON.parse(stage.description);
+          anonymize_identity = config.anonymize_identity || false;
+          standard_description = ''; // Review stage description is for config only
+        } catch (e) { /* Not valid JSON */ }
       }
 
       form.reset({
@@ -116,7 +125,8 @@ export const WorkflowStagePropertiesPanel = ({
         step_type: stage.step_type,
         form_id: stage.form_id || null,
         email_template_id: stage.email_template_id || null,
-        evaluation_template_id: stage.evaluation_template_id || null, // New
+        evaluation_template_id: stage.evaluation_template_id || null,
+        anonymize_identity: anonymize_identity || false,
         decision_options: decision_options || [{ name: 'Accepted', email_template_id: null }, { name: 'Declined', email_template_id: null }],
         status_message: status_message || '',
         status_tag: status_tag || 'Info',
@@ -143,6 +153,8 @@ export const WorkflowStagePropertiesPanel = ({
       descriptionPayload = JSON.stringify(statusConfig);
     } else if (values.step_type === 'resubmission') {
       descriptionPayload = JSON.stringify({ resubmission_for_stage_order: values.resubmission_for_stage_order });
+    } else if (values.step_type === 'review') {
+      descriptionPayload = JSON.stringify({ anonymize_identity: values.anonymize_identity });
     }
 
     const finalValues: Partial<WorkflowStage> = {
@@ -150,7 +162,7 @@ export const WorkflowStagePropertiesPanel = ({
       step_type: values.step_type,
       form_id: values.form_id,
       email_template_id: values.email_template_id,
-      evaluation_template_id: values.evaluation_template_id, // New
+      evaluation_template_id: values.evaluation_template_id,
       description: descriptionPayload,
     };
 
@@ -220,32 +232,56 @@ export const WorkflowStagePropertiesPanel = ({
           />
 
           {selectedStageType === 'review' && (
-            <FormFieldComponent
-              control={form.control}
-              name="evaluation_template_id"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Evaluation Template (Scorecard)</FormLabel>
-                  <Select onValueChange={(value) => field.onChange(value === '__none__' ? null : value)} value={field.value || ''}>
+            <>
+              <FormFieldComponent
+                control={form.control}
+                name="evaluation_template_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Evaluation Template (Scorecard)</FormLabel>
+                    <Select onValueChange={(value) => field.onChange(value === '__none__' ? null : value)} value={field.value || ''}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Choose a scorecard for this stage" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="__none__">No scorecard attached</SelectItem>
+                        {publishedEvaluationTemplates.map(template => (
+                          <SelectItem key={template.id} value={template.id}>{template.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormDescription>
+                      Only published scorecards are available. This scorecard will be used by reviewers at this stage.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormFieldComponent
+                control={form.control}
+                name="anonymize_identity"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
                     <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Choose a scorecard for this stage" />
-                      </SelectTrigger>
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
                     </FormControl>
-                    <SelectContent>
-                      <SelectItem value="__none__">No scorecard attached</SelectItem>
-                      {publishedEvaluationTemplates.map(template => (
-                        <SelectItem key={template.id} value={template.id}>{template.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormDescription>
-                    Only published scorecards are available. This scorecard will be used by reviewers at this stage.
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                    <div className="space-y-1 leading-none">
+                      <FormLabel>
+                        Anonymize applicant identity in this stage
+                      </FormLabel>
+                      <FormDescription>
+                        If checked, reviewers will not see the applicant's name or email.
+                      </FormDescription>
+                    </div>
+                  </FormItem>
+                )}
+              />
+            </>
           )}
 
           {selectedStageType === 'resubmission' && (

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { FormField } from '@/types';
-import { GripVertical, Trash2, Eye, Pencil, Info } from 'lucide-react';
+import { GripVertical, Trash2, Eye, Pencil, Info, Shield } from 'lucide-react'; // Import Shield icon
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
@@ -106,6 +106,16 @@ export const FormFieldItem = ({ field, onDelete, onToggleRequired, onSelectField
                 </span>
             )}
             <Badge variant="outline" className="ml-2 capitalize">{field.field_type}</Badge>
+            {field.is_anonymized && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Shield className="h-4 w-4 ml-2 inline-block text-destructive" />
+                </TooltipTrigger>
+                <TooltipContent className="max-w-xs bg-gray-800 text-white p-2 rounded-md text-sm">
+                  This field is anonymized and will be hidden from reviewers.
+                </TooltipContent>
+              </Tooltip>
+            )}
             {hasLogic && (
               <Tooltip>
                 <TooltipTrigger asChild>
