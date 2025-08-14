@@ -147,10 +147,13 @@ const EditEvaluationTemplatePage = () => {
     return criteria.filter(c => c.section_id === sectionId).sort((a, b) => a.order - b.order);
   }, [criteria]);
 
-  const renderStatusMessage = () => {
-    if (isAutoSaving) return <span className="text-blue-500">Saving...</span>;
-    if (hasUnsavedChanges) return <span className="text-orange-500">Unsaved changes</span>;
-    if (lastSavedTimestamp) return `Last saved: ${lastSavedTimestamp.toLocaleTimeString()}`;
+  const renderAutoSaveStatus = () => {
+    if (isAutoSaving) {
+      return <span className="text-blue-500">Saving...</span>;
+    }
+    if (hasUnsavedChanges) {
+      return <span className="text-orange-500">Unsaved changes</span>;
+    }
     return null;
   };
 
@@ -166,8 +169,19 @@ const EditEvaluationTemplatePage = () => {
             <Card className="mx-auto max-w-3xl mb-8">
               <CardHeader>
                 <div className="flex justify-between items-start">
-                  <div><CardTitle>Template Settings</CardTitle><CardDescription>Define the name and description for this evaluation template.</CardDescription></div>
-                  <div className="text-sm text-muted-foreground text-right"><p>{renderStatusMessage()}</p>{lastEditedByUserName && <p className="text-xs">By: {lastEditedByUserName}</p>}{creatorUserName && <p className="text-xs">Created by: {creatorUserName}</p>}</div>
+                  <div>
+                    <CardTitle>Evaluation Rubric</CardTitle> {/* Renamed title */}
+                    <CardDescription>Define the name and description for this evaluation template.</CardDescription>
+                  </div>
+                  <div className="text-sm text-muted-foreground text-right">
+                    {template.last_edited_at && (
+                      <p>Last saved: {new Date(template.last_edited_at).toLocaleString()} by {lastEditedByUserName || 'Unknown'}</p>
+                    )}
+                    {template.created_at && (
+                      <p className="text-xs">Created: {new Date(template.created_at).toLocaleDateString()} by {creatorUserName || 'Unknown'}</p>
+                    )}
+                    {renderAutoSaveStatus()}
+                  </div>
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
