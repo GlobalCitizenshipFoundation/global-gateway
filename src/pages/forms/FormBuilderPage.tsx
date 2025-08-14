@@ -6,19 +6,19 @@ import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/componen
 
 import { useFormBuilderState } from "@/hooks/forms/useFormBuilderState";
 import { useFormBuilderHandlers } from "@/hooks/forms/useFormBuilderHandlers";
-import { useFormBuilderActions } from "@/hooks/forms/useFormBuilderActions";
-import { useFormFieldDragAndDrop } from "@/hooks/forms/useFormFieldDragAndDrop";
-import { useFormSectionDragAndDrop } from "@/hooks/forms/useFormSectionDragAndDrop";
+import { useFormBuilderActions } from "@/hooks/forms/useFormBuilderActions"; // Import directly
+import { useFormFieldDragAndDrop } from "@/hooks/forms/useFormFieldDragAndDrop"; // Import directly
+import { useFormSectionDragAndDrop } from "@/hooks/forms/useFormSectionDragAndDrop"; // Import directly
 
 import { FormDetailsCard } from "@/components/forms/form-builder/FormDetailsCard";
 import { FormActions } from "@/components/forms/form-builder/FormActions";
-import { AddSectionForm } from "@/components/forms/form-builder/AddSectionForm";
-import { AddFieldForm } from "@/components/forms/form-builder/AddFieldForm";
+import { AddSectionForm } from "@/components/form-builder/AddSectionForm";
+import { AddFieldForm } from "@/components/form-builder/AddFieldForm";
 import { FormSectionsList } from "@/components/forms/form-builder/FormSectionsList";
 import { UncategorizedFieldsList } from "@/components/forms/form-builder/UncategorizedFieldsList";
 import { FormFieldItem } from "@/components/forms/form-builder/FormFieldItem";
 import { FieldPropertiesPanel } from "@/components/forms/form-builder/FieldPropertiesPanel";
-import { SectionPropertiesPanel } from "@/components/forms/form-builder/SectionPropertiesPanel";
+import { SectionPropertiesPanel } from "@/components/forms/form-builder/SectionPropertiesPanel"; // Import new panel
 import { FormField, FormSection } from "@/types";
 
 const FormBuilderPage = () => {
@@ -49,7 +49,7 @@ const FormBuilderPage = () => {
   } = state;
 
   const [selectedField, setSelectedField] = useState<FormField | null>(null);
-  const [selectedSection, setSelectedSection] = useState<FormSection | null>(null);
+  const [selectedSection, setSelectedSection] = useState<FormSection | null>(null); // New state for selected section
 
   // Initialize actions from the dedicated hook
   const formBuilderActions = useFormBuilderActions({
@@ -174,7 +174,7 @@ const FormBuilderPage = () => {
                 onUpdateLabel={handlers.handleUpdateFieldLabel}
                 onSelectField={setSelectedField}
                 onQuickAddField={handleQuickAddField}
-                onSelectSection={setSelectedSection}
+                onSelectSection={setSelectedSection} // Pass new handler
               />
 
               <UncategorizedFieldsList
@@ -198,7 +198,7 @@ const FormBuilderPage = () => {
                 handleAddSection={handlers.handleAddSection}
               />
 
-              <div id="add-field-form">
+              <div id="add-field-form"> {/* Add ID for scrolling */}
                 <AddFieldForm
                   newFieldLabel={newFieldLabel}
                   setNewFieldLabel={setNewFieldLabel}
@@ -221,7 +221,7 @@ const FormBuilderPage = () => {
               </div>
             </div>
           </ResizablePanel>
-          {(selectedField || selectedSection) && (
+          {(selectedField || selectedSection) && ( // Conditionally render panel
             <>
               <ResizableHandle withHandle />
               <ResizablePanel defaultSize={35} minSize={25}>

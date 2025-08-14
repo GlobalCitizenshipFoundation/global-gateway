@@ -3,14 +3,17 @@ import { useSession } from '@/contexts/auth/SessionContext';
 import { showError, showSuccess } from '@/utils/toast';
 import { FormField, DisplayRule, Form as FormType } from '@/types';
 import { useFormBuilderState } from '@/hooks/forms/useFormBuilderState';
-import { useFormBuilderActions } from '@/hooks/forms/useFormBuilderActions';
+import { useFormBuilderActions } from '@/hooks/forms/useFormBuilderActions'; // Import the actions hook
 
 interface UseFormBuilderHandlersProps {
   state: ReturnType<typeof useFormBuilderState>;
+  // The properties 'performUpdateFormDetails' and 'performUpdateFormStatus'
+  // are no longer expected here as useFormBuilderHandlers now accesses
+  // them directly from useFormBuilderActions within this hook.
 }
 
-const AUTO_SAVE_DEBOUNCE_TIME = 2000;
-const SAVED_CONFIRMATION_DISPLAY_TIME = 2000;
+const AUTO_SAVE_DEBOUNCE_TIME = 2000; // 2 seconds
+const SAVED_CONFIRMATION_DISPLAY_TIME = 2000; // 2 seconds
 
 export const useFormBuilderHandlers = ({
   state,
@@ -52,10 +55,11 @@ export const useFormBuilderHandlers = ({
     isAddingField, setIsAddingField,
   } = state;
 
+  // Initialize actions from the dedicated hook
   const {
     handleAddSection: performAddSection,
     handleDeleteSection: performDeleteSection,
-    handleSaveEditedSection: performSaveEditedSection,
+    handleSaveEditedSection: performSaveEditedSection, // Destructure new action
     handleAddField: performAddField,
     handleDeleteField: performDeleteField,
     handleToggleRequired: performToggleRequired,
@@ -64,7 +68,7 @@ export const useFormBuilderHandlers = ({
     handleUpdateFieldLabel: performUpdateFieldLabel,
     handleUpdateFormStatus: performUpdateFormStatus,
     handleUpdateFormDetails: performUpdateFormDetails,
-    handleSaveAsTemplate: performSaveAsTemplate,
+    handleSaveAsTemplate: performSaveAsTemplate, // Destructure the new action
   } = useFormBuilderActions({ formId, setSections, setFields, fetchData });
 
   const showSavedFeedback = useCallback(() => {
@@ -295,10 +299,10 @@ export const useFormBuilderHandlers = ({
       id: formId,
       name: formName,
       description: formDescription,
-      is_template: false,
+      is_template: false, // This is the source form, not a template itself
       status: formStatus,
       user_id: user.id,
-      created_at: state.formLastEditedAt || new Date().toISOString(),
+      created_at: state.formLastEditedAt || new Date().toISOString(), // Use existing or current
       updated_at: new Date().toISOString(),
       last_edited_by_user_id: user.id,
       last_edited_at: new Date().toISOString(),
@@ -327,7 +331,7 @@ export const useFormBuilderHandlers = ({
     triggerAutoSave,
     handleAddSection,
     handleDeleteSection,
-    handleSaveEditedSection,
+    handleSaveEditedSection, // Expose new handler
     handleAddField,
     handleDeleteField,
     handleToggleRequired,
