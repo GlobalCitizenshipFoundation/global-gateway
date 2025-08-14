@@ -67,7 +67,7 @@ export const WorkflowStagePropertiesPanel = ({
       let status_custom_tag: string | undefined = undefined;
       let resubmission_for_stage_order: number | undefined | null = undefined;
       let anonymize_identity: boolean | undefined = undefined;
-      let review_form_source_stage_order: number | undefined | null = undefined;
+      let review_form_source_stage_id: string | undefined | null = undefined; // Changed from _order to _id
       let rec_form_id: string | undefined | null = undefined;
       let rec_min_recommenders: number | undefined | null = undefined;
       let rec_max_recommenders: number | undefined | null = undefined;
@@ -106,7 +106,7 @@ export const WorkflowStagePropertiesPanel = ({
         try {
           const config = JSON.parse(stage.description);
           anonymize_identity = config.anonymize_identity ?? false; // Default to false if undefined
-          review_form_source_stage_order = config.review_form_source_stage_order ?? null; // Default to null if undefined
+          review_form_source_stage_id = config.review_form_source_stage_id ?? null; // Changed from _order to _id
           standard_description = '';
         } catch (e) { /* Not valid JSON */ }
       } else if (stage.step_type === 'recommendation' && stage.description) {
@@ -131,7 +131,7 @@ export const WorkflowStagePropertiesPanel = ({
         email_template_id: stage.email_template_id || null,
         evaluation_template_id: stage.evaluation_template_id || null,
         anonymize_identity: anonymize_identity, // Use the parsed/defaulted value
-        review_form_source_stage_order: review_form_source_stage_order, // Use the parsed/defaulted value
+        review_form_source_stage_id: review_form_source_stage_id, // Use the parsed/defaulted value
         decision_options: decision_options || [ // Default decision options if none are set
           { name: 'Accept', email_template_id: null, icon: 'CheckCircle' },
           { name: 'Decline', email_template_id: null, icon: 'XCircle' },
@@ -258,7 +258,7 @@ export const WorkflowStagePropertiesPanel = ({
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
-              )}
+            )}
             />
           )}
 

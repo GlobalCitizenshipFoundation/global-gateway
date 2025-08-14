@@ -66,7 +66,7 @@ export const createWorkflowStageSchema = (allStages: WorkflowStage[], publishedE
     email_template_id: z.string().nullable().optional(),
     evaluation_template_id: z.string().nullable().optional(),
     anonymize_identity: z.boolean().optional(),
-    review_form_source_stage_order: z.number().nullable().optional(),
+    review_form_source_stage_id: z.string().nullable().optional(), // Changed from _order to _id
     decision_options: z.array(decisionOutcomeSchema).optional(),
     status_message: z.string().optional(),
     status_tag: z.string().optional(),
@@ -112,14 +112,15 @@ export const createWorkflowStageSchema = (allStages: WorkflowStage[], publishedE
       if (!data.evaluation_template_id) {
         ctx.addIssue({ code: z.ZodIssueCode.custom, message: "An evaluation rubric must be selected for this stage.", path: ['evaluation_template_id'] });
       }
-      if (data.review_form_source_stage_order === null || data.review_form_source_stage_order === undefined) {
-        ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'A form to review must be selected.', path: ['review_form_source_stage_order'] });
+      
+      if (data.review_form_source_stage_id === null || data.review_form_source_stage_id === undefined) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'A form to review must be selected.', path: ['review_form_source_stage_id'] });
       } else {
-        const sourceStage = allStages.find((s: WorkflowStage) => s.order_index === data.review_form_source_stage_order);
+        const sourceStage = allStages.find((s: WorkflowStage) => s.id === data.review_form_source_stage_id); // Find by ID
         if (!sourceStage) {
-          ctx.addIssue({ code: z.ZodIssueCode.custom, message: `The selected form to review (Stage ${data.review_form_source_stage_order}) does not exist.`, path: ['review_form_source_stage_order'] });
+          ctx.addIssue({ code: z.ZodIssueCode.custom, message: `The selected form to review does not exist.`, path: ['review_form_source_stage_id'] });
         } else if (sourceStage.step_type !== 'form') {
-          ctx.addIssue({ code: z.ZodIssueCode.custom, message: `The selected form to review ('${sourceStage.name}') is not a 'Form' stage.`, path: ['review_form_source_stage_order'] });
+          ctx.addIssue({ code: z.ZodIssueCode.custom, message: `The selected form to review ('${sourceStage.name}') is not a 'Form' stage.`, path: ['review_form_source_stage_id'] });
         }
       }
     }
@@ -210,7 +211,7 @@ export const createStagePayload = (values: any): Partial<WorkflowStage> => {
     case 'review':
       descriptionPayload = JSON.stringify({
         anonymize_identity: values.anonymize_identity ?? false, // Ensure boolean, default to false
-        review_form_source_stage_order: values.review_form_source_stage_order ?? null, // Ensure number or null
+        review_form_source_stage_id: values.review_form_source_stage_id ?? null, // Ensure string ID or null
       });
       formIdPayload = null;
       emailTemplateIdPayload = null;
