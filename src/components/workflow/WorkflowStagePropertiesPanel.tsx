@@ -128,7 +128,15 @@ export const WorkflowStagePropertiesPanel = ({
         email_template_id: stage.email_template_id || null,
         evaluation_template_id: stage.evaluation_template_id || null,
         anonymize_identity: anonymize_identity || false,
-        decision_options: decision_options || [{ name: 'Accepted', email_template_id: null, icon: 'CheckCircle' }, { name: 'Declined', email_template_id: null, icon: 'XCircle' }],
+        decision_options: decision_options || [
+          { name: 'Accept', email_template_id: null, icon: 'CheckCircle' },
+          { name: 'Decline', email_template_id: null, icon: 'XCircle' },
+          { name: 'Waitlist / Hold', email_template_id: null, icon: 'Hourglass' },
+          { name: 'Needs Revision', email_template_id: null, icon: 'Activity' },
+          { name: 'Resubmit', email_template_id: null, icon: 'Pencil' },
+          { name: 'Advance to Next Stage', email_template_id: null, icon: 'ArrowRight' },
+          { name: 'Custom', email_template_id: null, icon: 'Wrench' }
+        ],
         status_message: status_message || '',
         status_tag: status_tag || 'Info',
         status_custom_tag: status_custom_tag || '',
