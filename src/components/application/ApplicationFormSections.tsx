@@ -28,7 +28,6 @@ const ApplicationFormSections = ({
         const fieldsInSection = getFieldsForSection(section.id);
         const sanitizedDescription = section.description ? DOMPurify.sanitize(section.description, { USE_PROFILES: { html: true } }) : null;
         const hasTooltip = section.tooltip && section.tooltip.trim() !== '';
-        const hasDescriptionOrTooltip = !!sanitizedDescription || hasTooltip;
 
         return (
           <Card key={section.id} className="mb-6">
@@ -57,12 +56,7 @@ const ApplicationFormSections = ({
                 fieldsInSection.map(field => (
                   <FormFieldRenderer key={field.id} field={field} submitting={submitting} />
                 ))
-              ) : (
-                // Only show this message if there are no fields AND no description/tooltip
-                !hasDescriptionOrTooltip && (
-                  <p className="text-muted-foreground text-sm text-center py-4">No fields in this section.</p>
-                )
-              )}
+              ) : null} {/* Removed the "No fields in this section." message */}
             </CardContent>
           </Card>
         );
