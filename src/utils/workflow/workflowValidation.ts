@@ -64,10 +64,10 @@ export const validateWorkflowStage = (stage: WorkflowStage, allStages: WorkflowS
       if (reviewFormSourceStageOrder === null || reviewFormSourceStageOrder === undefined) {
         return { isValid: false, message: 'A form to review must be selected.' };
       }
-      // Check if the selected source stage actually exists and is a form stage before this one
+      // Only check if the selected source stage actually exists and is a form stage
       const sourceStage = allStages.find(s => s.order_index === reviewFormSourceStageOrder);
-      if (!sourceStage || sourceStage.step_type !== 'form' || sourceStage.order_index >= stage.order_index) {
-        return { isValid: false, message: "The selected form to review must be a valid 'Form' stage that appears before this review stage." };
+      if (!sourceStage || sourceStage.step_type !== 'form') {
+        return { isValid: false, message: "The selected form to review must be a valid 'Form' stage." };
       }
       break;
 

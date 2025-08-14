@@ -17,9 +17,9 @@ interface ReviewFormSourceStageSelectProps {
 }
 
 export const ReviewFormSourceStageSelect = ({ form, allStages, currentStageId }: ReviewFormSourceStageSelectProps) => {
-  const currentStageIndex = allStages.findIndex((s: WorkflowStage) => s.id === currentStageId);
-  const availableFormStages = allStages.filter((s: WorkflowStage, index: number) =>
-    s.step_type === 'form' && index < currentStageIndex
+  // Filter to get all 'form' type stages, regardless of their order relative to the current stage
+  const availableFormStages = allStages.filter((s: WorkflowStage) =>
+    s.step_type === 'form'
   );
 
   return (
@@ -32,12 +32,12 @@ export const ReviewFormSourceStageSelect = ({ form, allStages, currentStageId }:
           <Select onValueChange={(val) => field.onChange(val ? parseInt(val) : null)} value={String(field.value || '')}>
             <FormControl>
               <SelectTrigger>
-                <SelectValue placeholder="Select a previous form stage" />
+                <SelectValue placeholder="Select a form stage" />
               </SelectTrigger>
             </FormControl>
             <SelectContent>
               {availableFormStages.length === 0 ? (
-                <SelectItem value="__none__" disabled>No previous form stages available</SelectItem>
+                <SelectItem value="__none__" disabled>No form stages available</SelectItem>
               ) : (
                 availableFormStages.map((formStage: WorkflowStage) => (
                   <SelectItem key={formStage.id} value={String(formStage.order_index)}>
