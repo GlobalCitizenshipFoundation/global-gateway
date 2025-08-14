@@ -1,12 +1,38 @@
 // @ts-nocheck
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
-import { verifyWebhookSignature } from 'https://esm.sh/@mailgun/webhook-validation@1.0.0'; // For Mailgun webhook validation
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+// Helper function to verify Mailgun webhook signature
+async function verifyMailgunSignature(signingKey: string, token: string, timestamp: string, signature: string): Promise<boolean> {
+  const encoder = new TextEncoder();
+  const keyData = encoder.encode(signingKey);
+  const messageData = encoder.encode(timestamp + token);
+
+  const key = await crypto.subtle.importKey(
+    'raw',
+    keyData,
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign']
+  );
+
+  const hmacBuffer = await crypto.subtle.sign(
+    'HMAC',
+    key,
+    messageData
+  );
+
+  const calculatedHmac = Array.from(new Uint8Array(hmacBuffer))
+    .map(b => b.toString(16).padStart(2, '0'))
+    .join('');
+
+  return calculatedHmac === signature;
+}
 
 serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
@@ -30,8 +56,8 @@ serve(async (req: Request) => {
     const timestamp = signature.timestamp;
     const hmac = signature.signature;
 
-    // Verify Mailgun webhook signature
-    const isSignatureValid = verifyWebhookSignature(MAILGUN_WEBHOOK_SIGNING_KEY, token, timestamp, hmac);
+    // Verify Mailgun webhook signature using the custom helper
+    const isSignatureValid = await verifyMailgunSignature(MAILGUN_WEBHOOK_SIGNING_KEY, token, timestamp, hmac);
 
     if (!isSignatureValid) {
       console.warn('Mailgun webhook signature verification failed.');
@@ -54,8 +80,6 @@ serve(async (req: Request) => {
     );
 
     // Attempt to find a user associated with the recipient email for logging
-    // This is a basic mapping. More complex logic (e.g., parsing reply-to addresses)
-    // would be needed for specific campaign tracking.
     let userId: string | null = null;
     const { data: profileData, error: profileError } = await supabaseAdmin
       .from('profiles')
@@ -94,9 +118,9 @@ serve(async (req: Request) => {
       status: 200,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
-  } catch (error: unknown) { // Explicitly type error as unknown
+  } catch (error: unknown) {
     console.error('Inbound Webhook Edge Function error:', error);
-    return new Response(JSON.stringify({ error: (error as Error).message }), { // Cast to Error
+    return new Response(JSON.stringify({ error: (error as Error).message }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

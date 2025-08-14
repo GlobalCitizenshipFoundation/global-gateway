@@ -10,25 +10,66 @@ interface UseFormBuilderHandlersProps {
   state: ReturnType<typeof useFormBuilderState>;
 }
 
-const AUTO_SAVE_DEBOUNCE_TIME = 2000; // 2 seconds
-const SAVED_CONFIRMATION_DISPLAY_TIME = 2000; // 2 seconds
+type FormBuilderHandlers = {
+  triggerAutoSave: () => void;
+  handleManualSaveDraft: () => Promise<void>;
+  handleOpenPreview: () => void;
+  handlePublishUnpublish: (newStatus: 'draft' | 'published') => Promise<void>;
+  handleSaveAsTemplate: (templateFormToCopy: FormType, newTemplateName: string) => Promise<boolean>;
+  handleAddSection: (e: React.FormEvent) => Promise<void>;
+  handleDeleteSection: (sectionId: string, fieldAction: 'delete_fields' | 'uncategorize_fields' | 'move_to_section', targetSectionId?: string | null) => Promise<boolean>;
+  handleSaveEditedSection: (sectionId: string, values: { name: string; description?: string | null; tooltip?: string | null; }) => Promise<boolean>;
+  handleSaveSectionLogic: (sectionId: string, rules: DisplayRule[], logicType: 'AND' | 'OR') => Promise<boolean>;
+  handleAddField: (e: React.FormEvent) => Promise<FormField | null>;
+  handleDeleteField: (fieldId: string) => Promise<boolean>;
+  handleToggleRequired: (fieldId: string, isRequired: boolean) => Promise<boolean>;
+  handleSaveLogic: (fieldId: string, rules: DisplayRule[], logicType: 'AND' | 'OR') => Promise<boolean>;
+  handleSaveEditedField: (fieldId: string, values: {
+    label: string;
+    field_type: FormField['field_type'];
+    options?: string;
+    is_required: boolean;
+    is_anonymized: boolean;
+    description?: string | null;
+    tooltip?: string | null;
+    placeholder?: string | null;
+    section_id?: string | null;
+    date_min?: string | null;
+    date_max?: string | null;
+    date_allow_past?: boolean;
+    date_allow_future?: boolean;
+    rating_min_value?: number | null;
+    rating_max_value?: number | null;
+    rating_min_label?: string | null;
+    rating_max_label?: string | null;
+  }) => Promise<boolean>;
+  handleUpdateFieldLabel: (fieldId: string, newLabel: string) => Promise<boolean>;
+  handleUpdateFormStatus: (id: string, status: 'draft' | 'published') => Promise<boolean>;
+  handleUpdateFormDetails: (id: string, name: string, description: string | null) => Promise<boolean>;
+};
 
 export const useFormBuilderHandlers = ({
-  state: {
+  state,
+}: UseFormBuilderHandlersProps): FormBuilderHandlers => {
+  const { user } = useSession();
+  const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const savedConfirmationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const {
     formId,
-    formName, setFormName,
-    formDescription, setFormDescription,
-    formStatus, setFormStatus,
-    sections, setSections,
-    fields, setFields,
+    formName,
+    formDescription,
+    formStatus, setFormStatus, // Destructure setFormStatus
+    sections, setSections, // Destructure setSections
+    fields, setFields, // Destructure setFields
     fetchData,
     setIsAutoSaving,
     setLastSavedTimestamp,
     setHasUnsavedChanges,
-    setIsUpdatingStatus,
-    setShowSavedConfirmation,
-    setFormLastEditedAt,
-    setFormLastEditedByUserId,
+    isUpdatingStatus, setIsUpdatingStatus,
+    showSavedConfirmation, setShowSavedConfirmation,
+    formLastEditedAt, setFormLastEditedAt, // Destructure setFormLastEditedAt
+    formLastEditedByUserId, setFormLastEditedByUserId, // Destructure setFormLastEditedByUserId
     setIsSaveAsTemplateDialogOpen,
     setNewTemplateName,
     setIsSavingTemplate,
@@ -45,11 +86,7 @@ export const useFormBuilderHandlers = ({
     newFieldTooltip, setNewFieldTooltip,
     newFieldPlaceholder, setNewFieldPlaceholder,
     isAddingField, setIsAddingField,
-  },
-}: UseFormBuilderHandlersProps) => {
-  const { user } = useSession();
-  const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const savedConfirmationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  } = state;
 
   const {
     handleAddSection: performAddSection,
@@ -101,6 +138,43 @@ export const useFormBuilderHandlers = ({
       setIsAutoSaving(false);
     }, AUTO_SAVE_DEBOUNCE_TIME);
   }, [formId, formName, formDescription, user, performUpdateFormDetails, setIsAutoSaving, setLastSavedTimestamp, setHasUnsavedChanges, setShowSavedConfirmation, setFormLastEditedAt, setFormLastEditedByUserId, showSavedFeedback]);
+
+  const handleManualSaveDraft = useCallback(async () => {
+    if (!formId || !user) return;
+    setIsAutoSaving(true);
+    const now = new Date().toISOString();
+    const success = await performUpdateFormDetails(formId, formName, formDescription);
+    if (success) {
+      setLastSavedTimestamp(new Date(now));
+      setFormLastEditedAt(now);
+      setFormLastEditedByUserId(user.id);
+      setHasUnsavedChanges(false);
+      showSuccess("Draft saved successfully!");
+    } else {
+      showError("Failed to save draft.");
+    }
+    setIsAutoSaving(false);
+  }, [formId, formName, formDescription, user, performUpdateFormDetails, setIsAutoSaving, setLastSavedTimestamp, setHasUnsavedChanges, setFormLastEditedAt, setFormLastEditedByUserId]);
+
+  const handleOpenPreview = useCallback(() => {
+    setIsFormPreviewOpen(true);
+  }, [setIsFormPreviewOpen]);
+
+  const handlePublishUnpublish = useCallback(async (newStatus: 'draft' | 'published') => {
+    if (!formId || !user) return;
+    setIsUpdatingStatus(true);
+    const success = await performUpdateFormStatus(formId, newStatus);
+    if (success) {
+      setFormStatus(newStatus);
+      setHasUnsavedChanges(false);
+      setFormLastEditedAt(new Date().toISOString());
+      setFormLastEditedByUserId(user.id);
+      showSuccess(`Form status updated to "${newStatus}".`);
+    } else {
+      showError(`Failed to update form status to "${newStatus}".`);
+    }
+    setIsUpdatingStatus(false);
+  }, [formId, user, performUpdateFormStatus, setFormStatus, setHasUnsavedChanges, setFormLastEditedAt, setFormLastEditedByUserId, setIsUpdatingStatus]);
 
   const handleAddSection = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
@@ -454,6 +528,11 @@ export const useFormBuilderHandlers = ({
   };
 
   return {
+    triggerAutoSave,
+    handleManualSaveDraft,
+    handleOpenPreview,
+    handlePublishUnpublish,
+    handleSaveAsTemplate,
     handleAddSection,
     handleDeleteSection,
     handleSaveEditedSection,
@@ -466,6 +545,5 @@ export const useFormBuilderHandlers = ({
     handleUpdateFieldLabel,
     handleUpdateFormStatus,
     handleUpdateFormDetails,
-    handleSaveAsTemplate,
   };
 };

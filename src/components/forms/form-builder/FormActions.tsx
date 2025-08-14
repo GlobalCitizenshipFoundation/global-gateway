@@ -4,6 +4,7 @@ import FormPreviewDialog from "@/components/forms/form-builder/FormPreviewDialog
 import { useFormBuilderState } from "@/hooks/forms/useFormBuilderState";
 import { useFormBuilderHandlers } from "@/hooks/forms/useFormBuilderHandlers";
 import { useSession } from "@/contexts/auth/SessionContext";
+import { Form as FormType } from "@/types"; // Import FormType
 
 interface FormActionsProps {
   state: ReturnType<typeof useFormBuilderState>;
@@ -38,6 +39,20 @@ export const FormActions = ({ state, handlers }: FormActionsProps) => {
     handleSaveAsTemplate,
   } = handlers;
 
+  // Create a FormType object for formToCopy
+  const formToCopy: FormType = {
+    id: formId || '',
+    name: formName,
+    description: formDescription,
+    is_template: false, // This is the source form, not necessarily a template itself
+    status: formStatus,
+    user_id: user?.id || '',
+    created_at: '', // Placeholder, not strictly needed for copying
+    updated_at: '', // Placeholder
+    last_edited_by_user_id: formLastEditedByUserId,
+    last_edited_at: formLastEditedAt,
+  };
+
   return (
     <>
       <div className="flex justify-between items-center mt-8 pt-4 border-t">
@@ -68,22 +83,11 @@ export const FormActions = ({ state, handlers }: FormActionsProps) => {
       <SaveAsTemplateDialog
         isOpen={isSaveAsTemplateDialogOpen}
         onClose={() => setIsSaveAsTemplateDialogOpen(false)}
-        formToCopy={{
-          id: formId || '',
-          name: formName,
-          description: formDescription,
-          is_template: false,
-          status: formStatus,
-          user_id: user?.id || '',
-          created_at: '',
-          updated_at: '',
-          last_edited_by_user_id: formLastEditedByUserId,
-          last_edited_at: formLastEditedAt,
-        }}
+        formToCopy={formToCopy}
         newTemplateName={newTemplateName}
         setNewTemplateName={setNewTemplateName}
         isSaving={isSavingTemplate}
-        onSave={() => handleSaveAsTemplate(state.formToCopy, newTemplateName)}
+        onSave={() => handleSaveAsTemplate(formToCopy, newTemplateName)}
       />
 
       <FormPreviewDialog

@@ -294,8 +294,6 @@ export type Program = {
       tags?: Tag; // For joining
     };
 
-    export type EmailTemplateTag = {
-      email_template_id: string;
-      tag_id: string;
-      tags?: Tag; // For joining
-    };
+    export type EmailTemplateTag = Tag; // Alias for Tag
+
+    export type EvaluationTemplateTag = Tag; // Alias for Tag
