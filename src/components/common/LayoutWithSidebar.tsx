@@ -78,46 +78,42 @@ const LayoutWithSidebar = ({ children }: LayoutWithSidebarProps) => {
         <DesktopSidebar isCollapsed={isCollapsed} toggleCollapse={toggleCollapse} />
       )}
 
-      {/* Main Content Area */}
-      <div
-        className={cn(
-          "flex flex-col flex-grow overflow-x-hidden",
-          // Apply margin-right only on desktop based on sidebar state
-          !isMobile && (isCollapsed ? "mr-16" : "mr-56")
-        )}
-      >
-        {/* Mobile Sheet (Menu) - Only active if mobile */}
-        {isMobile ? (
-          <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
-            <Header isMobile={isMobile} onOpenMobileMenu={() => setIsMobileMenuOpen(true)} />
-            <SheetContent side="right" className="w-64 p-0 flex flex-col bg-sidebar border-l border-sidebar-border">
-              <div className="flex items-center justify-start p-4 h-16 border-b border-sidebar-border">
-                <SheetClose asChild>
-                  <Button variant="ghost" size="icon">
-                    <X className="h-5 w-5" />
-                  </Button>
-                </SheetClose>
+      {/* Sheet wraps Header and main content. It's always rendered to provide context for SheetTrigger. */}
+      <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
+        <div
+          className={cn(
+            "flex flex-col flex-grow overflow-x-hidden",
+            // Apply margin-right only on desktop based on sidebar state
+            !isMobile && (isCollapsed ? "mr-16" : "mr-56")
+          )}
+        >
+          {/* Header always renders, passes mobile state and menu toggle */}
+          <Header isMobile={isMobile} onOpenMobileMenu={() => setIsMobileMenuOpen(true)} />
+          
+          <main className="flex-grow transition-all duration-200 ease-in-out">
+            {children}
+          </main>
+        </div>
+
+        {/* SheetContent (mobile sidebar) - Only visible on mobile */}
+        {isMobile && (
+          <SheetContent side="right" className="w-64 p-0 flex flex-col bg-sidebar border-l border-sidebar-border">
+            <div className="flex items-center justify-start p-4 h-16 border-b border-sidebar-border">
+              <SheetClose asChild>
+                <Button variant="ghost" size="icon">
+                  <X className="h-5 w-5" />
+                </Button>
+              </SheetClose>
+            </div>
+            {renderMobileNavigation(() => setIsMobileMenuOpen(false))}
+            <div className="p-4 border-t border-sidebar-border flex flex-col items-center space-y-2">
+              <div className="flex w-full justify-center">
+                <ThemeToggle isCollapsed={false} />
               </div>
-              {renderMobileNavigation(() => setIsMobileMenuOpen(false))}
-              <div className="p-4 border-t border-sidebar-border flex flex-col items-center space-y-2">
-                <div className="flex w-full justify-center">
-                  <ThemeToggle isCollapsed={false} />
-                </div>
-              </div>
-            </SheetContent>
-            <main className="flex-grow transition-all duration-200 ease-in-out">
-              {children}
-            </main>
-          </Sheet>
-        ) : (
-          <>
-            <Header isMobile={isMobile} onOpenMobileMenu={() => setIsMobileMenuOpen(true)} />
-            <main className="flex-grow transition-all duration-200 ease-in-out">
-              {children}
-            </main>
-          </>
+            </div>
+          </SheetContent>
         )}
-      </div>
+      </Sheet>
     </div>
   );
 };
