@@ -18,11 +18,18 @@ export const useEvaluationCriteriaActions = ({ templateId, setCriteria, setSecti
       return null;
     }
 
-    const { data: existingCriteria, error: fetchError } = await supabase
+    let query = supabase
       .from('evaluation_criteria')
       .select('order')
-      .eq('template_id', templateId)
-      .eq('section_id', sectionId);
+      .eq('template_id', templateId);
+
+    if (sectionId === null) {
+      query = query.is('section_id', null);
+    } else {
+      query = query.eq('section_id', sectionId);
+    }
+
+    const { data: existingCriteria, error: fetchError } = await query;
 
     if (fetchError) {
       showError("Could not determine order for new criterion.");
@@ -85,6 +92,7 @@ export const useEvaluationCriteriaActions = ({ templateId, setCriteria, setSecti
     const updates = orderedCriteria.map((criterion, index) => ({
       id: criterion.id,
       order: index + 1,
+      section_id: criterion.section_id,
     }));
 
     const { error } = await supabase
