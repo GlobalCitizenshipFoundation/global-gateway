@@ -56,7 +56,7 @@ const FormFieldRenderer = ({ field, submitting }: FormFieldRendererProps) => {
                 <TooltipTrigger asChild>
                   <Info className="h-4 w-4 text-muted-foreground cursor-help" />
                 </TooltipTrigger>
-                <TooltipContent side="top" align="center"> {/* Added side and align */}
+                <TooltipContent side="top" align="center" forceMount> {/* Added forceMount */}
                   <p>{field.tooltip}</p>
                 </TooltipContent>
               </Tooltip>
