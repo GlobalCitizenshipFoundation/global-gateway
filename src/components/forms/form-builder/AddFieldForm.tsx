@@ -2,10 +2,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { FormField, FormSection } from "@/types";
-import { Plus, FileText, FolderOpen } from "lucide-react"; // Import FileText and FolderOpen icons
+import { Plus, FileText, FolderOpen } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import RichTextEditor from "@/components/common/RichTextEditor"; // Updated import path
+import RichTextEditor from "@/components/common/RichTextEditor";
 
 interface AddFieldFormProps {
   newFieldLabel: string;

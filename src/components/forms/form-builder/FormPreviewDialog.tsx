@@ -6,10 +6,10 @@ import { FormProvider, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import ApplicationFormSections from '@/components/application/ApplicationFormSections';
-import { ApplicantInfoCard } from '@/components/application/ApplicantInfoCard';
+import { ApplicantInfoCard } from '@/components/applications/ApplicantInfoCard';
 import DOMPurify from 'dompurify';
-import { TooltipProvider } from '@/components/ui/tooltip'; // Required for tooltips in preview
-import { shouldFieldBeDisplayed } from '@/utils/forms/formFieldUtils'; // Import the missing utility
+import { TooltipProvider } from '@/components/ui/tooltip';
+import { shouldFieldBeDisplayed } from '@/utils/forms/formFieldUtils';
 
 interface FormPreviewDialogProps {
   isOpen: boolean;
@@ -20,12 +20,9 @@ interface FormPreviewDialogProps {
   formFields: FormField[];
 }
 
-// Define a dynamic schema for the preview form, making all fields optional
-// This is because we are only previewing, not validating submission.
 const createPreviewSchema = (fields: FormField[]) => {
   const schemaFields: { [key: string]: z.ZodTypeAny } = {};
   fields.forEach(field => {
-    // For preview, all fields are optional and can be any type
     schemaFields[field.id] = z.any().optional().nullable();
   });
   return z.object(schemaFields);
@@ -41,30 +38,26 @@ const FormPreviewDialog = ({
 }: FormPreviewDialogProps) => {
   const [currentResponses, setCurrentResponses] = useState<Record<string, any>>({});
 
-  // Create a dynamic form instance for the preview, using a relaxed schema
   const previewSchema = createPreviewSchema(formFields);
   const form = useForm<Record<string, any>>({
     resolver: zodResolver(previewSchema),
-    defaultValues: {}, // No default values needed for preview
-    mode: "onChange", // Update responses on change for conditional logic
+    defaultValues: {},
+    mode: "onChange",
   });
 
   const { watch, setValue } = form;
 
-  // Watch all fields to update currentResponses for conditional logic evaluation
   useEffect(() => {
     const subscription = watch((value, { name, type }) => {
       if (name) {
         setCurrentResponses(prev => ({ ...prev, [name]: value[name] }));
       } else {
-        // If no specific name, it means all fields changed (e.g., on initial load)
         setCurrentResponses(value);
       }
     });
     return () => subscription.unsubscribe();
   }, [watch]);
 
-  // Initialize responses when formFields change (e.g., when dialog opens with new form data)
   useEffect(() => {
     const initialResponses: Record<string, any> = {};
     formFields.forEach(field => {
@@ -80,9 +73,8 @@ const FormPreviewDialog = ({
     });
     form.reset(initialResponses);
     setCurrentResponses(initialResponses);
-  }, [formFields, form]); // Depend on formFields to re-initialize when structure changes
+  }, [formFields, form]);
 
-  // Filter fields based on conditional logic for display in preview
   const displayedFormFields = formFields.filter(field =>
     shouldFieldBeDisplayed(field, currentResponses, formFields)
   );
@@ -104,16 +96,15 @@ const FormPreviewDialog = ({
           </DialogDescription>
         </DialogHeader>
         <div className="py-4">
-          <TooltipProvider> {/* Wrap with TooltipProvider for tooltips to work */}
+          <TooltipProvider>
             <FormProvider {...form}>
               <form className="grid gap-6">
-                {/* Applicant Info Card is not dynamic, so it can be hardcoded for preview */}
                 <ApplicantInfoCard fullName="Preview Applicant" email="preview@example.com" />
 
                 <ApplicationFormSections
                   formSections={formSections}
                   displayedFormFields={displayedFormFields}
-                  submitting={false} // Always false for preview
+                  submitting={false}
                 />
 
                 {formFields.length === 0 && (

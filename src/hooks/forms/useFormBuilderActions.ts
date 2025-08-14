@@ -98,7 +98,7 @@ export const useFormBuilderActions = ({
       fetchData();
       return false;
     } else {
-      fetchData(); // Re-fetch on success to ensure UI consistency
+      fetchData();
       return true;
     }
   };
@@ -201,10 +201,10 @@ export const useFormBuilderActions = ({
 
     if (error) {
       showError(`Failed to save display logic: ${error.message}.`);
-      fetchData(); // Re-fetch on error
+      fetchData();
       return false;
     } else {
-      fetchData(); // Re-fetch on success to ensure UI consistency
+      fetchData();
       return true;
     }
   };
@@ -281,7 +281,7 @@ export const useFormBuilderActions = ({
       fetchData();
       return false;
     } else {
-      fetchData(); // Re-fetch on success to ensure UI consistency
+      fetchData();
       return true;
     }
   };
