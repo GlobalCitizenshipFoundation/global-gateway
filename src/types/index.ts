@@ -24,6 +24,7 @@ export type Form = {
   updated_at: string;
   last_edited_by_user_id: string | null; // New
   last_edited_at: string | null; // New
+  tags?: Tag[]; // New: Associated tags
 };
 
 export type ProgramStage = {
@@ -132,6 +133,7 @@ export type EmailTemplate = {
   updated_at: string;
   last_edited_by_user_id: string | null;
   last_edited_at: string | null;
+  tags?: Tag[]; // New: Associated tags
 };
 
 export type WorkflowTemplate = {
@@ -144,6 +146,7 @@ export type WorkflowTemplate = {
   updated_at: string;
   last_edited_by_user_id: string | null;
   last_edited_at: string | null;
+  tags?: Tag[]; // New: Associated tags
 };
 
 export type WorkflowStage = { // This type represents workflow_steps table
@@ -233,6 +236,7 @@ export type EvaluationTemplate = {
   status: 'draft' | 'published';
   last_edited_by_user_id: string | null;
   last_edited_at: string | null;
+  tags?: Tag[]; // New: Associated tags
 };
 
 export type EvaluationSection = {
@@ -259,4 +263,36 @@ export type EvaluationCriterion = {
   max_label: string | null;
   weight: number;
   order: number;
+};
+
+// New types for the tagging system
+export type Tag = {
+  id: string;
+  name: string;
+  user_id: string | null;
+  created_at: string;
+};
+
+export type FormTag = {
+  form_id: string;
+  tag_id: string;
+  tags?: Tag; // For joining
+};
+
+export type WorkflowTemplateTag = {
+  workflow_template_id: string;
+  tag_id: string;
+  tags?: Tag; // For joining
+};
+
+export type EmailTemplateTag = {
+  email_template_id: string;
+  tag_id: string;
+  tags?: Tag; // For joining
+};
+
+export type EvaluationTemplateTag = {
+  evaluation_template_id: string;
+  tag_id: string;
+  tags?: Tag; // For joining
 };
