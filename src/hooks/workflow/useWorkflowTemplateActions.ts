@@ -3,8 +3,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { useSession } from '@/contexts/auth/SessionContext';
 import { showError, showSuccess } from '@/utils/toast';
 import { useNavigate } from 'react-router-dom';
-import { WorkflowTemplate, WorkflowStage } from '@/types';
+import { WorkflowTemplate, WorkflowStage, EvaluationCriterion } from '@/types';
 import { isWorkflowPublishable } from '@/utils/workflowValidation';
+import { isEvaluationTemplatePublishable } from '@/utils/evaluation/evaluationValidation';
 
 interface UseWorkflowTemplateActionsProps {
   setTemplates?: React.Dispatch<React.SetStateAction<WorkflowTemplate[]>>;
@@ -74,10 +75,39 @@ export const useWorkflowTemplateActions = ({ setTemplates, fetchTemplates }: Use
         return false;
       }
 
-      const { publishable, errors } = isWorkflowPublishable(stages as WorkflowStage[]);
+      const { publishable: basePublishable, errors: baseErrors } = isWorkflowPublishable(stages as WorkflowStage[]);
+      let combinedErrors = new Map(baseErrors);
+      let isFullyPublishable = basePublishable;
 
-      if (!publishable) {
-        const errorMessages = Array.from(errors.entries()).map(([stageId, message]: [string, string]) => {
+      const evalTemplateIds = stages
+        .filter(s => s.step_type === 'review' && s.evaluation_template_id)
+        .map(s => s.evaluation_template_id);
+
+      if (evalTemplateIds.length > 0) {
+        const { data: allCriteria, error: criteriaError } = await supabase
+          .from('evaluation_criteria')
+          .select('*')
+          .in('template_id', evalTemplateIds);
+        
+        if (criteriaError) {
+          showError("Could not verify evaluation templates.");
+          return false;
+        }
+
+        stages.forEach(stage => {
+          if (stage.step_type === 'review' && stage.evaluation_template_id) {
+            const templateCriteria = (allCriteria as EvaluationCriterion[]).filter(c => c.template_id === stage.evaluation_template_id);
+            const { publishable: templateIsPublishable } = isEvaluationTemplatePublishable(templateCriteria);
+            if (!templateIsPublishable) {
+              isFullyPublishable = false;
+              combinedErrors.set(stage.id, `Attached evaluation template is incomplete.`);
+            }
+          }
+        });
+      }
+
+      if (!isFullyPublishable) {
+        const errorMessages = Array.from(combinedErrors.entries()).map(([stageId, message]: [string, string]) => {
           const stageName = stages.find(s => s.id === stageId)?.name || 'A stage';
           return `• '${stageName}': ${message}`;
         }).join('\n');

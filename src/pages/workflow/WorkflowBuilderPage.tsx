@@ -14,10 +14,11 @@ import { WorkflowStageCard } from "@/components/workflow/WorkflowStageCard";
 import { showSuccess, showError } from "@/utils/toast";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 import { WorkflowStagePropertiesPanel } from "@/components/workflow/WorkflowStagePropertiesPanel";
-import { WorkflowStage, Form as FormType, EmailTemplate, EvaluationTemplate } from "@/types";
+import { WorkflowStage, Form as FormType, EmailTemplate, EvaluationTemplate, EvaluationCriterion } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/contexts/auth/SessionContext";
 import { isWorkflowPublishable } from '@/utils/workflowValidation';
+import { isEvaluationTemplatePublishable } from "@/utils/evaluation/evaluationValidation";
 import { WorkflowActions } from "@/components/workflow/WorkflowActions";
 
 const AUTO_SAVE_DEBOUNCE_TIME = 2000;
@@ -33,6 +34,7 @@ const WorkflowBuilderPage = () => {
   const [forms, setForms] = useState<FormType[]>([]);
   const [emailTemplates, setEmailTemplates] = useState<EmailTemplate[]>([]);
   const [evaluationTemplates, setEvaluationTemplates] = useState<EvaluationTemplate[]>([]);
+  const [allCriteria, setAllCriteria] = useState<EvaluationCriterion[]>([]);
   const [validationErrors, setValidationErrors] = useState<Map<string, string>>(new Map());
   const [isDuplicateDialogOpen, setIsDuplicateDialogOpen] = useState(false);
   const [newTemplateName, setNewTemplateName] = useState('');
@@ -48,9 +50,22 @@ const WorkflowBuilderPage = () => {
   }, [template]);
 
   useEffect(() => {
-    const { errors } = isWorkflowPublishable(stages);
-    setValidationErrors(errors);
-  }, [stages]);
+    const { errors: stageErrors } = isWorkflowPublishable(stages);
+    const combinedErrors = new Map(stageErrors);
+
+    stages.forEach(stage => {
+      if (stage.step_type === 'review' && stage.evaluation_template_id) {
+        const templateCriteria = allCriteria.filter(c => c.template_id === stage.evaluation_template_id);
+        const { publishable: templateIsPublishable } = isEvaluationTemplatePublishable(templateCriteria);
+        if (!templateIsPublishable) {
+          const templateName = evaluationTemplates.find(t => t.id === stage.evaluation_template_id)?.name || 'template';
+          combinedErrors.set(stage.id, `Attached evaluation template '${templateName}' is incomplete.`);
+        }
+      }
+    });
+
+    setValidationErrors(combinedErrors);
+  }, [stages, allCriteria, evaluationTemplates]);
 
   useEffect(() => {
     const fetchDropdownData = async () => {
@@ -67,8 +82,23 @@ const WorkflowBuilderPage = () => {
       if (emailsError) showError("Could not load email templates for selection.");
       else setEmailTemplates(emailsData as EmailTemplate[]);
 
-      if (evalsError) showError("Could not load evaluation templates for selection.");
-      else setEvaluationTemplates(evalsData as EvaluationTemplate[]);
+      if (evalsError) {
+        showError("Could not load evaluation templates for selection.");
+      } else if (evalsData) {
+        setEvaluationTemplates(evalsData as EvaluationTemplate[]);
+        const templateIds = evalsData.map(t => t.id);
+        if (templateIds.length > 0) {
+          const { data: criteriaData, error: criteriaError } = await supabase
+            .from('evaluation_criteria')
+            .select('*')
+            .in('template_id', templateIds);
+          if (criteriaError) {
+            showError("Could not load evaluation criteria for validation.");
+          } else {
+            setAllCriteria(criteriaData as EvaluationCriterion[]);
+          }
+        }
+      }
     };
     fetchDropdownData();
   }, [user]);
