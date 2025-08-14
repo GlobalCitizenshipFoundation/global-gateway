@@ -6,28 +6,29 @@ import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/componen
 
 import { useFormBuilderState } from "@/hooks/forms/useFormBuilderState";
 import { useFormBuilderHandlers } from "@/hooks/forms/useFormBuilderHandlers";
-import { useFormBuilderActions } from "@/hooks/forms/useFormBuilderActions"; // Import directly
-import { useFormFieldDragAndDrop } from "@/hooks/forms/useFormFieldDragAndDrop"; // Import directly
-import { useFormSectionDragAndDrop } from "@/hooks/forms/useFormSectionDragAndDrop"; // Import directly
+import { useFormFieldDragAndDrop } from "@/hooks/forms/useFormFieldDragAndDrop";
+import { useFormSectionDragAndDrop } from "@/hooks/forms/useFormSectionDragAndDrop";
 
 import { FormDetailsCard } from "@/components/forms/form-builder/FormDetailsCard";
 import { FormActions } from "@/components/forms/form-builder/FormActions";
 import { AddSectionForm } from "@/components/form-builder/AddSectionForm";
 import { AddFieldForm } from "@/components/form-builder/AddFieldForm";
 import { FormSectionsList } from "@/components/forms/form-builder/FormSectionsList";
-import { UncategorizedFieldsList } from "@/components/forms/form-builder/UncategorizedFieldsList";
+import { UncategorizedFieldsList } from "@/components/form-builder/UncategorizedFieldsList";
 import { FormFieldItem } from "@/components/forms/form-builder/FormFieldItem";
 import { FieldPropertiesPanel } from "@/components/forms/form-builder/FieldPropertiesPanel";
-import { SectionPropertiesPanel } from "@/components/forms/form-builder/SectionPropertiesPanel"; // Import new panel
-import { FormField, FormSection, Tag } from "@/types"; // Import Tag type
-import { FormTagsInput } from "@/components/forms/FormTagsInput"; // Import new component
-import { useTagsData } from "@/hooks/tags/useTagsData"; // Import useTagsData
+import { SectionPropertiesPanel } from "@/components/forms/form-builder/SectionPropertiesPanel";
+import { FormField, FormSection, Tag } from "@/types";
+import { FormTagsInput } from "@/components/forms/FormTagsInput";
+import { useTagsData } from "@/hooks/tags/useTagsData";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const FormBuilderPage = () => {
-  const { formId } = useParams<{ formId: string }>();
+  const { formId: paramFormId } = useParams<{ formId: string }>();
 
-  const state = useFormBuilderState(formId);
+  const state = useFormBuilderState(paramFormId);
   const {
+    formId,
     sections,
     fields,
     loading,
@@ -46,42 +47,29 @@ const FormBuilderPage = () => {
     isAddingField, setIsAddingField,
     setHasUnsavedChanges,
     fetchData,
-    setSections,
-    setFields,
-    formTags, // Destructure formTags from state
+    formTags,
+    selectedField, setSelectedField,
+    selectedSection, setSelectedSection,
   } = state;
-
-  const [selectedField, setSelectedField] = useState<FormField | null>(null);
-  const [selectedSection, setSelectedSection] = useState<FormSection | null>(null); // New state for selected section
 
   // Fetch all available tags
   const { tags: allAvailableTags, loading: loadingTags } = useTagsData();
 
-  // Initialize actions from the dedicated hook
-  const formBuilderActions = useFormBuilderActions({
-    formId: state.formId,
-    setSections: state.setSections,
-    setFields: state.setFields, // Pass fields directly
-    fetchData: state.fetchData,
-  });
-
-  const handlers = useFormBuilderHandlers({
-    state,
-  });
+  const handlers = useFormBuilderHandlers({ state });
 
   const {
     sensors: fieldSensors,
     onDragStart: onFieldDragStart,
     onDragEnd: onFieldDragEnd,
     activeDragItem: activeFieldDragItem,
-  } = useFormFieldDragAndDrop({ fields, setFields, sections, fetchData });
+  } = useFormFieldDragAndDrop({ fields, setFields: state.setFields, sections, fetchData });
 
   const {
     sensors: sectionSensors,
     onDragStart: onSectionDragStart,
     onDragEnd: onSectionDragEnd,
     activeDragItem: activeSectionDragItem,
-  } = useFormSectionDragAndDrop({ sections, setSections, fetchData });
+  } = useFormSectionDragAndDrop({ sections, setSections: state.setSections, fetchData });
 
   const combinedSensors = [...fieldSensors, ...sectionSensors];
 
@@ -125,7 +113,7 @@ const FormBuilderPage = () => {
         setSelectedField(updatedFieldFromList);
       }
     }
-  }, [fields, selectedField]);
+  }, [fields, selectedField, setSelectedField]);
 
   // Sync selected section with the main sections array
   useEffect(() => {
@@ -135,7 +123,7 @@ const FormBuilderPage = () => {
         setSelectedSection(updatedSectionFromList);
       }
     }
-  }, [sections, selectedSection]);
+  }, [sections, selectedSection, setSelectedSection]);
 
   const uncategorizedFields = getFieldsForSection(null);
 
@@ -155,10 +143,12 @@ const FormBuilderPage = () => {
   };
 
   const handleUpdateFormTags = (selectedTagIds: string[]) => {
-    if (state.formId) {
+    if (formId) {
       handlers.handleUpdateFormTags(selectedTagIds);
     }
   };
+
+  if (loading) return <div className="container py-12"><Skeleton className="h-8 w-48 mb-4" /><Skeleton className="h-64 w-full" /></div>;
 
   return (
     <div className="container py-12">
@@ -167,7 +157,7 @@ const FormBuilderPage = () => {
         Back to Forms
       </Link>
 
-      <FormDetailsCard state={state} />
+      <FormDetailsCard state={state} handlers={handlers} />
 
       <DndContext sensors={combinedSensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd} onDragStart={handleDragStart}>
         <ResizablePanelGroup direction="horizontal" className="min-h-[600px] border rounded-lg mt-8">
@@ -175,7 +165,7 @@ const FormBuilderPage = () => {
             <div className="p-6 h-full overflow-y-auto">
               <FormSectionsList
                 sections={sections}
-                fields={fields} // Pass all fields for section logic
+                fields={fields}
                 loading={loading}
                 getFieldsForSection={getFieldsForSection}
                 handleDeleteSection={handlers.handleDeleteSection}
@@ -184,7 +174,7 @@ const FormBuilderPage = () => {
                 onUpdateLabel={handlers.handleUpdateFieldLabel}
                 onSelectField={setSelectedField}
                 onQuickAddField={handleQuickAddField}
-                onSelectSection={setSelectedSection} // Pass new handler
+                onSelectSection={setSelectedSection}
               />
 
               <UncategorizedFieldsList
@@ -206,7 +196,7 @@ const FormBuilderPage = () => {
                 handleAddSection={handlers.handleAddSection}
               />
 
-              <div id="add-field-form"> {/* Add ID for scrolling */}
+              <div id="add-field-form">
                 <AddFieldForm
                   newFieldLabel={newFieldLabel}
                   setNewFieldLabel={setNewFieldLabel}
@@ -229,7 +219,7 @@ const FormBuilderPage = () => {
               </div>
             </div>
           </ResizablePanel>
-          {(selectedField || selectedSection) && ( // Conditionally render panel
+          {(selectedField || selectedSection) && (
             <>
               <ResizableHandle withHandle />
               <ResizablePanel defaultSize={35} minSize={25}>
@@ -246,9 +236,9 @@ const FormBuilderPage = () => {
                 {selectedSection && (
                   <SectionPropertiesPanel
                     section={selectedSection}
-                    allFields={fields} // Pass all fields for section logic
+                    allFields={fields}
                     onSave={handlers.handleSaveEditedSection}
-                    onSaveLogic={handlers.handleSaveSectionLogic} // Pass new handler
+                    onSaveLogic={handlers.handleSaveSectionLogic}
                     onClose={() => setSelectedSection(null)}
                   />
                 )}
@@ -276,8 +266,8 @@ const FormBuilderPage = () => {
 
       <div className="mt-8 pt-4 border-t">
         <FormTagsInput
-          formId={state.formId}
-          currentTags={formTags?.map(ft => ft.id) || []}
+          formId={formId}
+          currentTags={formTags?.map(tag => tag.id) || []}
           allAvailableTags={allAvailableTags.filter(tag => tag.applicable_to.includes('forms'))}
           onTagsChange={handleUpdateFormTags}
           loading={loadingTags}

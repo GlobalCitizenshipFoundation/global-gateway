@@ -7,7 +7,7 @@ interface UseFormBuilderActionsProps {
   formId: string | undefined;
   setSections: React.Dispatch<React.SetStateAction<FormSection[]>>;
   setFields: React.Dispatch<React.SetStateAction<FormField[]>>;
-  fetchData: () => Promise<void>;
+  fetchData: () => Promise<void>; // To trigger a full re-fetch after complex operations
 }
 
 export const useFormBuilderActions = ({
@@ -19,7 +19,10 @@ export const useFormBuilderActions = ({
   const { user } = useSession();
 
   const handleAddSection = async (name: string, description: string | null, tooltip: string | null) => {
-    if (!name.trim() || !formId || !user) return null;
+    if (!name.trim() || !formId || !user) {
+      showError("Cannot add section: missing name, form ID, or user.");
+      return null;
+    }
 
     const { data: currentSections, error: fetchError } = await supabase
       .from('form_sections')
@@ -32,6 +35,7 @@ export const useFormBuilderActions = ({
     }
 
     const nextOrder = currentSections && currentSections.length > 0 ? Math.max(...currentSections.map(s => s.order)) + 1 : 1;
+    const now = new Date().toISOString();
 
     const { data, error } = await supabase
       .from('form_sections')
@@ -42,7 +46,7 @@ export const useFormBuilderActions = ({
         description: description,
         tooltip: tooltip,
         last_edited_by_user_id: user.id,
-        last_edited_at: new Date().toISOString(),
+        last_edited_at: now,
       })
       .select()
       .single();
@@ -73,13 +77,17 @@ export const useFormBuilderActions = ({
       showError(`Failed to delete section: ${error.message}`);
       return false;
     } else {
-      fetchData();
+      // A full re-fetch is needed here because RPC can affect multiple rows (fields)
+      await fetchData(); 
       return true;
     }
   };
 
   const handleSaveEditedSection = async (sectionId: string, values: { name: string; description?: string | null; tooltip?: string | null; }) => {
-    if (!user) return false;
+    if (!user) {
+      showError("You must be logged in to update a section.");
+      return false;
+    }
     const now = new Date().toISOString();
 
     const { error } = await supabase
@@ -95,16 +103,19 @@ export const useFormBuilderActions = ({
 
     if (error) {
       showError(`Failed to update section: ${error.message}.`);
-      fetchData();
+      await fetchData(); // Re-fetch on error to ensure consistency
       return false;
     } else {
-      fetchData(); // Re-fetch on success to ensure UI consistency
+      await fetchData(); // Re-fetch on success to ensure UI consistency
       return true;
     }
   };
 
   const handleSaveSectionLogic = async (sectionId: string, rules: DisplayRule[], logicType: 'AND' | 'OR') => {
-    if (!user) return false;
+    if (!user) {
+      showError("You must be logged in to save section display logic.");
+      return false;
+    }
     const now = new Date().toISOString();
 
     const { error } = await supabase
@@ -114,16 +125,19 @@ export const useFormBuilderActions = ({
 
     if (error) {
       showError(`Failed to save section display logic: ${error.message}.`);
-      fetchData(); // Re-fetch on error
+      await fetchData(); // Re-fetch on error
       return false;
     } else {
-      fetchData(); // Re-fetch on success to ensure UI consistency
+      await fetchData(); // Re-fetch on success to ensure UI consistency
       return true;
     }
   };
 
   const handleAddField = async (label: string, type: FormField['field_type'], options: string, sectionId: string | null, description: string | null, tooltip: string | null, placeholder: string | null) => {
-    if (!label.trim() || !formId || !user) return null;
+    if (!label.trim() || !formId || !user) {
+      showError("Cannot add field: missing label, form ID, or user.");
+      return null;
+    }
 
     let query = supabase
       .from('form_fields')
@@ -144,6 +158,7 @@ export const useFormBuilderActions = ({
     }
 
     const nextOrder = currentFieldsInTargetSection && currentFieldsInTargetSection.length > 0 ? Math.max(...currentFieldsInTargetSection.map(f => f.order)) + 1 : 1;
+    const now = new Date().toISOString();
 
     const { data, error } = await supabase
       .from('form_fields')
@@ -162,7 +177,7 @@ export const useFormBuilderActions = ({
         tooltip: tooltip || null,
         placeholder: placeholder || null,
         last_edited_by_user_id: user.id,
-        last_edited_at: new Date().toISOString(),
+        last_edited_at: now,
         date_min: null,
         date_max: null,
         date_allow_past: true,
@@ -186,11 +201,11 @@ export const useFormBuilderActions = ({
   };
 
   const handleDeleteField = async (fieldId: string) => {
-    setFields(prev => prev.filter(f => f.id !== fieldId));
+    setFields(prev => prev.filter(f => f.id !== fieldId)); // Optimistic update
     const { error } = await supabase.from('form_fields').delete().eq('id', fieldId);
     if (error) {
       showError(`Failed to delete field: ${error.message}. Reverting.`);
-      fetchData();
+      await fetchData(); // Revert by re-fetching
       return false;
     } else {
       return true;
@@ -198,12 +213,16 @@ export const useFormBuilderActions = ({
   };
 
   const handleToggleRequired = async (fieldId: string, isRequired: boolean) => {
-    if (!user) return false;
-    setFields(prev => prev.map(f => f.id === fieldId ? { ...f, is_required: isRequired } : f));
-    const { error } = await supabase.from('form_fields').update({ is_required: isRequired, last_edited_by_user_id: user.id, last_edited_at: new Date().toISOString() }).eq('id', fieldId);
+    if (!user) {
+      showError("You must be logged in to update field requirement.");
+      return false;
+    }
+    setFields(prev => prev.map(f => f.id === fieldId ? { ...f, is_required: isRequired } : f)); // Optimistic update
+    const now = new Date().toISOString();
+    const { error } = await supabase.from('form_fields').update({ is_required: isRequired, last_edited_by_user_id: user.id, last_edited_at: now }).eq('id', fieldId);
     if (error) {
       showError(`Failed to update field: ${error.message}. Reverting.`);
-      setFields(prev => prev.map(f => f.id === fieldId ? { ...f, is_required: !isRequired } : f));
+      await fetchData(); // Revert by re-fetching
       return false;
     } else {
       return true;
@@ -211,19 +230,23 @@ export const useFormBuilderActions = ({
   };
 
   const handleSaveLogic = async (fieldId: string, rules: DisplayRule[], logicType: 'AND' | 'OR') => {
-    if (!user) return false;
+    if (!user) {
+      showError("You must be logged in to save display logic.");
+      return false;
+    }
+    const now = new Date().toISOString();
     
     const { error } = await supabase
       .from('form_fields')
-      .update({ display_rules: rules, display_rules_logic_type: logicType, last_edited_by_user_id: user.id, last_edited_at: new Date().toISOString() })
+      .update({ display_rules: rules, display_rules_logic_type: logicType, last_edited_by_user_id: user.id, last_edited_at: now })
       .eq('id', fieldId);
 
     if (error) {
       showError(`Failed to save display logic: ${error.message}.`);
-      fetchData(); // Re-fetch on error
+      await fetchData(); // Re-fetch on error
       return false;
     } else {
-      fetchData(); // Re-fetch on success to ensure UI consistency
+      await fetchData(); // Re-fetch on success to ensure UI consistency
       return true;
     }
   };
@@ -247,11 +270,15 @@ export const useFormBuilderActions = ({
     rating_min_label?: string | null;
     rating_max_label?: string | null;
   }) => {
-    if (!user) return false;
+    if (!user) {
+      showError("You must be logged in to update a field.");
+      return false;
+    }
     const updatedOptions = (values.field_type === 'select' || values.field_type === 'radio' || values.field_type === 'checkbox')
       ? values.options?.split(',').map(opt => opt.trim()) || null
       : null;
 
+    const now = new Date().toISOString();
     const updatePayload: Partial<FormField> = {
       label: values.label,
       field_type: values.field_type,
@@ -263,7 +290,7 @@ export const useFormBuilderActions = ({
       placeholder: values.placeholder || null,
       section_id: values.section_id === 'none' ? null : values.section_id || null,
       last_edited_by_user_id: user.id,
-      last_edited_at: new Date().toISOString(),
+      last_edited_at: now,
     };
 
     if (values.field_type === 'date') {
@@ -282,7 +309,7 @@ export const useFormBuilderActions = ({
       updatePayload.rating_min_value = values.rating_min_value ?? 1;
       updatePayload.rating_max_value = values.rating_max_value ?? 5;
       updatePayload.rating_min_label = values.rating_min_label || "Poor";
-      updatePayload.rating_max_label = "Excellent";
+      updatePayload.rating_max_label = values.rating_max_label || "Excellent";
     } else {
       updatePayload.rating_min_value = null;
       updatePayload.rating_max_value = null;
@@ -297,27 +324,31 @@ export const useFormBuilderActions = ({
 
     if (error) {
       showError(`Failed to update field: ${error.message}.`);
-      fetchData();
+      await fetchData(); // Re-fetch on error
       return false;
     } else {
-      fetchData(); // Re-fetch on success to ensure UI consistency
+      await fetchData(); // Re-fetch on success to ensure UI consistency
       return true;
     }
   };
 
   const handleUpdateFieldLabel = async (fieldId: string, newLabel: string) => {
-    if (!user) return false;
+    if (!user) {
+      showError("You must be logged in to update field label.");
+      return false;
+    }
     setFields(prevFields =>
       prevFields.map(f => (f.id === fieldId ? { ...f, label: newLabel } : f))
-    );
+    ); // Optimistic update
+    const now = new Date().toISOString();
     const { error } = await supabase
       .from('form_fields')
-      .update({ label: newLabel, last_edited_by_user_id: user.id, last_edited_at: new Date().toISOString() })
+      .update({ label: newLabel, last_edited_by_user_id: user.id, last_edited_at: now })
       .eq('id', fieldId);
 
     if (error) {
       showError(`Failed to update label: ${error.message}. Reverting.`);
-      fetchData();
+      await fetchData(); // Revert by re-fetching
       return false;
     } else {
       return true;
@@ -325,10 +356,14 @@ export const useFormBuilderActions = ({
   };
 
   const handleUpdateFormStatus = async (id: string, status: 'draft' | 'published') => {
-    if (!user) return false;
+    if (!user) {
+      showError("You must be logged in to update form status.");
+      return false;
+    }
+    const now = new Date().toISOString();
     const { error } = await supabase
       .from('forms')
-      .update({ status: status, updated_at: new Date().toISOString(), last_edited_by_user_id: user.id, last_edited_at: new Date().toISOString() })
+      .update({ status: status, updated_at: now, last_edited_by_user_id: user.id, last_edited_at: now })
       .eq('id', id);
 
     if (error) {
@@ -340,13 +375,18 @@ export const useFormBuilderActions = ({
   };
 
   const handleUpdateFormDetails = async (id: string, name: string, description: string | null) => {
-    if (!user) return false;
+    if (!user) {
+      showError("You must be logged in to update form details.");
+      return false;
+    }
+    const now = new Date().toISOString();
     const { error } = await supabase
       .from('forms')
-      .update({ name: name, description: description, updated_at: new Date().toISOString(), last_edited_by_user_id: user.id, last_edited_at: new Date().toISOString() })
+      .update({ name: name, description: description, updated_at: now, last_edited_by_user_id: user.id, last_edited_at: now })
       .eq('id', id);
 
     if (error) {
+      showError(`Failed to update form details: ${error.message}`);
       return false;
     } else {
       return true;
@@ -363,9 +403,10 @@ export const useFormBuilderActions = ({
       return false;
     }
 
+    let newTemplateFormData: { id: string } | null = null; // Declare outside try block
     try {
       const now = new Date().toISOString();
-      const { data: newTemplateFormData, error: newTemplateFormError } = await supabase.from("forms").insert({
+      const { data, error: newTemplateFormError } = await supabase.from("forms").insert({
         user_id: user.id,
         name: newTemplateName,
         is_template: true,
@@ -375,10 +416,10 @@ export const useFormBuilderActions = ({
         last_edited_at: now,
       }).select('id').single();
 
-      if (newTemplateFormError || !newTemplateFormData) {
-        showError(`Failed to create template form: ${newTemplateFormError?.message}`);
-        return false;
+      if (newTemplateFormError || !data) {
+        throw new Error(`Failed to create template form: ${newTemplateFormError?.message}`);
       }
+      newTemplateFormData = data; // Assign to the outer variable
 
       const { data: currentSections, error: sectionsError } = await supabase
         .from('form_sections')
@@ -393,9 +434,7 @@ export const useFormBuilderActions = ({
         .order('order', { ascending: true });
 
       if (sectionsError || fieldsError) {
-        showError(`Failed to load current form content: ${sectionsError?.message || fieldsError?.message}`);
-        await supabase.from('forms').delete().eq('id', newTemplateFormData.id);
-        return false;
+        throw new Error(`Failed to load current form content: ${sectionsError?.message || fieldsError?.message}`);
       }
 
       const oldSectionIdMap = new Map<string, string>();
@@ -404,13 +443,13 @@ export const useFormBuilderActions = ({
         oldSectionIdMap.set(section.id, newSectionId);
         return {
           id: newSectionId,
-          form_id: newTemplateFormData.id,
+          form_id: newTemplateFormData!.id, // Use newTemplateFormData.id
           name: section.name,
           order: section.order,
           description: section.description,
           tooltip: section.tooltip,
-          display_rules: section.display_rules, // Copy display rules
-          display_rules_logic_type: section.display_rules_logic_type, // Copy logic type
+          display_rules: section.display_rules,
+          display_rules_logic_type: section.display_rules_logic_type,
           last_edited_by_user_id: user.id,
           last_edited_at: now,
         };
@@ -418,7 +457,7 @@ export const useFormBuilderActions = ({
 
       const newFieldsToInsert = currentFields.map(field => ({
         id: crypto.randomUUID(),
-        form_id: newTemplateFormData.id,
+        form_id: newTemplateFormData!.id, // Use newTemplateFormData.id
         section_id: field.section_id ? oldSectionIdMap.get(field.section_id) : null,
         label: field.label,
         field_type: field.field_type,
@@ -447,9 +486,7 @@ export const useFormBuilderActions = ({
       const { error: insertFieldsError } = await supabase.from('form_fields').insert(newFieldsToInsert);
 
       if (insertSectionsError || insertFieldsError) {
-        showError(`Failed to copy form content to template: ${insertSectionsError?.message || insertFieldsError?.message}`);
-        await supabase.from('forms').delete().eq('id', newTemplateFormData.id);
-        return false;
+        throw new Error(`Failed to copy form content to template: ${insertSectionsError?.message || insertFieldsError?.message}`);
       }
 
       // Copy tags
@@ -460,10 +497,9 @@ export const useFormBuilderActions = ({
 
       if (tagsError) {
         console.error("Error fetching original form tags:", tagsError);
-        // Don't fail the whole operation, but log the error
       } else if (currentFormTags && currentFormTags.length > 0) {
         const newFormTagsToInsert = currentFormTags.map(ft => ({
-          form_id: newTemplateFormData.id,
+          form_id: newTemplateFormData!.id, // Use newTemplateFormData.id
           tag_id: ft.tag_id,
         }));
         const { error: insertTagsError } = await supabase.from('form_tags').insert(newFormTagsToInsert);
@@ -475,6 +511,10 @@ export const useFormBuilderActions = ({
       return true;
     } catch (err: any) {
       showError("An unexpected error occurred: " + err.message);
+      // Clean up partially created template if an error occurred during content copying
+      if (newTemplateFormData?.id) {
+        await supabase.from('forms').delete().eq('id', newTemplateFormData.id);
+      }
       return false;
     }
   };
@@ -531,7 +571,7 @@ export const useFormBuilderActions = ({
     handleAddSection,
     handleDeleteSection,
     handleSaveEditedSection,
-    handleSaveSectionLogic, // New action
+    handleSaveSectionLogic,
     handleAddField,
     handleDeleteField,
     handleToggleRequired,
@@ -541,6 +581,6 @@ export const useFormBuilderActions = ({
     handleUpdateFormStatus,
     handleUpdateFormDetails,
     handleSaveAsTemplate,
-    handleUpdateFormTags, // New action
+    handleUpdateFormTags,
   };
 };

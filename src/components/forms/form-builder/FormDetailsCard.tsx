@@ -4,17 +4,16 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import RichTextEditor from "@/components/common/RichTextEditor";
 import { useFormBuilderState } from "@/hooks/forms/useFormBuilderState";
-import { useFormBuilderHandlers } from "@/hooks/forms/useFormBuilderHandlers";
-import { useFormBuilderActions } from "@/hooks/forms/useFormBuilderActions";
+import { useFormBuilderHandlers } from "@/hooks/forms/useFormBuilderHandlers"; // Import handlers type
 import { useEffect } from "react";
 
 interface FormDetailsCardProps {
   state: ReturnType<typeof useFormBuilderState>;
+  handlers: ReturnType<typeof useFormBuilderHandlers>; // Add handlers prop
 }
 
-export const FormDetailsCard = ({ state }: FormDetailsCardProps) => {
+export const FormDetailsCard = ({ state, handlers }: FormDetailsCardProps) => {
   const {
-    formId,
     formName, setFormName,
     formDescription, setFormDescription,
     formStatus,
@@ -27,24 +26,12 @@ export const FormDetailsCard = ({ state }: FormDetailsCardProps) => {
     loading,
   } = state;
 
-  // Initialize actions from the dedicated hook
-  const formBuilderActions = useFormBuilderActions({
-    formId: formId,
-    setSections: state.setSections,
-    setFields: state.setFields,
-    fetchData: state.fetchData,
-  });
-
-  // useFormBuilderHandlers now directly imports and uses actions internally
-  const { triggerAutoSave } = useFormBuilderHandlers({
-    state,
-  });
-
+  // Trigger auto-save when form details change
   useEffect(() => {
-    if (!loading) {
-      triggerAutoSave();
+    if (!loading) { // Only trigger if initial loading is complete
+      handlers.triggerAutoSave(); // Call from handlers
     }
-  }, [formName, formDescription, state.sections, state.fields, loading, triggerAutoSave]);
+  }, [formName, formDescription, loading, handlers.triggerAutoSave]); // Depend on handlers.triggerAutoSave
 
   const renderStatusMessage = () => {
     if (isAutoSaving) {

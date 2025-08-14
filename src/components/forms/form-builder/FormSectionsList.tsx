@@ -1,7 +1,7 @@
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { FormFieldItem } from "@/components/form-builder/FormFieldItem"; // Corrected import path
+import { FormFieldItem } from "@/components/forms/form-builder/FormFieldItem";
 import { FormField, FormSection } from "@/types";
 import { GripVertical, Trash2, Info, Plus, Pencil } from "lucide-react";
 import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
@@ -59,7 +59,7 @@ const SortableAccordionItem = ({ section, children, confirmDeleteSection, onQuic
 
   const hasTooltip = section.tooltip && section.tooltip.trim() !== '';
   const sanitizedDescription = section.description ? DOMPurify.sanitize(section.description, { USE_PROFILES: { html: true } }) : null;
-  const hasLogic = section.display_rules && section.display_rules.length > 0; // Check for section logic
+  const hasLogic = section.display_rules && section.display_rules.length > 0;
 
   return (
     <AccordionItem
@@ -67,7 +67,7 @@ const SortableAccordionItem = ({ section, children, confirmDeleteSection, onQuic
       value={section.id}
       ref={setNodeRef}
       style={style}
-      className={cn("rounded-md border mb-2", isDragging && "opacity-50", hasLogic && "border-l-4 border-blue-500")} // Add border for logic
+      className={cn("rounded-md border mb-2", isDragging && "opacity-50", hasLogic && "border-l-4 border-blue-500")}
     >
       <div className="flex items-center justify-between w-full pr-4">
         <Button variant="ghost" size="icon" className="cursor-grab" {...attributes} {...listeners}>
@@ -76,7 +76,7 @@ const SortableAccordionItem = ({ section, children, confirmDeleteSection, onQuic
         <AccordionTrigger className="flex-grow flex justify-between items-center pr-4">
           <div className="flex items-center gap-2">
             <span className="font-semibold">{section.name}</span>
-            {hasLogic && ( // Display icon for section logic
+            {hasLogic && (
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Info className="h-4 w-4 text-blue-500" />
@@ -116,7 +116,7 @@ const SortableAccordionItem = ({ section, children, confirmDeleteSection, onQuic
 
 export const FormSectionsList = ({
   sections,
-  fields, // All fields for conditional logic evaluation
+  fields,
   loading,
   getFieldsForSection,
   handleDeleteSection,

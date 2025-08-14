@@ -14,40 +14,40 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
-import { FormField, FormSection, DisplayRule } from "@/types"; // Import DisplayRule
+import { FormField, FormSection, DisplayRule } from "@/types";
 import RichTextEditor from "@/components/common/RichTextEditor";
-import { X, AlertTriangle } from "lucide-react"; // Import AlertTriangle
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"; // Import Alert
-import ConditionalLogicBuilder from '@/components/forms/ConditionalLogicBuilder'; // Import ConditionalLogicBuilder
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'; // Import RadioGroup
+import { X, AlertTriangle } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import ConditionalLogicBuilder from '@/components/forms/ConditionalLogicBuilder';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
 const editFormSectionSchema = z.object({
   name: z.string().min(1, { message: "Section name cannot be empty." }),
   description: z.string().nullable().optional(),
   tooltip: z.string().nullable().optional(),
-  display_rules: z.array(z.object({ // Schema for display_rules
+  display_rules: z.array(z.object({
     field_id: z.string().min(1, "Field is required."),
     operator: z.string().min(1, "Operator is required."),
     value: z.any().optional().nullable(),
   })).optional().nullable(),
-  display_rules_logic_type: z.enum(['AND', 'OR']).optional(), // Schema for logic type
+  display_rules_logic_type: z.enum(['AND', 'OR']).optional(),
 });
 
 type EditFormSectionValues = z.infer<typeof editFormSectionSchema>;
 
 interface SectionPropertiesPanelProps {
   section: FormSection;
-  allFields: FormField[]; // Pass all fields for conditional logic
+  allFields: FormField[];
   onSave: (sectionId: string, values: { name: string; description?: string | null; tooltip?: string | null; }) => Promise<void>;
-  onSaveLogic: (sectionId: string, rules: DisplayRule[], logicType: 'AND' | 'OR') => Promise<void>; // New prop for saving logic
+  onSaveLogic: (sectionId: string, rules: DisplayRule[], logicType: 'AND' | 'OR') => Promise<void>;
   onClose: () => void;
 }
 
 export const SectionPropertiesPanel = ({
   section,
-  allFields, // Passed for conditional logic
+  allFields,
   onSave,
-  onSaveLogic, // New prop
+  onSaveLogic,
   onClose,
 }: SectionPropertiesPanelProps) => {
   const form = useForm<EditFormSectionValues>({
@@ -74,7 +74,6 @@ export const SectionPropertiesPanel = ({
   }, [section, form]);
 
   const onSubmit = (values: EditFormSectionValues) => {
-    // Only save basic properties here. Logic is saved via onSaveLogic.
     onSave(section.id, {
       name: values.name,
       description: values.description ?? null,
@@ -83,7 +82,6 @@ export const SectionPropertiesPanel = ({
   };
 
   const handleSaveConditionalLogic = (itemId: string, rules: DisplayRule[], logicType: 'AND' | 'OR') => {
-    // The itemId here will be the section.id because we pass the section as itemToEdit
     onSaveLogic(itemId, rules, logicType);
   };
 
@@ -168,8 +166,8 @@ export const SectionPropertiesPanel = ({
 
       <h3 className="text-lg font-semibold mb-4">Conditional Logic</h3>
       <ConditionalLogicBuilder
-        itemToEdit={section} // Pass the section as itemToEdit
-        allFields={allFields} // Pass all fields for rule selection
+        itemToEdit={section}
+        allFields={allFields}
         onSave={handleSaveConditionalLogic}
         isOpen={true}
         onClose={() => {}}

@@ -12,8 +12,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 interface FormTagsInputProps {
   formId: string | undefined;
-  currentTags: string[]; // Array of tag IDs currently associated with the form
-  allAvailableTags: TagType[]; // All tags the user can select from
+  currentTags: string[];
+  allAvailableTags: TagType[];
   onTagsChange: (selectedTagIds: string[]) => void;
   loading: boolean;
 }

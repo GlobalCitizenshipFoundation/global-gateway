@@ -1,13 +1,12 @@
 import { Button } from "@/components/ui/button";
 import { SaveAsTemplateDialog } from "@/components/forms/SaveAsTemplateDialog";
 import FormPreviewDialog from "@/components/forms/form-builder/FormPreviewDialog";
-import { useFormBuilderState } from "@/hooks/forms/useFormBuilderState";
-import { useFormBuilderHandlers } from "@/hooks/forms/useFormBuilderHandlers";
+import { useFormBuilderState } from "@/hooks/forms/useFormBuilderState"; // Import the composed state hook
 import { useSession } from "@/contexts/auth/SessionContext";
 
 interface FormActionsProps {
   state: ReturnType<typeof useFormBuilderState>;
-  handlers: ReturnType<typeof useFormBuilderHandlers>;
+  handlers: ReturnType<typeof import('@/hooks/forms/useFormBuilderHandlers').useFormBuilderHandlers>; // Explicitly import handlers type
 }
 
 export const FormActions = ({ state, handlers }: FormActionsProps) => {
@@ -27,8 +26,8 @@ export const FormActions = ({ state, handlers }: FormActionsProps) => {
     isFormPreviewOpen, setIsFormPreviewOpen,
     formLastEditedAt,
     formLastEditedByUserId,
-    sections,
-    fields,
+    sections, // Pass sections for preview
+    fields, // Pass fields for preview
   } = state;
 
   const {

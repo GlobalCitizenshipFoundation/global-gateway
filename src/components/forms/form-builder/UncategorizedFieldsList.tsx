@@ -1,4 +1,4 @@
-import { FormFieldItem } from "@/components/form-builder/FormFieldItem"; // Corrected import path
+import { FormFieldItem } from "@/components/forms/form-builder/FormFieldItem";
 import { FormField } from "@/types";
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { useDroppable } from "@dnd-kit/core";
@@ -8,13 +8,10 @@ interface UncategorizedFieldsListProps {
   uncategorizedFields: FormField[];
   handleDeleteField: (fieldId: string) => Promise<void>;
   handleToggleRequired: (fieldId: string, isRequired: boolean) => Promise<void>;
-  // Removed onEditLogic: (field: FormField) => void;
-  // Removed onEditField: (field: FormField) => void;
   onUpdateLabel: (fieldId: string, newLabel: string) => void;
   onSelectField: (field: FormField) => void;
 }
 
-// Helper component for droppable areas
 const DroppableContainer = ({ id, children, className }: { id: string; children: React.ReactNode; className?: string; }) => {
   const { setNodeRef, isOver } = useDroppable({ id });
   return <div ref={setNodeRef} className={cn(className, isOver && "ring-2 ring-blue-500 ring-offset-2")}>{children}</div>;
@@ -24,8 +21,6 @@ export const UncategorizedFieldsList = ({
   uncategorizedFields,
   handleDeleteField,
   handleToggleRequired,
-  // Removed onEditLogic,
-  // Removed onEditField,
   onUpdateLabel,
   onSelectField,
 }: UncategorizedFieldsListProps) => {
