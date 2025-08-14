@@ -10,8 +10,8 @@ import DynamicIcon from "./DynamicIcon";
 import { NAVIGATION_ITEMS } from "@/constants/navigation";
 import { Sheet, SheetContent, SheetTrigger, SheetClose } from "@/components/ui/sheet";
 import { useIsMobile } from "@/hooks/common/use-mobile";
-import DesktopSidebar from "./DesktopSidebar"; // Import the new DesktopSidebar
-import Header from "./Header"; // Import the Header component
+import DesktopSidebar from "./DesktopSidebar";
+import Header from "./Header";
 
 interface LayoutWithSidebarProps {
   children: React.ReactNode;
@@ -38,7 +38,6 @@ const LayoutWithSidebar = ({ children }: LayoutWithSidebarProps) => {
     })
   })).filter(section => section.links.length > 0);
 
-  // This function is now specific to the mobile sheet, as DesktopSidebar has its own internal renderNavigation
   const renderMobileNavigation = (closeMobileMenu?: () => void) => (
     <nav className="flex-grow overflow-y-auto p-2 space-y-2">
       {filteredNavigationItems.map((section, sectionIndex) => (
@@ -57,7 +56,7 @@ const LayoutWithSidebar = ({ children }: LayoutWithSidebarProps) => {
                   : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
               )}
               asChild
-              onClick={closeMobileMenu} // Close mobile menu on item click
+              onClick={closeMobileMenu}
             >
               <Link to={item.path}>
                 <DynamicIcon name={item.icon} className="h-5 w-5 mr-3" />
@@ -71,16 +70,15 @@ const LayoutWithSidebar = ({ children }: LayoutWithSidebarProps) => {
   );
 
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="flex flex-row-reverse min-h-screen bg-background"> {/* Added flex-row-reverse */}
       {isMobile ? (
-        // Mobile Sidebar (Sheet)
         <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
           <SheetTrigger asChild>
-            <Button variant="ghost" size="icon" className="fixed top-4 left-4 z-40">
+            <Button variant="ghost" size="icon" className="fixed top-4 right-4 z-40"> {/* Changed left-4 to right-4 */}
               <Menu className="h-6 w-6" />
             </Button>
           </SheetTrigger>
-          <SheetContent side="left" className="w-64 p-0 flex flex-col bg-sidebar border-r border-sidebar-border">
+          <SheetContent side="right" className="w-64 p-0 flex flex-col bg-sidebar border-l border-sidebar-border"> {/* Changed side to right, border-r to border-l */}
             <div className="flex items-center justify-between p-4 h-16 border-b border-sidebar-border">
               <Link to="/" className="flex items-center gap-2" onClick={() => setIsMobileMenuOpen(false)}>
                 <Award className="h-6 w-6 text-sidebar-primary" />
@@ -97,24 +95,16 @@ const LayoutWithSidebar = ({ children }: LayoutWithSidebarProps) => {
               <div className="flex w-full justify-center">
                 <ThemeToggle isCollapsed={false} />
               </div>
-              {/* UserNav removed from here */}
             </div>
           </SheetContent>
         </Sheet>
       ) : (
-        // Desktop Sidebar
         <DesktopSidebar isCollapsed={isCollapsed} toggleCollapse={toggleCollapse} />
       )}
 
-      {/* Main Content Area */}
-      <div className="flex flex-col flex-grow"> {/* Added flex-col to stack Header and main content */}
-        <Header /> {/* Render Header here */}
-        <main className={cn(
-          "flex-grow transition-all duration-200 ease-in-out",
-          // The ml classes are now handled by the parent div's width and the main content's flex-grow
-          // No need for explicit ml here as Header is now part of the main content flow
-        )}
-        >
+      <div className="flex flex-col flex-grow">
+        <Header />
+        <main className="flex-grow transition-all duration-200 ease-in-out"> {/* Removed ml classes */}
           {children}
         </main>
       </div>
