@@ -11,6 +11,7 @@ import { NAVIGATION_ITEMS } from "@/constants/navigation";
 import { Sheet, SheetContent, SheetTrigger, SheetClose } from "@/components/ui/sheet";
 import { useIsMobile } from "@/hooks/common/use-mobile";
 import DesktopSidebar from "./DesktopSidebar"; // Import the new DesktopSidebar
+import Header from "./Header"; // Import the Header component
 
 interface LayoutWithSidebarProps {
   children: React.ReactNode;
@@ -96,9 +97,7 @@ const LayoutWithSidebar = ({ children }: LayoutWithSidebarProps) => {
               <div className="flex w-full justify-center">
                 <ThemeToggle isCollapsed={false} />
               </div>
-              <div className="w-full flex justify-center">
-                <UserNav isCollapsed={false} />
-              </div>
+              {/* UserNav removed from here */}
             </div>
           </SheetContent>
         </Sheet>
@@ -108,14 +107,17 @@ const LayoutWithSidebar = ({ children }: LayoutWithSidebarProps) => {
       )}
 
       {/* Main Content Area */}
-      <main className={cn(
-        "flex-grow transition-all duration-200 ease-in-out",
-        !isMobile && (isCollapsed ? "ml-[var(--sidebar-width-collapsed)]" : "ml-[var(--sidebar-width-expanded)]")
-      )}
-      style={{ '--sidebar-width-expanded': '250px', '--sidebar-width-collapsed': '80px' } as React.CSSProperties}
-      >
-        {children}
-      </main>
+      <div className="flex flex-col flex-grow"> {/* Added flex-col to stack Header and main content */}
+        <Header /> {/* Render Header here */}
+        <main className={cn(
+          "flex-grow transition-all duration-200 ease-in-out",
+          // The ml classes are now handled by the parent div's width and the main content's flex-grow
+          // No need for explicit ml here as Header is now part of the main content flow
+        )}
+        >
+          {children}
+        </main>
+      </div>
     </div>
   );
 };

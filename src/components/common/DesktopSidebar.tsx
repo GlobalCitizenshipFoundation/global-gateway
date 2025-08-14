@@ -5,7 +5,7 @@ import { ChevronLeft, ChevronRight, Award } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useSession } from "@/contexts/auth/SessionContext";
 import { ThemeToggle } from "./ThemeToggle";
-import UserNav from "./UserNav";
+import UserNav from "./UserNav"; // Keep import for clarity, but it's not rendered here
 import DynamicIcon from "./DynamicIcon";
 import { NAVIGATION_ITEMS } from "@/constants/navigation";
 
@@ -82,9 +82,7 @@ const DesktopSidebar = ({ isCollapsed, toggleCollapse }: DesktopSidebarProps) =>
         <div className="flex w-full justify-center">
           <ThemeToggle isCollapsed={isCollapsed} />
         </div>
-        <div className="w-full flex justify-center">
-          <UserNav isCollapsed={isCollapsed} />
-        </div>
+        {/* UserNav removed from here */}
         <Button
           variant="ghost"
           size="icon"
