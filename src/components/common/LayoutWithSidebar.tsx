@@ -72,7 +72,7 @@ const LayoutWithSidebar = ({ children }: LayoutWithSidebarProps) => {
   );
 
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="flex flex-row-reverse min-h-screen bg-background">
       {/* Desktop Sidebar - Only rendered if not mobile */}
       {!isMobile && (
         <DesktopSidebar isCollapsed={isCollapsed} toggleCollapse={toggleCollapse} />
@@ -82,17 +82,16 @@ const LayoutWithSidebar = ({ children }: LayoutWithSidebarProps) => {
       <div
         className={cn(
           "flex flex-col flex-grow overflow-x-hidden",
-          // Apply margin-left only on desktop based on sidebar state
-          !isMobile && (isCollapsed ? "ml-16" : "ml-56")
+          // Apply margin-right only on desktop based on sidebar state
+          !isMobile && (isCollapsed ? "mr-16" : "mr-56")
         )}
       >
         {/* Mobile Sheet (Menu) - Only active if mobile */}
-        {isMobile && (
+        {isMobile ? (
           <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
-            {/* Header with mobile trigger */}
             <Header isMobile={isMobile} onOpenMobileMenu={() => setIsMobileMenuOpen(true)} />
             <SheetContent side="right" className="w-64 p-0 flex flex-col bg-sidebar border-l border-sidebar-border">
-              <div className="flex items-center justify-end p-4 h-16 border-b border-sidebar-border">
+              <div className="flex items-center justify-start p-4 h-16 border-b border-sidebar-border">
                 <SheetClose asChild>
                   <Button variant="ghost" size="icon">
                     <X className="h-5 w-5" />
@@ -106,15 +105,18 @@ const LayoutWithSidebar = ({ children }: LayoutWithSidebarProps) => {
                 </div>
               </div>
             </SheetContent>
+            <main className="flex-grow transition-all duration-200 ease-in-out">
+              {children}
+            </main>
           </Sheet>
+        ) : (
+          <>
+            <Header isMobile={isMobile} onOpenMobileMenu={() => setIsMobileMenuOpen(true)} />
+            <main className="flex-grow transition-all duration-200 ease-in-out">
+              {children}
+            </main>
+          </>
         )}
-
-        {/* Render Header directly if not mobile (outside Sheet) */}
-        {!isMobile && <Header isMobile={isMobile} onOpenMobileMenu={() => setIsMobileMenuOpen(true)} />}
-        
-        <main className="flex-grow transition-all duration-200 ease-in-out">
-          {children}
-        </main>
       </div>
     </div>
   );
