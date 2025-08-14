@@ -14,8 +14,8 @@ import {
 } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { WorkflowStage, Form as FormType, EmailTemplate, EvaluationTemplate } from "@/types";
-import { X, AlertTriangle } from "lucide-react"; // Import AlertTriangle
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"; // Import Alert components
+import { X, AlertTriangle } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { GeneralProperties } from './stage-properties/GeneralProperties';
 import { ReviewProperties } from './stage-properties/ReviewProperties';
 import { ResubmissionProperties } from './stage-properties/ResubmissionProperties';
@@ -26,10 +26,10 @@ import { FormAttachmentProperties } from './stage-properties/FormAttachmentPrope
 
 const editWorkflowStageSchema = z.object({
   name: z.string().min(1, { message: "Stage name cannot be empty." }),
-  description: z.string().nullable().optional(), // Generic description, will be overridden for specific types
+  description: z.string().nullable().optional(),
   step_type: z.enum(['form', 'screening', 'review', 'resubmission', 'decision', 'email', 'scheduling', 'status', 'recommendation']),
   form_id: z.string().nullable().optional(),
-  email_template_id: z.string().nullable().optional(), // Generic email trigger
+  email_template_id: z.string().nullable().optional(),
   evaluation_template_id: z.string().nullable().optional(),
   anonymize_identity: z.boolean().optional(),
   decision_options: z.array(z.object({
