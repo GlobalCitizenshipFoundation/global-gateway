@@ -6,6 +6,10 @@ export interface StageValidationResult {
 }
 
 export const validateWorkflowStage = (stage: WorkflowStage, allStages: WorkflowStage[], publishedEmailTemplates: EmailTemplate[], publishedForms: Form[]): StageValidationResult => {
+  // NEW DEBUG LOG: Log the entire stage object and its description
+  console.log("validateWorkflowStage: Checking stage:", stage);
+  console.log("validateWorkflowStage: Raw stage.description:", stage.description);
+
   switch (stage.step_type) {
     case 'form':
       if (!stage.form_id) {
