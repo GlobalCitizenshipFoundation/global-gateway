@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { EvaluationCriterion } from "@/types";
+import { EvaluationCriterion, EvaluationSection } from "@/types";
 import { Info, X } from "lucide-react";
 import { Switch } from '../ui/switch';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
@@ -35,17 +35,19 @@ const criterionSchema = z.object({
   min_label: z.string().optional().nullable(),
   max_label: z.string().optional().nullable(),
   weight: z.preprocess((val) => Number(val), z.number().min(0, "Weight must be non-negative.")),
+  section_id: z.string().nullable().optional(),
 });
 
 type CriterionFormValues = z.infer<typeof criterionSchema>;
 
 interface CriterionPropertiesPanelProps {
   criterion: EvaluationCriterion;
+  sections: EvaluationSection[];
   onSave: (criterionId: string, values: Partial<EvaluationCriterion>) => void;
   onClose: () => void;
 }
 
-export const CriterionPropertiesPanel = ({ criterion, onSave, onClose }: CriterionPropertiesPanelProps) => {
+export const CriterionPropertiesPanel = ({ criterion, sections, onSave, onClose }: CriterionPropertiesPanelProps) => {
   const form = useForm<CriterionFormValues>({
     resolver: zodResolver(criterionSchema),
     defaultValues: {},
@@ -64,6 +66,7 @@ export const CriterionPropertiesPanel = ({ criterion, onSave, onClose }: Criteri
         min_label: criterion.min_label,
         max_label: criterion.max_label,
         weight: criterion.weight,
+        section_id: criterion.section_id,
       });
     }
   }, [criterion, form]);
@@ -138,6 +141,29 @@ export const CriterionPropertiesPanel = ({ criterion, onSave, onClose }: Criteri
           )}
 
           <FormFieldComponent control={form.control} name="weight" render={({ field }) => (<FormItem><FormLabel>Weight</FormLabel><FormControl><Input type="number" step="0.1" {...field} /></FormControl><FormDescription>Determines the importance of this criterion in the total score.</FormDescription><FormMessage /></FormItem>)} />
+          <FormFieldComponent
+            control={form.control}
+            name="section_id"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Section</FormLabel>
+                <Select onValueChange={(value) => field.onChange(value === '__none__' ? null : value)} value={field.value || '__none__'}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Assign to a section" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="__none__">Uncategorized</SelectItem>
+                    {sections.map(section => (
+                      <SelectItem key={section.id} value={section.id}>{section.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
           <FormFieldComponent
             control={form.control}
             name="is_public"

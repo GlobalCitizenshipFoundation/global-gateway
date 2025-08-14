@@ -105,13 +105,13 @@ export const DynamicReviewForm = ({ criteria, onSubmit, isSubmitting, isPreview 
                   <FormItem>
                     <div className="flex items-center gap-2">
                       <FormLabel>{criterion.label}</FormLabel>
-                      {criterion.is_public && (
-                        <Tooltip>
-                          <TooltipTrigger asChild><Info className="h-4 w-4 text-muted-foreground cursor-help" /></TooltipTrigger>
-                          <TooltipContent><p className="max-w-xs">Aggregated and anonymized feedback for this criterion may be shared with applicants.</p></TooltipContent>
-                        </Tooltip>
-                      )}
                     </div>
+                    {criterion.is_public && (
+                      <FormDescription className="flex items-center gap-1 text-blue-600">
+                        <Info className="h-4 w-4" />
+                        Aggregated and anonymized feedback for this criterion may be shared with applicants.
+                      </FormDescription>
+                    )}
                     {criterion.description && <FormDescription dangerouslySetInnerHTML={{ __html: criterion.description }} />}
                     <FormControl>
                       <>
@@ -121,9 +121,9 @@ export const DynamicReviewForm = ({ criteria, onSubmit, isSubmitting, isPreview 
                             <Slider min={criterion.min_score || 1} max={criterion.max_score || 5} step={1} value={[field.value as number]} onValueChange={(val) => field.onChange(val[0])} disabled={isSubmitting} />
                             <div className="flex justify-between text-sm text-muted-foreground">
                               <span>{criterion.min_label || criterion.min_score}</span>
-                              <span className="font-semibold text-foreground">{field.value as number}</span>
                               <span>{criterion.max_label || criterion.max_score}</span>
                             </div>
+                            <div className="text-center font-semibold text-lg text-primary mt-1">{field.value as number}</div>
                           </div>
                         )}
                         {criterion.criterion_type === 'repeater_buttons' && (

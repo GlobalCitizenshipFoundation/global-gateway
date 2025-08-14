@@ -1,17 +1,18 @@
 import { supabase } from '@/integrations/supabase/client';
 import { useSession } from '@/contexts/auth/SessionContext';
 import { showError, showSuccess } from '@/utils/toast';
-import { EvaluationCriterion } from '@/types';
+import { EvaluationCriterion, EvaluationSection } from '@/types';
 
 interface UseEvaluationCriteriaActionsProps {
   templateId: string | undefined;
   setCriteria: React.Dispatch<React.SetStateAction<EvaluationCriterion[]>>;
+  setSections: React.Dispatch<React.SetStateAction<EvaluationSection[]>>;
 }
 
-export const useEvaluationCriteriaActions = ({ templateId, setCriteria }: UseEvaluationCriteriaActionsProps) => {
+export const useEvaluationCriteriaActions = ({ templateId, setCriteria, setSections }: UseEvaluationCriteriaActionsProps) => {
   const { user } = useSession();
 
-  const handleAddCriterion = async () => {
+  const handleAddCriterion = async (sectionId: string | null) => {
     if (!user || !templateId) {
       showError("Cannot add criterion: missing user or template ID.");
       return null;
@@ -20,7 +21,8 @@ export const useEvaluationCriteriaActions = ({ templateId, setCriteria }: UseEva
     const { data: existingCriteria, error: fetchError } = await supabase
       .from('evaluation_criteria')
       .select('order')
-      .eq('template_id', templateId);
+      .eq('template_id', templateId)
+      .eq('section_id', sectionId);
 
     if (fetchError) {
       showError("Could not determine order for new criterion.");
@@ -33,6 +35,7 @@ export const useEvaluationCriteriaActions = ({ templateId, setCriteria }: UseEva
       .from('evaluation_criteria')
       .insert({
         template_id: templateId,
+        section_id: sectionId,
         label: "New Criterion",
         criterion_type: 'number_scale',
         order: nextOrder,
@@ -95,10 +98,36 @@ export const useEvaluationCriteriaActions = ({ templateId, setCriteria }: UseEva
     return true;
   };
 
+  const handleAddSection = async (name: string, description: string | null) => {
+    if (!user || !templateId) return null;
+    const { data: existingSections, error: fetchError } = await supabase.from('evaluation_sections').select('order').eq('template_id', templateId);
+    if (fetchError) { showError("Could not determine order for new section."); return null; }
+    const nextOrder = existingSections.length > 0 ? Math.max(...existingSections.map(s => s.order)) + 1 : 1;
+    const { data, error } = await supabase.from('evaluation_sections').insert({ template_id: templateId, name, description, order: nextOrder }).select().single();
+    if (error) { showError(`Failed to add section: ${error.message}`); return null; }
+    setSections(prev => [...prev, data as EvaluationSection]);
+    return data as EvaluationSection;
+  };
+
+  const handleDeleteSection = async (sectionId: string) => {
+    const { error } = await supabase.from('evaluation_sections').delete().eq('id', sectionId);
+    if (error) { showError(`Failed to delete section: ${error.message}`); return false; }
+    return true;
+  };
+
+  const handleUpdateSection = async (sectionId: string, updates: Partial<EvaluationSection>) => {
+    const { error } = await supabase.from('evaluation_sections').update(updates).eq('id', sectionId);
+    if (error) { showError(`Failed to update section: ${error.message}`); return false; }
+    return true;
+  };
+
   return {
     handleAddCriterion,
     handleDeleteCriterion,
     handleUpdateCriterion,
     handleUpdateCriteriaOrder,
+    handleAddSection,
+    handleDeleteSection,
+    handleUpdateSection,
   };
 };
