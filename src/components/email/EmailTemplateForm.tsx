@@ -1,3 +1,5 @@
+"use client";
+
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -53,7 +55,7 @@ export const EmailTemplateForm = ({ initialData, onSubmit, isSubmitting, isNewTe
             <FormItem>
               <FormLabel>Template Name</FormLabel>
               <FormControl>
-                <Input placeholder="e.g., Application Submitted Confirmation" {...field} disabled={isSubmitting || initialData?.is_default} />
+                <Input placeholder="e.g., Application Submitted Confirmation" {...field} disabled={isSubmitting} autoComplete="off" />
               </FormControl>
               <FormDescription>
                 A unique name for this email template. Cannot be changed for default templates.
@@ -69,7 +71,7 @@ export const EmailTemplateForm = ({ initialData, onSubmit, isSubmitting, isNewTe
             <FormItem>
               <FormLabel>Subject</FormLabel>
               <FormControl>
-                <Input placeholder="e.g., Your Application Has Been Received!" {...field} disabled={isSubmitting} />
+                <Input placeholder="e.g., Your Application Has Been Received!" {...field} disabled={isSubmitting} autoComplete="off" />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -88,6 +90,7 @@ export const EmailTemplateForm = ({ initialData, onSubmit, isSubmitting, isNewTe
                   readOnly={isSubmitting}
                   className="min-h-[300px]"
                   placeholder="Compose your email content here. You can use HTML for rich text."
+                  // Note: ReactQuill is a complex component, direct autocomplete might not apply to its internal editable area.
                 />
               </FormControl>
               <FormDescription>
