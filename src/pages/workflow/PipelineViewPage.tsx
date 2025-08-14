@@ -36,7 +36,7 @@ type SubmissionDetail = {
     form_id: string | null;
     allow_pdf_download: boolean;
   } | null;
-  program_stages: { name: string } | null;
+  program_stages: { name: string, description: string | null, step_type: ProgramStage['step_type'] } | null; // Added description and step_type
 };
 
 type ResponseWithField = {
@@ -91,6 +91,7 @@ const PipelineViewPage = () => {
         setStages(stagesData as ProgramStage[]);
         setApplications(applicationsData as Applicant[]);
 
+        // Fetch all form fields for the program's main form for conditional logic evaluation
         if (programData.form_id) {
           const { data: allFieldsData, error: allFieldsError } = await supabase
             .from('form_fields')
@@ -162,11 +163,7 @@ const PipelineViewPage = () => {
     allSubmissionResponses.forEach(res => {
       if (res.form_fields?.id && res.value !== null) {
         if (res.form_fields.field_type === 'checkbox') {
-          try {
-            currentResponsesMap[res.form_fields.id] = JSON.parse(res.value);
-          } catch {
-            currentResponsesMap[res.form_fields.id] = [];
-          }
+          try { currentResponsesMap[res.form_fields.id] = JSON.parse(res.value); } catch { currentResponsesMap[res.form_fields.id] = []; }
         } else if (res.form_fields.field_type === 'number') {
           currentResponsesMap[res.form_fields.id] = parseFloat(res.value);
         }
@@ -191,9 +188,10 @@ const PipelineViewPage = () => {
     setSelectedSubmission(null);
     setAllSubmissionResponses([]);
     setDecisionOutcomes([]);
+    setAllFormFieldsForLogic([]); // Clear fields for logic until determined
 
     const { data: submissionData, error: submissionError } = await supabase
-      .from('applications').select(`id, submitted_date, full_name, email, stage_id, programs(title, form_id, allow_pdf_download), program_stages(name)`).eq('id', applicant.id).single();
+      .from('applications').select(`id, submitted_date, full_name, email, stage_id, programs(title, form_id, allow_pdf_download), program_stages(name, description, step_type)`).eq('id', applicant.id).single();
 
     if (submissionError) {
       showError("Failed to load submission details.");
@@ -208,6 +206,46 @@ const PipelineViewPage = () => {
     };
     setSelectedSubmission(formattedSubmissionData);
     setCurrentStageInSheet(formattedSubmissionData.stage_id);
+
+    // Determine which form to load for responses based on stage type
+    let targetFormId: string | null = formattedSubmissionData.programs?.form_id || null;
+    if (formattedSubmissionData.program_stages?.step_type === 'review' && formattedSubmissionData.program_stages.description) {
+      try {
+        const config = JSON.parse(formattedSubmissionData.program_stages.description);
+        const reviewFormSourceStageOrder = config.review_form_source_stage_order;
+        if (typeof reviewFormSourceStageOrder === 'number') {
+          const { data: sourceStageData, error: sourceStageError } = await supabase
+            .from('program_stages')
+            .select('form_id')
+            .eq('program_id', programId)
+            .eq('order', reviewFormSourceStageOrder)
+            .single();
+          if (sourceStageError || !sourceStageData) {
+            console.error("Error fetching review source stage form_id:", sourceStageError);
+            showError("Could not load the source form for this review stage.");
+            targetFormId = null;
+          } else {
+            targetFormId = sourceStageData.form_id;
+          }
+        }
+      } catch (e) {
+        console.error("Error parsing review stage description:", e);
+        showError("Invalid review stage configuration.");
+        targetFormId = null;
+      }
+    }
+
+    if (targetFormId) {
+      const { data: allFieldsData, error: allFieldsError } = await supabase
+        .from('form_fields')
+        .select('id, form_id, section_id, label, field_type, options, is_required, order, display_rules, description, tooltip, placeholder, last_edited_by_user_id, last_edited_at')
+        .eq('form_id', targetFormId)
+        .order('order', { ascending: true });
+      if (allFieldsError) showError("Could not load all form fields for logic evaluation.");
+      else setAllFormFieldsForLogic(allFieldsData as FormField[]);
+    } else {
+      setAllFormFieldsForLogic([]); // Ensure it's empty if no form is found
+    }
 
     const currentStage = stages.find(s => s.id === formattedSubmissionData.stage_id);
     if (currentStage?.step_type === 'decision' && currentStage.description) {

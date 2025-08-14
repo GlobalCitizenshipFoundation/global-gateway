@@ -9,14 +9,17 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { UseFormReturn } from "react-hook-form";
-import { EvaluationTemplate } from "@/types";
+import { EvaluationTemplate, WorkflowStage } from "@/types";
+import { ReviewFormSourceStageSelect } from "./ReviewFormSourceStageSelect"; // Import the new component
 
 interface ReviewPropertiesProps {
   form: UseFormReturn<any>;
   publishedEvaluationTemplates: EvaluationTemplate[];
+  allStages: WorkflowStage[]; // Pass allStages for form source selection
+  currentStageId: string; // Pass currentStageId for form source selection
 }
 
-export const ReviewProperties = ({ form, publishedEvaluationTemplates }: ReviewPropertiesProps) => {
+export const ReviewProperties = ({ form, publishedEvaluationTemplates, allStages, currentStageId }: ReviewPropertiesProps) => {
   return (
     <>
       <FormFieldComponent
@@ -44,6 +47,11 @@ export const ReviewProperties = ({ form, publishedEvaluationTemplates }: ReviewP
             <FormMessage />
           </FormItem>
         )}
+      />
+      <ReviewFormSourceStageSelect
+        form={form}
+        allStages={allStages}
+        currentStageId={currentStageId}
       />
       <FormFieldComponent
         control={form.control}

@@ -150,7 +150,7 @@ export type WorkflowStage = { // This type represents workflow_steps table
   id: string;
   workflow_template_id: string;
   name: string;
-  description: string | null;
+  description: string | null; // Can be JSON for complex types (e.g., { anonymize_identity: boolean, review_form_source_stage_order: number } for 'review')
   step_type: 'form' | 'screening' | 'review' | 'resubmission' | 'decision' | 'email' | 'scheduling' | 'status' | 'recommendation';
   order_index: number; // This is the column name in workflow_steps
   created_at: string;

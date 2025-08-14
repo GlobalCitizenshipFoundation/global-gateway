@@ -32,6 +32,7 @@ const editWorkflowStageSchema = z.object({
   email_template_id: z.string().nullable().optional(),
   evaluation_template_id: z.string().nullable().optional(),
   anonymize_identity: z.boolean().optional(),
+  review_form_source_stage_order: z.number().nullable().optional(), // New field for review stage
   decision_options: z.array(z.object({
     name: z.string().min(1, "Outcome name cannot be empty."),
     email_template_id: z.string().nullable().optional(),
@@ -61,6 +62,15 @@ const editWorkflowStageSchema = z.object({
       message: "A target form stage must be selected for resubmission.",
       path: ['resubmission_for_stage_order'],
     });
+  }
+  if (data.step_type === 'review') {
+    if (data.review_form_source_stage_order === null || data.review_form_source_stage_order === undefined) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "A form to review must be selected.",
+        path: ['review_form_source_stage_order'],
+      });
+    }
   }
   if (data.step_type === 'recommendation') {
     if (!data.rec_form_id) {
@@ -121,6 +131,7 @@ export const WorkflowStagePropertiesPanel = ({
       let status_custom_tag: string | undefined = undefined;
       let resubmission_for_stage_order: number | undefined | null = undefined;
       let anonymize_identity: boolean | undefined = undefined;
+      let review_form_source_stage_order: number | undefined | null = undefined; // New
       let rec_form_id: string | undefined | null = undefined;
       let rec_min_recommenders: number | undefined | null = undefined;
       let rec_max_recommenders: number | undefined | null = undefined;
@@ -158,6 +169,7 @@ export const WorkflowStagePropertiesPanel = ({
         try {
           const config = JSON.parse(stage.description);
           anonymize_identity = config.anonymize_identity || false;
+          review_form_source_stage_order = config.review_form_source_stage_order; // New
           standard_description = ''; // Review stage description is for config only
         } catch (e) { /* Not valid JSON */ }
       } else if (stage.step_type === 'recommendation' && stage.description) {
@@ -181,6 +193,7 @@ export const WorkflowStagePropertiesPanel = ({
         email_template_id: stage.email_template_id || null,
         evaluation_template_id: stage.evaluation_template_id || null,
         anonymize_identity: anonymize_identity || false,
+        review_form_source_stage_order: review_form_source_stage_order, // New
         decision_options: decision_options || [
           { name: 'Accept', email_template_id: null, icon: 'CheckCircle' },
           { name: 'Decline', email_template_id: null, icon: 'XCircle' },
@@ -206,10 +219,12 @@ export const WorkflowStagePropertiesPanel = ({
 
   const onSubmit = (values: EditWorkflowStageValues) => {
     let descriptionPayload: string | null = values.description || null;
+    let formIdPayload: string | null = values.form_id || null; // Keep form_id for 'form' type
 
     if (values.step_type === 'decision') {
       const validOutcomes = values.decision_options?.filter(o => o.name.trim() !== '') || [];
       descriptionPayload = JSON.stringify({ outcomes: validOutcomes });
+      formIdPayload = null; // Clear form_id for decision stages
     } else if (values.step_type === 'status') {
       const statusConfig: { message: string; tag: string; custom_tag?: string } = {
         message: values.status_message || '',
@@ -219,10 +234,16 @@ export const WorkflowStagePropertiesPanel = ({
         statusConfig.custom_tag = values.status_custom_tag || '';
       }
       descriptionPayload = JSON.stringify(statusConfig);
+      formIdPayload = null; // Clear form_id for status stages
     } else if (values.step_type === 'resubmission') {
       descriptionPayload = JSON.stringify({ resubmission_for_stage_order: values.resubmission_for_stage_order });
+      formIdPayload = null; // Clear form_id for resubmission stages
     } else if (values.step_type === 'review') {
-      descriptionPayload = JSON.stringify({ anonymize_identity: values.anonymize_identity });
+      descriptionPayload = JSON.stringify({
+        anonymize_identity: values.anonymize_identity,
+        review_form_source_stage_order: values.review_form_source_stage_order, // New
+      });
+      formIdPayload = null; // Clear form_id for review stages
     } else if (values.step_type === 'recommendation') {
       const reminderIntervals = values.rec_reminder_intervals_days?.split(',').map(s => parseInt(s.trim())).filter(n => !isNaN(n)) || [];
       descriptionPayload = JSON.stringify({
@@ -233,12 +254,16 @@ export const WorkflowStagePropertiesPanel = ({
         reminder_intervals_days: reminderIntervals,
         anonymize_recommender_identity: values.rec_anonymize_recommender_identity,
       });
+      formIdPayload = null; // Clear form_id for recommendation stages
+    } else if (values.step_type !== 'form') {
+      // For other types like 'screening', 'scheduling', 'email'
+      formIdPayload = null; // Ensure form_id is null if not a 'form' type
     }
 
     const finalValues: Partial<WorkflowStage> = {
       name: values.name,
       step_type: values.step_type,
-      form_id: values.form_id,
+      form_id: formIdPayload, // Use the determined formIdPayload
       email_template_id: values.email_template_id,
       evaluation_template_id: values.evaluation_template_id,
       description: descriptionPayload,
@@ -317,6 +342,8 @@ export const WorkflowStagePropertiesPanel = ({
             <ReviewProperties
               form={form}
               publishedEvaluationTemplates={publishedEvaluationTemplates}
+              allStages={allStages}
+              currentStageId={stage.id}
             />
           )}
 
@@ -383,8 +410,8 @@ export const WorkflowStagePropertiesPanel = ({
             />
           )}
 
-          {/* Form Attachment Properties (for 'form' and 'review' types) */}
-          {['form', 'review'].includes(selectedStageType) && (
+          {/* Form Attachment Properties (only for 'form' type) */}
+          {selectedStageType === 'form' && (
             <FormAttachmentProperties
               form={form}
               forms={forms}

@@ -49,6 +49,19 @@ export const validateWorkflowStage = (stage: WorkflowStage, publishedEmailTempla
       }
       break;
     
+    case 'review':
+      try {
+        const config = JSON.parse(stage.description || '{}');
+        if (typeof config.review_form_source_stage_order !== 'number') {
+          return { isValid: false, message: 'A form to review must be selected for this stage.' };
+        }
+        const sourceStage = stage.workflow_template_id ? null : null; // This validation needs access to all stages in the workflow, which is not available here.
+        // For now, we rely on the Zod schema's superRefine to check if the selected stage is valid.
+      } catch (e) {
+        return { isValid: false, message: 'Review stage configuration is invalid or incomplete.' };
+      }
+      break;
+
     case 'recommendation':
       try {
         const config = JSON.parse(stage.description || '{}');
@@ -80,7 +93,6 @@ export const validateWorkflowStage = (stage: WorkflowStage, publishedEmailTempla
       break;
 
     case 'screening':
-    case 'review':
     case 'scheduling':
     case 'status':
       // No specific validation rules for these types yet.

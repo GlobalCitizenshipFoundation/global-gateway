@@ -122,15 +122,45 @@ const SubmissionDetailPage = () => {
       setEvaluationCriteria([]);
     }
 
-    const formId = formattedSubmissionData.programs?.form_id;
-    if (formId) {
-      const { data: allFieldsData, error: allFieldsError } = await supabase.from('form_fields').select('*').eq('form_id', formId).order('order', { ascending: true });
+    // Determine which form to load based on stage type
+    let targetFormId: string | null = formattedSubmissionData.programs?.form_id || null;
+    if (formattedSubmissionData.program_stages?.step_type === 'review' && formattedSubmissionData.program_stages.description) {
+      try {
+        const config = JSON.parse(formattedSubmissionData.program_stages.description);
+        const reviewFormSourceStageOrder = config.review_form_source_stage_order;
+        if (typeof reviewFormSourceStageOrder === 'number') {
+          const { data: sourceStageData, error: sourceStageError } = await supabase
+            .from('program_stages')
+            .select('form_id')
+            .eq('program_id', programId)
+            .eq('order', reviewFormSourceStageOrder)
+            .single();
+          if (sourceStageError || !sourceStageData) {
+            console.error("Error fetching review source stage form_id:", sourceStageError);
+            showError("Could not load the source form for this review stage.");
+            targetFormId = null;
+          } else {
+            targetFormId = sourceStageData.form_id;
+          }
+        }
+      } catch (e) {
+        console.error("Error parsing review stage description:", e);
+        showError("Invalid review stage configuration.");
+        targetFormId = null;
+      }
+    }
+
+    if (targetFormId) {
+      const { data: allFieldsData, error: allFieldsError } = await supabase.from('form_fields').select('*').eq('form_id', targetFormId).order('order', { ascending: true });
       if (allFieldsError) showError("Could not load all form fields for logic evaluation.");
       else setAllFormFieldsForLogic(allFieldsData as FormField[]);
 
-      const { data: sectionsData, error: sectionsError } = await supabase.from('form_sections').select('*').eq('form_id', formId).order('order', { ascending: true });
+      const { data: sectionsData, error: sectionsError } = await supabase.from('form_sections').select('*').eq('form_id', targetFormId).order('order', { ascending: true });
       if (sectionsError) showError("Could not load form sections.");
       else setAllFormSections(sectionsData || []);
+    } else {
+      setAllFormFieldsForLogic([]);
+      setAllFormSections([]);
     }
 
     const { data: responsesData, error: responsesError } = await supabase.from('application_responses').select(`value, form_fields ( * )`).eq('application_id', submissionId);
@@ -174,14 +204,17 @@ const SubmissionDetailPage = () => {
           try { currentResponsesMap[res.form_fields.id] = JSON.parse(res.value); } catch { currentResponsesMap[res.form_fields.id] = []; }
         } else if (res.form_fields.field_type === 'number') {
           currentResponsesMap[res.form_fields.id] = parseFloat(res.value);
-        } else {
+        }
+        else {
           currentResponsesMap[res.form_fields.id] = res.value;
         }
       }
     });
+
     return filteredResponses.map(res => {
       const field = res.form_fields;
       if (!field) return null;
+
       const wasDisplayed = shouldFieldBeDisplayed(field, currentResponsesMap, allFormFieldsForLogic);
       return { ...res, wasDisplayed };
     }).filter(Boolean) as (ResponseWithField & { wasDisplayed: boolean })[];
