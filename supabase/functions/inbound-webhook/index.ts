@@ -1,7 +1,7 @@
 // @ts-nocheck
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
-import { verifyWebhookSignature } from 'https://esm.sh/@mailgun/webhook-validation@1.0.2'; // Updated version to 1.0.2
+import { verifyWebhookSignature } from 'https://unpkg.com/@mailgun/webhook-validation@1.0.2/dist/index.mjs'; // Changed to unpkg.com
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
