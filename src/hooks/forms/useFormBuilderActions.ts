@@ -18,45 +18,67 @@ export const useFormBuilderActions = ({
 }: UseFormBuilderActionsProps) => {
   const { user } = useSession();
 
+  // Helper to get the next order index for a new item within a parent
+  const getNextOrder = async (tableName: string, parentIdColumn: string, parentId: string | null) => {
+    let query = supabase
+      .from(tableName)
+      .select('order')
+      .eq('form_id', formId); // Always filter by form_id
+
+    if (parentIdColumn === 'section_id') {
+      if (parentId === null) {
+        query = query.is('section_id', null);
+      } else {
+        query = query.eq('section_id', parentId);
+      }
+    }
+
+    const { data, error } = await query;
+    if (error) {
+      console.error(`Error fetching order for ${tableName}:`, error);
+      throw new Error(`Failed to determine order: ${error.message}`);
+    }
+    return data && data.length > 0 ? Math.max(...data.map(item => item.order)) + 1 : 1;
+  };
+
+  // Helper to create metadata for last edited user and timestamp
+  const createMetadata = () => {
+    const now = new Date().toISOString();
+    return {
+      last_edited_by_user_id: user?.id || null,
+      last_edited_at: now,
+    };
+  };
+
   const handleAddSection = async (name: string, description: string | null, tooltip: string | null) => {
     if (!name.trim() || !formId || !user) {
       showError("Cannot add section: missing name, form ID, or user.");
       return null;
     }
 
-    const { data: currentSections, error: fetchError } = await supabase
-      .from('form_sections')
-      .select('order')
-      .eq('form_id', formId);
+    try {
+      const nextOrder = await getNextOrder('form_sections', 'section_id', null); // section_id is null for top-level sections
+      const metadata = createMetadata();
 
-    if (fetchError) {
-      showError(`Failed to fetch sections for new order: ${fetchError.message}`);
-      return null;
-    }
+      const { data, error } = await supabase
+        .from('form_sections')
+        .insert({
+          form_id: formId,
+          name: name,
+          order: nextOrder,
+          description: description,
+          tooltip: tooltip,
+          ...metadata,
+        })
+        .select()
+        .single();
 
-    const nextOrder = currentSections && currentSections.length > 0 ? Math.max(...currentSections.map(s => s.order)) + 1 : 1;
-    const now = new Date().toISOString();
-
-    const { data, error } = await supabase
-      .from('form_sections')
-      .insert({
-        form_id: formId,
-        name: name,
-        order: nextOrder,
-        description: description,
-        tooltip: tooltip,
-        last_edited_by_user_id: user.id,
-        last_edited_at: now,
-      })
-      .select()
-      .single();
-
-    if (error) {
-      showError(`Failed to add section: ${error.message}`);
-      return null;
-    } else {
+      if (error) throw error;
       setSections(prev => [...prev, data]);
       return data;
+    } catch (error: any) {
+      showError(`Failed to add section: ${error.message}`);
+      return null;
     }
   };
 
@@ -66,20 +88,20 @@ export const useFormBuilderActions = ({
       return false;
     }
 
-    const { error } = await supabase.rpc('delete_form_section_with_field_handling', {
-      p_section_id: sectionId,
-      p_user_id: user.id,
-      p_field_action: fieldAction,
-      p_target_section_id: targetSectionId,
-    });
-  
-    if (error) {
+    try {
+      const { error } = await supabase.rpc('delete_form_section_with_field_handling', {
+        p_section_id: sectionId,
+        p_user_id: user.id,
+        p_field_action: fieldAction,
+        p_target_section_id: targetSectionId,
+      });
+    
+      if (error) throw error;
+      await fetchData(); // A full re-fetch is needed because RPC can affect multiple rows (fields)
+      return true;
+    } catch (error: any) {
       showError(`Failed to delete section: ${error.message}`);
       return false;
-    } else {
-      // A full re-fetch is needed here because RPC can affect multiple rows (fields)
-      await fetchData(); 
-      return true;
     }
   };
 
@@ -88,26 +110,25 @@ export const useFormBuilderActions = ({
       showError("You must be logged in to update a section.");
       return false;
     }
-    const now = new Date().toISOString();
+    try {
+      const metadata = createMetadata();
+      const { error } = await supabase
+        .from('form_sections')
+        .update({
+          name: values.name,
+          description: values.description ?? null,
+          tooltip: values.tooltip ?? null,
+          ...metadata,
+        })
+        .eq('id', sectionId);
 
-    const { error } = await supabase
-      .from('form_sections')
-      .update({
-        name: values.name,
-        description: values.description ?? null,
-        tooltip: values.tooltip ?? null,
-        last_edited_by_user_id: user.id,
-        last_edited_at: now,
-      })
-      .eq('id', sectionId);
-
-    if (error) {
+      if (error) throw error;
+      await fetchData(); // Re-fetch on success to ensure UI consistency
+      return true;
+    } catch (error: any) {
       showError(`Failed to update section: ${error.message}.`);
       await fetchData(); // Re-fetch on error to ensure consistency
       return false;
-    } else {
-      await fetchData(); // Re-fetch on success to ensure UI consistency
-      return true;
     }
   };
 
@@ -116,20 +137,20 @@ export const useFormBuilderActions = ({
       showError("You must be logged in to save section display logic.");
       return false;
     }
-    const now = new Date().toISOString();
+    try {
+      const metadata = createMetadata();
+      const { error } = await supabase
+        .from('form_sections')
+        .update({ display_rules: rules, display_rules_logic_type: logicType, ...metadata })
+        .eq('id', sectionId);
 
-    const { error } = await supabase
-      .from('form_sections')
-      .update({ display_rules: rules, display_rules_logic_type: logicType, last_edited_by_user_id: user.id, last_edited_at: now })
-      .eq('id', sectionId);
-
-    if (error) {
+      if (error) throw error;
+      await fetchData(); // Re-fetch on success to ensure UI consistency
+      return true;
+    } catch (error: any) {
       showError(`Failed to save section display logic: ${error.message}.`);
       await fetchData(); // Re-fetch on error
       return false;
-    } else {
-      await fetchData(); // Re-fetch on success to ensure UI consistency
-      return true;
     }
   };
 
@@ -139,76 +160,58 @@ export const useFormBuilderActions = ({
       return null;
     }
 
-    let query = supabase
-      .from('form_fields')
-      .select('order')
-      .eq('form_id', formId);
-    
-    if (sectionId === null) {
-      query = query.is('section_id', null);
-    } else {
-      query = query.eq('section_id', sectionId);
-    }
+    try {
+      const nextOrder = await getNextOrder('form_fields', 'section_id', sectionId);
+      const metadata = createMetadata();
 
-    const { data: currentFieldsInTargetSection, error: fetchError } = await query;
+      const { data, error } = await supabase
+        .from('form_fields')
+        .insert({
+          form_id: formId,
+          label: label,
+          field_type: type,
+          order: nextOrder,
+          section_id: sectionId,
+          options: (type === 'select' || type === 'radio' || type === 'checkbox') ? options.split(',').map(opt => opt.trim()) : null,
+          is_required: false,
+          is_anonymized: false,
+          display_rules: null,
+          display_rules_logic_type: 'AND',
+          description: description || null,
+          tooltip: tooltip || null,
+          placeholder: placeholder || null,
+          date_min: null,
+          date_max: null,
+          date_allow_past: true,
+          date_allow_future: true,
+          rating_min_value: 1,
+          rating_max_value: 5,
+          rating_min_label: "Poor",
+          rating_max_label: "Excellent",
+          ...metadata,
+        })
+        .select()
+        .single();
 
-    if (fetchError) {
-      showError(`Failed to fetch fields for new order: ${fetchError.message}`);
-      return null;
-    }
-
-    const nextOrder = currentFieldsInTargetSection && currentFieldsInTargetSection.length > 0 ? Math.max(...currentFieldsInTargetSection.map(f => f.order)) + 1 : 1;
-    const now = new Date().toISOString();
-
-    const { data, error } = await supabase
-      .from('form_fields')
-      .insert({
-        form_id: formId,
-        label: label,
-        field_type: type,
-        order: nextOrder,
-        section_id: sectionId,
-        options: (type === 'select' || type === 'radio' || type === 'checkbox') ? options.split(',').map(opt => opt.trim()) : null,
-        is_required: false,
-        is_anonymized: false,
-        display_rules: null,
-        display_rules_logic_type: 'AND',
-        description: description || null,
-        tooltip: tooltip || null,
-        placeholder: placeholder || null,
-        last_edited_by_user_id: user.id,
-        last_edited_at: now,
-        date_min: null,
-        date_max: null,
-        date_allow_past: true,
-        date_allow_future: true,
-        rating_min_value: 1,
-        rating_max_value: 5,
-        rating_min_label: "Poor",
-        rating_max_label: "Excellent",
-      })
-      .select()
-      .single();
-
-    if (error) {
-      showError(`Failed to add field: ${error.message}`);
-      return null;
-    } else if (data) {
+      if (error) throw error;
       setFields(prev => [...prev, data as FormField]);
       return data as FormField;
+    } catch (error: any) {
+      showError(`Failed to add field: ${error.message}`);
+      return null;
     }
-    return null;
   };
 
   const handleDeleteField = async (fieldId: string) => {
-    setFields(prev => prev.filter(f => f.id !== fieldId)); // Optimistic update
-    const { error } = await supabase.from('form_fields').delete().eq('id', fieldId);
-    if (error) {
+    try {
+      setFields(prev => prev.filter(f => f.id !== fieldId)); // Optimistic update
+      const { error } = await supabase.from('form_fields').delete().eq('id', fieldId);
+      if (error) throw error;
+      return true;
+    } catch (error: any) {
       showError(`Failed to delete field: ${error.message}. Reverting.`);
       await fetchData(); // Revert by re-fetching
       return false;
-    } else {
-      return true;
     }
   };
 
@@ -217,15 +220,16 @@ export const useFormBuilderActions = ({
       showError("You must be logged in to update field requirement.");
       return false;
     }
-    setFields(prev => prev.map(f => f.id === fieldId ? { ...f, is_required: isRequired } : f)); // Optimistic update
-    const now = new Date().toISOString();
-    const { error } = await supabase.from('form_fields').update({ is_required: isRequired, last_edited_by_user_id: user.id, last_edited_at: now }).eq('id', fieldId);
-    if (error) {
+    try {
+      setFields(prev => prev.map(f => f.id === fieldId ? { ...f, is_required: isRequired } : f)); // Optimistic update
+      const metadata = createMetadata();
+      const { error } = await supabase.from('form_fields').update({ is_required: isRequired, ...metadata }).eq('id', fieldId);
+      if (error) throw error;
+      return true;
+    } catch (error: any) {
       showError(`Failed to update field: ${error.message}. Reverting.`);
       await fetchData(); // Revert by re-fetching
       return false;
-    } else {
-      return true;
     }
   };
 
@@ -234,20 +238,20 @@ export const useFormBuilderActions = ({
       showError("You must be logged in to save display logic.");
       return false;
     }
-    const now = new Date().toISOString();
-    
-    const { error } = await supabase
-      .from('form_fields')
-      .update({ display_rules: rules, display_rules_logic_type: logicType, last_edited_by_user_id: user.id, last_edited_at: now })
-      .eq('id', fieldId);
+    try {
+      const metadata = createMetadata();
+      const { error } = await supabase
+        .from('form_fields')
+        .update({ display_rules: rules, display_rules_logic_type: logicType, ...metadata })
+        .eq('id', fieldId);
 
-    if (error) {
+      if (error) throw error;
+      await fetchData(); // Re-fetch on success to ensure UI consistency
+      return true;
+    } catch (error: any) {
       showError(`Failed to save display logic: ${error.message}.`);
       await fetchData(); // Re-fetch on error
       return false;
-    } else {
-      await fetchData(); // Re-fetch on success to ensure UI consistency
-      return true;
     }
   };
 
@@ -274,61 +278,61 @@ export const useFormBuilderActions = ({
       showError("You must be logged in to update a field.");
       return false;
     }
-    const updatedOptions = (values.field_type === 'select' || values.field_type === 'radio' || values.field_type === 'checkbox')
-      ? values.options?.split(',').map(opt => opt.trim()) || null
-      : null;
+    try {
+      const updatedOptions = (values.field_type === 'select' || values.field_type === 'radio' || values.field_type === 'checkbox')
+        ? values.options?.split(',').map(opt => opt.trim()) || null
+        : null;
 
-    const now = new Date().toISOString();
-    const updatePayload: Partial<FormField> = {
-      label: values.label,
-      field_type: values.field_type,
-      options: updatedOptions,
-      is_required: values.is_required,
-      is_anonymized: values.is_anonymized,
-      description: values.description || null,
-      tooltip: values.tooltip || null,
-      placeholder: values.placeholder || null,
-      section_id: values.section_id === 'none' ? null : values.section_id || null,
-      last_edited_by_user_id: user.id,
-      last_edited_at: now,
-    };
+      const metadata = createMetadata();
+      const updatePayload: Partial<FormField> = {
+        label: values.label,
+        field_type: values.field_type,
+        options: updatedOptions,
+        is_required: values.is_required,
+        is_anonymized: values.is_anonymized,
+        description: values.description || null,
+        tooltip: values.tooltip || null,
+        placeholder: values.placeholder || null,
+        section_id: values.section_id === 'none' ? null : values.section_id || null,
+        ...metadata,
+      };
 
-    if (values.field_type === 'date') {
-      updatePayload.date_min = values.date_min || null;
-      updatePayload.date_max = values.date_max || null;
-      updatePayload.date_allow_past = values.date_allow_past ?? true;
-      updatePayload.date_allow_future = values.date_allow_future ?? true;
-    } else {
-      updatePayload.date_min = null;
-      updatePayload.date_max = null;
-      updatePayload.date_allow_past = true;
-      updatePayload.date_allow_future = true;
-    }
+      if (values.field_type === 'date') {
+        updatePayload.date_min = values.date_min || null;
+        updatePayload.date_max = values.date_max || null;
+        updatePayload.date_allow_past = values.date_allow_past ?? true;
+        updatePayload.date_allow_future = values.date_allow_future ?? true;
+      } else {
+        updatePayload.date_min = null;
+        updatePayload.date_max = null;
+        updatePayload.date_allow_past = true;
+        updatePayload.date_allow_future = true;
+      }
 
-    if (values.field_type === 'rating') {
-      updatePayload.rating_min_value = values.rating_min_value ?? 1;
-      updatePayload.rating_max_value = values.rating_max_value ?? 5;
-      updatePayload.rating_min_label = values.rating_min_label || "Poor";
-      updatePayload.rating_max_label = values.rating_max_label || "Excellent";
-    } else {
-      updatePayload.rating_min_value = null;
-      updatePayload.rating_max_value = null;
-      updatePayload.rating_min_label = null;
-      updatePayload.rating_max_label = null;
-    }
+      if (values.field_type === 'rating') {
+        updatePayload.rating_min_value = values.rating_min_value ?? 1;
+        updatePayload.rating_max_value = values.rating_max_value ?? 5;
+        updatePayload.rating_min_label = values.rating_min_label || "Poor";
+        updatePayload.rating_max_label = values.rating_max_label || "Excellent";
+      } else {
+        updatePayload.rating_min_value = null;
+        updatePayload.rating_max_value = null;
+        updatePayload.rating_min_label = null;
+        updatePayload.rating_max_label = null;
+      }
 
-    const { error } = await supabase
-      .from('form_fields')
-      .update(updatePayload)
-      .eq('id', fieldId);
+      const { error } = await supabase
+        .from('form_fields')
+        .update(updatePayload)
+        .eq('id', fieldId);
 
-    if (error) {
+      if (error) throw error;
+      await fetchData(); // Re-fetch on success to ensure UI consistency
+      return true;
+    } catch (error: any) {
       showError(`Failed to update field: ${error.message}.`);
       await fetchData(); // Re-fetch on error
       return false;
-    } else {
-      await fetchData(); // Re-fetch on success to ensure UI consistency
-      return true;
     }
   };
 
@@ -337,21 +341,22 @@ export const useFormBuilderActions = ({
       showError("You must be logged in to update field label.");
       return false;
     }
-    setFields(prevFields =>
-      prevFields.map(f => (f.id === fieldId ? { ...f, label: newLabel } : f))
-    ); // Optimistic update
-    const now = new Date().toISOString();
-    const { error } = await supabase
-      .from('form_fields')
-      .update({ label: newLabel, last_edited_by_user_id: user.id, last_edited_at: now })
-      .eq('id', fieldId);
+    try {
+      setFields(prevFields =>
+        prevFields.map(f => (f.id === fieldId ? { ...f, label: newLabel } : f))
+      ); // Optimistic update
+      const metadata = createMetadata();
+      const { error } = await supabase
+        .from('form_fields')
+        .update({ label: newLabel, ...metadata })
+        .eq('id', fieldId);
 
-    if (error) {
+      if (error) throw error;
+      return true;
+    } catch (error: any) {
       showError(`Failed to update label: ${error.message}. Reverting.`);
       await fetchData(); // Revert by re-fetching
       return false;
-    } else {
-      return true;
     }
   };
 
@@ -360,17 +365,18 @@ export const useFormBuilderActions = ({
       showError("You must be logged in to update form status.");
       return false;
     }
-    const now = new Date().toISOString();
-    const { error } = await supabase
-      .from('forms')
-      .update({ status: status, updated_at: now, last_edited_by_user_id: user.id, last_edited_at: now })
-      .eq('id', id);
+    try {
+      const metadata = createMetadata();
+      const { error } = await supabase
+        .from('forms')
+        .update({ status: status, updated_at: metadata.last_edited_at, ...metadata })
+        .eq('id', id);
 
-    if (error) {
+      if (error) throw error;
+      return true;
+    } catch (error: any) {
       showError(`Failed to update form status: ${error.message}`);
       return false;
-    } else {
-      return true;
     }
   };
 
@@ -379,17 +385,18 @@ export const useFormBuilderActions = ({
       showError("You must be logged in to update form details.");
       return false;
     }
-    const now = new Date().toISOString();
-    const { error } = await supabase
-      .from('forms')
-      .update({ name: name, description: description, updated_at: now, last_edited_by_user_id: user.id, last_edited_at: now })
-      .eq('id', id);
+    try {
+      const metadata = createMetadata();
+      const { error } = await supabase
+        .from('forms')
+        .update({ name: name, description: description, updated_at: metadata.last_edited_at, ...metadata })
+        .eq('id', id);
 
-    if (error) {
+      if (error) throw error;
+      return true;
+    } catch (error: any) {
       showError(`Failed to update form details: ${error.message}`);
       return false;
-    } else {
-      return true;
     }
   };
 
@@ -403,23 +410,22 @@ export const useFormBuilderActions = ({
       return false;
     }
 
-    let newTemplateFormData: { id: string } | null = null; // Declare outside try block
+    let newTemplateFormData: { id: string } | null = null;
     try {
-      const now = new Date().toISOString();
+      const metadata = createMetadata();
       const { data, error: newTemplateFormError } = await supabase.from("forms").insert({
         user_id: user.id,
         name: newTemplateName,
         is_template: true,
         status: 'published',
         description: templateFormToCopy.description,
-        last_edited_by_user_id: user.id,
-        last_edited_at: now,
+        ...metadata,
       }).select('id').single();
 
       if (newTemplateFormError || !data) {
         throw new Error(`Failed to create template form: ${newTemplateFormError?.message}`);
       }
-      newTemplateFormData = data; // Assign to the outer variable
+      newTemplateFormData = data;
 
       const { data: currentSections, error: sectionsError } = await supabase
         .from('form_sections')
@@ -437,28 +443,25 @@ export const useFormBuilderActions = ({
         throw new Error(`Failed to load current form content: ${sectionsError?.message || fieldsError?.message}`);
       }
 
-      const oldSectionIdMap = new Map<string, string>();
       const newSectionsToInsert = currentSections.map(section => {
         const newSectionId = crypto.randomUUID();
-        oldSectionIdMap.set(section.id, newSectionId);
         return {
           id: newSectionId,
-          form_id: newTemplateFormData!.id, // Use newTemplateFormData.id
+          form_id: newTemplateFormData!.id,
           name: section.name,
           order: section.order,
           description: section.description,
           tooltip: section.tooltip,
           display_rules: section.display_rules,
           display_rules_logic_type: section.display_rules_logic_type,
-          last_edited_by_user_id: user.id,
-          last_edited_at: now,
+          ...metadata,
         };
       });
 
       const newFieldsToInsert = currentFields.map(field => ({
         id: crypto.randomUUID(),
-        form_id: newTemplateFormData!.id, // Use newTemplateFormData.id
-        section_id: field.section_id ? oldSectionIdMap.get(field.section_id) : null,
+        form_id: newTemplateFormData!.id,
+        section_id: field.section_id ? newSectionsToInsert.find(s => s.name === (currentSections.find(cs => cs.id === field.section_id)?.name))?.id || null : null, // Map to new section ID by name
         label: field.label,
         field_type: field.field_type,
         options: field.options,
@@ -470,8 +473,6 @@ export const useFormBuilderActions = ({
         description: field.description,
         tooltip: field.tooltip,
         placeholder: field.placeholder,
-        last_edited_by_user_id: user.id,
-        last_edited_at: now,
         date_min: field.date_min,
         date_max: field.date_max,
         date_allow_past: field.date_allow_past,
@@ -480,6 +481,7 @@ export const useFormBuilderActions = ({
         rating_max_value: field.rating_max_value,
         rating_min_label: field.rating_min_label,
         rating_max_label: field.rating_max_label,
+        ...metadata,
       }));
 
       const { error: insertSectionsError } = await supabase.from('form_sections').insert(newSectionsToInsert);
@@ -499,7 +501,7 @@ export const useFormBuilderActions = ({
         console.error("Error fetching original form tags:", tagsError);
       } else if (currentFormTags && currentFormTags.length > 0) {
         const newFormTagsToInsert = currentFormTags.map(ft => ({
-          form_id: newTemplateFormData!.id, // Use newTemplateFormData.id
+          form_id: newTemplateFormData!.id,
           tag_id: ft.tag_id,
         }));
         const { error: insertTagsError } = await supabase.from('form_tags').insert(newFormTagsToInsert);
@@ -509,8 +511,8 @@ export const useFormBuilderActions = ({
       }
 
       return true;
-    } catch (err: any) {
-      showError("An unexpected error occurred: " + err.message);
+    } catch (error: any) {
+      showError("An unexpected error occurred: " + error.message);
       // Clean up partially created template if an error occurred during content copying
       if (newTemplateFormData?.id) {
         await supabase.from('forms').delete().eq('id', newTemplateFormData.id);
@@ -524,47 +526,43 @@ export const useFormBuilderActions = ({
       showError("You must be logged in to update form tags.");
       return false;
     }
-    const now = new Date().toISOString();
+    try {
+      const metadata = createMetadata();
 
-    // Delete existing tags for this form
-    const { error: deleteError } = await supabase
-      .from('form_tags')
-      .delete()
-      .eq('form_id', formId);
-
-    if (deleteError) {
-      showError(`Failed to clear existing tags: ${deleteError.message}`);
-      return false;
-    }
-
-    // Insert new tags
-    if (tagIds.length > 0) {
-      const newTags = tagIds.map(tagId => ({
-        form_id: formId,
-        tag_id: tagId,
-      }));
-      const { error: insertError } = await supabase
+      // Delete existing tags for this form
+      const { error: deleteError } = await supabase
         .from('form_tags')
-        .insert(newTags);
+        .delete()
+        .eq('form_id', formId);
 
-      if (insertError) {
-        showError(`Failed to add new tags: ${insertError.message}`);
-        return false;
+      if (deleteError) throw deleteError;
+
+      // Insert new tags
+      if (tagIds.length > 0) {
+        const newTags = tagIds.map(tagId => ({
+          form_id: formId,
+          tag_id: tagId,
+        }));
+        const { error: insertError } = await supabase
+          .from('form_tags')
+          .insert(newTags);
+
+        if (insertError) throw insertError;
       }
-    }
 
-    // Update form's last edited timestamp
-    const { error: updateFormError } = await supabase
-      .from('forms')
-      .update({ last_edited_by_user_id: user.id, last_edited_at: now })
-      .eq('id', formId);
+      // Update form's last edited timestamp
+      const { error: updateFormError } = await supabase
+        .from('forms')
+        .update({ updated_at: metadata.last_edited_at, ...metadata })
+        .eq('id', formId);
 
-    if (updateFormError) {
-      showError(`Failed to update form timestamp after tag change: ${updateFormError.message}`);
+      if (updateFormError) throw updateFormError;
+
+      return true;
+    } catch (error: any) {
+      showError(`Failed to update form tags: ${error.message}`);
       return false;
     }
-
-    return true;
   };
 
   return {

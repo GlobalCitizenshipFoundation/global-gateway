@@ -103,6 +103,7 @@ export const FormFieldItem = ({ field, onDelete, onToggleRequired, onSelectField
             ) : (
                 <span className="font-medium cursor-pointer" onDoubleClick={handleLabelDoubleClick}>
                     {field.label}
+                    {field.is_required && <span className="text-destructive ml-1">*</span>} {/* Added asterisk here */}
                 </span>
             )}
             <Badge variant="outline" className="ml-2 capitalize">{field.field_type}</Badge>
