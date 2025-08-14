@@ -24,7 +24,7 @@ Codebase Context. Steps to select the files to use as context.
 ## Stage 1 — Context Filtering
 - **Model:** `deepseek/deepseek-chat-v3-0324:free`
 - **Files for Context:** `src/**/*.tsx`
-- **Purpose:** Extract only the most relevant context from the specified files before sending to the main model.
+- **Purpose:** Extract only the most relevant contexts from the specified files before sending to the main model.
 - **Prompt:**
 
 You are a context-reduction assistant.
