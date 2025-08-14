@@ -13,7 +13,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Form } from "@/components/ui/form";
 import { useEditApplicationForm } from "@/hooks/applications/useEditApplicationForm";
 import { ApplicantInfoCard } from "@/components/applications/ApplicantInfoCard";
-import ApplicationFormSections from "@/components/applications/ApplicationFormSections";
+import ApplicationFormSections from "@/components/application/ApplicationFormSections";
 import { useState } from "react";
 import DOMPurify from 'dompurify';
 import { useSession } from "@/contexts/auth/SessionContext";

@@ -14,7 +14,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Form } from "@/components/ui/form";
 import { useApplicationForm } from "@/hooks/applications/useApplicationForm";
 import { ApplicantInfoCard } from "@/components/applications/ApplicantInfoCard";
-import ApplicationFormSections from "@/components/applications/ApplicationFormSections";
+import ApplicationFormSections from "@/components/application/ApplicationFormSections";
 import { useState, useEffect } from "react";
 import DOMPurify from 'dompurify';
 

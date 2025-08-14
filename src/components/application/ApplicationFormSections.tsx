@@ -1,10 +1,9 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { FormField, FormSection } from "@/types";
-import FormFieldRenderer from "./FormFieldRenderer"; // Ensure this import is correct
-import { useFormContext } from "react-hook-form";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"; // Import Tooltip components
-import { Info } from "lucide-react"; // Import Info icon
-import DOMPurify from 'dompurify'; // Import DOMPurify
+import FormFieldRenderer from "./FormFieldRenderer";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { Info } from "lucide-react";
+import DOMPurify from 'dompurify';
 
 interface ApplicationFormSectionsProps {
   formSections: FormSection[];
@@ -27,23 +26,28 @@ const ApplicationFormSections = ({
     <>
       {formSections.map(section => {
         const fieldsInSection = getFieldsForSection(section.id);
-        if (fieldsInSection.length === 0) return null;
-
+        const hasVisibleDescription = section.description && DOMPurify.sanitize(section.description, { ALLOWED_TAGS: [] }).trim() !== '';
         const hasTooltip = section.tooltip && section.tooltip.trim() !== '';
+
+        // If the section has no fields and no visible content in its header, don't render it.
+        if (fieldsInSection.length === 0 && !hasVisibleDescription && !hasTooltip) {
+          return null;
+        }
+
         const sanitizedDescription = section.description ? DOMPurify.sanitize(section.description, { USE_PROFILES: { html: true } }) : null;
 
         return (
           <Card key={section.id} className="mb-6">
             <CardHeader>
               <div className="flex items-center gap-2">
-                <CardTitle className="text-xl">{section.name}</CardTitle>
+                <CardTitle className="text-2xl font-bold">{section.name}</CardTitle>
                 {hasTooltip && (
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Info className="h-4 w-4 text-muted-foreground cursor-help" />
                     </TooltipTrigger>
-                    <TooltipContent className="max-w-xs bg-gray-800 text-white p-2 rounded-md text-sm">
-                      {section.tooltip}
+                    <TooltipContent>
+                      <p>{section.tooltip}</p>
                     </TooltipContent>
                   </Tooltip>
                 )}
@@ -54,11 +58,13 @@ const ApplicationFormSections = ({
                 </CardDescription>
               )}
             </CardHeader>
-            <CardContent className="grid gap-6">
-              {fieldsInSection.map(field => (
-                <FormFieldRenderer key={field.id} field={field} submitting={submitting} />
-              ))}
-            </CardContent>
+            {fieldsInSection.length > 0 && (
+              <CardContent className="grid gap-6">
+                {fieldsInSection.map(field => (
+                  <FormFieldRenderer key={field.id} field={field} submitting={submitting} />
+                ))}
+              </CardContent>
+            )}
           </Card>
         );
       })}
@@ -66,7 +72,7 @@ const ApplicationFormSections = ({
       {uncategorizedFields.length > 0 && (
         <Card className="mb-6">
           <CardHeader>
-            <CardTitle className="text-xl">Additional Information</CardTitle>
+            <CardTitle className="text-2xl font-bold">Additional Information</CardTitle>
             <CardDescription>Fields not assigned to a specific section.</CardDescription>
           </CardHeader>
           <CardContent className="grid gap-6">
