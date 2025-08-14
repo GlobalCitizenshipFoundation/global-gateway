@@ -14,6 +14,7 @@ import {
   YAxis,
   Tooltip, // Import Tooltip from recharts
   type TooltipProps,
+  type Payload, // Import Payload type
 } from "recharts";
 
 import { cn } from "@/lib/utils";
@@ -24,18 +25,14 @@ export type ChartConfig = {
     label?: string;
     color?: string;
     icon?: React.ComponentType<React.SVGProps<SVGSVGElement>>;
+    unit?: string; // Added unit property
   };
 };
 
 // Define a type for the payload if TooltipPayload is not directly exported
-type CustomTooltipPayload = {
-  name?: string;
-  value?: number | string;
+type CustomTooltipPayload = Payload & { // Extend Payload type
   unit?: string;
-  color?: string;
-  dataKey?: string;
-  payload?: any;
-  inactive?: boolean; // Added inactive property
+  inactive?: boolean;
 };
 
 type ChartContextProps = {
@@ -56,7 +53,7 @@ function useChart() {
 
 type ChartContainerProps = React.ComponentPropsWithoutRef<"div"> & {
   config: ChartConfig;
-  children: React.ReactNode;
+  children: React.ReactElement; // Expecting a single chart component as child
 };
 
 const ChartContainer = React.forwardRef<
@@ -82,7 +79,7 @@ const ChartContainer = React.forwardRef<
 });
 ChartContainer.displayName = "ChartContainer";
 
-type ChartTooltipContentProps = TooltipProps<any, any> & {
+type ChartTooltipContentProps = TooltipProps<any, any> & React.HTMLAttributes<HTMLDivElement> & {
   hideLabel?: boolean;
   hideIndicator?: boolean;
   formatter?: (
@@ -119,7 +116,7 @@ const ChartTooltipContent = React.forwardRef<
     >
       {!hideLabel && label && <div className="text-sm text-muted-foreground">{label}</div>}
       <div className="grid gap-1">
-        {payload.map((item, index) => {
+        {(payload as CustomTooltipPayload[]).map((item, index) => { // Cast payload to CustomTooltipPayload[]
           const key = item.dataKey || item.name || index;
           const configItem = item.dataKey ? config[item.dataKey] : undefined;
           return (
@@ -149,7 +146,7 @@ const ChartTooltipContent = React.forwardRef<
               </div>
               <div className="font-medium text-foreground">
                 {formatter
-                  ? formatter(item.value, item.name || "", item, index, payload)
+                  ? formatter(item.value, item.name || "", item, index, payload as CustomTooltipPayload[])
                   : defaultFormatter(item.value, item.name || "")}
               </div>
             </div>
@@ -233,8 +230,8 @@ ChartTooltipValue.displayName = "ChartTooltipValue";
 
 export {
   ChartContainer,
-  ChartTooltipContent, // Exporting the local ChartTooltipContent
-  ChartLegendContent, // Exporting the local ChartLegendContent
+  ChartTooltipContent,
+  ChartLegendContent,
   ChartTooltipName,
   ChartTooltipValue,
   Area,
@@ -247,5 +244,5 @@ export {
   XAxis,
   YAxis,
   CartesianGrid,
-  Tooltip, // Exporting recharts Tooltip
+  Tooltip,
 };

@@ -1,15 +1,15 @@
 "use client";
 
 import * as React from "react";
-import useEmblaCarousel, { type EmblaCarouselType, type EmblaCarouselAPI } from "embla-carousel-react"; // Corrected type imports
+import useEmblaCarousel, { type UseEmblaCarouselType } from "embla-carousel-react"; // Corrected type imports
 import { ArrowLeft, ArrowRight } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
 type CarouselContextProps = {
-  carouselRef: React.RefCallback<HTMLDivElement>; // Adjusted type for carouselRef
-  api: EmblaCarouselAPI | undefined;
+  carouselRef: UseEmblaCarouselType[0]; // Use inferred type for ref
+  api: UseEmblaCarouselType[1]; // Use inferred type for API
   scrollPrev: () => void;
   scrollNext: () => void;
   canScrollPrev: boolean;
@@ -33,7 +33,7 @@ type CarouselProps = {
   opts?: Parameters<typeof useEmblaCarousel>[0];
   orientation?: "horizontal" | "vertical";
   plugins?: Parameters<typeof useEmblaCarousel>[1];
-  setApi?: (api: EmblaCarouselAPI) => void;
+  setApi?: (api: UseEmblaCarouselType[1]) => void; // Use inferred type for API
 } & React.ComponentPropsWithoutRef<"div">;
 
 const Carousel = React.forwardRef<
@@ -62,7 +62,7 @@ const Carousel = React.forwardRef<
     const [canScrollPrev, setCanScrollPrev] = React.useState(false);
     const [canScrollNext, setCanScrollNext] = React.useState(false);
 
-    const onSelect = React.useCallback((api: EmblaCarouselAPI) => {
+    const onSelect = React.useCallback((api: UseEmblaCarouselType[1]) => {
       setCanScrollPrev(api.canScrollPrev());
       setCanScrollNext(api.canScrollNext());
     }, []);
@@ -75,7 +75,7 @@ const Carousel = React.forwardRef<
       api?.scrollNext();
     }, [api]);
 
-    const emblaReady = React.useCallback((api: EmblaCarouselAPI) => {
+    const emblaReady = React.useCallback((api: UseEmblaCarouselType[1]) => {
       setApi?.(api);
       onSelect(api);
     }, [onSelect, setApi]);
