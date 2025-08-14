@@ -4,7 +4,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
-import Sidebar from "./components/common/Sidebar"; // Import the new Sidebar component
+import LayoutWithSidebar from "./components/common/LayoutWithSidebar"; // Import the new LayoutWithSidebar
 import LoginPage from "./pages/auth/LoginPage";
 import ApplyPage from "./pages/applications/ApplyPage";
 import DashboardPage from "./pages/applications/DashboardPage";
@@ -52,8 +52,8 @@ const App = () => (
         <Sonner position="top-right" />
         <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
           <SessionContextProvider>
-            {/* The Sidebar now wraps all routes that should have the sidebar layout */}
-            <Sidebar>
+            {/* The LayoutWithSidebar now wraps all routes that should have the sidebar layout */}
+            <LayoutWithSidebar>
               <Routes>
                 <Route path="/" element={<Index />} />
                 <Route path="/login" element={<LoginPage />} />
@@ -104,7 +104,7 @@ const App = () => (
 
                 <Route path="*" element={<NotFound />} />
               </Routes>
-            </Sidebar>
+            </LayoutWithSidebar>
           </SessionContextProvider>
         </BrowserRouter>
       </TooltipProvider>
