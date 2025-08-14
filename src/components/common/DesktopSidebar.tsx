@@ -34,7 +34,7 @@ const DesktopSidebar = ({ isCollapsed, toggleCollapse }: DesktopSidebarProps) =>
         isCollapsed ? "w-16" : "w-56"
       )}
     >
-      <div className="flex items-center justify-start p-4 h-16 border-b border-sidebar-border">
+      <div className="flex items-center justify-end p-4 h-16 border-b border-sidebar-border">
         <Button
           variant="ghost"
           size="icon"
@@ -53,7 +53,7 @@ const DesktopSidebar = ({ isCollapsed, toggleCollapse }: DesktopSidebarProps) =>
         {filteredNavigationItems.map((section, sectionIndex) => (
           <div key={sectionIndex} className="space-y-1">
             {!isCollapsed && (
-              <h3 className="px-2 py-1 text-sm font-semibold text-sidebar-foreground/70 text-left">
+              <h3 className="px-2 py-1 text-sm font-semibold text-sidebar-foreground/70 text-right">
                 {section.title}
               </h3>
             )}
@@ -62,7 +62,7 @@ const DesktopSidebar = ({ isCollapsed, toggleCollapse }: DesktopSidebarProps) =>
                 key={item.path}
                 variant="ghost"
                 className={cn(
-                  "w-full justify-start",
+                  "w-full justify-end", // Changed to justify-end
                   isCollapsed ? "px-2 py-2" : "px-3 py-2",
                   location.pathname === item.path
                     ? "bg-sidebar-accent text-sidebar-accent-foreground"
@@ -70,9 +70,9 @@ const DesktopSidebar = ({ isCollapsed, toggleCollapse }: DesktopSidebarProps) =>
                 )}
                 asChild
               >
-                <Link to={item.path}>
-                  <DynamicIcon name={item.icon} className={cn("h-5 w-5", !isCollapsed && "mr-2")} />
-                  {!isCollapsed && <span className="whitespace-nowrap text-left">{item.label}</span>}
+                <Link to={item.path} className="flex items-center justify-end w-full"> {/* Added flex and justify-end here */}
+                  {!isCollapsed && <span className="whitespace-nowrap text-right">{item.label}</span>} {/* Added text-right */}
+                  <DynamicIcon name={item.icon} className={cn("h-5 w-5", !isCollapsed && "ml-2")} /> {/* Moved icon and added ml-2 */}
                 </Link>
               </Button>
             ))}
@@ -80,8 +80,8 @@ const DesktopSidebar = ({ isCollapsed, toggleCollapse }: DesktopSidebarProps) =>
         ))}
       </nav>
 
-      <div className="p-4 border-t border-sidebar-border flex flex-col items-start space-y-2">
-        <div className="flex w-full justify-start">
+      <div className="p-4 border-t border-sidebar-border flex flex-col items-end space-y-2"> {/* Changed items-start to items-end */}
+        <div className="flex w-full justify-end"> {/* Changed justify-start to justify-end */}
           <ThemeToggle isCollapsed={isCollapsed} />
         </div>
       </div>

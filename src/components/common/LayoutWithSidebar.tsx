@@ -43,7 +43,7 @@ const LayoutWithSidebar = ({ children }: LayoutWithSidebarProps) => {
       {filteredNavigationItems.map((section, sectionIndex) => (
         <div key={sectionIndex} className="space-y-1">
           {section.title && (
-            <h3 className="px-2 py-1 text-sm font-semibold text-sidebar-foreground/70">
+            <h3 className="px-2 py-1 text-sm font-semibold text-sidebar-foreground/70 text-right"> {/* Added text-right */}
               {section.title}
             </h3>
           )}
@@ -52,7 +52,7 @@ const LayoutWithSidebar = ({ children }: LayoutWithSidebarProps) => {
               key={item.path}
               variant="ghost"
               className={cn(
-                "w-full justify-start px-4 py-2",
+                "w-full justify-end px-4 py-2", // Changed to justify-end
                 location.pathname === item.path
                   ? "bg-sidebar-accent text-sidebar-accent-foreground"
                   : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
@@ -60,9 +60,9 @@ const LayoutWithSidebar = ({ children }: LayoutWithSidebarProps) => {
               asChild
               onClick={closeMobileMenu}
             >
-              <Link to={item.path}>
-                <DynamicIcon name={item.icon} className="h-5 w-5 mr-3" />
-                <span className="whitespace-nowrap">{item.label}</span>
+              <Link to={item.path} className="flex items-center justify-end w-full"> {/* Added flex and justify-end here */}
+                <span className="text-right">{item.label}</span> {/* Removed whitespace-nowrap, added text-right */}
+                <DynamicIcon name={item.icon} className="h-5 w-5 ml-3" /> {/* Moved icon and added ml-3 */}
               </Link>
             </Button>
           ))}
@@ -97,12 +97,12 @@ const LayoutWithSidebar = ({ children }: LayoutWithSidebarProps) => {
         {/* SheetContent (mobile sidebar) - Only visible on mobile */}
         {isMobile && (
           <SheetContent side="right" className="w-64 p-0 flex flex-col bg-sidebar border-l border-sidebar-border">
-            <div className="flex items-center justify-start p-4 h-16 border-b border-sidebar-border">
+            <div className="flex items-center justify-end p-4 h-16 border-b border-sidebar-border"> {/* Changed justify-start to justify-end */}
               {/* This div can be kept for spacing/border if needed, but the close button is gone */}
             </div>
             {renderMobileNavigation(() => setIsMobileMenuOpen(false))}
-            <div className="p-4 border-t border-sidebar-border flex flex-col items-center space-y-2">
-              <div className="flex w-full justify-center">
+            <div className="p-4 border-t border-sidebar-border flex flex-col items-end space-y-2"> {/* Changed items-center to items-end */}
+              <div className="flex w-full justify-end"> {/* Changed justify-center to justify-end */}
                 <ThemeToggle isCollapsed={false} />
               </div>
             </div>
