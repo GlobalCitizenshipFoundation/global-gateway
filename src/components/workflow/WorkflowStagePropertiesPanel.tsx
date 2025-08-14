@@ -49,13 +49,43 @@ const editWorkflowStageSchema = z.object({
   rec_reminder_intervals_days: z.string().optional(),
   rec_anonymize_recommender_identity: z.boolean().optional(),
 }).superRefine((data, ctx) => {
-  if (data.step_type === 'status' && data.status_tag === 'Custom' && !data.status_custom_tag) {
+  // Validation for 'form' type
+  if (data.step_type === 'form' && !data.form_id) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
-      message: "Custom tag text is required when 'Custom' is selected.",
-      path: ['status_custom_tag'],
+      message: "A form must be selected for this stage.",
+      path: ['form_id'],
     });
   }
+
+  // Validation for 'email' type
+  if (data.step_type === 'email' && !data.email_template_id) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "An email template must be selected for this stage.",
+      path: ['email_template_id'],
+    });
+  }
+
+  // Validation for 'status' type
+  if (data.step_type === 'status') {
+    if (data.status_tag === 'Custom' && (!data.status_custom_tag || data.status_custom_tag.trim() === '')) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Custom tag text is required when 'Custom' is selected.",
+        path: ['status_custom_tag'],
+      });
+    }
+    if (!data.status_message || data.status_message.trim() === '') {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Status message cannot be empty.",
+        path: ['status_message'],
+      });
+    }
+  }
+
+  // Validation for 'resubmission' type
   if (data.step_type === 'resubmission' && (data.resubmission_for_stage_order === null || data.resubmission_for_stage_order === undefined)) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
@@ -63,7 +93,16 @@ const editWorkflowStageSchema = z.object({
       path: ['resubmission_for_stage_order'],
     });
   }
+
+  // Validation for 'review' type
   if (data.step_type === 'review') {
+    if (data.evaluation_template_id === null || data.evaluation_template_id === undefined) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "An evaluation rubric must be selected for this stage.",
+        path: ['evaluation_template_id'],
+      });
+    }
     if (data.review_form_source_stage_order === null || data.review_form_source_stage_order === undefined) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
@@ -72,6 +111,29 @@ const editWorkflowStageSchema = z.object({
       });
     }
   }
+
+  // Validation for 'decision' type
+  if (data.step_type === 'decision') {
+    if (!data.decision_options || data.decision_options.length === 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "At least one decision outcome must be defined.",
+        path: ['decision_options'],
+      });
+    } else {
+      data.decision_options.forEach((outcome, index) => {
+        if (!outcome.name || outcome.name.trim() === '') {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "Outcome name cannot be empty.",
+            path: ['decision_options', index, 'name'],
+          });
+        }
+      });
+    }
+  }
+
+  // Validation for 'recommendation' type
   if (data.step_type === 'recommendation') {
     if (!data.rec_form_id) {
       ctx.addIssue({
@@ -93,6 +155,16 @@ const editWorkflowStageSchema = z.object({
         message: "Maximum recommenders must be a number greater than or equal to minimum.",
         path: ['rec_max_recommenders'],
       });
+    }
+    if (data.rec_reminder_intervals_days) {
+      const intervals = data.rec_reminder_intervals_days.split(',').map(s => parseInt(s.trim())).filter(n => !isNaN(n));
+      if (intervals.some(n => n < 0)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Reminder intervals must be non-negative numbers.",
+          path: ['rec_reminder_intervals_days'],
+        });
+      }
     }
   }
 });
@@ -241,6 +313,7 @@ export const WorkflowStagePropertiesPanel = ({
     } else if (values.step_type === 'review') {
       descriptionPayload = JSON.stringify({
         anonymize_identity: values.anonymize_identity,
+        evaluation_template_id: values.evaluation_template_id, // Ensure evaluation_template_id is part of description for review stage
         review_form_source_stage_order: values.review_form_source_stage_order, // New
       });
       formIdPayload = null; // Clear form_id for review stages
