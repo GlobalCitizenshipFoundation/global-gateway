@@ -1,7 +1,7 @@
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { FormFieldItem } from "@/components/form-builder/FormFieldItem"; // Updated import path
+import { FormFieldItem } from "@/components/form-builder/FormFieldItem"; // Corrected import path
 import { FormField, FormSection } from "@/types";
 import { GripVertical, Trash2, Info, Plus, Pencil } from "lucide-react";
 import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
@@ -30,21 +30,17 @@ interface FormSectionsListProps {
   handleDeleteSection: (sectionId: string, fieldAction: 'delete_fields' | 'uncategorize_fields' | 'move_to_section', targetSectionId?: string | null) => Promise<void>;
   handleDeleteField: (fieldId: string) => Promise<void>;
   handleToggleRequired: (fieldId: string, isRequired: boolean) => Promise<void>;
-  // Removed onEditLogic: (field: FormField) => void; // This prop is no longer directly used by FormFieldItem, but by parent
-  // Removed onEditField: (field: FormField) => void; // This prop is no longer directly used by FormFieldItem, but by parent
   onUpdateLabel: (fieldId: string, newLabel: string) => void;
   onSelectField: (field: FormField) => void;
   onQuickAddField: (sectionId: string) => void;
   onSelectSection: (section: FormSection) => void;
 }
 
-// Helper component for droppable areas
 const DroppableContainer = ({ id, children, className }: { id: string; children: React.ReactNode; className?: string; }) => {
   const { setNodeRef, isOver } = useDroppable({ id });
   return <div ref={setNodeRef} className={cn(className, isOver && "ring-2 ring-blue-500 ring-offset-2")}>{children}</div>;
 };
 
-// Sortable Accordion Item for Sections
 const SortableAccordionItem = ({ section, children, confirmDeleteSection, onQuickAddField, onSelectSection }: { section: FormSection; children: React.ReactNode; confirmDeleteSection: (section: FormSection) => void; onQuickAddField: (sectionId: string) => void; onSelectSection: (section: FormSection) => void; }) => {
   const {
     attributes,
@@ -189,7 +185,7 @@ export const FormSectionsList = ({
       <AlertDialog open={isSectionDeleteDialogOpen} onOpenChange={setIsSectionDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogTitle>Delete Section "{sectionToDelete?.name}"?</AlertDialogTitle>
             <AlertDialogDescription>
               This action cannot be undone. This will permanently delete the section.
               {hasFields && (

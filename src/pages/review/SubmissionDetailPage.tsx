@@ -31,9 +31,8 @@ import { useSession } from "@/contexts/auth/SessionContext";
 import { ReviewerAssignment } from "@/components/review/ReviewerAssignment";
 import { YourReviewCard } from "@/components/review/YourReviewCard";
 import { DynamicReviewForm } from "@/components/review/DynamicReviewForm";
-import { useFormLoader, DynamicFormValues } from "@/hooks/forms/useFormLoader";
-import { Form } from "@/components/ui/form"; // Added import
-import ApplicationFormSections from "@/components/application/ApplicationFormSections"; // Added import
+import { useFormLoader, DynamicFormValues } from "@/hooks/forms/useFormLoader"; // Import useFormLoader
+import ApplicationFormSections from "@/components/application/ApplicationFormSections"; // Import ApplicationFormSections
 
 type SubmissionDetail = {
   id: string;
@@ -344,20 +343,13 @@ const SubmissionDetailPage = () => {
             <div className="space-y-6">
               <div>
                 <h3 className="font-semibold text-lg mb-4">Application Responses</h3>
-                {/* Render ApplicationFormSections here */}
-                {applicationForm && (
-                  <Form {...formLoaderInstance}>
-                    <form>
-                      <ApplicationFormSections
-                        formSections={formSections}
-                        displayedFormFields={formLoaderDisplayedFormFields}
-                        allFormFields={formFields}
-                        currentResponses={formLoaderCurrentResponses}
-                        submitting={false}
-                      />
-                    </form>
-                  </Form>
-                )}
+                <ApplicationFormSections
+                  formSections={formSections}
+                  displayedFormFields={formLoaderDisplayedFormFields} // Use fields filtered by their own logic
+                  allFormFields={formFields} // Pass all fields for section logic
+                  currentResponses={formLoaderCurrentResponses} // Pass current responses for section logic
+                  submitting={false} // Not submitting the form here
+                />
               </div>
             </div>
           </CardContent>
