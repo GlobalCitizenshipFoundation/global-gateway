@@ -19,6 +19,7 @@ Available packages and libraries:
 - Use prebuilt components from the shadcn/ui library after importing them. Note that these files shouldn't be edited, so make new components if you need to change them.
 
 # AI Rules — Smart Context Two-Stage Setup
+Codebase Context. Steps to select the files to use as context. 
 
 ## Stage 1 — Context Filtering
 - **Model:** `deepseek/deepseek-chat-v3-0324:free`
