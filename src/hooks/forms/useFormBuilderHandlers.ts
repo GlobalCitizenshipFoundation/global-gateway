@@ -10,13 +10,16 @@ interface UseFormBuilderHandlersProps {
   state: ReturnType<typeof useFormBuilderState>;
 }
 
+const AUTO_SAVE_DEBOUNCE_TIME = 2000; // 2 seconds
+const SAVED_CONFIRMATION_DISPLAY_TIME = 2000; // 2 seconds
+
 type FormBuilderHandlers = {
   triggerAutoSave: () => void;
   handleManualSaveDraft: () => Promise<void>;
   handleOpenPreview: () => void;
   handlePublishUnpublish: (newStatus: 'draft' | 'published') => Promise<void>;
   handleSaveAsTemplate: (templateFormToCopy: FormType, newTemplateName: string) => Promise<boolean>;
-  handleAddSection: (e: React.FormEvent) => Promise<void>;
+  handleAddSection: (e: React.FormEvent) => Promise<FormSection | null>; // Corrected return type
   handleDeleteSection: (sectionId: string, fieldAction: 'delete_fields' | 'uncategorize_fields' | 'move_to_section', targetSectionId?: string | null) => Promise<boolean>;
   handleSaveEditedSection: (sectionId: string, values: { name: string; description?: string | null; tooltip?: string | null; }) => Promise<boolean>;
   handleSaveSectionLogic: (sectionId: string, rules: DisplayRule[], logicType: 'AND' | 'OR') => Promise<boolean>;
@@ -59,17 +62,17 @@ export const useFormBuilderHandlers = ({
     formId,
     formName,
     formDescription,
-    formStatus, setFormStatus, // Destructure setFormStatus
-    sections, setSections, // Destructure setSections
-    fields, setFields, // Destructure setFields
+    setFormStatus,
+    setSections,
+    setFields,
     fetchData,
     setIsAutoSaving,
     setLastSavedTimestamp,
     setHasUnsavedChanges,
-    isUpdatingStatus, setIsUpdatingStatus,
-    showSavedConfirmation, setShowSavedConfirmation,
-    formLastEditedAt, setFormLastEditedAt, // Destructure setFormLastEditedAt
-    formLastEditedByUserId, setFormLastEditedByUserId, // Destructure setFormLastEditedByUserId
+    setIsUpdatingStatus,
+    setShowSavedConfirmation,
+    setFormLastEditedAt,
+    setFormLastEditedByUserId,
     setIsSaveAsTemplateDialogOpen,
     setNewTemplateName,
     setIsSavingTemplate,
@@ -178,7 +181,7 @@ export const useFormBuilderHandlers = ({
 
   const handleAddSection = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newSectionName.trim() || !formId || !user) return;
+    if (!newSectionName.trim() || !formId || !user) return null; // Changed return type to FormSection | null
 
     setIsAddingSection(true);
     const newSection = await performAddSection(newSectionName, newSectionDescription, newSectionTooltip);
@@ -193,8 +196,11 @@ export const useFormBuilderHandlers = ({
       setFormLastEditedAt(new Date().toISOString());
       setFormLastEditedByUserId(user.id);
       triggerAutoSave();
+      setIsAddingSection(false);
+      return newSection; // Explicitly return newSection
     }
     setIsAddingSection(false);
+    return null; // Explicitly return null on failure
   }, [formId, newSectionName, newSectionDescription, newSectionTooltip, user, setNewSectionName, setNewSectionDescription, setNewSectionTooltip, setNewFieldSectionId, setHasUnsavedChanges, setFormLastEditedAt, setFormLastEditedByUserId, setIsAddingSection, performAddSection, triggerAutoSave]);
 
   const handleDeleteSection = useCallback(async (sectionId: string, fieldAction: 'delete_fields' | 'uncategorize_fields' | 'move_to_section', targetSectionId: string | null = null) => {
@@ -206,10 +212,11 @@ export const useFormBuilderHandlers = ({
       setFormLastEditedByUserId(user?.id || null);
       triggerAutoSave();
     }
+    return success; // Explicitly return success
   }, [user, setHasUnsavedChanges, setFormLastEditedAt, setFormLastEditedByUserId, performDeleteSection, triggerAutoSave]);
 
   const handleSaveEditedSection = useCallback(async (sectionId: string, values: { name: string; description?: string | null; tooltip?: string | null; }) => {
-    if (!user) return;
+    if (!user) return false;
     const success = await performSaveEditedSection(sectionId, values);
     if (success) {
       showSuccess("Section updated successfully!");
@@ -218,10 +225,11 @@ export const useFormBuilderHandlers = ({
       setFormLastEditedByUserId(user.id);
       triggerAutoSave();
     }
+    return success; // Explicitly return success
   }, [user, setHasUnsavedChanges, setFormLastEditedAt, setFormLastEditedByUserId, performSaveEditedSection, triggerAutoSave]);
 
   const handleSaveSectionLogic = useCallback(async (sectionId: string, rules: DisplayRule[], logicType: 'AND' | 'OR') => {
-    if (!user) return;
+    if (!user) return false;
     const success = await performSaveSectionLogic(sectionId, rules, logicType);
     if (success) {
       showSuccess("Section display logic saved successfully!");
@@ -230,11 +238,12 @@ export const useFormBuilderHandlers = ({
       setFormLastEditedByUserId(user.id);
       triggerAutoSave();
     }
+    return success; // Explicitly return success
   }, [user, setHasUnsavedChanges, setFormLastEditedAt, setFormLastEditedByUserId, performSaveSectionLogic, triggerAutoSave]);
 
   const handleAddField = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newFieldLabel.trim() || !formId || !user) return;
+    if (!newFieldLabel.trim() || !formId || !user) return null; // Changed return type to FormField | null
 
     setIsAddingField(true);
     const newField = await performAddField(newFieldLabel, newFieldType, newFieldOptions, newFieldSectionId, newFieldDescription, newFieldTooltip, newFieldPlaceholder);
@@ -251,8 +260,11 @@ export const useFormBuilderHandlers = ({
       setFormLastEditedAt(new Date().toISOString());
       setFormLastEditedByUserId(user.id);
       triggerAutoSave();
+      setIsAddingField(false);
+      return newField; // Explicitly return newField
     }
     setIsAddingField(false);
+    return null; // Explicitly return null on failure
   }, [formId, newFieldLabel, newFieldType, newFieldOptions, newFieldSectionId, newFieldDescription, newFieldTooltip, newFieldPlaceholder, user, setNewFieldLabel, setNewFieldOptions, setNewFieldType, setNewFieldDescription, setNewFieldTooltip, setNewFieldPlaceholder, setHasUnsavedChanges, setFormLastEditedAt, setFormLastEditedByUserId, setIsAddingField, performAddField, triggerAutoSave]);
 
   const handleDeleteField = useCallback(async (fieldId: string) => {
@@ -264,10 +276,11 @@ export const useFormBuilderHandlers = ({
       setFormLastEditedByUserId(user?.id || null);
       triggerAutoSave();
     }
+    return success; // Explicitly return success
   }, [user, setHasUnsavedChanges, setFormLastEditedAt, setFormLastEditedByUserId, performDeleteField, triggerAutoSave]);
 
   const handleToggleRequired = useCallback(async (fieldId: string, isRequired: boolean) => {
-    if (!user) return;
+    if (!user) return false;
     const success = await performToggleRequired(fieldId, isRequired);
     if (success) {
       showSuccess("Field requirement updated.");
@@ -276,6 +289,7 @@ export const useFormBuilderHandlers = ({
       setFormLastEditedByUserId(user.id);
       triggerAutoSave();
     }
+    return success; // Explicitly return success
   }, [user, setHasUnsavedChanges, setFormLastEditedAt, setFormLastEditedByUserId, performToggleRequired, triggerAutoSave]);
 
   const handleSaveLogic = useCallback(async (fieldId: string, rules: DisplayRule[], logicType: 'AND' | 'OR') => {
