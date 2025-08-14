@@ -5,7 +5,7 @@ export interface StageValidationResult {
   message: string | null;
 }
 
-export const validateWorkflowStage = (stage: WorkflowStage, publishedEmailTemplates: EmailTemplate[], publishedForms: Form[]): StageValidationResult => {
+export const validateWorkflowStage = (stage: WorkflowStage, allStages: WorkflowStage[], publishedEmailTemplates: EmailTemplate[], publishedForms: Form[]): StageValidationResult => {
   switch (stage.step_type) {
     case 'form':
       if (!stage.form_id) {
@@ -50,15 +50,24 @@ export const validateWorkflowStage = (stage: WorkflowStage, publishedEmailTempla
       break;
     
     case 'review':
+      if (!stage.evaluation_template_id) {
+        return { isValid: false, message: 'An evaluation rubric must be selected for this stage.' };
+      }
+      let reviewFormSourceStageOrder: number | undefined | null = null;
       try {
         const config = JSON.parse(stage.description || '{}');
-        if (typeof config.review_form_source_stage_order !== 'number') {
-          return { isValid: false, message: 'A form to review must be selected for this stage.' };
-        }
-        const sourceStage = stage.workflow_template_id ? null : null; // This validation needs access to all stages in the workflow, which is not available here.
-        // For now, we rely on the Zod schema's superRefine to check if the selected stage is valid.
+        reviewFormSourceStageOrder = config.review_form_source_stage_order;
       } catch (e) {
         return { isValid: false, message: 'Review stage configuration is invalid or incomplete.' };
+      }
+
+      if (reviewFormSourceStageOrder === null || reviewFormSourceStageOrder === undefined) {
+        return { isValid: false, message: 'A form to review must be selected.' };
+      }
+      // Check if the selected source stage actually exists and is a form stage before this one
+      const sourceStage = allStages.find(s => s.order_index === reviewFormSourceStageOrder);
+      if (!sourceStage || sourceStage.step_type !== 'form' || sourceStage.order_index >= stage.order_index) {
+        return { isValid: false, message: "The selected form to review must be a valid 'Form' stage that appears before this review stage." };
       }
       break;
 
@@ -107,7 +116,8 @@ export const isWorkflowPublishable = (stages: WorkflowStage[], publishedEmailTem
   let publishable = true;
 
   stages.forEach(stage => {
-    const { isValid, message } = validateWorkflowStage(stage, publishedEmailTemplates, publishedForms);
+    // Pass allStages to validateCriterion
+    const { isValid, message } = validateWorkflowStage(stage, stages, publishedEmailTemplates, publishedForms);
     if (!isValid && message) {
       publishable = false;
       errors.set(stage.id, message);

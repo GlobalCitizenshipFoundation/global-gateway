@@ -10,16 +10,23 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { UseFormReturn } from "react-hook-form";
 import { EvaluationTemplate, WorkflowStage } from "@/types";
-import { ReviewFormSourceStageSelect } from "./ReviewFormSourceStageSelect"; // Import the new component
+import { ReviewFormSourceStageSelect } from "./ReviewFormSourceStageSelect";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"; // Import Alert
+import { Info } from "lucide-react"; // Import Info icon
 
 interface ReviewPropertiesProps {
   form: UseFormReturn<any>;
   publishedEvaluationTemplates: EvaluationTemplate[];
-  allStages: WorkflowStage[]; // Pass allStages for form source selection
-  currentStageId: string; // Pass currentStageId for form source selection
+  allStages: WorkflowStage[];
+  currentStageId: string;
 }
 
 export const ReviewProperties = ({ form, publishedEvaluationTemplates, allStages, currentStageId }: ReviewPropertiesProps) => {
+  const currentStageIndex = allStages.findIndex(s => s.id === currentStageId);
+  const availableFormStages = allStages.filter((s, index) =>
+    s.step_type === 'form' && index < currentStageIndex
+  );
+
   return (
     <>
       <FormFieldComponent
@@ -48,6 +55,16 @@ export const ReviewProperties = ({ form, publishedEvaluationTemplates, allStages
           </FormItem>
         )}
       />
+      {availableFormStages.length === 0 && (
+        <Alert variant="destructive">
+          <Info className="h-4 w-4" />
+          <AlertTitle>Missing Form Stage</AlertTitle>
+          <AlertDescription>
+            To configure this review stage, you must have at least one "Form" stage placed *before* it in the workflow.
+            Please add a form stage or reorder your workflow.
+          </AlertDescription>
+        </Alert>
+      )}
       <ReviewFormSourceStageSelect
         form={form}
         allStages={allStages}
