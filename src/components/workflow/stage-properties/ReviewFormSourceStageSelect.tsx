@@ -17,19 +17,19 @@ interface ReviewFormSourceStageSelectProps {
 }
 
 export const ReviewFormSourceStageSelect = ({ form, allStages, currentStageId }: ReviewFormSourceStageSelectProps) => {
-  // Filter to get only 'form' type stages, regardless of their order
+  // Filter to get only 'form' type stages, and exclude the current stage itself
   const availableFormStages = allStages.filter((s: WorkflowStage) =>
-    s.step_type === 'form'
+    s.step_type === 'form' && s.id !== currentStageId
   );
 
   return (
     <FormFieldComponent
       control={form.control}
-      name="review_form_source_stage_id" // Changed name to use ID
+      name="review_form_source_stage_id"
       render={({ field }) => (
         <FormItem>
           <FormLabel>Form to Review</FormLabel>
-          <Select onValueChange={(val) => field.onChange(val === '__none__' ? null : val)} value={field.value || ''}> {/* Pass string ID directly */}
+          <Select onValueChange={(val) => field.onChange(val === '__none__' ? null : val)} value={field.value || ''}>
             <FormControl>
               <SelectTrigger>
                 <SelectValue placeholder="Select a form stage" />
@@ -40,7 +40,7 @@ export const ReviewFormSourceStageSelect = ({ form, allStages, currentStageId }:
                 <SelectItem value="__none__" disabled>No form stages available</SelectItem>
               ) : (
                 availableFormStages.map((formStage: WorkflowStage) => (
-                  <SelectItem key={formStage.id} value={formStage.id}> {/* Use formStage.id as value */}
+                  <SelectItem key={formStage.id} value={formStage.id}>
                     {formStage.name} (Stage {formStage.order_index})
                   </SelectItem>
                 ))
