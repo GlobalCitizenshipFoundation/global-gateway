@@ -39,7 +39,7 @@ const ApplicationFormSections = ({
                     <TooltipTrigger asChild>
                       <Info className="h-4 w-4 text-muted-foreground cursor-help" />
                     </TooltipTrigger>
-                    <TooltipContent>
+                    <TooltipContent side="top" align="center"> {/* Added side and align */}
                       <p>{section.tooltip}</p>
                     </TooltipContent>
                   </Tooltip>
