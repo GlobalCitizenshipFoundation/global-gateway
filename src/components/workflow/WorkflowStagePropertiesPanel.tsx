@@ -105,8 +105,8 @@ export const WorkflowStagePropertiesPanel = ({
       } else if (stage.step_type === 'review' && stage.description) {
         try {
           const config = JSON.parse(stage.description);
-          anonymize_identity = config.anonymize_identity || false;
-          review_form_source_stage_order = config.review_form_source_stage_order;
+          anonymize_identity = config.anonymize_identity ?? false; // Default to false if undefined
+          review_form_source_stage_order = config.review_form_source_stage_order ?? null; // Default to null if undefined
           standard_description = '';
         } catch (e) { /* Not valid JSON */ }
       } else if (stage.step_type === 'recommendation' && stage.description) {
@@ -130,8 +130,8 @@ export const WorkflowStagePropertiesPanel = ({
         form_id: stage.form_id || null,
         email_template_id: stage.email_template_id || null,
         evaluation_template_id: stage.evaluation_template_id || null,
-        anonymize_identity: anonymize_identity || false,
-        review_form_source_stage_order: review_form_source_stage_order,
+        anonymize_identity: anonymize_identity, // Use the parsed/defaulted value
+        review_form_source_stage_order: review_form_source_stage_order, // Use the parsed/defaulted value
         decision_options: decision_options || [ // Default decision options if none are set
           { name: 'Accept', email_template_id: null, icon: 'CheckCircle' },
           { name: 'Decline', email_template_id: null, icon: 'XCircle' },

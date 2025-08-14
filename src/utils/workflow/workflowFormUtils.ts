@@ -17,12 +17,18 @@ const statusConfigSchema = z.object({
 const recommendationConfigSchema = z.object({
   form_id: z.string().min(1, "A recommendation form must be selected."),
   min_recommenders: z.preprocess(
-    (val) => (val === '' ? null : Number(val)),
-    z.number().nullable().optional()
-  ).refine(val => val === null || val === undefined || val >= 0, "Minimum recommenders must be non-negative."),
+    (val) => {
+      if (val === '' || val === null || val === undefined) return null;
+      return Number(val);
+    },
+    z.number().nullable().optional().refine(val => val === null || val === undefined || val >= 0, "Minimum recommenders must be non-negative.")
+  ),
   max_recommenders: z.preprocess(
-    (val) => (val === '' ? null : Number(val)),
-    z.number().nullable().optional()
+    (val) => {
+      if (val === '' || val === null || val === undefined) return null;
+      return Number(val);
+    },
+    z.number().nullable().optional().refine(val => val === null || val === undefined || val >= 0, "Maximum recommenders must be non-negative.") // Added refine for max_recommenders too
   ),
   reminder_email_template_id: z.string().nullable().optional(),
   reminder_intervals_days: z.string().optional(), // Stored as comma-separated string
@@ -203,8 +209,8 @@ export const createStagePayload = (values: any): Partial<WorkflowStage> => {
       break;
     case 'review':
       descriptionPayload = JSON.stringify({
-        anonymize_identity: values.anonymize_identity,
-        review_form_source_stage_order: values.review_form_source_stage_order,
+        anonymize_identity: values.anonymize_identity ?? false, // Ensure boolean, default to false
+        review_form_source_stage_order: values.review_form_source_stage_order ?? null, // Ensure number or null
       });
       formIdPayload = null;
       emailTemplateIdPayload = null;
