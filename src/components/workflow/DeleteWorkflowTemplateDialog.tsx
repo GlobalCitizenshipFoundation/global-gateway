@@ -20,7 +20,7 @@ interface DeleteWorkflowTemplateDialogProps {
 export const DeleteWorkflowTemplateDialog = ({ isOpen, onClose, templateToDelete, onConfirmDelete }: DeleteWorkflowTemplateDialogProps) => {
   return (
     <AlertDialog open={isOpen} onOpenChange={onClose}>
-      <AlertDialogContent>
+      <AlertDialogContent key={isOpen ? 'delete-workflow-open' : 'delete-workflow-closed'}>
         <AlertDialogHeader>
           <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
           <AlertDialogDescription>

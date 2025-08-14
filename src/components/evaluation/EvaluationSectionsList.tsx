@@ -3,7 +3,6 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CriterionCard } from "./CriterionCard";
 import { EvaluationCriterion, EvaluationSection } from "@/types";
-import { GripVertical, Trash2, Pencil, Plus, Eye } from "lucide-react";
 import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { useDroppable } from "@dnd-kit/core";
 import { cn } from "@/lib/utils";
@@ -12,6 +11,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { useState } from "react";
 import DOMPurify from 'dompurify';
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
+import { GripVertical, Trash2, Pencil, Plus, Eye } from 'lucide-react'; // Added missing Lucide icons
 
 interface EvaluationSectionsListProps {
   sections: EvaluationSection[];
@@ -108,7 +108,7 @@ export const EvaluationSectionsList = ({ sections, criteria, loading, validation
         </Accordion>
       ) : <p className="text-muted-foreground text-sm">No sections defined yet. Add one to get started.</p>}
       <AlertDialog open={isSectionDeleteDialogOpen} onOpenChange={setIsSectionDeleteDialogOpen}>
-        <AlertDialogContent>
+        <AlertDialogContent key={isSectionDeleteDialogOpen ? 'section-delete-open' : 'section-delete-closed'}>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Section "{sectionToDelete?.name}"?</AlertDialogTitle>
             <AlertDialogDescription>

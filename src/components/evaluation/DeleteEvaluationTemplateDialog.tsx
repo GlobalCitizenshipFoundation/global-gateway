@@ -20,7 +20,7 @@ interface DeleteEvaluationTemplateDialogProps {
 export const DeleteEvaluationTemplateDialog = ({ isOpen, onClose, templateToDelete, onConfirmDelete }: DeleteEvaluationTemplateDialogProps) => {
   return (
     <AlertDialog open={isOpen} onOpenChange={onClose}>
-      <AlertDialogContent>
+      <AlertDialogContent key={isOpen ? 'delete-eval-template-open' : 'delete-eval-template-closed'}>
         <AlertDialogHeader>
           <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
           <AlertDialogDescription>

@@ -19,7 +19,7 @@ interface AccountDeletionDialogProps {
 export const AccountDeletionDialog = ({ isOpen, onClose, onConfirm }: AccountDeletionDialogProps) => {
   return (
     <AlertDialog open={isOpen} onOpenChange={onClose}>
-      <AlertDialogContent>
+      <AlertDialogContent key={isOpen ? 'account-deletion-open' : 'account-deletion-closed'}>
         <AlertDialogHeader>
           <AlertDialogTitle>Request Account Deletion</AlertDialogTitle>
           <AlertDialogDescription>

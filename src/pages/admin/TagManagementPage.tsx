@@ -189,7 +189,7 @@ const TagManagementPage = () => {
       </div>
 
       <Dialog open={isFormDialogOpen} onOpenChange={setIsFormDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent key={isFormDialogOpen ? 'tag-form-open' : 'tag-form-closed'} className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>{selectedTag ? "Edit Tag" : "Create New Tag"}</DialogTitle>
             <DialogDescription> {/* Changed from CardDescription */}
@@ -206,7 +206,7 @@ const TagManagementPage = () => {
       </Dialog>
 
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <AlertDialogContent>
+        <AlertDialogContent key={isDeleteDialogOpen ? 'tag-delete-open' : 'tag-delete-closed'}>
           <AlertDialogHeader>
             <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
             <AlertDialogDescription>

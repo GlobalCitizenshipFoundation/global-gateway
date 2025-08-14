@@ -32,7 +32,7 @@ export const SaveAsTemplateDialog = ({
 }: SaveAsTemplateDialogProps) => {
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent key={isOpen ? 'save-template-open' : 'save-template-closed'} className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Save Form as Template</DialogTitle>
           <DialogDescription>

@@ -20,7 +20,7 @@ interface ApproveDeletionDialogProps {
 export const ApproveDeletionDialog = ({ isOpen, onClose, onConfirm, userName, isProcessing }: ApproveDeletionDialogProps) => {
   return (
     <AlertDialog open={isOpen} onOpenChange={onClose}>
-      <AlertDialogContent>
+      <AlertDialogContent key={isOpen ? 'approve-deletion-open' : 'approve-deletion-closed'}>
         <AlertDialogHeader>
           <AlertDialogTitle>Approve Account Deletion?</AlertDialogTitle>
           <AlertDialogDescription>

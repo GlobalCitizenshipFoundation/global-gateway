@@ -29,7 +29,7 @@ export const DuplicateWorkflowTemplateDialog = ({
 }: DuplicateWorkflowTemplateDialogProps) => {
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent key={isOpen ? 'duplicate-workflow-open' : 'duplicate-workflow-closed'} className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Duplicate Workflow Template</DialogTitle>
           <DialogDescription>

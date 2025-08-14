@@ -20,7 +20,7 @@ interface DeleteFormDialogProps {
 export const DeleteFormDialog = ({ isOpen, onClose, formToDelete, onConfirmDelete }: DeleteFormDialogProps) => {
   return (
     <AlertDialog open={isOpen} onOpenChange={onClose}>
-      <AlertDialogContent>
+      <AlertDialogContent key={isOpen ? 'delete-form-open' : 'delete-form-closed'}>
         <AlertDialogHeader>
           <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
           <AlertDialogDescription>

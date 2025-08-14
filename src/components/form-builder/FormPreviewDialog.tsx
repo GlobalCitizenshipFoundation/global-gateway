@@ -90,7 +90,7 @@ const FormPreviewDialog = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto">
+      <DialogContent key={isOpen ? 'form-preview-open' : 'form-preview-closed'} className="sm:max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-2xl">{formName} - Preview</DialogTitle>
           {formDescription && (

@@ -16,7 +16,7 @@ export const EmailTemplatePreviewDialog = ({ isOpen, onClose, template }: EmailT
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto">
+      <DialogContent key={isOpen ? 'email-preview-open' : 'email-preview-closed'} className="sm:max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-2xl">Preview: {template.name}</DialogTitle>
           <DialogDescription>Subject: {template.subject}</DialogDescription>
