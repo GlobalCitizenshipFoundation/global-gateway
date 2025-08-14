@@ -128,7 +128,7 @@ export const FieldPropertiesPanel = ({
 
       <h3 className="text-lg font-semibold mb-4">Conditional Logic</h3>
       <ConditionalLogicBuilder
-        fieldToEdit={field}
+        itemToEdit={field}
         allFields={allFields}
         onSave={onSaveLogic}
         isOpen={true}

@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { FormField, DisplayRule } from '@/types';
+import { FormField, DisplayRule, FormSection } from '@/types';
 import { Plus, Trash2, CalendarIcon } from 'lucide-react';
 import { showError } from '@/utils/toast';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -14,9 +14,9 @@ import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 
 interface ConditionalLogicBuilderProps {
-  fieldToEdit: FormField | null;
-  allFields: FormField[];
-  onSave: (fieldId: string, rules: DisplayRule[], logicType: 'AND' | 'OR') => void;
+  itemToEdit: FormField | FormSection | null; // Can be a field or a section
+  allFields: FormField[]; // All fields are needed to select trigger fields
+  onSave: (itemId: string, rules: DisplayRule[], logicType: 'AND' | 'OR') => void; // itemId is now generic
   isOpen?: boolean;
   onClose?: () => void;
 }
@@ -52,7 +52,7 @@ const operatorLabels: Record<DisplayRule['operator'], string> = {
 };
 
 const ConditionalLogicBuilder = ({
-  fieldToEdit,
+  itemToEdit, // Renamed from fieldToEdit
   allFields,
   onSave,
 }: ConditionalLogicBuilderProps) => {
@@ -60,16 +60,17 @@ const ConditionalLogicBuilder = ({
   const [logicType, setLogicType] = useState<'AND' | 'OR'>('AND');
 
   useEffect(() => {
-    if (fieldToEdit) {
-      setRules(fieldToEdit.display_rules || []);
-      setLogicType(fieldToEdit.display_rules_logic_type || 'AND');
+    if (itemToEdit) {
+      setRules(itemToEdit.display_rules || []);
+      setLogicType(itemToEdit.display_rules_logic_type || 'AND');
     } else {
       setRules([]);
       setLogicType('AND');
     }
-  }, [fieldToEdit]);
+  }, [itemToEdit]);
 
-  const availableTriggerFields = allFields.filter(f => f.id !== fieldToEdit?.id);
+  // Filter out the item being edited if it's a field, as a field cannot depend on itself
+  const availableTriggerFields = allFields.filter(f => f.id !== itemToEdit?.id);
 
   const addRule = () => {
     setRules([...rules, { field_id: '', operator: 'equals', value: '' }]);
@@ -86,7 +87,7 @@ const ConditionalLogicBuilder = ({
   };
 
   const handleSave = () => {
-    if (!fieldToEdit) return;
+    if (!itemToEdit) return;
 
     for (const rule of rules) {
       const triggerField = allFields.find(f => f.id === rule.field_id);
@@ -104,7 +105,7 @@ const ConditionalLogicBuilder = ({
       }
     }
 
-    onSave(fieldToEdit.id, rules, logicType);
+    onSave(itemToEdit.id, rules, logicType); // Pass itemToEdit.id
   };
 
   const renderValueInput = (rule: DisplayRule, index: number, triggerField: FormField | undefined) => {

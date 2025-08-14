@@ -53,13 +53,15 @@ export const useFormBuilderHandlers = ({
     newFieldTooltip, setNewFieldTooltip,
     newFieldPlaceholder, setNewFieldPlaceholder,
     isAddingField, setIsAddingField,
+    formTags, // New: Destructure formTags
   } = state;
 
   // Initialize actions from the dedicated hook
   const {
     handleAddSection: performAddSection,
     handleDeleteSection: performDeleteSection,
-    handleSaveEditedSection: performSaveEditedSection, // Destructure new action
+    handleSaveEditedSection: performSaveEditedSection,
+    handleSaveSectionLogic: performSaveSectionLogic, // Destructure new action
     handleAddField: performAddField,
     handleDeleteField: performDeleteField,
     handleToggleRequired: performToggleRequired,
@@ -68,7 +70,8 @@ export const useFormBuilderHandlers = ({
     handleUpdateFieldLabel: performUpdateFieldLabel,
     handleUpdateFormStatus: performUpdateFormStatus,
     handleUpdateFormDetails: performUpdateFormDetails,
-    handleSaveAsTemplate: performSaveAsTemplate, // Destructure the new action
+    handleSaveAsTemplate: performSaveAsTemplate,
+    handleUpdateFormTags: performUpdateFormTags, // Destructure new action
   } = useFormBuilderActions({ formId, setSections, setFields, fetchData });
 
   const showSavedFeedback = useCallback(() => {
@@ -149,6 +152,18 @@ export const useFormBuilderHandlers = ({
       triggerAutoSave();
     }
   }, [user, setHasUnsavedChanges, setFormLastEditedAt, setFormLastEditedByUserId, performSaveEditedSection, triggerAutoSave]);
+
+  const handleSaveSectionLogic = useCallback(async (sectionId: string, rules: DisplayRule[], logicType: 'AND' | 'OR') => {
+    if (!user) return;
+    const success = await performSaveSectionLogic(sectionId, rules, logicType);
+    if (success) {
+      showSuccess("Section display logic saved successfully!");
+      setHasUnsavedChanges(true);
+      setFormLastEditedAt(new Date().toISOString());
+      setFormLastEditedByUserId(user.id);
+      triggerAutoSave();
+    }
+  }, [user, setHasUnsavedChanges, setFormLastEditedAt, setFormLastEditedByUserId, performSaveSectionLogic, triggerAutoSave]);
 
   const handleAddField = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
@@ -306,6 +321,7 @@ export const useFormBuilderHandlers = ({
       updated_at: new Date().toISOString(),
       last_edited_by_user_id: user.id,
       last_edited_at: new Date().toISOString(),
+      tags: formTags, // Pass existing tags to be copied
     };
 
     const success = await performSaveAsTemplate(currentFormAsTemplateCopy, state.newTemplateName);
@@ -321,17 +337,34 @@ export const useFormBuilderHandlers = ({
       showError("Failed to save as template. Please try again.");
     }
     setIsSavingTemplate(false);
-  }, [formId, formName, formDescription, formStatus, user, state.newTemplateName, state.formLastEditedAt, setIsSavingTemplate, performSaveAsTemplate, setIsSaveAsTemplateDialogOpen, setNewTemplateName, setFormLastEditedAt, setFormLastEditedByUserId, triggerAutoSave]);
+  }, [formId, formName, formDescription, formStatus, user, state.newTemplateName, state.formLastEditedAt, formTags, setIsSavingTemplate, performSaveAsTemplate, setIsSaveAsTemplateDialogOpen, setNewTemplateName, setFormLastEditedAt, setFormLastEditedByUserId, triggerAutoSave]);
 
   const handleOpenPreview = useCallback(() => {
     setIsFormPreviewOpen(true);
   }, [setIsFormPreviewOpen]);
 
+  const handleUpdateFormTags = useCallback(async (tagIds: string[]) => {
+    if (!formId || !user) return;
+    setIsAutoSaving(true); // Use auto-saving indicator for tag changes
+    const success = await performUpdateFormTags(formId, tagIds);
+    if (success) {
+      setHasUnsavedChanges(true); // Mark as unsaved to trigger auto-save logic
+      setFormLastEditedAt(new Date().toISOString());
+      setFormLastEditedByUserId(user.id);
+      showSavedFeedback();
+      fetchData(); // Re-fetch to update formTags state
+    } else {
+      showError("Failed to update form tags.");
+    }
+    setIsAutoSaving(false);
+  }, [formId, user, performUpdateFormTags, setIsAutoSaving, setHasUnsavedChanges, setFormLastEditedAt, setFormLastEditedByUserId, showSavedFeedback, fetchData]);
+
   return {
     triggerAutoSave,
     handleAddSection,
     handleDeleteSection,
-    handleSaveEditedSection, // Expose new handler
+    handleSaveEditedSection,
+    handleSaveSectionLogic, // Expose new handler
     handleAddField,
     handleDeleteField,
     handleToggleRequired,
@@ -342,5 +375,6 @@ export const useFormBuilderHandlers = ({
     handleManualSaveDraft,
     handleSaveAsTemplate,
     handleOpenPreview,
+    handleUpdateFormTags, // Expose new handler
   };
 };

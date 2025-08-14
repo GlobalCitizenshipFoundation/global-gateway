@@ -24,15 +24,16 @@ const ApplyPage = () => {
   const {
     program,
     formSections,
-    formFields,
+    formFields, // All form fields for logic evaluation
     loading,
     profileFullName,
     profileEmail,
     form,
-    displayedFormFields,
+    displayedFormFields, // Fields displayed after their own logic
     user,
     programId,
     applicationForm,
+    currentResponses, // Current responses for section logic
   } = useApplicationForm();
 
   const [submitting, setSubmitting] = useState(false);
@@ -142,6 +143,8 @@ const ApplyPage = () => {
               <ApplicationFormSections
                 formSections={formSections}
                 displayedFormFields={displayedFormFields}
+                allFormFields={formFields} // Pass all fields for section logic
+                currentResponses={currentResponses} // Pass current responses for section logic
                 submitting={submitting}
               />
 

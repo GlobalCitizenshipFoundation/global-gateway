@@ -32,6 +32,7 @@ import { ReviewerAssignment } from "@/components/review/ReviewerAssignment";
 import { YourReviewCard } from "@/components/review/YourReviewCard";
 import { DynamicReviewForm } from "@/components/review/DynamicReviewForm";
 import { useFormLoader, DynamicFormValues } from "@/hooks/forms/useFormLoader"; // Import useFormLoader
+import ApplicationFormSections from "@/components/application/ApplicationFormSections"; // Import ApplicationFormSections
 
 type SubmissionDetail = {
   id: string;
@@ -77,12 +78,12 @@ const SubmissionDetailPage = () => {
     program: loadedProgram, // Renamed to avoid conflict with local 'program' state
     applicationForm,
     formSections,
-    formFields,
+    formFields, // All form fields for logic evaluation
     loading: formLoaderLoading,
     error: formLoaderError,
     form: formLoaderInstance, // Renamed to avoid conflict with local 'form' state
     currentResponses: formLoaderCurrentResponses,
-    displayedFormFields: formLoaderDisplayedFormFields,
+    displayedFormFields: formLoaderDisplayedFormFields, // Fields displayed after their own logic
   } = useFormLoader({ programId, formId: targetFormIdForResponses, initialResponses });
 
   const [stages, setStages] = useState<ProgramStage[]>([]); // Define stages state here
@@ -195,7 +196,7 @@ const SubmissionDetailPage = () => {
     }
     
     setLoadingPage(false);
-  }, [submissionId, programId, formLoaderInstance]);
+  }, [programId, submissionId, formLoaderInstance]); // Added formLoaderInstance to dependencies
 
   useEffect(() => {
     fetchSubmissionDetails();
@@ -212,7 +213,7 @@ const SubmissionDetailPage = () => {
     }
   }, [isReviewer, submission]);
 
-  const displayedResponses = useMemo(() => {
+  const displayedResponsesForPdf = useMemo(() => {
     // Use formLoaderDisplayedFormFields which already applies conditional logic
     // and filter by anonymization status if current user is a reviewer
     return formLoaderDisplayedFormFields.filter(field => {
@@ -342,22 +343,13 @@ const SubmissionDetailPage = () => {
             <div className="space-y-6">
               <div>
                 <h3 className="font-semibold text-lg mb-4">Application Responses</h3>
-                <dl className="space-y-4">
-                  {displayedResponses.length > 0 ? (
-                    displayedResponses.map((res, index) => {
-                      const sanitizedDescription = res.form_fields?.description ? DOMPurify.sanitize(res.form_fields.description, { USE_PROFILES: { html: true } }) : null;
-                      return (
-                        <div key={index}>
-                          <dt className="font-medium text-sm">{res.form_fields?.label || 'Untitled Question'}</dt>
-                          {sanitizedDescription && <dd className="text-sm text-muted-foreground mt-1"><div dangerouslySetInnerHTML={{ __html: sanitizedDescription }} className="prose max-w-none" /></dd>}
-                          <dd className="text-muted-foreground whitespace-pre-wrap mt-1">{formatResponseValue(res.value, res.form_fields?.field_type || null)}</dd>
-                        </div>
-                      );
-                    })
-                  ) : (
-                    <p className="text-muted-foreground text-sm">No responses to display for this application.</p>
-                  )}
-                </dl>
+                <ApplicationFormSections
+                  formSections={formSections}
+                  displayedFormFields={formLoaderDisplayedFormFields} // Use fields filtered by their own logic
+                  allFormFields={formFields} // Pass all fields for section logic
+                  currentResponses={formLoaderCurrentResponses} // Pass current responses for section logic
+                  submitting={false} // Not submitting the form here
+                />
               </div>
             </div>
           </CardContent>
@@ -371,7 +363,7 @@ const SubmissionDetailPage = () => {
                   applicantEmail={submission.email || 'N/A'}
                   submittedDate={submission.submitted_date}
                   currentStageName={submission.program_stages?.name || 'N/A'}
-                  allResponses={displayedResponses} // Pass filtered responses
+                  allResponses={displayedResponsesForPdf} // Pass filtered responses for PDF
                   allFormFields={formFields} // Pass all fields for logic evaluation in PDF
                   formSections={formSections}
                 />

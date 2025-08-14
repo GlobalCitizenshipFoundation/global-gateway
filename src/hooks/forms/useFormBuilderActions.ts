@@ -103,6 +103,25 @@ export const useFormBuilderActions = ({
     }
   };
 
+  const handleSaveSectionLogic = async (sectionId: string, rules: DisplayRule[], logicType: 'AND' | 'OR') => {
+    if (!user) return false;
+    const now = new Date().toISOString();
+
+    const { error } = await supabase
+      .from('form_sections')
+      .update({ display_rules: rules, display_rules_logic_type: logicType, last_edited_by_user_id: user.id, last_edited_at: now })
+      .eq('id', sectionId);
+
+    if (error) {
+      showError(`Failed to save section display logic: ${error.message}.`);
+      fetchData(); // Re-fetch on error
+      return false;
+    } else {
+      fetchData(); // Re-fetch on success to ensure UI consistency
+      return true;
+    }
+  };
+
   const handleAddField = async (label: string, type: FormField['field_type'], options: string, sectionId: string | null, description: string | null, tooltip: string | null, placeholder: string | null) => {
     if (!label.trim() || !formId || !user) return null;
 
@@ -263,7 +282,7 @@ export const useFormBuilderActions = ({
       updatePayload.rating_min_value = values.rating_min_value ?? 1;
       updatePayload.rating_max_value = values.rating_max_value ?? 5;
       updatePayload.rating_min_label = values.rating_min_label || "Poor";
-      updatePayload.rating_max_label = values.rating_max_label || "Excellent";
+      updatePayload.rating_max_label = "Excellent";
     } else {
       updatePayload.rating_min_value = null;
       updatePayload.rating_max_value = null;
@@ -390,6 +409,8 @@ export const useFormBuilderActions = ({
           order: section.order,
           description: section.description,
           tooltip: section.tooltip,
+          display_rules: section.display_rules, // Copy display rules
+          display_rules_logic_type: section.display_rules_logic_type, // Copy logic type
           last_edited_by_user_id: user.id,
           last_edited_at: now,
         };
@@ -431,6 +452,26 @@ export const useFormBuilderActions = ({
         return false;
       }
 
+      // Copy tags
+      const { data: currentFormTags, error: tagsError } = await supabase
+        .from('form_tags')
+        .select('tag_id')
+        .eq('form_id', templateFormToCopy.id);
+
+      if (tagsError) {
+        console.error("Error fetching original form tags:", tagsError);
+        // Don't fail the whole operation, but log the error
+      } else if (currentFormTags && currentFormTags.length > 0) {
+        const newFormTagsToInsert = currentFormTags.map(ft => ({
+          form_id: newTemplateFormData.id,
+          tag_id: ft.tag_id,
+        }));
+        const { error: insertTagsError } = await supabase.from('form_tags').insert(newFormTagsToInsert);
+        if (insertTagsError) {
+          console.error("Failed to copy form tags:", insertTagsError);
+        }
+      }
+
       return true;
     } catch (err: any) {
       showError("An unexpected error occurred: " + err.message);
@@ -438,10 +479,59 @@ export const useFormBuilderActions = ({
     }
   };
 
+  const handleUpdateFormTags = async (formId: string, tagIds: string[]) => {
+    if (!user) {
+      showError("You must be logged in to update form tags.");
+      return false;
+    }
+    const now = new Date().toISOString();
+
+    // Delete existing tags for this form
+    const { error: deleteError } = await supabase
+      .from('form_tags')
+      .delete()
+      .eq('form_id', formId);
+
+    if (deleteError) {
+      showError(`Failed to clear existing tags: ${deleteError.message}`);
+      return false;
+    }
+
+    // Insert new tags
+    if (tagIds.length > 0) {
+      const newTags = tagIds.map(tagId => ({
+        form_id: formId,
+        tag_id: tagId,
+      }));
+      const { error: insertError } = await supabase
+        .from('form_tags')
+        .insert(newTags);
+
+      if (insertError) {
+        showError(`Failed to add new tags: ${insertError.message}`);
+        return false;
+      }
+    }
+
+    // Update form's last edited timestamp
+    const { error: updateFormError } = await supabase
+      .from('forms')
+      .update({ last_edited_by_user_id: user.id, last_edited_at: now })
+      .eq('id', formId);
+
+    if (updateFormError) {
+      showError(`Failed to update form timestamp after tag change: ${updateFormError.message}`);
+      return false;
+    }
+
+    return true;
+  };
+
   return {
     handleAddSection,
     handleDeleteSection,
     handleSaveEditedSection,
+    handleSaveSectionLogic, // New action
     handleAddField,
     handleDeleteField,
     handleToggleRequired,
@@ -451,5 +541,6 @@ export const useFormBuilderActions = ({
     handleUpdateFormStatus,
     handleUpdateFormDetails,
     handleSaveAsTemplate,
+    handleUpdateFormTags, // New action
   };
 };

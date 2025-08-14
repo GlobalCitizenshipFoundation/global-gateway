@@ -16,6 +16,7 @@ export const useFormBuilderState = (initialFormId?: string) => {
   const [formLastEditedByUserId, setFormLastEditedByUserId] = useState<string | null>(null);
   const [lastEditedByUserName, setLastEditedByUserName] = useState<string | null>(null);
   const [isTemplate, setIsTemplate] = useState(false); // New: is_template status
+  const [formTags, setFormTags] = useState<FormType['tags']>([]); // New: State for form tags
 
   // Form content state
   const [sections, setSections] = useState<FormSection[]>([]);
@@ -61,7 +62,7 @@ export const useFormBuilderState = (initialFormId?: string) => {
 
     const { data: formData, error: formError } = await supabase
       .from('forms')
-      .select('name, status, description, last_edited_at, last_edited_by_user_id, is_template') // Fetch is_template
+      .select('name, status, description, last_edited_at, last_edited_by_user_id, is_template, form_tags(tags(*))') // Fetch is_template and form_tags
       .eq('id', currentFormId)
       .single();
     
@@ -73,6 +74,7 @@ export const useFormBuilderState = (initialFormId?: string) => {
       setFormLastEditedAt(null);
       setFormLastEditedByUserId(null);
       setIsTemplate(false); // Reset is_template
+      setFormTags([]); // Reset formTags
     } else {
       setFormName(formData.name);
       setFormDescription(formData.description);
@@ -80,11 +82,12 @@ export const useFormBuilderState = (initialFormId?: string) => {
       setFormLastEditedAt(formData.last_edited_at);
       setFormLastEditedByUserId(formData.last_edited_by_user_id);
       setIsTemplate(formData.is_template); // Set is_template
+      setFormTags(formData.form_tags.map((ft: any) => ft.tags) || []); // Set formTags
     }
 
     const { data: sectionsData, error: sectionsError } = await supabase
       .from('form_sections')
-      .select('*, description, tooltip') // Select new columns
+      .select('*, description, tooltip, display_rules, display_rules_logic_type') // Select new columns
       .eq('form_id', currentFormId)
       .order('order', { ascending: true });
     
@@ -132,14 +135,14 @@ export const useFormBuilderState = (initialFormId?: string) => {
       if (formLastEditedByUserId) {
         const { data, error } = await supabase
           .from('profiles')
-          .select('full_name')
+          .select('first_name, last_name')
           .eq('id', formLastEditedByUserId)
           .single();
         if (error) {
           console.error("Error fetching last edited user name:", error);
           setLastEditedByUserName(null);
         } else if (data) {
-          setLastEditedByUserName(data.full_name || 'Unknown User');
+          setLastEditedByUserName([data.first_name, data.last_name].filter(Boolean).join(' ').trim() || 'Unknown User');
         }
       } else {
         setLastEditedByUserName(null);
@@ -188,5 +191,6 @@ export const useFormBuilderState = (initialFormId?: string) => {
     newFieldTooltip, setNewFieldTooltip,
     newFieldPlaceholder, setNewFieldPlaceholder,
     isAddingField, setIsAddingField,
+    formTags, // New: Expose formTags
   };
 };

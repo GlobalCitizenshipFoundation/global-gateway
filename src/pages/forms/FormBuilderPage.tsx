@@ -19,7 +19,9 @@ import { UncategorizedFieldsList } from "@/components/forms/form-builder/Uncateg
 import { FormFieldItem } from "@/components/forms/form-builder/FormFieldItem";
 import { FieldPropertiesPanel } from "@/components/forms/form-builder/FieldPropertiesPanel";
 import { SectionPropertiesPanel } from "@/components/forms/form-builder/SectionPropertiesPanel"; // Import new panel
-import { FormField, FormSection } from "@/types";
+import { FormField, FormSection, Tag } from "@/types"; // Import Tag type
+import { FormTagsInput } from "@/components/forms/FormTagsInput"; // Import new component
+import { useTagsData } from "@/hooks/tags/useTagsData"; // Import useTagsData
 
 const FormBuilderPage = () => {
   const { formId } = useParams<{ formId: string }>();
@@ -46,10 +48,14 @@ const FormBuilderPage = () => {
     fetchData,
     setSections,
     setFields,
+    formTags, // Destructure formTags from state
   } = state;
 
   const [selectedField, setSelectedField] = useState<FormField | null>(null);
   const [selectedSection, setSelectedSection] = useState<FormSection | null>(null); // New state for selected section
+
+  // Fetch all available tags
+  const { tags: allAvailableTags, loading: loadingTags } = useTagsData();
 
   // Initialize actions from the dedicated hook
   const formBuilderActions = useFormBuilderActions({
@@ -148,6 +154,12 @@ const FormBuilderPage = () => {
     }
   };
 
+  const handleUpdateFormTags = (selectedTagIds: string[]) => {
+    if (state.formId) {
+      handlers.handleUpdateFormTags(selectedTagIds);
+    }
+  };
+
   return (
     <div className="container py-12">
       <Link to="/creator/forms" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-4">
@@ -163,7 +175,7 @@ const FormBuilderPage = () => {
             <div className="p-6 h-full overflow-y-auto">
               <FormSectionsList
                 sections={sections}
-                fields={fields}
+                fields={fields} // Pass all fields for section logic
                 loading={loading}
                 getFieldsForSection={getFieldsForSection}
                 handleDeleteSection={handlers.handleDeleteSection}
@@ -234,7 +246,9 @@ const FormBuilderPage = () => {
                 {selectedSection && (
                   <SectionPropertiesPanel
                     section={selectedSection}
+                    allFields={fields} // Pass all fields for section logic
                     onSave={handlers.handleSaveEditedSection}
+                    onSaveLogic={handlers.handleSaveSectionLogic} // Pass new handler
                     onClose={() => setSelectedSection(null)}
                   />
                 )}
@@ -259,6 +273,16 @@ const FormBuilderPage = () => {
           ) : null}
         </DragOverlay>
       </DndContext>
+
+      <div className="mt-8 pt-4 border-t">
+        <FormTagsInput
+          formId={state.formId}
+          currentTags={formTags?.map(ft => ft.tag_id) || []}
+          allAvailableTags={allAvailableTags.filter(tag => tag.applicable_to.includes('forms'))}
+          onTagsChange={handleUpdateFormTags}
+          loading={loadingTags}
+        />
+      </div>
 
       <FormActions state={state} handlers={handlers} />
     </div>

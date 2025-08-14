@@ -22,7 +22,7 @@ type DynamicFormValues = Record<string, string | string[] | number | undefined |
 
 const EditApplicationPage = () => {
   const { user } = useSession();
-  const { application, program, applicationForm, formSections, formFields, loading, form, displayedFormFields } = useEditApplicationForm();
+  const { application, program, applicationForm, formSections, formFields, loading, form, displayedFormFields, currentResponses } = useEditApplicationForm();
   const [submitting, setSubmitting] = useState(false);
   const [savingDraft, setSavingDraft] = useState(false);
   const navigate = useNavigate();
@@ -36,7 +36,8 @@ const EditApplicationPage = () => {
       .map(field => {
         const fieldValue = values[field.id];
         if (fieldValue === undefined || fieldValue === null || (typeof fieldValue === 'string' && fieldValue.trim() === '')) return null;
-        const valueToStore = field.field_type === 'checkbox' ? JSON.stringify(fieldValue) : String(fieldValue);
+        const valueToStore = field.field_type === 'checkbox' ? JSON.stringify(fieldValue) :
+                           (field.field_type === 'number' && fieldValue === undefined) ? '' : String(fieldValue);
         return { application_id: application.id, field_id: field.id, value: valueToStore };
       })
       .filter(Boolean);
@@ -129,6 +130,8 @@ const EditApplicationPage = () => {
               <ApplicationFormSections
                 formSections={formSections}
                 displayedFormFields={displayedFormFields}
+                allFormFields={formFields} // Pass all fields for section logic
+                currentResponses={currentResponses} // Pass current responses for section logic
                 submitting={submitting || savingDraft}
               />
               <div className="flex justify-between items-center">

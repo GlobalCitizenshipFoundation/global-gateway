@@ -72,6 +72,8 @@ export type Program = {
       last_edited_at: string | null; // New
       description: string | null; // New: Optional description for the section
       tooltip: string | null; // New: Optional tooltip for the section
+      display_rules: DisplayRule[] | null; // New: Conditional logic rules for the section
+      display_rules_logic_type: 'AND' | 'OR'; // New: Logic type for section rules
     };
 
     export type DisplayRule = {

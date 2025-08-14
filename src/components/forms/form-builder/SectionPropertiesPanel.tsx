@@ -14,27 +14,40 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
-import { FormSection } from "@/types";
+import { FormField, FormSection, DisplayRule } from "@/types"; // Import DisplayRule
 import RichTextEditor from "@/components/common/RichTextEditor";
-import { X } from "lucide-react";
+import { X, AlertTriangle } from "lucide-react"; // Import AlertTriangle
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"; // Import Alert
+import ConditionalLogicBuilder from '@/components/forms/ConditionalLogicBuilder'; // Import ConditionalLogicBuilder
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'; // Import RadioGroup
 
 const editFormSectionSchema = z.object({
   name: z.string().min(1, { message: "Section name cannot be empty." }),
   description: z.string().nullable().optional(),
   tooltip: z.string().nullable().optional(),
+  display_rules: z.array(z.object({ // Schema for display_rules
+    field_id: z.string().min(1, "Field is required."),
+    operator: z.string().min(1, "Operator is required."),
+    value: z.any().optional().nullable(),
+  })).optional().nullable(),
+  display_rules_logic_type: z.enum(['AND', 'OR']).optional(), // Schema for logic type
 });
 
 type EditFormSectionValues = z.infer<typeof editFormSectionSchema>;
 
 interface SectionPropertiesPanelProps {
   section: FormSection;
+  allFields: FormField[]; // Pass all fields for conditional logic
   onSave: (sectionId: string, values: { name: string; description?: string | null; tooltip?: string | null; }) => Promise<void>;
+  onSaveLogic: (sectionId: string, rules: DisplayRule[], logicType: 'AND' | 'OR') => Promise<void>; // New prop for saving logic
   onClose: () => void;
 }
 
 export const SectionPropertiesPanel = ({
   section,
+  allFields, // Passed for conditional logic
   onSave,
+  onSaveLogic, // New prop
   onClose,
 }: SectionPropertiesPanelProps) => {
   const form = useForm<EditFormSectionValues>({
@@ -43,6 +56,8 @@ export const SectionPropertiesPanel = ({
       name: "",
       description: "",
       tooltip: "",
+      display_rules: [],
+      display_rules_logic_type: 'AND',
     },
   });
 
@@ -52,12 +67,24 @@ export const SectionPropertiesPanel = ({
         name: section.name,
         description: section.description || '',
         tooltip: section.tooltip || '',
+        display_rules: section.display_rules || [],
+        display_rules_logic_type: section.display_rules_logic_type || 'AND',
       });
     }
   }, [section, form]);
 
   const onSubmit = (values: EditFormSectionValues) => {
-    onSave(section.id, values);
+    // Only save basic properties here. Logic is saved via onSaveLogic.
+    onSave(section.id, {
+      name: values.name,
+      description: values.description ?? null,
+      tooltip: values.tooltip ?? null,
+    });
+  };
+
+  const handleSaveConditionalLogic = (itemId: string, rules: DisplayRule[], logicType: 'AND' | 'OR') => {
+    // The itemId here will be the section.id because we pass the section as itemToEdit
+    onSaveLogic(itemId, rules, logicType);
   };
 
   return (
@@ -71,6 +98,15 @@ export const SectionPropertiesPanel = ({
       
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4">
+          {!form.formState.isValid && form.formState.isSubmitted && (
+            <Alert variant="destructive">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertTitle>Validation Error</AlertTitle>
+              <AlertDescription>
+                Please correct the errors in the form before saving.
+              </AlertDescription>
+            </Alert>
+          )}
           <FormFieldComponent
             control={form.control}
             name="name"
@@ -127,6 +163,17 @@ export const SectionPropertiesPanel = ({
           <Button type="submit" className="w-full">Save Section Properties</Button>
         </form>
       </Form>
+
+      <Separator className="my-8" />
+
+      <h3 className="text-lg font-semibold mb-4">Conditional Logic</h3>
+      <ConditionalLogicBuilder
+        itemToEdit={section} // Pass the section as itemToEdit
+        allFields={allFields} // Pass all fields for rule selection
+        onSave={handleSaveConditionalLogic}
+        isOpen={true}
+        onClose={() => {}}
+      />
     </div>
   );
 };

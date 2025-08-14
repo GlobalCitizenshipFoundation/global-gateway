@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { FormField, FormSection, Form as FormType } from '@/types'; // Import FormType
+import { FormField, FormSection, Form as FormType, Tag as TagType } from '@/types'; // Import FormType and TagType
 import { showError } from '@/utils/toast';
 
 export const useFormBuilderData = (initialFormId?: string) => { // Accept initialFormId as prop
@@ -17,6 +17,7 @@ export const useFormBuilderData = (initialFormId?: string) => { // Accept initia
   const [fields, setFields] = useState<FormField[]>([]);
   const [loading, setLoading] = useState(true);
   const [newFieldSectionId, setNewFieldSectionId] = useState<string | null>(null);
+  const [formTags, setFormTags] = useState<FormType['tags']>([]); // New: State for form tags
 
   const fetchData = useCallback(async () => {
     if (!currentFormId) {
@@ -25,10 +26,10 @@ export const useFormBuilderData = (initialFormId?: string) => { // Accept initia
     }
     setLoading(true);
 
-    // Fetch form details
+    // Fetch form details and its associated tags
     const { data: formData, error: formError } = await supabase
       .from('forms')
-      .select('name, status, description, last_edited_at, last_edited_by_user_id') // Fetch new columns
+      .select('name, status, description, last_edited_at, last_edited_by_user_id, is_template, form_tags(tags(*))') // Fetch new columns and tags
       .eq('id', currentFormId)
       .single();
     
@@ -39,18 +40,25 @@ export const useFormBuilderData = (initialFormId?: string) => { // Accept initia
       setFormStatus('draft');
       setFormLastEditedAt(null);
       setFormLastEditedByUserId(null);
+      setFormTags([]); // Reset tags on error
     } else {
       setFormName(formData.name);
       setFormDescription(formData.description); // Set description
       setFormStatus(formData.status);
       setFormLastEditedAt(formData.last_edited_at);
       setFormLastEditedByUserId(formData.last_edited_by_user_id);
+      // Correctly map the fetched data to the FormTag type
+      setFormTags(formData.form_tags.map((ft: { tags: TagType }) => ({
+        form_id: currentFormId, // Assuming currentFormId is the form_id
+        tag_id: ft.tags.id,
+        tags: ft.tags,
+      })) || []); // Set tags
     }
 
-    // Fetch sections for the form
+    // Fetch sections for the form, including new conditional logic fields
     const { data: sectionsData, error: sectionsError } = await supabase
       .from('form_sections')
-      .select('*')
+      .select('*, description, tooltip, display_rules, display_rules_logic_type') // Fetch new columns
       .eq('form_id', currentFormId) // Use form_id
       .order('order', { ascending: true });
     
@@ -105,5 +113,6 @@ export const useFormBuilderData = (initialFormId?: string) => { // Accept initia
     setNewFieldSectionId,
     fetchData,
     getFieldsForSection,
+    formTags, // New: Return form tags
   };
 };

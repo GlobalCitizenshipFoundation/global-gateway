@@ -24,14 +24,12 @@ import DOMPurify from 'dompurify';
 
 interface FormSectionsListProps {
   sections: FormSection[];
-  fields: FormField[];
+  fields: FormField[]; // All fields for conditional logic evaluation
   loading: boolean;
   getFieldsForSection: (sectionId: string | null) => FormField[];
   handleDeleteSection: (sectionId: string, fieldAction: 'delete_fields' | 'uncategorize_fields' | 'move_to_section', targetSectionId?: string | null) => Promise<void>;
   handleDeleteField: (fieldId: string) => Promise<void>;
   handleToggleRequired: (fieldId: string, isRequired: boolean) => Promise<void>;
-  // Removed onEditLogic: (field: FormField) => void;
-  // Removed onEditField: (field: FormField) => void;
   onUpdateLabel: (fieldId: string, newLabel: string) => void;
   onSelectField: (field: FormField) => void;
   onQuickAddField: (sectionId: string) => void;
@@ -61,6 +59,7 @@ const SortableAccordionItem = ({ section, children, confirmDeleteSection, onQuic
 
   const hasTooltip = section.tooltip && section.tooltip.trim() !== '';
   const sanitizedDescription = section.description ? DOMPurify.sanitize(section.description, { USE_PROFILES: { html: true } }) : null;
+  const hasLogic = section.display_rules && section.display_rules.length > 0; // Check for section logic
 
   return (
     <AccordionItem
@@ -68,7 +67,7 @@ const SortableAccordionItem = ({ section, children, confirmDeleteSection, onQuic
       value={section.id}
       ref={setNodeRef}
       style={style}
-      className={cn("rounded-md border mb-2", isDragging && "opacity-50")}
+      className={cn("rounded-md border mb-2", isDragging && "opacity-50", hasLogic && "border-l-4 border-blue-500")} // Add border for logic
     >
       <div className="flex items-center justify-between w-full pr-4">
         <Button variant="ghost" size="icon" className="cursor-grab" {...attributes} {...listeners}>
@@ -77,6 +76,16 @@ const SortableAccordionItem = ({ section, children, confirmDeleteSection, onQuic
         <AccordionTrigger className="flex-grow flex justify-between items-center pr-4">
           <div className="flex items-center gap-2">
             <span className="font-semibold">{section.name}</span>
+            {hasLogic && ( // Display icon for section logic
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Info className="h-4 w-4 text-blue-500" />
+                </TooltipTrigger>
+                <TooltipContent className="max-w-xs bg-gray-800 text-white p-2 rounded-md text-sm">
+                  This section has conditional display logic.
+                </TooltipContent>
+              </Tooltip>
+            )}
             {hasTooltip && (
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -107,14 +116,12 @@ const SortableAccordionItem = ({ section, children, confirmDeleteSection, onQuic
 
 export const FormSectionsList = ({
   sections,
-  fields,
+  fields, // All fields for conditional logic evaluation
   loading,
   getFieldsForSection,
   handleDeleteSection,
   handleDeleteField,
   handleToggleRequired,
-  // Removed onEditLogic,
-  // Removed onEditField,
   onUpdateLabel,
   onSelectField,
   onQuickAddField,
@@ -163,9 +170,7 @@ export const FormSectionsList = ({
                             onSelectField={onSelectField}
                           />
                         ))
-                      ) : (
-                        <p className="text-muted-foreground text-sm text-center py-4">Drag fields here or add new ones below.</p>
-                      )}
+                      ) : null}
                     </ul>
                   </SortableContext>
                 </DroppableContainer>

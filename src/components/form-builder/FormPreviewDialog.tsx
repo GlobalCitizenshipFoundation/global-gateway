@@ -8,7 +8,6 @@ import { z } from 'zod';
 import ApplicationFormSections from '@/components/application/ApplicationFormSections';
 import { ApplicantInfoCard } from '@/components/applications/ApplicantInfoCard';
 import DOMPurify from 'dompurify';
-// Removed: import { TooltipProvider } from '@/components/ui/tooltip'; // This import is no longer needed here
 import { shouldFieldBeDisplayed } from '@/utils/forms/formFieldUtils';
 
 interface FormPreviewDialogProps {
@@ -104,7 +103,6 @@ const FormPreviewDialog = ({
           </DialogDescription>
         </DialogHeader>
         <div className="py-4">
-          {/* Removed TooltipProvider wrapper here */}
           <FormProvider {...form}>
             <form className="grid gap-6">
               {/* Applicant Info Card is not dynamic, so it can be hardcoded for preview */}
@@ -113,6 +111,8 @@ const FormPreviewDialog = ({
               <ApplicationFormSections
                 formSections={formSections}
                 displayedFormFields={displayedFormFields}
+                allFormFields={formFields} // Pass all fields for section logic
+                currentResponses={currentResponses} // Pass current responses for section logic
                 submitting={false} // Always false for preview
               />
 
