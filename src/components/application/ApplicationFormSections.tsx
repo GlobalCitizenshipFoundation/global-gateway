@@ -28,6 +28,7 @@ const ApplicationFormSections = ({
         const fieldsInSection = getFieldsForSection(section.id);
         const sanitizedDescription = section.description ? DOMPurify.sanitize(section.description, { USE_PROFILES: { html: true } }) : null;
         const hasTooltip = section.tooltip && section.tooltip.trim() !== '';
+        const hasDescriptionOrTooltip = !!sanitizedDescription || hasTooltip;
 
         return (
           <Card key={section.id} className="mb-6">
@@ -39,7 +40,7 @@ const ApplicationFormSections = ({
                     <TooltipTrigger asChild>
                       <Info className="h-4 w-4 text-muted-foreground cursor-help" />
                     </TooltipTrigger>
-                    <TooltipContent side="top" align="center"> {/* Removed forceMount */}
+                    <TooltipContent side="top" align="center">
                       <p>{section.tooltip}</p>
                     </TooltipContent>
                   </Tooltip>
@@ -57,7 +58,10 @@ const ApplicationFormSections = ({
                   <FormFieldRenderer key={field.id} field={field} submitting={submitting} />
                 ))
               ) : (
-                <p className="text-muted-foreground text-sm text-center py-4">No fields in this section.</p>
+                // Only show this message if there are no fields AND no description/tooltip
+                !hasDescriptionOrTooltip && (
+                  <p className="text-muted-foreground text-sm text-center py-4">No fields in this section.</p>
+                )
               )}
             </CardContent>
           </Card>
