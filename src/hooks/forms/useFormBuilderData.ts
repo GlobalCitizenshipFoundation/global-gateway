@@ -48,7 +48,10 @@ export const useFormBuilderData = (initialFormId?: string) => { // Accept initia
       setFormLastEditedAt(formData.last_edited_at);
       setFormLastEditedByUserId(formData.last_edited_by_user_id);
       // Correctly map the fetched data to the FormTag type
-      setFormTags(formData.form_tags.map((ft: { tags: TagType | null }) => ft.tags).filter(Boolean) as TagType[] || []); // Set tags
+      setFormTags(formData.form_tags.map((ft: { tags: TagType | null | TagType[] }) => {
+        // Handle case where `tags` might be an array of one element
+        return Array.isArray(ft.tags) ? ft.tags[0] : ft.tags;
+      }).filter(Boolean) as TagType[] || []); // Filter out nulls and cast
     }
 
     // Fetch sections for the form, including new conditional logic fields
