@@ -3,8 +3,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useSession } from '@/contexts/auth/SessionContext';
 import { showError, showSuccess } from '@/utils/toast';
 import { useNavigate } from 'react-router-dom';
-import { WorkflowTemplate, WorkflowStage, EvaluationCriterion } from '@/types';
-import { isWorkflowPublishable } from '@/utils/workflowValidation';
+import { WorkflowTemplate, WorkflowStage, EvaluationCriterion, EmailTemplate } from '@/types';
+import { isWorkflowPublishable } from '@/utils/workflow/workflowValidation';
 import { isEvaluationTemplatePublishable } from '@/utils/evaluation/evaluationValidation';
 
 interface UseWorkflowTemplateActionsProps {
@@ -75,7 +75,17 @@ export const useWorkflowTemplateActions = ({ setTemplates, fetchTemplates }: Use
         return false;
       }
 
-      const { publishable: basePublishable, errors: baseErrors } = isWorkflowPublishable(stages as WorkflowStage[]);
+      const { data: publishedEmailTemplates, error: emailTemplatesError } = await supabase
+        .from('email_templates')
+        .select('id')
+        .eq('status', 'published');
+
+      if (emailTemplatesError) {
+        showError("Could not verify email templates before publishing.");
+        return false;
+      }
+
+      const { publishable: basePublishable, errors: baseErrors } = isWorkflowPublishable(stages as WorkflowStage[], publishedEmailTemplates as EmailTemplate[]);
       let combinedErrors = new Map(baseErrors);
       let isFullyPublishable = basePublishable;
 

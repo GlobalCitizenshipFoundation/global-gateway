@@ -1,11 +1,11 @@
-import { WorkflowStage } from '@/types';
+import { WorkflowStage, EmailTemplate } from '@/types';
 
 export interface StageValidationResult {
   isValid: boolean;
   message: string | null;
 }
 
-export const validateWorkflowStage = (stage: WorkflowStage): StageValidationResult => {
+export const validateWorkflowStage = (stage: WorkflowStage, publishedEmailTemplates: EmailTemplate[]): StageValidationResult => {
   switch (stage.step_type) {
     case 'form':
       if (!stage.form_id) {
@@ -36,6 +36,14 @@ export const validateWorkflowStage = (stage: WorkflowStage): StageValidationResu
         if (!Array.isArray(config.outcomes) || config.outcomes.length === 0 || config.outcomes.some((o: any) => !o.name || o.name.trim() === '')) {
           return { isValid: false, message: 'At least one decision outcome with a name must be defined.' };
         }
+        for (const outcome of config.outcomes) {
+          if (outcome.email_template_id) {
+            const templateExistsAndIsPublished = publishedEmailTemplates.some(t => t.id === outcome.email_template_id);
+            if (!templateExistsAndIsPublished) {
+              return { isValid: false, message: `Outcome "${outcome.name}" is linked to an unpublished or non-existent email template.` };
+            }
+          }
+        }
       } catch (e) {
         return { isValid: false, message: 'Decision outcomes are not configured correctly.' };
       }
@@ -52,12 +60,12 @@ export const validateWorkflowStage = (stage: WorkflowStage): StageValidationResu
   return { isValid: true, message: null };
 };
 
-export const isWorkflowPublishable = (stages: WorkflowStage[]): { publishable: boolean; errors: Map<string, string> } => {
+export const isWorkflowPublishable = (stages: WorkflowStage[], publishedEmailTemplates: EmailTemplate[]): { publishable: boolean; errors: Map<string, string> } => {
   const errors = new Map<string, string>();
   let publishable = true;
 
   stages.forEach(stage => {
-    const { isValid, message } = validateWorkflowStage(stage);
+    const { isValid, message } = validateWorkflowStage(stage, publishedEmailTemplates);
     if (!isValid && message) {
       publishable = false;
       errors.set(stage.id, message);
