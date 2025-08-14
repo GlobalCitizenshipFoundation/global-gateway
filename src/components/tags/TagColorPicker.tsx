@@ -40,8 +40,8 @@ export const TagColorPicker = ({ value, onChange, disabled }: TagColorPickerProp
               size="icon"
               className={cn(
                 "h-8 w-8 rounded-full",
-                `bg-tag-${color.name}`,
-                `text-tag-${color.name}-foreground`,
+                `bg-tag-${color.name}`, // Apply dynamic background color
+                `text-tag-${color.name}-foreground`, // Apply dynamic text color
                 "hover:opacity-80",
                 value === color.name && "ring-2 ring-offset-2 ring-primary"
               )}

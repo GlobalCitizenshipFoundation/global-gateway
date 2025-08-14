@@ -27,7 +27,7 @@ import { useTagManagementActions } from "@/hooks/tags/useTagManagementActions";
 import { TagForm } from "@/components/tags/TagForm";
 import { TagDisplay } from "@/components/tags/TagDisplay";
 import { Tag } from "@/types";
-import { APPLICABLE_MODULES } from "@/constants/tags";
+import { APPLICABLE_MODULES, getRandomTagColorName } from "@/constants/tags"; // Import getRandomTagColorName
 import { Badge } from "@/components/ui/badge";
 
 const TagManagementPage = () => {
@@ -58,7 +58,9 @@ const TagManagementPage = () => {
     if (selectedTag) {
       success = await handleUpdateTag(selectedTag.id, values);
     } else {
-      const newTag = await handleCreateTag(values.name, values.color, values.applicable_to);
+      // Assign a random color if it's a new tag and no specific color is chosen (or default 'default')
+      const finalColor = values.color === 'default' ? getRandomTagColorName() : values.color;
+      const newTag = await handleCreateTag(values.name, finalColor, values.applicable_to);
       success = !!newTag;
     }
     if (success) {

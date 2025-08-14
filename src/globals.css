@@ -67,6 +67,16 @@
         --tag-yellow-foreground: 40 90% 20%;
         --tag-teal: 170 70% 70%;
         --tag-teal-foreground: 170 70% 20%;
+        --tag-pink: 330 80% 70%;
+        --tag-pink-foreground: 330 80% 20%;
+        --tag-indigo: 238 70% 70%;
+        --tag-indigo-foreground: 238 70% 20%;
+        --tag-cyan: 190 80% 70%;
+        --tag-cyan-foreground: 190 80% 20%;
+        --tag-lime: 80 70% 70%;
+        --tag-lime-foreground: 80 70% 20%;
+        --tag-rose: 350 80% 70%;
+        --tag-rose-foreground: 350 80% 20%;
       }
 
       .dark {
@@ -123,6 +133,16 @@
         --tag-yellow-foreground: 40 90% 90%;
         --tag-teal: 170 70% 30%;
         --tag-teal-foreground: 170 70% 90%;
+        --tag-pink: 330 80% 30%;
+        --tag-pink-foreground: 330 80% 90%;
+        --tag-indigo: 238 70% 30%;
+        --tag-indigo-foreground: 238 70% 90%;
+        --tag-cyan: 190 80% 30%;
+        --tag-cyan-foreground: 190 80% 90%;
+        --tag-lime: 80 70% 30%;
+        --tag-lime-foreground: 80 70% 90%;
+        --tag-rose: 350 80% 30%;
+        --tag-rose-foreground: 350 80% 90%;
       }
     }
 
