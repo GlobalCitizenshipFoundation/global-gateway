@@ -121,9 +121,9 @@ export const DynamicReviewForm = ({ criteria, onSubmit, isSubmitting, isPreview 
                             <Slider min={criterion.min_score || 1} max={criterion.max_score || 5} step={1} value={[field.value as number]} onValueChange={(val) => field.onChange(val[0])} disabled={isSubmitting} />
                             <div className="flex justify-between text-sm text-muted-foreground">
                               <span>{criterion.min_label || criterion.min_score}</span>
+                              <span className="font-semibold text-foreground">{field.value as number}</span>
                               <span>{criterion.max_label || criterion.max_score}</span>
                             </div>
-                            <div className="text-center font-semibold text-lg text-primary mt-1">{field.value as number}</div>
                           </div>
                         )}
                         {criterion.criterion_type === 'repeater_buttons' && (

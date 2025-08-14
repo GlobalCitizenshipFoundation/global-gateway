@@ -48,7 +48,7 @@ const App = () => (
       disableTransitionOnChange
     >
       <TooltipProvider>
-        <Sonner />
+        <Sonner position="top-right" />
         <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
           <SessionContextProvider>
             <Layout>

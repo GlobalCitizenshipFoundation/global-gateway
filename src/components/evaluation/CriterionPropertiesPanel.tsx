@@ -138,12 +138,28 @@ export const CriterionPropertiesPanel = ({ criterion, onSave, onClose }: Criteri
           )}
 
           <FormFieldComponent control={form.control} name="weight" render={({ field }) => (<FormItem><FormLabel>Weight</FormLabel><FormControl><Input type="number" step="0.1" {...field} /></FormControl><FormDescription>Determines the importance of this criterion in the total score.</FormDescription><FormMessage /></FormItem>)} />
-          <FormFieldComponent control={form.control} name="is_public" render={({ field }) => (
-            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-              <div className="space-y-0.5"><FormLabel className="text-base">Visibility</FormLabel><FormDescription>Set whether this criterion is internal or public.</FormDescription></div>
-              <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
-            </FormItem>
-          )} />
+          <FormFieldComponent
+            control={form.control}
+            name="is_public"
+            render={({ field }) => (
+              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                <div className="space-y-0.5">
+                  <FormLabel className="text-base">
+                    Visibility: <span className="font-bold text-primary">{field.value ? 'Public' : 'Internal'}</span>
+                  </FormLabel>
+                  <FormDescription>
+                    Public criteria may be shared with applicants.
+                  </FormDescription>
+                </div>
+                <FormControl>
+                  <Switch
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                  />
+                </FormControl>
+              </FormItem>
+            )}
+          />
           {isPublic && (<Alert><Info className="h-4 w-4" /><AlertTitle>Public Criterion</AlertTitle><AlertDescription>Aggregated and anonymized feedback for this criterion may be shared with applicants in the future.</AlertDescription></Alert>)}
           <Button type="submit" className="w-full">Save Criterion</Button>
         </form>
