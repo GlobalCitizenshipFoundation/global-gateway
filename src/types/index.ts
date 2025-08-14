@@ -225,9 +225,18 @@ export type EvaluationTemplate = {
   last_edited_at: string | null;
 };
 
+export type EvaluationSection = {
+  id: string;
+  template_id: string;
+  name: string;
+  description: string | null;
+  order: number;
+};
+
 export type EvaluationCriterion = {
   id: string;
   template_id: string;
+  section_id: string | null;
   label: string;
   criterion_type: 'numerical_score' | 'number_scale' | 'single_select' | 'short_text' | 'long_text' | 'repeater_buttons';
   is_public: boolean;

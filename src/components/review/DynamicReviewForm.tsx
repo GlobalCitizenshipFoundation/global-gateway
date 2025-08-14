@@ -26,35 +26,39 @@ interface DynamicReviewFormProps {
   criteria: EvaluationCriterion[];
   onSubmit: (values: Record<string, any>) => Promise<void>;
   isSubmitting: boolean;
+  isPreview?: boolean;
 }
 
-export const DynamicReviewForm = ({ criteria, onSubmit, isSubmitting }: DynamicReviewFormProps) => {
-  const formSchema = z.object({
-    ...criteria.reduce((acc, criterion) => {
-      let schema: z.ZodTypeAny;
-      switch (criterion.criterion_type) {
-        case 'numerical_score':
-        case 'number_scale':
-          schema = z.number().min(criterion.min_score || 0).max(criterion.max_score || 10);
-          break;
-        case 'single_select':
-        case 'repeater_buttons':
-          schema = z.string().min(1, "Please select an option.");
-          break;
-        case 'short_text':
-        case 'long_text':
-          schema = z.string().optional();
-          break;
-        default:
-          schema = z.any();
-      }
-      acc[criterion.id] = schema;
-      return acc;
-    }, {} as Record<string, z.ZodTypeAny>),
-    overall_score: z.number().min(1).max(10),
-    internal_notes: z.string().optional(),
-    shared_feedback: z.string().optional(),
-  });
+export const DynamicReviewForm = ({ criteria, onSubmit, isSubmitting, isPreview = false }: DynamicReviewFormProps) => {
+  const formSchemaObject = criteria.reduce((acc, criterion) => {
+    let schema: z.ZodTypeAny;
+    switch (criterion.criterion_type) {
+      case 'numerical_score':
+      case 'number_scale':
+        schema = z.number().min(criterion.min_score || 0).max(criterion.max_score || 10);
+        break;
+      case 'single_select':
+      case 'repeater_buttons':
+        schema = z.string().min(1, "Please select an option.");
+        break;
+      case 'short_text':
+      case 'long_text':
+        schema = z.string().optional();
+        break;
+      default:
+        schema = z.any();
+    }
+    acc[criterion.id] = schema;
+    return acc;
+  }, {} as Record<string, z.ZodTypeAny>);
+
+  if (!isPreview) {
+    formSchemaObject.overall_score = z.number().min(1).max(10);
+    formSchemaObject.internal_notes = z.string().optional();
+    formSchemaObject.shared_feedback = z.string().optional();
+  }
+
+  const formSchema = z.object(formSchemaObject);
 
   type ReviewFormValues = z.infer<typeof formSchema>;
 
@@ -105,7 +109,7 @@ export const DynamicReviewForm = ({ criteria, onSubmit, isSubmitting }: DynamicR
                             <Slider min={criterion.min_score || 1} max={criterion.max_score || 5} step={1} value={[field.value as number]} onValueChange={(val) => field.onChange(val[0])} disabled={isSubmitting} />
                             <div className="flex justify-between text-sm text-muted-foreground">
                               <span>{criterion.min_label || criterion.min_score}</span>
-                              <span>{field.value as number}</span>
+                              <span className="font-semibold text-foreground">{field.value as number}</span>
                               <span>{criterion.max_label || criterion.max_score}</span>
                             </div>
                           </div>
@@ -137,11 +141,15 @@ export const DynamicReviewForm = ({ criteria, onSubmit, isSubmitting }: DynamicR
                 )}
               />
             ))}
-            <hr />
-            <FormField control={form.control} name="overall_score" render={({ field }) => (<FormItem><FormLabel>Overall Score: {field.value}</FormLabel><FormControl><Slider min={1} max={10} step={1} value={[field.value]} onValueChange={(val) => field.onChange(val[0])} disabled={isSubmitting} /></FormControl><FormMessage /></FormItem>)} />
-            <FormField control={form.control} name="internal_notes" render={({ field }) => (<FormItem><FormLabel>Internal Notes</FormLabel><FormDescription>These notes are only visible to your team.</FormDescription><FormControl><Textarea placeholder="Provide your private feedback..." {...field} disabled={isSubmitting} /></FormControl><FormMessage /></FormItem>)} />
-            <FormField control={form.control} name="shared_feedback" render={({ field }) => (<FormItem><FormLabel>Shared Feedback (Optional)</FormLabel><FormDescription>This feedback may be shared with the applicant at a later stage.</FormDescription><FormControl><Textarea placeholder="Provide feedback for the applicant..." {...field} disabled={isSubmitting} /></FormControl><FormMessage /></FormItem>)} />
-            <Button type="submit" disabled={isSubmitting}>{isSubmitting ? "Submitting..." : "Submit Review"}</Button>
+            {!isPreview && (
+              <>
+                <hr />
+                <FormField control={form.control} name="overall_score" render={({ field }) => (<FormItem><FormLabel>Overall Score: {field.value}</FormLabel><FormControl><Slider min={1} max={10} step={1} value={[field.value]} onValueChange={(val) => field.onChange(val[0])} disabled={isSubmitting} /></FormControl><FormMessage /></FormItem>)} />
+                <FormField control={form.control} name="internal_notes" render={({ field }) => (<FormItem><FormLabel>Internal Notes</FormLabel><FormDescription>These notes are only visible to your team.</FormDescription><FormControl><Textarea placeholder="Provide your private feedback..." {...field} disabled={isSubmitting} /></FormControl><FormMessage /></FormItem>)} />
+                <FormField control={form.control} name="shared_feedback" render={({ field }) => (<FormItem><FormLabel>Shared Feedback (Optional)</FormLabel><FormDescription>This feedback may be shared with the applicant at a later stage.</FormDescription><FormControl><Textarea placeholder="Provide feedback for the applicant..." {...field} disabled={isSubmitting} /></FormControl><FormMessage /></FormItem>)} />
+                <Button type="submit" disabled={isSubmitting}>{isSubmitting ? "Submitting..." : "Submit Review"}</Button>
+              </>
+            )}
           </form>
         </Form>
       </CardContent>

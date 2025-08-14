@@ -30,6 +30,7 @@ export const EvaluationTemplatePreviewDialog = ({
             criteria={criteria}
             onSubmit={async () => { /* No-op for preview */ }}
             isSubmitting={false}
+            isPreview={true}
           />
         </div>
         <DialogFooter>
