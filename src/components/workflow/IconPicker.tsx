@@ -16,13 +16,14 @@ export const IconPicker = ({ value, onChange }: IconPickerProps) => {
     <Popover>
       <PopoverTrigger asChild>
         <Button variant="outline" className="w-full justify-start">
+          {/* Ensure the content is always a single React element */}
           {value ? (
-            <>
+            <span>
               <DynamicIcon name={value} className="h-4 w-4 mr-2" />
               {value}
-            </>
+            </span>
           ) : (
-            'Select an icon'
+            <span>Select an icon</span>
           )}
         </Button>
       </PopoverTrigger>
