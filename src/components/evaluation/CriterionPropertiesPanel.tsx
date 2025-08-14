@@ -15,7 +15,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { EvaluationCriterion, EvaluationSection } from "@/types";
-import { Info, X } from "lucide-react";
+import { Info, X, AlertTriangle } from "lucide-react"; // Import AlertTriangle
 import { Switch } from '../ui/switch';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import { CriterionOptionsInput } from './CriterionOptionsInput';
@@ -36,6 +36,51 @@ const criterionSchema = z.object({
   max_label: z.string().optional().nullable(),
   weight: z.preprocess((val) => Number(val), z.number().min(0, "Weight must be non-negative.")),
   section_id: z.string().nullable().optional(),
+}).superRefine((data, ctx) => {
+  if (['single_select', 'repeater_buttons'].includes(data.criterion_type)) {
+    if (!data.options || data.options.length === 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "At least one option is required for this criterion type.",
+        path: ['options'],
+      });
+    } else if (data.options.some(opt => !opt.label || opt.label.trim() === '')) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "All options must have a label.",
+        path: ['options'],
+      });
+    }
+  }
+
+  if (['numerical_score', 'number_scale'].includes(data.criterion_type)) {
+    if (data.min_score === null || data.min_score === undefined) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Minimum score is required.",
+        path: ['min_score'],
+      });
+    }
+    if (data.max_score === null || data.max_score === undefined) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Maximum score is required.",
+        path: ['max_score'],
+      });
+    }
+    if (data.min_score !== null && data.max_score !== null && (data.min_score as number) >= (data.max_score as number)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Minimum score must be less than maximum score.",
+        path: ['min_score'],
+      });
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Maximum score must be greater than minimum score.",
+        path: ['max_score'],
+      });
+    }
+  }
 });
 
 type CriterionFormValues = z.infer<typeof criterionSchema>;
@@ -74,7 +119,7 @@ export const CriterionPropertiesPanel = ({ criterion, sections, onSave, onClose 
   const onSubmit = (values: CriterionFormValues) => {
     const updates: Partial<EvaluationCriterion> = {
       ...values,
-      options: ['single_select', 'repeater_buttons'].includes(values.criterion_type) ? values.options?.map(o => ({ ...o, value: o.value || o.label })) : null,
+      options: ['single_select', 'repeater_buttons', 'status'].includes(values.criterion_type) ? values.options?.map(o => ({ ...o, value: o.value || o.label })) : null,
       min_score: ['numerical_score', 'number_scale'].includes(values.criterion_type) ? values.min_score : null,
       max_score: ['numerical_score', 'number_scale'].includes(values.criterion_type) ? values.max_score : null,
       min_label: values.criterion_type === 'number_scale' ? values.min_label : null,
@@ -96,6 +141,15 @@ export const CriterionPropertiesPanel = ({ criterion, sections, onSave, onClose 
       </div>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          {!form.formState.isValid && form.formState.isSubmitted && (
+            <Alert variant="destructive">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertTitle>Validation Error</AlertTitle>
+              <AlertDescription>
+                Please correct the errors in the form before saving.
+              </AlertDescription>
+            </Alert>
+          )}
           <FormFieldComponent control={form.control} name="label" render={({ field }) => (<FormItem><FormLabel>Label</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
           <FormFieldComponent control={form.control} name="description" render={({ field }) => (<FormItem><FormLabel>Description (Optional)</FormLabel><FormControl><RichTextEditor value={field.value || ''} onChange={field.onChange} /></FormControl><FormMessage /></FormItem>)} />
           <FormFieldComponent control={form.control} name="criterion_type" render={({ field }) => (
@@ -129,7 +183,7 @@ export const CriterionPropertiesPanel = ({ criterion, sections, onSave, onClose 
               <FormFieldComponent control={form.control} name="max_label" render={({ field }) => (<FormItem><FormLabel>Max Label</FormLabel><FormControl><Input {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>)} />
             </div>
           )}
-          {['single_select', 'repeater_buttons'].includes(selectedType) && (
+          {['single_select', 'repeater_buttons', 'status'].includes(selectedType) && (
             <FormFieldComponent control={form.control} name="options" render={() => (
               <FormItem>
                 <FormLabel>Options</FormLabel>

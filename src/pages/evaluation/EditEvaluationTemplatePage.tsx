@@ -1,5 +1,5 @@
 import { Link, useParams } from "react-router-dom";
-import { ArrowLeft, Plus } from "lucide-react";
+import { ArrowLeft, Plus, AlertTriangle } from "lucide-react";
 import { useEvaluationTemplateBuilderData } from "@/hooks/evaluation/useEvaluationTemplateBuilderData";
 import { useEvaluationCriteriaActions } from "@/hooks/evaluation/useEvaluationCriteriaActions";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -26,8 +26,20 @@ import { UncategorizedCriteriaList } from "@/components/evaluation/Uncategorized
 import { useEvaluationCriteriaDragAndDrop } from "@/hooks/evaluation/useEvaluationCriteriaDragAndDrop";
 import { useEvaluationSectionDragAndDrop } from "@/hooks/evaluation/useEvaluationSectionDragAndDrop";
 import { CriterionCard } from "@/components/evaluation/CriterionCard";
+import { useForm } from "react-hook-form"; // Import useForm
+import { zodResolver } from "@hookform/resolvers/zod"; // Import zodResolver
+import { z } from "zod"; // Import z
+import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form"; // Import Form components
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"; // Import Alert
 
 const AUTO_SAVE_DEBOUNCE_TIME = 2000;
+
+const templateDetailsSchema = z.object({
+  name: z.string().min(1, { message: "Template name is required." }),
+  description: z.string().nullable().optional(),
+});
+
+type TemplateDetailsFormValues = z.infer<typeof templateDetailsSchema>;
 
 const EditEvaluationTemplatePage = () => {
   const { user } = useSession();
@@ -37,8 +49,6 @@ const EditEvaluationTemplatePage = () => {
   const actions = useEvaluationCriteriaActions({ templateId, setCriteria, setSections });
   const { handleUpdateTemplateStatus } = useEvaluationTemplateActions({ fetchTemplates: fetchData });
 
-  const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
   const [selectedCriterion, setSelectedCriterion] = useState<EvaluationCriterion | null>(null);
   const [selectedSection, setSelectedSection] = useState<EvaluationSection | null>(null);
   const [validationErrors, setValidationErrors] = useState<Map<string, string>>(new Map());
@@ -46,27 +56,33 @@ const EditEvaluationTemplatePage = () => {
 
   const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  const { sensors: criteriaSensors, onDragStart: onCriterionDragStart, onDragEnd: onCriterionDragEnd, activeDragItem: activeCriterionDragItem } = useEvaluationCriteriaDragAndDrop({ criteria, setCriteria, sections, fetchData });
-  const { sensors: sectionSensors, onDragStart: onSectionDragStart, onDragEnd: onSectionDragEnd, activeDragItem: activeSectionDragItem } = useEvaluationSectionDragAndDrop({ sections, setSections, fetchData });
-  const combinedSensors = [...criteriaSensors, ...sectionSensors];
+  const templateForm = useForm<TemplateDetailsFormValues>({
+    resolver: zodResolver(templateDetailsSchema),
+    defaultValues: {
+      name: "",
+      description: "",
+    },
+  });
 
   useEffect(() => {
     if (template) {
-      setName(template.name);
-      setDescription(template.description || '');
+      templateForm.reset({
+        name: template.name,
+        description: template.description || '',
+      });
     }
-  }, [template]);
+  }, [template, templateForm]);
 
   useEffect(() => {
     const { errors } = isEvaluationTemplatePublishable(criteria);
     setValidationErrors(errors);
   }, [criteria]);
 
-  const handleDetailsSave = useCallback(async (newName: string, newDescription: string) => {
+  const handleDetailsSave = useCallback(async (values: TemplateDetailsFormValues) => {
     if (!templateId || !user) return false;
     const { error } = await supabase
       .from('evaluation_templates')
-      .update({ name: newName, description: newDescription, updated_at: new Date().toISOString(), last_edited_by_user_id: user.id, last_edited_at: new Date().toISOString() })
+      .update({ name: values.name, description: values.description, updated_at: new Date().toISOString(), last_edited_by_user_id: user.id, last_edited_at: new Date().toISOString() })
       .eq('id', templateId);
     
     if (error) {
@@ -80,8 +96,15 @@ const EditEvaluationTemplatePage = () => {
     if (autoSaveTimeoutRef.current) clearTimeout(autoSaveTimeoutRef.current);
     setHasUnsavedChanges(true);
     autoSaveTimeoutRef.current = setTimeout(async () => {
+      const isValid = await templateForm.trigger(['name', 'description']); // Trigger validation
+      if (!isValid) {
+        setIsAutoSaving(false);
+        return;
+      }
+
       setIsAutoSaving(true);
-      const success = await handleDetailsSave(name, description);
+      const values = templateForm.getValues();
+      const success = await handleDetailsSave(values);
       if (success) {
         setLastSavedTimestamp(new Date());
         setHasUnsavedChanges(false);
@@ -89,13 +112,33 @@ const EditEvaluationTemplatePage = () => {
       }
       setIsAutoSaving(false);
     }, AUTO_SAVE_DEBOUNCE_TIME);
-  }, [name, description, handleDetailsSave, setIsAutoSaving, setHasUnsavedChanges, setLastSavedTimestamp, fetchData]);
+  }, [templateForm, handleDetailsSave, setIsAutoSaving, setHasUnsavedChanges, setLastSavedTimestamp, fetchData]);
 
   useEffect(() => {
-    if (!loading && template && (name !== template.name || description !== (template.description || ''))) {
-      triggerAutoSave();
+    if (!loading && template) {
+      const currentName = templateForm.watch('name');
+      const currentDescription = templateForm.watch('description');
+      if (currentName !== template.name || currentDescription !== (template.description || '')) {
+        triggerAutoSave();
+      }
     }
-  }, [name, description, template, loading, triggerAutoSave]);
+  }, [templateForm.watch('name'), templateForm.watch('description'), template, loading, triggerAutoSave]);
+
+  const {
+    sensors: criterionSensors,
+    onDragStart: onCriterionDragStart,
+    onDragEnd: onCriterionDragEnd,
+    activeDragItem: activeCriterionDragItem,
+  } = useEvaluationCriteriaDragAndDrop({ criteria, setCriteria, sections, fetchData });
+
+  const {
+    sensors: sectionSensors,
+    onDragStart: onSectionDragStart,
+    onDragEnd: onSectionDragEnd,
+    activeDragItem: activeSectionDragItem,
+  } = useEvaluationSectionDragAndDrop({ sections, setSections, fetchData });
+
+  const combinedSensors = useSensors(...criterionSensors, ...sectionSensors);
 
   const handleDragStart = (event: DragStartEvent) => {
     if (event.active.data.current?.type === "Criterion") onCriterionDragStart(event);
@@ -170,7 +213,7 @@ const EditEvaluationTemplatePage = () => {
               <CardHeader>
                 <div className="flex justify-between items-start">
                   <div>
-                    <CardTitle>Evaluation Rubric</CardTitle> {/* Renamed title */}
+                    <CardTitle>Evaluation Rubric</CardTitle>
                     <CardDescription>Define the name and description for this evaluation template.</CardDescription>
                   </div>
                   <div className="text-sm text-muted-foreground text-right">
@@ -185,8 +228,45 @@ const EditEvaluationTemplatePage = () => {
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
-                <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Template Name" />
-                <Textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Template Description (optional)" />
+                <Form {...templateForm}>
+                  <form onSubmit={templateForm.handleSubmit(handleDetailsSave)} className="space-y-4">
+                    {!templateForm.formState.isValid && templateForm.formState.isSubmitted && (
+                      <Alert variant="destructive">
+                        <AlertTriangle className="h-4 w-4" />
+                        <AlertTitle>Validation Error</AlertTitle>
+                        <AlertDescription>
+                          Please correct the errors in the template details.
+                        </AlertDescription>
+                      </Alert>
+                    )}
+                    <FormField
+                      control={templateForm.control}
+                      name="name"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Template Name</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Template Name" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={templateForm.control}
+                      name="description"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Description (Optional)</FormLabel>
+                          <FormControl>
+                            <Textarea placeholder="Template Description (optional)" {...field} value={field.value || ''} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </form>
+                </Form>
               </CardContent>
             </Card>
             <DndContext sensors={combinedSensors} collisionDetection={closestCenter} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
@@ -225,13 +305,13 @@ const EditEvaluationTemplatePage = () => {
         )}
       </ResizablePanelGroup>
       <div className="flex justify-between items-center mt-8 pt-4 border-t">
-        <Button variant="outline" onClick={() => handleDetailsSave(name, description)} disabled={isAutoSaving || !hasUnsavedChanges}>Save Draft</Button>
+        <Button variant="outline" onClick={templateForm.handleSubmit(handleDetailsSave)} disabled={isAutoSaving || !hasUnsavedChanges}>Save Draft</Button>
         <div className="flex gap-2">
           <Button variant="outline" onClick={() => setIsPreviewOpen(true)}>Preview</Button>
           {template.status === 'draft' ? (<Button onClick={() => handleUpdateTemplateStatus(template.id, 'published')}>Publish</Button>) : (<Button variant="outline" onClick={() => handleUpdateTemplateStatus(template.id, 'draft')}>Unpublish</Button>)}
         </div>
       </div>
-      <EvaluationTemplatePreviewDialog isOpen={isPreviewOpen} onClose={() => setIsPreviewOpen(false)} templateName={name} criteria={criteria} />
+      <EvaluationTemplatePreviewDialog isOpen={isPreviewOpen} onClose={() => setIsPreviewOpen(false)} templateName={templateForm.watch('name')} criteria={criteria} />
     </div>
   );
 };

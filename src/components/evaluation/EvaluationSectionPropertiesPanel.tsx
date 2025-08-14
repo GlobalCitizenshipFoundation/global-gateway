@@ -14,9 +14,10 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { EvaluationSection } from "@/types";
-import { X } from "lucide-react";
+import { X, AlertTriangle } from "lucide-react"; // Import AlertTriangle
 import RichTextEditor from '../common/RichTextEditor';
 import { Switch } from '../ui/switch';
+import { Alert, AlertDescription, AlertTitle } from '../ui/alert'; // Import Alert
 
 const sectionSchema = z.object({
   name: z.string().min(1, "Section name is required."),
@@ -62,6 +63,15 @@ export const EvaluationSectionPropertiesPanel = ({ section, onSave, onClose }: E
       </div>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          {!form.formState.isValid && form.formState.isSubmitted && (
+            <Alert variant="destructive">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertTitle>Validation Error</AlertTitle>
+              <AlertDescription>
+                Please correct the errors in the form before saving.
+              </AlertDescription>
+            </Alert>
+          )}
           <FormFieldComponent control={form.control} name="name" render={({ field }) => (<FormItem><FormLabel>Section Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
           <FormFieldComponent control={form.control} name="description" render={({ field }) => (<FormItem><FormLabel>Description (Optional)</FormLabel><FormControl><RichTextEditor value={field.value || ''} onChange={field.onChange} /></FormControl><FormMessage /></FormItem>)} />
           <FormFieldComponent
