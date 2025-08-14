@@ -1,5 +1,3 @@
-"use client";
-
 import { FormField } from "@/types";
 import { useFormContext } from "react-hook-form";
 import {
@@ -41,16 +39,6 @@ const FormFieldRenderer = ({ field, submitting }: FormFieldRendererProps) => {
   const hasTooltip = field.tooltip && field.tooltip.trim() !== '';
   const sanitizedDescription = field.description ? DOMPurify.sanitize(field.description, { USE_PROFILES: { html: true } }) : null;
 
-  const getAutoCompleteValue = (type: FormField['field_type']) => {
-    switch (type) {
-      case 'email': return 'email';
-      case 'phone': return 'tel';
-      case 'number': return 'numeric';
-      case 'text': return 'name'; // Generic text field might be a name
-      default: return 'off'; // Default to off for other types or if not specific
-    }
-  };
-
   return (
     <FormFieldComponent
       key={field.id}
@@ -59,7 +47,7 @@ const FormFieldRenderer = ({ field, submitting }: FormFieldRendererProps) => {
       render={({ field: formHookField }) => (
         <FormItem className="grid gap-2">
           <div className="flex items-center gap-2">
-            <FormLabel htmlFor={field.id} className="text-lg font-semibold">
+            <FormLabel htmlFor={field.id} className="text-lg font-semibold"> {/* Adjusted typography */}
               {field.label}
               {field.is_required && <span className="text-destructive ml-1">*</span>}
             </FormLabel>
@@ -68,7 +56,7 @@ const FormFieldRenderer = ({ field, submitting }: FormFieldRendererProps) => {
                 <TooltipTrigger asChild>
                   <Info className="h-4 w-4 text-muted-foreground cursor-help" />
                 </TooltipTrigger>
-                <TooltipContent side="top" align="center">
+                <TooltipContent side="top" align="center"> {/* Removed forceMount */}
                   <p>{field.tooltip}</p>
                 </TooltipContent>
               </Tooltip>
@@ -85,7 +73,6 @@ const FormFieldRenderer = ({ field, submitting }: FormFieldRendererProps) => {
                 disabled={submitting}
                 className="min-h-[120px] resize-y"
                 placeholder={field.placeholder || undefined}
-                autoComplete={getAutoCompleteValue(field.field_type)}
               />
             </FormControl>
           ) : field.field_type === 'select' ? (
@@ -135,18 +122,17 @@ const FormFieldRenderer = ({ field, submitting }: FormFieldRendererProps) => {
                       <FormControl>
                         <Checkbox
                           checked={Array.isArray(checkboxField.value) && checkboxField.value.includes(option)}
-                          onCheckedChange={checked => {
+                          onCheckedChange={(checked) => {
                             const currentValues = Array.isArray(checkboxField.value) ? checkboxField.value : [];
                             return checked
                               ? checkboxField.onChange([...currentValues, option])
                               : checkboxField.onChange(
                                   currentValues.filter(
-                                    value => value !== option
+                                    (value) => value !== option
                                   )
                                 );
                           }}
                           disabled={submitting}
-                          id={`${field.id}-${index}`}
                         />
                       </FormControl>
                       <Label htmlFor={`${field.id}-${index}`}>{option}</Label>
@@ -165,11 +151,10 @@ const FormFieldRenderer = ({ field, submitting }: FormFieldRendererProps) => {
                 required={field.is_required}
                 disabled={submitting}
                 placeholder={field.placeholder || undefined}
-                autoComplete={getAutoCompleteValue(field.field_type)}
               />
             </FormControl>
           ) : field.field_type === 'date' ? (
-            <FormControl>
+            <FormControl> {/* Wrap Popover with FormControl */}
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
@@ -179,7 +164,6 @@ const FormFieldRenderer = ({ field, submitting }: FormFieldRendererProps) => {
                       !formHookField.value && "text-muted-foreground"
                     )}
                     disabled={submitting}
-                    id={field.id} // Add ID to the button acting as input
                   >
                     {typeof formHookField.value === 'string' && formHookField.value ? (
                       format(new Date(formHookField.value), "PPP")
@@ -193,11 +177,12 @@ const FormFieldRenderer = ({ field, submitting }: FormFieldRendererProps) => {
                   <Calendar
                     mode="single"
                     selected={typeof formHookField.value === 'string' && formHookField.value ? new Date(formHookField.value) : undefined}
-                    onSelect={date => formHookField.onChange(date ? date.toISOString() : '')}
+                    onSelect={(date) => formHookField.onChange(date ? date.toISOString() : '')}
                     initialFocus
+                    // Apply date constraints
                     fromDate={field.date_allow_past ? undefined : new Date()}
                     toDate={field.date_allow_future ? undefined : new Date()}
-                    disabled={date => {
+                    disabled={(date) => {
                       const minDate = field.date_min ? new Date(field.date_min) : null;
                       const maxDate = field.date_max ? new Date(field.date_max) : null;
                       if (minDate && date < minDate) return true;
@@ -218,7 +203,6 @@ const FormFieldRenderer = ({ field, submitting }: FormFieldRendererProps) => {
                 required={field.is_required}
                 disabled={submitting}
                 placeholder={field.placeholder || undefined}
-                autoComplete={getAutoCompleteValue(field.field_type)}
               />
             </FormControl>
           ) : field.field_type === 'number' ? (
@@ -227,11 +211,11 @@ const FormFieldRenderer = ({ field, submitting }: FormFieldRendererProps) => {
                 id={field.id}
                 type="number"
                 {...formHookField}
+                // Ensure value is always string or undefined for number input
                 value={formHookField.value === undefined || formHookField.value === null ? '' : formHookField.value}
                 required={field.is_required}
                 disabled={submitting}
                 placeholder={field.placeholder || undefined}
-                autoComplete={getAutoCompleteValue(field.field_type)}
               />
             </FormControl>
           ) : field.field_type === 'richtext' ? (
@@ -241,8 +225,6 @@ const FormFieldRenderer = ({ field, submitting }: FormFieldRendererProps) => {
                 onChange={formHookField.onChange}
                 readOnly={submitting}
                 className="min-h-[120px]"
-                placeholder={field.placeholder || undefined}
-                // Note: ReactQuill is a complex component, direct autocomplete might not apply to its internal editable area.
               />
             </FormControl>
           ) : field.field_type === 'rating' ? (
@@ -254,7 +236,7 @@ const FormFieldRenderer = ({ field, submitting }: FormFieldRendererProps) => {
                   max={field.rating_max_value ?? 5}
                   step={1}
                   value={[Number(formHookField.value) || (field.rating_min_value ?? 1)]}
-                  onValueChange={val => formHookField.onChange(val[0])}
+                  onValueChange={(val) => formHookField.onChange(val[0])}
                   disabled={submitting}
                   className="w-full"
                 />
@@ -266,7 +248,6 @@ const FormFieldRenderer = ({ field, submitting }: FormFieldRendererProps) => {
                   type="hidden"
                   {...formHookField}
                   value={Number(formHookField.value) || (field.rating_min_value ?? 1)}
-                  autoComplete={getAutoCompleteValue(field.field_type)}
                 />
               </div>
             </FormControl>
@@ -279,7 +260,6 @@ const FormFieldRenderer = ({ field, submitting }: FormFieldRendererProps) => {
                 required={field.is_required}
                 disabled={submitting}
                 placeholder={field.placeholder || undefined}
-                autoComplete={getAutoCompleteValue(field.field_type)}
               />
             </FormControl>
           )}

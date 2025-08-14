@@ -17,7 +17,7 @@ export const NAVIGATION_ITEMS = [
       { label: "Programs", path: "/creator/dashboard", icon: "Award", roles: ["creator", "admin", "super_admin"] },
       { label: "Forms", path: "/creator/forms", icon: "FileText", roles: ["creator", "admin", "super_admin"] },
       { label: "Workflows", path: "/creator/workflows", icon: "GitPullRequest", roles: ["creator", "admin", "super_admin"] },
-      { label: "Email Templates", path: "/creator/emails", icon: "Mail", roles: ["creator", "admin", "super_admin"] },
+      { label: "Email Templates", path: "src/pages/emails/EmailManagementPage.tsx", icon: "Mail", roles: ["creator", "admin", "super_admin"] },
       { label: "Evaluation Rubrics", path: "/creator/evaluation-templates", icon: "Scale", roles: ["creator", "admin", "super_admin"] },
     ],
   },
@@ -26,7 +26,6 @@ export const NAVIGATION_ITEMS = [
     links: [
       { label: "User Management", path: "/admin/user-management", icon: "Users", roles: ["admin", "super_admin"] },
       { label: "Tags Manager", path: "/admin/tags", icon: "Tag", roles: ["admin", "super_admin"] },
-      { label: "Email Logs", path: "/admin/email-logs", icon: "Inbox", roles: ["admin", "super_admin"] }, // New: Email Logs
     ],
   },
   {

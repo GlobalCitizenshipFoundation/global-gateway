@@ -37,7 +37,7 @@ export const CreateFormFromTemplateDialog = ({
 }: CreateFormFromTemplateDialogProps) => {
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent key={isOpen ? 'create-form-open' : 'create-form-closed'} className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Create Form from Template</DialogTitle>
           <DialogDescription>

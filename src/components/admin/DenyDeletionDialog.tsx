@@ -24,7 +24,7 @@ interface DenyDeletionDialogProps {
 export const DenyDeletionDialog = ({ isOpen, onClose, onConfirm, userName, notes, setNotes, isProcessing }: DenyDeletionDialogProps) => {
   return (
     <AlertDialog open={isOpen} onOpenChange={onClose}>
-      <AlertDialogContent key={isOpen ? 'deny-deletion-open' : 'deny-deletion-closed'}>
+      <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>Deny Account Deletion Request?</AlertDialogTitle>
           <AlertDialogDescription>

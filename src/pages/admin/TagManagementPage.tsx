@@ -19,7 +19,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"; // Import DialogDescription
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
 import { useTagsData } from "@/hooks/tags/useTagsData";
@@ -189,12 +189,12 @@ const TagManagementPage = () => {
       </div>
 
       <Dialog open={isFormDialogOpen} onOpenChange={setIsFormDialogOpen}>
-        <DialogContent key={isFormDialogOpen ? 'tag-form-open' : 'tag-form-closed'} className="sm:max-w-[425px]">
+        <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>{selectedTag ? "Edit Tag" : "Create New Tag"}</DialogTitle>
-            <DialogDescription> {/* Changed from CardDescription */}
+            <CardDescription>
               {selectedTag ? "Update the details for this tag." : "Define a new tag for categorization."}
-            </DialogDescription>
+            </CardDescription>
           </DialogHeader>
           <TagForm
             initialData={selectedTag || undefined}
@@ -206,7 +206,7 @@ const TagManagementPage = () => {
       </Dialog>
 
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <AlertDialogContent key={isDeleteDialogOpen ? 'tag-delete-open' : 'tag-delete-closed'}>
+        <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
             <AlertDialogDescription>

@@ -6,17 +6,17 @@ import DOMPurify from 'dompurify';
 interface EmailTemplatePreviewDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  template: EmailTemplate | null; // Correctly type template prop
+  template: EmailTemplate | null;
 }
 
 export const EmailTemplatePreviewDialog = ({ isOpen, onClose, template }: EmailTemplatePreviewDialogProps) => {
   if (!template) return null;
 
-  const sanitizedBody = DOMPurify.sanitize(template.body_html, { USE_PROFILES: { html: true } });
+  const sanitizedBody = DOMPurify.sanitize(template.body, { USE_PROFILES: { html: true } });
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent key={isOpen ? 'email-preview-open' : 'email-preview-closed'} className="sm:max-w-3xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-2xl">Preview: {template.name}</DialogTitle>
           <DialogDescription>Subject: {template.subject}</DialogDescription>

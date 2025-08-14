@@ -15,7 +15,8 @@ export const useFormBuilderState = (initialFormId?: string) => {
   const [formLastEditedAt, setFormLastEditedAt] = useState<string | null>(null);
   const [formLastEditedByUserId, setFormLastEditedByUserId] = useState<string | null>(null);
   const [lastEditedByUserName, setLastEditedByUserName] = useState<string | null>(null);
-  const [isTemplate, setIsTemplate] = useState(false);
+  const [isTemplate, setIsTemplate] = useState(false); // New: is_template status
+  const [formTags, setFormTags] = useState<FormType['tags']>([]); // New: State for form tags
 
   // Form content state
   const [sections, setSections] = useState<FormSection[]>([]);
@@ -31,8 +32,8 @@ export const useFormBuilderState = (initialFormId?: string) => {
   const [showSavedConfirmation, setShowSavedConfirmation] = useState(false);
 
   // UI interaction states
-  const [selectedField, setSelectedField] = useState<FormField | null>(null);
-  const [selectedSection, setSelectedSection] = useState<FormSection | null>(null);
+  const [selectedField, setSelectedField] = useState<FormField | null>(null); // New: for properties panel
+  const [selectedSection, setSelectedSection] = useState<FormSection | null>(null); // New: for section properties panel
   const [isSaveAsTemplateDialogOpen, setIsSaveAsTemplateDialogOpen] = useState(false);
   const [newTemplateName, setNewTemplateName] = useState('');
   const [isSavingTemplate, setIsSavingTemplate] = useState(false);
@@ -40,12 +41,13 @@ export const useFormBuilderState = (initialFormId?: string) => {
 
   // New section/field input states
   const [newSectionName, setNewSectionName] = useState('');
-  const [newSectionDescription, setNewSectionDescription] = useState('');
-  const [newSectionTooltip, setNewSectionTooltip] = useState('');
+  const [newSectionDescription, setNewSectionDescription] = useState(''); // New: Section description
+  const [newSectionTooltip, setNewSectionTooltip] = useState(''); // New: Section tooltip
   const [isAddingSection, setIsAddingSection] = useState(false);
   const [newFieldLabel, setNewFieldLabel] = useState('');
   const [newFieldType, setNewFieldType] = useState<FormField['field_type']>('text');
   const [newFieldOptions, setNewFieldOptions] = useState('');
+  // Removed newFieldHelpText
   const [newFieldDescription, setNewFieldDescription] = useState('');
   const [newFieldTooltip, setNewFieldTooltip] = useState('');
   const [newFieldPlaceholder, setNewFieldPlaceholder] = useState('');
@@ -60,7 +62,7 @@ export const useFormBuilderState = (initialFormId?: string) => {
 
     const { data: formData, error: formError } = await supabase
       .from('forms')
-      .select('name, status, description, last_edited_at, last_edited_by_user_id, is_template')
+      .select('name, status, description, last_edited_at, last_edited_by_user_id, is_template, form_tags(tags(*))') // Fetch is_template and form_tags
       .eq('id', currentFormId)
       .single();
     
@@ -71,19 +73,21 @@ export const useFormBuilderState = (initialFormId?: string) => {
       setFormStatus('draft');
       setFormLastEditedAt(null);
       setFormLastEditedByUserId(null);
-      setIsTemplate(false);
+      setIsTemplate(false); // Reset is_template
+      setFormTags([]); // Reset formTags
     } else {
       setFormName(formData.name);
       setFormDescription(formData.description);
       setFormStatus(formData.status);
       setFormLastEditedAt(formData.last_edited_at);
       setFormLastEditedByUserId(formData.last_edited_by_user_id);
-      setIsTemplate(formData.is_template);
+      setIsTemplate(formData.is_template); // Set is_template
+      setFormTags(formData.form_tags.map((ft: any) => ft.tags) || []); // Set formTags
     }
 
     const { data: sectionsData, error: sectionsError } = await supabase
       .from('form_sections')
-      .select('*, description, tooltip, display_rules, display_rules_logic_type')
+      .select('*, description, tooltip, display_rules, display_rules_logic_type') // Select new columns
       .eq('form_id', currentFormId)
       .order('order', { ascending: true });
     
@@ -95,7 +99,7 @@ export const useFormBuilderState = (initialFormId?: string) => {
 
     const { data: fieldsData, error: fieldsError } = await supabase
       .from('form_fields')
-      .select('*')
+      .select('id, form_id, section_id, label, field_type, options, is_required, order, display_rules, display_rules_logic_type, description, tooltip, placeholder, last_edited_by_user_id, last_edited_at, date_min, date_max, date_allow_past, date_allow_future, rating_min_value, rating_max_value, rating_min_label, rating_max_label, is_anonymized') // Explicitly select all columns including new ones
       .eq('form_id', currentFormId)
       .order('order', { ascending: true });
 
@@ -117,6 +121,36 @@ export const useFormBuilderState = (initialFormId?: string) => {
     }
   }, [sections, newFieldSectionId]);
 
+  // Sync local states with fetched data
+  useEffect(() => {
+    if (!loading) {
+      setHasUnsavedChanges(false);
+      setLastSavedTimestamp(formLastEditedAt ? new Date(formLastEditedAt) : null);
+    }
+  }, [loading, formLastEditedAt]);
+
+  // Fetch last edited by user's full name
+  useEffect(() => {
+    const fetchUserName = async () => {
+      if (formLastEditedByUserId) {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('first_name, last_name')
+          .eq('id', formLastEditedByUserId)
+          .single();
+        if (error) {
+          console.error("Error fetching last edited user name:", error);
+          setLastEditedByUserName(null);
+        } else if (data) {
+          setLastEditedByUserName([data.first_name, data.last_name].filter(Boolean).join(' ').trim() || 'Unknown User');
+        }
+      } else {
+        setLastEditedByUserName(null);
+      }
+    };
+    fetchUserName();
+  }, [formLastEditedByUserId]);
+
   const getFieldsForSection = useCallback((sectionId: string | null) => {
     return fields.filter(field => field.section_id === sectionId).sort((a, b) => a.order - b.order);
   }, [fields]);
@@ -129,27 +163,26 @@ export const useFormBuilderState = (initialFormId?: string) => {
     formLastEditedAt, setFormLastEditedAt,
     formLastEditedByUserId, setFormLastEditedByUserId,
     lastEditedByUserName,
-    isTemplate, setIsTemplate,
+    isTemplate, // New: Expose isTemplate
     sections, setSections,
     fields, setFields,
-    loading, setLoading,
+    loading, fetchData,
     newFieldSectionId, setNewFieldSectionId,
-    fetchData,
     getFieldsForSection,
     isAutoSaving, setIsAutoSaving,
     lastSavedTimestamp, setLastSavedTimestamp,
     hasUnsavedChanges, setHasUnsavedChanges,
     isUpdatingStatus, setIsUpdatingStatus,
     showSavedConfirmation, setShowSavedConfirmation,
-    selectedField, setSelectedField,
-    selectedSection, setSelectedSection,
+    selectedField, setSelectedField, // New: Expose selectedField
+    selectedSection, setSelectedSection, // New: Expose selectedSection
     isSaveAsTemplateDialogOpen, setIsSaveAsTemplateDialogOpen,
     newTemplateName, setNewTemplateName,
     isSavingTemplate, setIsSavingTemplate,
     isFormPreviewOpen, setIsFormPreviewOpen,
     newSectionName, setNewSectionName,
-    newSectionDescription, setNewSectionDescription,
-    newSectionTooltip, setNewSectionTooltip,
+    newSectionDescription, setNewSectionDescription, // New
+    newSectionTooltip, setNewSectionTooltip, // New
     isAddingSection, setIsAddingSection,
     newFieldLabel, setNewFieldLabel,
     newFieldType, setNewFieldType,
@@ -158,5 +191,6 @@ export const useFormBuilderState = (initialFormId?: string) => {
     newFieldTooltip, setNewFieldTooltip,
     newFieldPlaceholder, setNewFieldPlaceholder,
     isAddingField, setIsAddingField,
+    formTags, // New: Expose formTags
   };
 };

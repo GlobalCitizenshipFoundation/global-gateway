@@ -6,9 +6,9 @@ import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/componen
 
 import { useFormBuilderState } from "@/hooks/forms/useFormBuilderState";
 import { useFormBuilderHandlers } from "@/hooks/forms/useFormBuilderHandlers";
-import { useFormBuilderActions } from "@/hooks/forms/useFormBuilderActions";
-import { useFormFieldDragAndDrop } from "@/hooks/forms/useFormFieldDragAndDrop";
-import { useFormSectionDragAndDrop } from "@/hooks/forms/useFormSectionDragAndDrop";
+import { useFormBuilderActions } from "@/hooks/forms/useFormBuilderActions"; // Import directly
+import { useFormFieldDragAndDrop } from "@/hooks/forms/useFormFieldDragAndDrop"; // Import directly
+import { useFormSectionDragAndDrop } from "@/hooks/forms/useFormSectionDragAndDrop"; // Import directly
 
 import { FormDetailsCard } from "@/components/forms/form-builder/FormDetailsCard";
 import { FormActions } from "@/components/forms/form-builder/FormActions";
@@ -18,8 +18,10 @@ import { FormSectionsList } from "@/components/forms/form-builder/FormSectionsLi
 import { UncategorizedFieldsList } from "@/components/forms/form-builder/UncategorizedFieldsList";
 import { FormFieldItem } from "@/components/forms/form-builder/FormFieldItem";
 import { FieldPropertiesPanel } from "@/components/forms/form-builder/FieldPropertiesPanel";
-import { SectionPropertiesPanel } from "@/components/forms/form-builder/SectionPropertiesPanel";
-import { FormField, FormSection } from "@/types";
+import { SectionPropertiesPanel } from "@/components/forms/form-builder/SectionPropertiesPanel"; // Import new panel
+import { FormField, FormSection, Tag } from "@/types"; // Import Tag type
+import { FormTagsInput } from "@/components/forms/FormTagsInput"; // Import new component
+import { useTagsData } from "@/hooks/tags/useTagsData"; // Import useTagsData
 
 const FormBuilderPage = () => {
   const { formId } = useParams<{ formId: string }>();
@@ -46,15 +48,20 @@ const FormBuilderPage = () => {
     fetchData,
     setSections,
     setFields,
+    formTags, // Destructure formTags from state
   } = state;
 
   const [selectedField, setSelectedField] = useState<FormField | null>(null);
-  const [selectedSection, setSelectedSection] = useState<FormSection | null>(null);
+  const [selectedSection, setSelectedSection] = useState<FormSection | null>(null); // New state for selected section
 
+  // Fetch all available tags
+  const { tags: allAvailableTags, loading: loadingTags } = useTagsData();
+
+  // Initialize actions from the dedicated hook
   const formBuilderActions = useFormBuilderActions({
     formId: state.formId,
     setSections: state.setSections,
-    setFields: state.setFields,
+    setFields: state.setFields, // Pass fields directly
     fetchData: state.fetchData,
   });
 
@@ -110,6 +117,7 @@ const FormBuilderPage = () => {
     };
   }, [state.hasUnsavedChanges]);
 
+  // Sync selected field with the main fields array to ensure panel has fresh data
   useEffect(() => {
     if (selectedField) {
       const updatedFieldFromList = fields.find(f => f.id === selectedField.id);
@@ -119,6 +127,7 @@ const FormBuilderPage = () => {
     }
   }, [fields, selectedField]);
 
+  // Sync selected section with the main sections array
   useEffect(() => {
     if (selectedSection) {
       const updatedSectionFromList = sections.find(s => s.id === selectedSection.id);
@@ -132,15 +141,22 @@ const FormBuilderPage = () => {
 
   const handleQuickAddField = (sectionId: string) => {
     setNewFieldSectionId(sectionId);
-    setNewFieldLabel('');
-    setNewFieldType('text');
-    setNewFieldOptions('');
+    setNewFieldLabel(''); // Clear previous label
+    setNewFieldType('text'); // Reset to default type
+    setNewFieldOptions(''); // Clear options
     setNewFieldDescription('');
     setNewFieldTooltip('');
     setNewFieldPlaceholder('');
+    // Optionally scroll to the add field form
     const addFieldFormElement = document.getElementById('add-field-form');
     if (addFieldFormElement) {
       addFieldFormElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+
+  const handleUpdateFormTags = (selectedTagIds: string[]) => {
+    if (state.formId) {
+      handlers.handleUpdateFormTags(selectedTagIds);
     }
   };
 
@@ -159,7 +175,7 @@ const FormBuilderPage = () => {
             <div className="p-6 h-full overflow-y-auto">
               <FormSectionsList
                 sections={sections}
-                fields={fields}
+                fields={fields} // Pass all fields for section logic
                 loading={loading}
                 getFieldsForSection={getFieldsForSection}
                 handleDeleteSection={handlers.handleDeleteSection}
@@ -168,7 +184,7 @@ const FormBuilderPage = () => {
                 onUpdateLabel={handlers.handleUpdateFieldLabel}
                 onSelectField={setSelectedField}
                 onQuickAddField={handleQuickAddField}
-                onSelectSection={setSelectedSection}
+                onSelectSection={setSelectedSection} // Pass new handler
               />
 
               <UncategorizedFieldsList
@@ -190,7 +206,7 @@ const FormBuilderPage = () => {
                 handleAddSection={handlers.handleAddSection}
               />
 
-              <div id="add-field-form">
+              <div id="add-field-form"> {/* Add ID for scrolling */}
                 <AddFieldForm
                   newFieldLabel={newFieldLabel}
                   setNewFieldLabel={setNewFieldLabel}
@@ -213,7 +229,7 @@ const FormBuilderPage = () => {
               </div>
             </div>
           </ResizablePanel>
-          {(selectedField || selectedSection) && (
+          {(selectedField || selectedSection) && ( // Conditionally render panel
             <>
               <ResizableHandle withHandle />
               <ResizablePanel defaultSize={35} minSize={25}>
@@ -230,9 +246,9 @@ const FormBuilderPage = () => {
                 {selectedSection && (
                   <SectionPropertiesPanel
                     section={selectedSection}
-                    allFields={fields}
+                    allFields={fields} // Pass all fields for section logic
                     onSave={handlers.handleSaveEditedSection}
-                    onSaveLogic={handlers.handleSaveSectionLogic}
+                    onSaveLogic={handlers.handleSaveSectionLogic} // Pass new handler
                     onClose={() => setSelectedSection(null)}
                   />
                 )}
@@ -257,6 +273,16 @@ const FormBuilderPage = () => {
           ) : null}
         </DragOverlay>
       </DndContext>
+
+      <div className="mt-8 pt-4 border-t">
+        <FormTagsInput
+          formId={state.formId}
+          currentTags={formTags?.map(ft => ft.id) || []}
+          allAvailableTags={allAvailableTags.filter(tag => tag.applicable_to.includes('forms'))}
+          onTagsChange={handleUpdateFormTags}
+          loading={loadingTags}
+        />
+      </div>
 
       <FormActions state={state} handlers={handlers} />
     </div>

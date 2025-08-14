@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
-import { FormField, FormSection, Form as FormType } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
+import { FormField, FormSection, Form as FormType, Tag as TagType } from '@/types'; // Import FormType and TagType
 import { showError } from '@/utils/toast';
 
 export const useFormBuilderData = (initialFormId?: string) => { // Accept initialFormId as prop
@@ -17,7 +17,7 @@ export const useFormBuilderData = (initialFormId?: string) => { // Accept initia
   const [fields, setFields] = useState<FormField[]>([]);
   const [loading, setLoading] = useState(true);
   const [newFieldSectionId, setNewFieldSectionId] = useState<string | null>(null);
-  // Removed formTags state as it's no longer part of the Form type
+  const [formTags, setFormTags] = useState<FormType['tags']>([]); // New: State for form tags
 
   const fetchData = useCallback(async () => {
     if (!currentFormId) {
@@ -26,10 +26,10 @@ export const useFormBuilderData = (initialFormId?: string) => { // Accept initia
     }
     setLoading(true);
 
-    // Fetch form details
+    // Fetch form details and its associated tags
     const { data: formData, error: formError } = await supabase
       .from('forms')
-      .select('name, status, description, last_edited_at, last_edited_by_user_id, is_template') // Fetch new columns
+      .select('name, status, description, last_edited_at, last_edited_by_user_id, is_template, form_tags(tags(*))') // Fetch new columns and tags
       .eq('id', currentFormId)
       .single();
     
@@ -40,12 +40,18 @@ export const useFormBuilderData = (initialFormId?: string) => { // Accept initia
       setFormStatus('draft');
       setFormLastEditedAt(null);
       setFormLastEditedByUserId(null);
+      setFormTags([]); // Reset tags on error
     } else {
       setFormName(formData.name);
       setFormDescription(formData.description); // Set description
       setFormStatus(formData.status);
       setFormLastEditedAt(formData.last_edited_at);
       setFormLastEditedByUserId(formData.last_edited_by_user_id);
+      // Correctly map the fetched data to the FormTag type
+      setFormTags(formData.form_tags.map((ft: { tags: TagType | null | TagType[] }) => {
+        // Handle case where `tags` might be an array of one element
+        return Array.isArray(ft.tags) ? ft.tags[0] : ft.tags;
+      }).filter(Boolean) as TagType[] || []); // Filter out nulls and cast
     }
 
     // Fetch sections for the form, including new conditional logic fields
@@ -106,6 +112,6 @@ export const useFormBuilderData = (initialFormId?: string) => { // Accept initia
     setNewFieldSectionId,
     fetchData,
     getFieldsForSection,
-    // Removed formTags from return
+    formTags, // New: Return form tags
   };
 };

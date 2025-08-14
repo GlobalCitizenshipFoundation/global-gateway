@@ -178,8 +178,6 @@ export const createWorkflowStageSchema = (allStages: WorkflowStage[], publishedE
 
 // Function to create the payload for Supabase update
 export const createStagePayload = (values: any): Partial<WorkflowStage> => {
-  console.log("createStagePayload: Incoming values:", values); // Debug log
-
   let descriptionPayload: string | null = values.description || null;
   let formIdPayload: string | null = values.form_id || null;
   let emailTemplateIdPayload: string | null = values.email_template_id || null;
@@ -214,7 +212,9 @@ export const createStagePayload = (values: any): Partial<WorkflowStage> => {
       descriptionPayload = JSON.stringify({
         anonymize_identity: values.anonymize_identity ?? false, // Ensure boolean, default to false
         // Ensure review_form_source_stage_id is always a string when writing to description
-        review_form_source_stage_id: values.review_form_source_stage_id ?? null, // This should now be a string ID or null
+        review_form_source_stage_id: typeof values.review_form_source_stage_id === 'number'
+          ? String(values.review_form_source_stage_id)
+          : values.review_form_source_stage_id ?? null,
       });
       formIdPayload = null;
       emailTemplateIdPayload = null;

@@ -52,10 +52,9 @@ export const WorkflowStageCard = ({ stage, validationError, onDelete, onEdit }: 
                   </Tooltip>
                 )}
               </CardTitle>
-              {/* Changed CardDescription to a div to allow Badge (which is a div) to be a child */}
-              <div className="text-sm text-muted-foreground">
+              <CardDescription>
                 <Badge variant="secondary" className="capitalize">{stage.step_type}</Badge>
-              </div>
+              </CardDescription>
             </div>
           </div>
           <div className="flex items-center gap-2">

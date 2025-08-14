@@ -18,7 +18,7 @@ export const EvaluationTemplatePreviewDialog = ({
 }: EvaluationTemplatePreviewDialogProps) => {
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent key={isOpen ? 'eval-preview-open' : 'eval-preview-closed'} className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-2xl">{templateName} - Preview</DialogTitle>
           <DialogDescription>

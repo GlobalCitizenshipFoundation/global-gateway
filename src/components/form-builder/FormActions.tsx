@@ -1,8 +1,9 @@
 import { Button } from "@/components/ui/button";
 import { SaveAsTemplateDialog } from "@/components/forms/SaveAsTemplateDialog";
-import FormPreviewDialog from "@/components/forms/form-builder/FormPreviewDialog";
+import FormPreviewDialog from "@/components/form-builder/FormPreviewDialog";
 import { useFormBuilderState } from "@/hooks/forms/useFormBuilderState";
 import { useFormBuilderHandlers } from "@/hooks/forms/useFormBuilderHandlers";
+import { useFormBuilderActions } from "@/hooks/forms/useFormBuilderActions";
 import { useSession } from "@/contexts/auth/SessionContext";
 
 interface FormActionsProps {
@@ -17,7 +18,7 @@ export const FormActions = ({ state, handlers }: FormActionsProps) => {
     formName,
     formDescription,
     formStatus,
-    isTemplate,
+    isTemplate, // New: Destructure isTemplate
     hasUnsavedChanges,
     isAutoSaving,
     isUpdatingStatus,
@@ -57,7 +58,7 @@ export const FormActions = ({ state, handlers }: FormActionsProps) => {
               {isUpdatingStatus ? `Unpublishing ${isTemplate ? "Template" : "Form"}...` : `Unpublish ${isTemplate ? "Template" : "Form"}`}
             </Button>
           )}
-          {!isTemplate && (
+          {!isTemplate && ( // Only show "Save as Template" if it's not already a template
             <Button variant="outline" onClick={() => setIsSaveAsTemplateDialogOpen(true)} disabled={isSavingTemplate}>
               Save as Template
             </Button>
@@ -72,7 +73,7 @@ export const FormActions = ({ state, handlers }: FormActionsProps) => {
           id: formId || '',
           name: formName,
           description: formDescription,
-          is_template: false,
+          is_template: false, // This dialog always creates a new non-template form
           status: formStatus,
           user_id: user?.id || '',
           created_at: '',

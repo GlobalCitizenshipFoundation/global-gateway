@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
     import { supabase } from '@/integrations/supabase/client';
     import { useSession } from '@/contexts/auth/SessionContext';
     import { showError } from '@/utils/toast';
-    import { Tag } from '@/types'; // Correctly import Tag
+    import { Tag } from '@/types';
 
     export const useTagsData = () => {
       const { user, profile } = useSession();

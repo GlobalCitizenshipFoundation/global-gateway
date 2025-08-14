@@ -10,20 +10,20 @@ import { CreateFormFromTemplateDialog } from "@/components/forms/CreateFormFromT
 import { SaveAsTemplateDialog } from "@/components/forms/SaveAsTemplateDialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useState, useMemo } from "react"; // Import useMemo
-import { Form as FormType } from "@/types"; // Removed TagType import
+import { Form as FormType, Tag as TagType } from "@/types"; // Import TagType
 import { Input } from "@/components/ui/input"; // Import Input
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"; // Import Select components
-// import { useTagsData } from "@/hooks/tags/useTagsData"; // Removed: Import useTagsData
-// import { TagDisplay } from "@/components/tags/TagDisplay"; // Removed: Import TagDisplay
-// import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"; // Removed: Import Popover
-// import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"; // Removed: Import Command components
-// import { Check, ChevronsUpDown } from "lucide-react"; // Removed: Import icons
-// import { cn } from "@/lib/utils"; // Removed: Import cn
-// import { ScrollArea } from "@/components/ui/scroll-area"; // Removed: Import ScrollArea
+import { useTagsData } from "@/hooks/tags/useTagsData"; // Import useTagsData
+import { TagDisplay } from "@/components/tags/TagDisplay"; // Import TagDisplay
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"; // Import Popover
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"; // Import Command components
+import { Check, ChevronsUpDown } from "lucide-react"; // Import icons
+import { cn } from "@/lib/utils"; // Import cn
+import { ScrollArea } from "@/components/ui/scroll-area"; // Import ScrollArea
 
 const FormManagementPage = () => {
   const { forms, setForms, templates, setTemplates, loading, error } = useFormsData();
-  // const { tags: allAvailableTags, loading: loadingTags } = useTagsData(); // Removed: Fetch all tags
+  const { tags: allAvailableTags, loading: loadingTags } = useTagsData(); // Fetch all tags
   const {
     isDeleteDialogOpen, setIsDeleteDialogOpen, selectedForm, setSelectedForm, handleDeleteForm,
     isCreateFromTemplateDialogOpen, setIsCreateFromTemplateDialogOpen, selectedTemplateId, setSelectedTemplateId, newFormName, setNewFormName, isCreatingForm, handleCreateBlankForm, handleCreateFormFromTemplate,
@@ -33,10 +33,10 @@ const FormManagementPage = () => {
 
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState<'all' | 'form' | 'template'>('all');
-  // const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]); // Removed: New state for tag filter
+  const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]); // New state for tag filter
   const [sortBy, setSortBy] = useState<'name' | 'created_at' | 'updated_at'>('updated_at');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
-  // const [isTagFilterOpen, setIsTagFilterOpen] = useState(false); // Removed: State for tag filter popover
+  const [isTagFilterOpen, setIsTagFilterOpen] = useState(false); // State for tag filter popover
 
   const openCreateDialog = () => {
     setSelectedTemplateId(null);
@@ -44,12 +44,11 @@ const FormManagementPage = () => {
     setIsCreateFromTemplateDialogOpen(true);
   };
 
-  // Removed: handleTagFilterChange function
-  // const handleTagFilterChange = (tagId: string) => {
-  //   setSelectedTagIds((prev: string[]) =>
-  //     prev.includes(tagId) ? prev.filter((id: string) => id !== tagId) : [...prev, tagId]
-  //   );
-  // };
+  const handleTagFilterChange = (tagId: string) => {
+    setSelectedTagIds(prev =>
+      prev.includes(tagId) ? prev.filter(id => id !== tagId) : [...prev, tagId]
+    );
+  };
 
   const filteredAndSortedForms = useMemo(() => {
     let filtered = forms.filter(form => {
@@ -59,11 +58,11 @@ const FormManagementPage = () => {
                           (filterType === 'form' && !form.is_template) ||
                           (filterType === 'template' && form.is_template);
       
-      // Removed: New: Filter by selected tags
-      // const matchesTags = selectedTagIds.length === 0 ||
-      //                     (form.tags && selectedTagIds.every((tagId: string) => form.tags?.some((formTag: TagType) => formTag.id === tagId)));
+      // New: Filter by selected tags
+      const matchesTags = selectedTagIds.length === 0 ||
+                          (form.tags && selectedTagIds.every(tagId => form.tags?.some(formTag => formTag.id === tagId)));
 
-      return matchesSearch && matchesType; // Removed matchesTags from condition
+      return matchesSearch && matchesType && matchesTags;
     });
 
     filtered.sort((a, b) => {
@@ -87,7 +86,7 @@ const FormManagementPage = () => {
     });
 
     return filtered;
-  }, [forms, searchTerm, filterType, sortBy, sortOrder]); // Removed selectedTagIds from dependencies
+  }, [forms, searchTerm, filterType, selectedTagIds, sortBy, sortOrder]);
 
   if (loading) {
     return (
@@ -156,8 +155,7 @@ const FormManagementPage = () => {
               <SelectItem value="template">Templates</SelectItem>
             </SelectContent>
           </Select>
-          {/* Removed: Tag filter Popover */}
-          {/* <Popover open={isTagFilterOpen} onOpenChange={setIsTagFilterOpen}>
+          <Popover open={isTagFilterOpen} onOpenChange={setIsTagFilterOpen}>
             <PopoverTrigger asChild>
               <Button
                 variant="outline"
@@ -168,7 +166,7 @@ const FormManagementPage = () => {
               >
                 {selectedTagIds.length > 0 ? (
                   <div className="flex flex-wrap gap-1">
-                    {selectedTagIds.map((tagId: string) => {
+                    {selectedTagIds.map(tagId => {
                       const tag = allAvailableTags.find(t => t.id === tagId);
                       return tag ? <TagDisplay key={tag.id} tag={tag} /> : null;
                     })}
@@ -207,7 +205,7 @@ const FormManagementPage = () => {
                 </CommandList>
               </Command>
             </PopoverContent>
-          </Popover> */}
+          </Popover>
           <Select value={sortBy} onValueChange={(value: 'name' | 'created_at' | 'updated_at') => setSortBy(value)}>
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Sort By" />

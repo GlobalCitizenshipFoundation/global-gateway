@@ -1,5 +1,3 @@
-"use client";
-
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -17,12 +15,11 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import RichTextEditor from "@/components/common/RichTextEditor"; // Updated import path
 import { EmailTemplate } from "@/types";
-import { useEffect } from "react"; // Import useEffect
 
 const emailTemplateSchema = z.object({
   name: z.string().min(1, { message: "Template name is required." }),
   subject: z.string().min(1, { message: "Subject is required." }),
-  body_html: z.string().min(1, { message: "Email body cannot be empty." }), // Changed to body_html
+  body: z.string().min(1, { message: "Email body cannot be empty." }),
   is_default: z.boolean().optional(),
 });
 
@@ -41,30 +38,10 @@ export const EmailTemplateForm = ({ initialData, onSubmit, isSubmitting, isNewTe
     defaultValues: {
       name: initialData?.name || "",
       subject: initialData?.subject || "",
-      body_html: initialData?.body_html || "", // Changed to body_html
+      body: initialData?.body || "",
       is_default: initialData?.is_default || false,
     },
   });
-
-  // Reset form when initialData changes (e.g., when a template is loaded via dropdown)
-  useEffect(() => {
-    if (initialData) {
-      form.reset({
-        name: initialData.name,
-        subject: initialData.subject,
-        body_html: initialData.body_html,
-        is_default: initialData.is_default,
-      });
-    } else if (isNewTemplate) {
-      // Clear form if it's a new template and initialData becomes null/undefined
-      form.reset({
-        name: "",
-        subject: "",
-        body_html: "",
-        is_default: false,
-      });
-    }
-  }, [initialData, isNewTemplate, form]);
 
   return (
     <Form {...form}>
@@ -76,7 +53,7 @@ export const EmailTemplateForm = ({ initialData, onSubmit, isSubmitting, isNewTe
             <FormItem>
               <FormLabel>Template Name</FormLabel>
               <FormControl>
-                <Input placeholder="e.g., Application Submitted Confirmation" {...field} disabled={isSubmitting} autoComplete="off" />
+                <Input placeholder="e.g., Application Submitted Confirmation" {...field} disabled={isSubmitting || initialData?.is_default} />
               </FormControl>
               <FormDescription>
                 A unique name for this email template. Cannot be changed for default templates.
@@ -92,7 +69,7 @@ export const EmailTemplateForm = ({ initialData, onSubmit, isSubmitting, isNewTe
             <FormItem>
               <FormLabel>Subject</FormLabel>
               <FormControl>
-                <Input placeholder="e.g., Your Application Has Been Received!" {...field} disabled={isSubmitting} autoComplete="off" />
+                <Input placeholder="e.g., Your Application Has Been Received!" {...field} disabled={isSubmitting} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -100,7 +77,7 @@ export const EmailTemplateForm = ({ initialData, onSubmit, isSubmitting, isNewTe
         />
         <FormFieldComponent
           control={form.control}
-          name="body_html" // Changed to body_html
+          name="body"
           render={({ field }) => (
             <FormItem>
               <FormLabel>Email Body</FormLabel>
@@ -111,7 +88,6 @@ export const EmailTemplateForm = ({ initialData, onSubmit, isSubmitting, isNewTe
                   readOnly={isSubmitting}
                   className="min-h-[300px]"
                   placeholder="Compose your email content here. You can use HTML for rich text."
-                  // Note: ReactQuill is a complex component, direct autocomplete might not apply to its internal editable area.
                 />
               </FormControl>
               <FormDescription>

@@ -282,7 +282,7 @@ export const useFormBuilderActions = ({
       updatePayload.rating_min_value = values.rating_min_value ?? 1;
       updatePayload.rating_max_value = values.rating_max_value ?? 5;
       updatePayload.rating_min_label = values.rating_min_label || "Poor";
-      updatePayload.rating_max_label = values.rating_max_label || "Excellent";
+      updatePayload.rating_max_label = "Excellent";
     } else {
       updatePayload.rating_min_value = null;
       updatePayload.rating_max_value = null;
@@ -407,8 +407,8 @@ export const useFormBuilderActions = ({
           form_id: newTemplateFormData.id,
           name: section.name,
           order: section.order,
-          description: section.description, // Copy section description
-          tooltip: section.tooltip, // Copy section tooltip
+          description: section.description,
+          tooltip: section.tooltip,
           display_rules: section.display_rules, // Copy display rules
           display_rules_logic_type: section.display_rules_logic_type, // Copy logic type
           last_edited_by_user_id: user.id,
