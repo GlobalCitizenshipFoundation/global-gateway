@@ -159,7 +159,9 @@ export const WorkflowStagePropertiesPanel = ({
   }, [stage, form]);
 
   const onSubmit = (values: EditWorkflowStageValues) => {
+    console.log("WorkflowStagePropertiesPanel: Submitting values:", values); // Debug log
     const finalValues = createStagePayload(values);
+    console.log("WorkflowStagePropertiesPanel: Payload to save:", finalValues); // Debug log
     onSave(stage.id, finalValues);
   };
 

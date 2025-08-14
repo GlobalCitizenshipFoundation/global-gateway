@@ -56,25 +56,30 @@ export const validateWorkflowStage = (stage: WorkflowStage, allStages: WorkflowS
       let reviewFormSourceStageId: string | null = null;
       try {
         const config = JSON.parse(stage.description || '{}');
+        console.log("validateWorkflowStage (review): Parsed config:", config); // Debug log
         if (typeof config.review_form_source_stage_id === 'string') {
           reviewFormSourceStageId = config.review_form_source_stage_id;
         }
       } catch (e) {
+        console.error("validateWorkflowStage (review): Error parsing description:", e); // Debug log
         return { isValid: false, message: 'Review stage configuration is invalid or incomplete (description is not valid JSON).' };
       }
+
+      console.log("validateWorkflowStage (review): reviewFormSourceStageId:", reviewFormSourceStageId); // Debug log
 
       if (reviewFormSourceStageId === null || reviewFormSourceStageId === undefined) {
         return { isValid: false, message: 'A form to review must be selected.' };
       }
 
       const sourceStage = allStages.find(s => s.id === reviewFormSourceStageId);
+      console.log("validateWorkflowStage (review): Found sourceStage:", sourceStage); // Debug log
+
       if (!sourceStage) {
         return { isValid: false, message: `The selected form to review does not exist.` };
       }
       if (sourceStage.step_type !== 'form') {
         return { isValid: false, message: `The selected form to review ('${sourceStage.name}') is not a 'Form' stage.` };
       }
-      // Removed the order dependency: Stage order should not matter for review form selection.
       break;
 
     case 'recommendation':
