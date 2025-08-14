@@ -15,13 +15,13 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { WorkflowStage, Form as FormType, EmailTemplate, EvaluationTemplate } from "@/types";
 import { X } from "lucide-react";
-import { GeneralProperties } from './stage-properties/GeneralProperties.tsx';
-import { ReviewProperties } from './stage-properties/ReviewProperties.tsx';
-import { ResubmissionProperties } from './stage-properties/ResubmissionProperties.tsx';
-import { DecisionProperties } from './stage-properties/DecisionProperties.tsx';
-import { StatusProperties } from './stage-properties/StatusProperties.tsx';
-import { RecommendationProperties } from './stage-properties/RecommendationProperties.tsx';
-import { FormAttachmentProperties } from './stage-properties/FormAttachmentProperties.tsx';
+import { GeneralProperties } from './stage-properties/GeneralProperties';
+import { ReviewProperties } from './stage-properties/ReviewProperties';
+import { ResubmissionProperties } from './stage-properties/ResubmissionProperties';
+import { DecisionProperties } from './stage-properties/DecisionProperties';
+import { StatusProperties } from './stage-properties/StatusProperties';
+import { RecommendationProperties } from './stage-properties/RecommendationProperties';
+import { FormAttachmentProperties } from './stage-properties/FormAttachmentProperties';
 
 const editWorkflowStageSchema = z.object({
   name: z.string().min(1, { message: "Stage name cannot be empty." }),
