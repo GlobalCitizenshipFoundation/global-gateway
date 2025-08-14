@@ -22,10 +22,10 @@ interface AddFieldFormProps {
   setNewFieldTooltip: (text: string) => void;
   newFieldPlaceholder: string;
   setNewFieldPlaceholder: (text: string) => void;
-  isSubmitting: boolean;
+  // Removed isSubmitting: boolean; as it was redundant with isAddingField
   handleAddField: (e: React.FormEvent) => void;
   sections: FormSection[];
-  isAddingField: boolean; // Added this prop
+  isAddingField: boolean; // This is the correct prop for submission state
 }
 
 export const AddFieldForm = ({
@@ -43,10 +43,10 @@ export const AddFieldForm = ({
   setNewFieldTooltip,
   newFieldPlaceholder,
   setNewFieldPlaceholder,
-  isSubmitting,
+  // Removed isSubmitting from destructuring
   handleAddField,
   sections,
-  isAddingField, // Destructure the new prop
+  isAddingField, // Destructure the correct prop
 }: AddFieldFormProps) => {
   const showPlaceholder = ['text', 'textarea', 'email', 'phone', 'number'].includes(newFieldType);
 
@@ -58,7 +58,7 @@ export const AddFieldForm = ({
           placeholder="e.g., 'Your Personal Statement'"
           value={newFieldLabel}
           onChange={e => setNewFieldLabel(e.target.value)}
-          disabled={isSubmitting}
+          disabled={isAddingField} // Use isAddingField for disabling
         />
         <div className="flex flex-col sm:flex-row gap-2">
           <div className="grid gap-2 w-full sm:w-[140px]">
@@ -89,7 +89,7 @@ export const AddFieldForm = ({
               placeholder="Comma-separated options, e.g., Yes, No"
               value={newFieldOptions}
               onChange={e => setNewFieldOptions(e.target.value)}
-              disabled={isSubmitting}
+              disabled={isAddingField} // Use isAddingField for disabling
               className="flex-grow"
             />
           )}
@@ -99,7 +99,7 @@ export const AddFieldForm = ({
           <RichTextEditor
             value={newFieldDescription}
             onChange={setNewFieldDescription}
-            readOnly={isSubmitting}
+            readOnly={isAddingField} // Use isAddingField for readOnly
             className="min-h-[60px]"
             placeholder="Optional: Add a description for this field (e.g., 'This section asks about your academic background.')"
           />
@@ -111,7 +111,7 @@ export const AddFieldForm = ({
             placeholder="e.g., 'What is a tooltip?'"
             value={newFieldTooltip}
             onChange={e => setNewFieldTooltip(e.target.value)}
-            disabled={isSubmitting}
+            disabled={isAddingField} // Use isAddingField for disabling
           />
         </div>
         {showPlaceholder && (
@@ -122,7 +122,7 @@ export const AddFieldForm = ({
               placeholder="e.g., Enter your email address"
               value={newFieldPlaceholder}
               onChange={e => setNewFieldPlaceholder(e.target.value)}
-              disabled={isSubmitting}
+              disabled={isAddingField} // Use isAddingField for disabling
             />
             <p className="text-sm text-muted-foreground mt-1">
               This text will appear inside the input field when it's empty.
@@ -136,7 +136,7 @@ export const AddFieldForm = ({
           <Select
             value={newFieldSectionId || 'none'}
             onValueChange={(value) => setNewFieldSectionId(value === 'none' ? null : value)}
-            disabled={isSubmitting}
+            disabled={isAddingField} // Use isAddingField for disabling
           >
             <SelectTrigger id="new-field-section-id">
               <SelectValue placeholder="Assign to Section (Optional)" />
@@ -149,7 +149,7 @@ export const AddFieldForm = ({
             </SelectContent>
           </Select>
         </div>
-        <Button type="submit" disabled={isSubmitting || !newFieldLabel.trim()} className="w-full sm:w-auto self-end">
+        <Button type="submit" disabled={isAddingField || !newFieldLabel.trim()} className="w-full sm:w-auto self-end">
           <Plus className="mr-2 h-4 w-4" />
           Add Field
         </Button>
