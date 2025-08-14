@@ -31,8 +31,9 @@ import { useSession } from "@/contexts/auth/SessionContext";
 import { ReviewerAssignment } from "@/components/review/ReviewerAssignment";
 import { YourReviewCard } from "@/components/review/YourReviewCard";
 import { DynamicReviewForm } from "@/components/review/DynamicReviewForm";
-import { useFormLoader, DynamicFormValues } from "@/hooks/forms/useFormLoader"; // Import useFormLoader
-// import ApplicationFormSections from "@/components/application/ApplicationFormSections"; // Import ApplicationFormSections
+import { useFormLoader, DynamicFormValues } from "@/hooks/forms/useFormLoader";
+import { Form } from "@/components/ui/form"; // Added import
+import ApplicationFormSections from "@/components/application/ApplicationFormSections"; // Added import
 
 type SubmissionDetail = {
   id: string;
