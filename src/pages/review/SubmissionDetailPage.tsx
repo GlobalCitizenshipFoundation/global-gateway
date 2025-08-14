@@ -31,8 +31,6 @@ import { useSession } from "@/contexts/auth/SessionContext";
 import { ReviewerAssignment } from "@/components/review/ReviewerAssignment";
 import { YourReviewCard } from "@/components/review/YourReviewCard";
 import { DynamicReviewForm } from "@/components/review/DynamicReviewForm";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
 
 type SubmissionDetail = {
   id: string;
@@ -73,11 +71,6 @@ const SubmissionDetailPage = () => {
   const [error, setError] = useState<string | null>(null);
 
   const isReviewer = useMemo(() => profile?.role === 'reviewer', [profile]);
-  const [isAnonymizedView, setIsAnonymizedView] = useState(false);
-
-  useEffect(() => {
-    setIsAnonymizedView(isReviewer);
-  }, [isReviewer]);
 
   const fetchSubmissionDetails = useCallback(async () => {
     if (!submissionId || !programId) return;
@@ -246,22 +239,12 @@ const SubmissionDetailPage = () => {
           <ArrowLeft className="h-4 w-4" />
           Back to Submissions
         </Link>
-        {isReviewer && (
-          <div className="flex items-center space-x-2 p-4 bg-muted/50 rounded-lg">
-            <Switch
-              id="anonymize-toggle"
-              checked={isAnonymizedView}
-              onCheckedChange={setIsAnonymizedView}
-            />
-            <Label htmlFor="anonymize-toggle">Anonymize View</Label>
-          </div>
-        )}
         <Card>
           <CardHeader>
             <div className="flex justify-between items-start">
               <div>
-                <CardTitle className="text-2xl">{isAnonymizedView ? `Applicant ID: ${submission?.id.substring(0, 8)}...` : submission?.full_name}</CardTitle>
-                <CardDescription>{isAnonymizedView ? 'Information hidden to ensure fair review' : submission?.email}</CardDescription>
+                <CardTitle className="text-2xl">{isReviewer ? `Applicant ID: ${submission?.id.substring(0, 8)}...` : submission?.full_name}</CardTitle>
+                <CardDescription>{isReviewer ? 'Information hidden to ensure fair review' : submission?.email}</CardDescription>
               </div>
               <Badge variant="secondary">{submission?.program_stages?.name}</Badge>
             </div>
@@ -274,7 +257,7 @@ const SubmissionDetailPage = () => {
                   {displayedResponses.length > 0 ? (
                     displayedResponses.map((res, index) => {
                       const sanitizedDescription = res.form_fields?.description ? DOMPurify.sanitize(res.form_fields.description, { USE_PROFILES: { html: true } }) : null;
-                      const isAnonymized = isAnonymizedView && res.form_fields?.is_anonymized;
+                      const isAnonymized = isReviewer && res.form_fields?.is_anonymized;
                       return (
                         <div key={index}>
                           <dt className="font-medium text-sm">{res.form_fields?.label || 'Untitled Question'}</dt>
@@ -304,7 +287,7 @@ const SubmissionDetailPage = () => {
                 allResponses={allResponses}
                 allFormFields={allFormFieldsForLogic}
                 formSections={allFormSections}
-                isAnonymizedView={isAnonymizedView}
+                isAnonymizedView={isReviewer}
               />
             )}
             <div className="flex items-center gap-2">
