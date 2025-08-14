@@ -31,6 +31,7 @@ import { useSession } from "@/contexts/auth/SessionContext";
 import { ReviewerAssignment } from "@/components/review/ReviewerAssignment";
 import { YourReviewCard } from "@/components/review/YourReviewCard";
 import { DynamicReviewForm } from "@/components/review/DynamicReviewForm";
+import { useFormLoader, DynamicFormValues } from "@/hooks/forms/useFormLoader"; // Import useFormLoader
 
 type SubmissionDetail = {
   id: string;
@@ -60,21 +61,38 @@ const SubmissionDetailPage = () => {
   const { programId, submissionId } = useParams<{ programId: string, submissionId: string }>();
   const { user, profile } = useSession();
   const [submission, setSubmission] = useState<SubmissionDetail | null>(null);
-  const [allResponses, setAllResponses] = useState<ResponseWithField[]>([]);
-  const [allFormFieldsForLogic, setAllFormFieldsForLogic] = useState<FormField[]>([]);
-  const [allFormSections, setAllFormSections] = useState<FormSection[]>([]);
-  const [programStages, setProgramStages] = useState<ProgramStage[]>([]);
   const [reviews, setReviews] = useState<ApplicationReview[]>([]);
   const [evaluationCriteria, setEvaluationCriteria] = useState<EvaluationCriterion[]>([]);
   const [selectedStage, setSelectedStage] = useState<string>('');
-  const [loading, setLoading] = useState(true);
+  const [loadingPage, setLoadingPage] = useState(true); // Overall page loading
   const [updating, setUpdating] = useState(false);
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const [initialResponses, setInitialResponses] = useState<DynamicFormValues>({});
+  const [targetFormIdForResponses, setTargetFormIdForResponses] = useState<string | undefined>(undefined);
+
+  // Use the new form loader hook for application responses
+  const {
+    program: loadedProgram, // Renamed to avoid conflict with local 'program' state
+    applicationForm,
+    formSections,
+    formFields,
+    loading: formLoaderLoading,
+    error: formLoaderError,
+    form: formLoaderInstance, // Renamed to avoid conflict with local 'form' state
+    currentResponses: formLoaderCurrentResponses,
+    displayedFormFields: formLoaderDisplayedFormFields,
+  } = useFormLoader({ programId, formId: targetFormIdForResponses, initialResponses });
+
+  const [stages, setStages] = useState<ProgramStage[]>([]); // Define stages state here
+
   const fetchSubmissionDetails = useCallback(async () => {
-    if (!submissionId || !programId) return;
-    setLoading(true);
+    if (!submissionId || !programId) {
+      setLoadingPage(false);
+      return;
+    }
+    setLoadingPage(true);
     setError(null);
 
     const submissionPromise = supabase
@@ -89,11 +107,18 @@ const SubmissionDetailPage = () => {
       .eq('application_id', submissionId)
       .order('created_at', { ascending: false });
 
-    const [{ data: submissionData, error: submissionError }, { data: reviewsData, error: reviewsError }] = await Promise.all([submissionPromise, reviewsPromise]);
+    const responsesPromise = supabase
+      .from('application_responses')
+      .select(`value, form_fields ( id, label, field_type, options, is_required, order, display_rules, description, tooltip )`)
+      .eq('application_id', submissionId);
+
+    const stagesPromise = supabase.from('program_stages').select('*').eq('program_id', programId).order('order', { ascending: true });
+
+    const [{ data: submissionData, error: submissionError }, { data: reviewsData, error: reviewsError }, { data: responsesData, error: responsesError }, { data: stagesData, error: stagesError }] = await Promise.all([submissionPromise, reviewsPromise, responsesPromise, stagesPromise]);
 
     if (submissionError) {
       setError(submissionError.message);
-      setLoading(false);
+      setLoadingPage(false);
       return;
     }
     const formattedSubmissionData: SubmissionDetail = {
@@ -122,60 +147,55 @@ const SubmissionDetailPage = () => {
       setEvaluationCriteria([]);
     }
 
-    // Determine which form to load based on stage type
-    let targetFormId: string | null = formattedSubmissionData.programs?.form_id || null;
+    // Set the stages state here
+    if (stagesError) {
+      showError("Could not load program stages.");
+    } else {
+      setStages(stagesData || []);
+    }
+
+    // Determine which form to load for responses based on stage type
+    let formIdForLoader: string | null = formattedSubmissionData.programs?.form_id || null;
     if (formattedSubmissionData.program_stages?.step_type === 'review' && formattedSubmissionData.program_stages.description) {
       try {
         const config = JSON.parse(formattedSubmissionData.program_stages.description);
         const reviewFormSourceStageOrder = config.review_form_source_stage_order;
         if (typeof reviewFormSourceStageOrder === 'number') {
-          const { data: sourceStageData, error: sourceStageError } = await supabase
-            .from('program_stages')
-            .select('form_id')
-            .eq('program_id', programId)
-            .eq('order', reviewFormSourceStageOrder)
-            .single();
-          if (sourceStageError || !sourceStageData) {
-            console.error("Error fetching review source stage form_id:", sourceStageError);
-            showError("Could not load the source form for this review stage.");
-            targetFormId = null;
-          } else {
-            targetFormId = sourceStageData.form_id;
+          const sourceStage = (stagesData as ProgramStage[]).find(s => s.order === reviewFormSourceStageOrder);
+          if (sourceStage) {
+            formIdForLoader = sourceStage.form_id;
           }
         }
       } catch (e) {
         console.error("Error parsing review stage description:", e);
         showError("Invalid review stage configuration.");
-        targetFormId = null;
+        formIdForLoader = null;
       }
     }
+    setTargetFormIdForResponses(formIdForLoader || undefined);
 
-    if (targetFormId) {
-      const { data: allFieldsData, error: allFieldsError } = await supabase.from('form_fields').select('*').eq('form_id', targetFormId).order('order', { ascending: true });
-      if (allFieldsError) showError("Could not load all form fields for logic evaluation.");
-      else setAllFormFieldsForLogic(allFieldsData as FormField[]);
-
-      const { data: sectionsData, error: sectionsError } = await supabase.from('form_sections').select('*').eq('form_id', targetFormId).order('order', { ascending: true });
-      if (sectionsError) showError("Could not load form sections.");
-      else setAllFormSections(sectionsData || []);
-    } else {
-      setAllFormFieldsForLogic([]);
-      setAllFormSections([]);
+    if (responsesError) {
+      showError("Could not load application responses.");
+    } else if (responsesData) {
+      const initialValues: DynamicFormValues = {};
+      responsesData.forEach(res => {
+        const field = Array.isArray(res.form_fields) ? res.form_fields[0] : res.form_fields;
+        if (field && res.value !== null) {
+          if (field.field_type === 'checkbox') {
+            try { initialValues[field.id] = JSON.parse(res.value); } catch { initialValues[field.id] = []; }
+          } else if (field.field_type === 'number' || field.field_type === 'rating') {
+            initialValues[field.id] = parseFloat(res.value);
+          } else {
+            initialValues[field.id] = res.value;
+          }
+        }
+      });
+      formLoaderInstance.reset(initialValues); // Use formLoaderInstance to reset the form
+      setInitialResponses(initialValues);
     }
-
-    const { data: responsesData, error: responsesError } = await supabase.from('application_responses').select(`value, form_fields ( * )`).eq('application_id', submissionId);
-    if (responsesError) showError("Could not load application responses.");
-    else if (responsesData) {
-      const formattedData = responsesData.map(res => ({ ...res, form_fields: Array.isArray(res.form_fields) ? res.form_fields[0] : res.form_fields }));
-      setAllResponses(formattedData as ResponseWithField[]);
-    }
-
-    const { data: stagesData, error: stagesError } = await supabase.from('program_stages').select('*').eq('program_id', programId).order('order', { ascending: true });
-    if (stagesError) showError("Could not fetch program stages.");
-    else setProgramStages(stagesData as ProgramStage[]);
-
-    setLoading(false);
-  }, [submissionId, programId]);
+    
+    setLoadingPage(false);
+  }, [submissionId, programId, formLoaderInstance]);
 
   useEffect(() => {
     fetchSubmissionDetails();
@@ -193,38 +213,24 @@ const SubmissionDetailPage = () => {
   }, [isReviewer, submission]);
 
   const displayedResponses = useMemo(() => {
-    const filteredResponses = isReviewer
-      ? allResponses.filter(res => !res.form_fields?.is_anonymized)
-      : allResponses;
-
-    const currentResponsesMap: Record<string, any> = {};
-    filteredResponses.forEach(res => {
-      if (res.form_fields?.id && res.value !== null) {
-        if (res.form_fields.field_type === 'checkbox') {
-          try { currentResponsesMap[res.form_fields.id] = JSON.parse(res.value); } catch { currentResponsesMap[res.form_fields.id] = []; }
-        } else if (res.form_fields.field_type === 'number') {
-          currentResponsesMap[res.form_fields.id] = parseFloat(res.value);
-        }
-        else {
-          currentResponsesMap[res.form_fields.id] = res.value;
-        }
-      }
+    // Use formLoaderDisplayedFormFields which already applies conditional logic
+    // and filter by anonymization status if current user is a reviewer
+    return formLoaderDisplayedFormFields.filter(field => {
+      if (isReviewer && field.is_anonymized) return false;
+      return true;
+    }).map(field => {
+      // Find the corresponding value from formLoaderCurrentResponses
+      const value = formLoaderCurrentResponses[field.id];
+      return { form_fields: field, value: value !== undefined && value !== null ? String(value) : null };
     });
-
-    return filteredResponses.map(res => {
-      const field = res.form_fields;
-      if (!field) return null;
-
-      const wasDisplayed = shouldFieldBeDisplayed(field, currentResponsesMap, allFormFieldsForLogic);
-      return { ...res, wasDisplayed };
-    }).filter(Boolean) as (ResponseWithField & { wasDisplayed: boolean })[];
-  }, [allResponses, allFormFieldsForLogic, isReviewer]);
+  }, [formLoaderDisplayedFormFields, formLoaderCurrentResponses, isReviewer]);
 
   const handleStageUpdate = async () => {
     if (!submission || !selectedStage || submission.stage_id === selectedStage) return;
     setUpdating(true);
 
-    const newStage = programStages.find(s => s.id === selectedStage);
+    // Use the local stages state, not loadedProgram.program_stages
+    const newStage = stages.find((s: ProgramStage) => s.id === selectedStage); 
     let newStageStatus = 'Completed';
     if (newStage?.step_type === 'resubmission') {
       newStageStatus = 'Awaiting Resubmission';
@@ -280,6 +286,41 @@ const SubmissionDetailPage = () => {
     return profile && ['creator', 'admin', 'super_admin'].includes(profile.role);
   }, [profile]);
 
+  const loading = loadingPage || formLoaderLoading;
+
+  if (loading) {
+    return (
+      <div className="container py-12">
+        <Skeleton className="h-6 w-48 mb-4" />
+        <Card>
+          <CardHeader>
+            <Skeleton className="h-8 w-1/2 mb-2" />
+            <Skeleton className="h-5 w-3/4" />
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="flex justify-between items-center">
+                  <div className="w-1/3">
+                    <Skeleton className="h-5 w-3/4 mb-1" />
+                    <Skeleton className="h-4 w-full" />
+                  </div>
+                  <Skeleton className="h-5 w-24" />
+                  <Skeleton className="h-5 w-24" />
+                  <Skeleton className="h-9 w-20" />
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (error || !submission) {
+    return <div className="container py-12 text-center text-destructive">Error: {error || "Submission not found."}</div>;
+  }
+
   return (
     <div className="container py-12 grid grid-cols-1 lg:grid-cols-3 gap-8">
       <div className="lg:col-span-2 space-y-8">
@@ -326,13 +367,13 @@ const SubmissionDetailPage = () => {
                 <ApplicationPdfViewer
                   applicationId={submission.id}
                   programTitle={submission.programs?.title || 'Application'}
-                  applicantFullName={submission.full_name}
-                  applicantEmail={submission.email}
+                  applicantFullName={submission.full_name || 'Applicant'}
+                  applicantEmail={submission.email || 'N/A'}
                   submittedDate={submission.submitted_date}
                   currentStageName={submission.program_stages?.name || 'N/A'}
-                  allResponses={allResponses}
-                  allFormFields={allFormFieldsForLogic}
-                  formSections={allFormSections}
+                  allResponses={displayedResponses} // Pass filtered responses
+                  allFormFields={formFields} // Pass all fields for logic evaluation in PDF
+                  formSections={formSections}
                 />
               )}
               <div className="flex items-center gap-2">
@@ -340,7 +381,7 @@ const SubmissionDetailPage = () => {
                 <Select value={selectedStage} onValueChange={setSelectedStage}>
                   <SelectTrigger className="w-[180px]"><SelectValue placeholder="Select a stage" /></SelectTrigger>
                   <SelectContent>
-                    {programStages.map(stage => (<SelectItem key={stage.id} value={stage.id}>{stage.name}</SelectItem>))}
+                    {stages.map((stage: ProgramStage) => (<SelectItem key={stage.id} value={stage.id}>{stage.name}</SelectItem>))}
                   </SelectContent>
                 </Select>
               </div>
