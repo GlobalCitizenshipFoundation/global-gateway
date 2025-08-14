@@ -173,12 +173,14 @@ const EditProgramPage = () => {
             <Skeleton className="h-5 w-64" />
           </CardHeader>
           <CardContent className="space-y-8">
-            <Skeleton className="h-10 w-full" />
-            <Skeleton className="h-24 w-full" />
+            <Skeleton className="h-10 w-1/2" />
+            <Skeleton className="h-10 w-1/2" />
             <div className="flex gap-8">
               <Skeleton className="h-10 w-1/2" />
               <Skeleton className="h-10 w-1/2" />
             </div>
+            <Skeleton className="h-10 w-1/2" />
+            <Skeleton className="h-10 w-1/2" />
             <Skeleton className="h-10 w-full" />
           </CardContent>
         </Card>
@@ -234,9 +236,9 @@ const EditProgramPage = () => {
                 render={({ field }) => (
                   <FormItem className="flex flex-col">
                     <FormLabel>Application Deadline</FormLabel>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <FormControl>
+                    <FormControl> {/* Wrap Popover with FormControl */}
+                      <Popover>
+                        <PopoverTrigger asChild>
                           <Button
                             variant={"outline"}
                             className={cn(
@@ -251,18 +253,18 @@ const EditProgramPage = () => {
                             )}
                             <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                           </Button>
-                        </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={field.value}
-                          onSelect={field.onChange}
-                          disabled={(date) => date < new Date()}
-                          initialFocus
-                        />
-                      </PopoverContent>
-                    </Popover>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={field.value}
+                            onSelect={field.onChange}
+                            disabled={(date) => date < new Date()}
+                            initialFocus
+                          />
+                        </PopoverContent>
+                      </Popover>
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}

@@ -29,9 +29,9 @@ export const DateProperties = ({ form }: DatePropertiesProps) => {
         render={({ field }) => (
           <FormItem className="flex flex-col">
             <FormLabel>Minimum Date (Optional)</FormLabel>
-            <Popover>
-              <PopoverTrigger asChild>
-                <FormControl>
+            <FormControl> {/* Wrap Popover with FormControl */}
+              <Popover>
+                <PopoverTrigger asChild>
                   <Button
                     variant={"outline"}
                     className={cn(
@@ -46,17 +46,17 @@ export const DateProperties = ({ form }: DatePropertiesProps) => {
                     )}
                     <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                   </Button>
-                </FormControl>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="single"
-                  selected={field.value ? new Date(field.value) : undefined}
-                  onSelect={(date) => field.onChange(date ? date.toISOString() : null)}
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={field.value ? new Date(field.value) : undefined}
+                    onSelect={(date) => field.onChange(date ? date.toISOString() : null)}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+            </FormControl>
             <FormDescription>
               Set the earliest date an applicant can select.
             </FormDescription>
@@ -70,9 +70,9 @@ export const DateProperties = ({ form }: DatePropertiesProps) => {
         render={({ field }) => (
           <FormItem className="flex flex-col">
             <FormLabel>Maximum Date (Optional)</FormLabel>
-            <Popover>
-              <PopoverTrigger asChild>
-                <FormControl>
+            <FormControl> {/* Wrap Popover with FormControl */}
+              <Popover>
+                <PopoverTrigger asChild>
                   <Button
                     variant={"outline"}
                     className={cn(
@@ -87,17 +87,17 @@ export const DateProperties = ({ form }: DatePropertiesProps) => {
                     )}
                     <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                   </Button>
-                </FormControl>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="single"
-                  selected={field.value ? new Date(field.value) : undefined}
-                  onSelect={(date) => field.onChange(date ? date.toISOString() : null)}
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={field.value ? new Date(field.value) : undefined}
+                    onSelect={(date) => field.onChange(date ? date.toISOString() : null)}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+            </FormControl>
             <FormDescription>
               Set the latest date an applicant can select.
             </FormDescription>
