@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { FormField } from '@/types';
-import { GripVertical, Trash2, Eye, Pencil, Info } from 'lucide-react'; // Import Info icon
+import { GripVertical, Trash2, Eye, Pencil, Info, Shield } from 'lucide-react'; // Import Shield icon
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
@@ -19,19 +19,18 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Input } from '@/components/ui/input'; // Import Input for inline editing
+import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 
 interface FormFieldItemProps {
   field: FormField;
   onDelete: (fieldId: string) => void;
   onToggleRequired: (fieldId: string, isRequired: boolean) => void;
-  onSelectField: (field: FormField) => void; // New prop to select field for properties panel
-  onUpdateLabel: (fieldId: string, newLabel: string) => void; // New prop for inline label update
+  onSelectField: (field: FormField) => void;
+  onUpdateLabel: (fieldId: string, newLabel: string) => void;
 }
 
 export const FormFieldItem = ({ field, onDelete, onToggleRequired, onSelectField, onUpdateLabel }: FormFieldItemProps) => {
-  // Defensive check: If field is null or undefined, return null to prevent errors
   if (!field) {
     console.error("FormFieldItem received a null or undefined field prop.");
     return null;
@@ -43,7 +42,7 @@ export const FormFieldItem = ({ field, onDelete, onToggleRequired, onSelectField
     setNodeRef,
     transform,
     transition,
-  } = useSortable({ id: field.id, data: { type: "FormField", field } }); // Pass field data for drag overlay
+  } = useSortable({ id: field.id, data: { type: "FormField", field } });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -51,7 +50,7 @@ export const FormFieldItem = ({ field, onDelete, onToggleRequired, onSelectField
   };
 
   const hasLogic = field.display_rules && field.display_rules.length > 0;
-  const hasTooltip = field.tooltip && field.tooltip.trim() !== ''; // Check for tooltip
+  const hasTooltip = field.tooltip && field.tooltip.trim() !== '';
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
   const [isEditingLabel, setIsEditingLabel] = useState(false);
@@ -74,7 +73,7 @@ export const FormFieldItem = ({ field, onDelete, onToggleRequired, onSelectField
 
   const handleLabelKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
-      e.currentTarget.blur(); // Trigger blur to save
+      e.currentTarget.blur();
     }
   };
 
@@ -104,9 +103,20 @@ export const FormFieldItem = ({ field, onDelete, onToggleRequired, onSelectField
             ) : (
                 <span className="font-medium cursor-pointer" onDoubleClick={handleLabelDoubleClick}>
                     {field.label}
+                    {field.is_required && <span className="text-destructive ml-1">*</span>} {/* Added asterisk here */}
                 </span>
             )}
             <Badge variant="outline" className="ml-2 capitalize">{field.field_type}</Badge>
+            {field.is_anonymized && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Shield className="h-4 w-4 ml-2 inline-block text-destructive" />
+                </TooltipTrigger>
+                <TooltipContent className="max-w-xs bg-gray-800 text-white p-2 rounded-md text-sm">
+                  This field is anonymized and will be hidden from reviewers.
+                </TooltipContent>
+              </Tooltip>
+            )}
             {hasLogic && (
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -117,7 +127,7 @@ export const FormFieldItem = ({ field, onDelete, onToggleRequired, onSelectField
                 </TooltipContent>
               </Tooltip>
             )}
-            {hasTooltip && ( // Display tooltip icon if tooltip exists
+            {hasTooltip && (
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Info className="h-4 w-4 ml-2 inline-block text-gray-500" />
@@ -138,7 +148,7 @@ export const FormFieldItem = ({ field, onDelete, onToggleRequired, onSelectField
             />
             <Label htmlFor={`required-${field.id}`}>Required</Label>
         </div>
-        <Button variant="outline" size="sm" onClick={() => onSelectField(field)}> {/* Changed to onSelectField */}
+        <Button variant="outline" size="sm" onClick={() => onSelectField(field)}>
           <Pencil className="mr-2 h-4 w-4" /> Edit
         </Button>
         <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
