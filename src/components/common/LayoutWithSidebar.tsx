@@ -72,42 +72,46 @@ const LayoutWithSidebar = ({ children }: LayoutWithSidebarProps) => {
   );
 
   return (
-    <div className="flex flex-row-reverse min-h-screen bg-background">
-      {isMobile ? (
-        <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
-          {/* The SheetTrigger is now here, directly inside Sheet */}
-          <SheetTrigger asChild>
-            <Button variant="ghost" size="icon" className="fixed top-4 right-4 z-40">
-              <Menu className="h-6 w-6" />
-            </Button>
-          </SheetTrigger>
-          <SheetContent side="right" className="w-64 p-0 flex flex-col bg-sidebar border-l border-sidebar-border">
-            <div className="flex items-center justify-end p-4 h-16 border-b border-sidebar-border">
-              <SheetClose asChild>
-                <Button variant="ghost" size="icon">
-                  <X className="h-5 w-5" />
-                </Button>
-              </SheetClose>
-            </div>
-            {renderMobileNavigation(() => setIsMobileMenuOpen(false))}
-            <div className="p-4 border-t border-sidebar-border flex flex-col items-center space-y-2">
-              <div className="flex w-full justify-center">
-                <ThemeToggle isCollapsed={false} />
-              </div>
-            </div>
-          </SheetContent>
-        </Sheet>
-      ) : (
+    <div className="flex min-h-screen bg-background">
+      {/* Desktop Sidebar - Only rendered if not mobile */}
+      {!isMobile && (
         <DesktopSidebar isCollapsed={isCollapsed} toggleCollapse={toggleCollapse} />
       )}
 
+      {/* Main Content Area */}
       <div
         className={cn(
           "flex flex-col flex-grow overflow-x-hidden",
-          !isMobile && (isCollapsed ? "ml-16" : "ml-56") // Apply margin-left only on desktop
+          // Apply margin-left only on desktop based on sidebar state
+          !isMobile && (isCollapsed ? "ml-16" : "ml-56")
         )}
       >
-        <Header />
+        {/* Mobile Sheet (Menu) - Only active if mobile */}
+        {isMobile && (
+          <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
+            {/* Header with mobile trigger */}
+            <Header isMobile={isMobile} onOpenMobileMenu={() => setIsMobileMenuOpen(true)} />
+            <SheetContent side="right" className="w-64 p-0 flex flex-col bg-sidebar border-l border-sidebar-border">
+              <div className="flex items-center justify-end p-4 h-16 border-b border-sidebar-border">
+                <SheetClose asChild>
+                  <Button variant="ghost" size="icon">
+                    <X className="h-5 w-5" />
+                  </Button>
+                </SheetClose>
+              </div>
+              {renderMobileNavigation(() => setIsMobileMenuOpen(false))}
+              <div className="p-4 border-t border-sidebar-border flex flex-col items-center space-y-2">
+                <div className="flex w-full justify-center">
+                  <ThemeToggle isCollapsed={false} />
+                </div>
+              </div>
+            </SheetContent>
+          </Sheet>
+        )}
+
+        {/* Render Header directly if not mobile (outside Sheet) */}
+        {!isMobile && <Header isMobile={isMobile} onOpenMobileMenu={() => setIsMobileMenuOpen(true)} />}
+        
         <main className="flex-grow transition-all duration-200 ease-in-out">
           {children}
         </main>

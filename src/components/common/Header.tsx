@@ -1,15 +1,17 @@
 import { Button } from "@/components/ui/button";
-import { Award } from "lucide-react";
+import { Award, Menu } from "lucide-react"; // Import Menu icon
 import { Link } from "react-router-dom";
 import UserNav from "./UserNav";
 import { useSession } from "@/contexts/auth/SessionContext";
 import { Skeleton } from "@/components/ui/skeleton";
+import { SheetTrigger } from "@/components/ui/sheet"; // Import SheetTrigger
 
 interface HeaderProps {
-  // Removed isMobile and onOpenMobileMenu props as the trigger is moved
+  isMobile: boolean;
+  onOpenMobileMenu: () => void;
 }
 
-const Header = () => { // Removed props from here
+const Header = ({ isMobile, onOpenMobileMenu }: HeaderProps) => {
   const { session, isLoading } = useSession();
 
   return (
@@ -36,7 +38,13 @@ const Header = () => { // Removed props from here
               </>
             )
           )}
-          {/* The mobile menu trigger is now handled directly in LayoutWithSidebar */}
+          {isMobile && (
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="icon" onClick={onOpenMobileMenu}>
+                <Menu className="h-6 w-6" />
+              </Button>
+            </SheetTrigger>
+          )}
         </nav>
       </div>
     </header>
