@@ -18,8 +18,8 @@ const Header = () => {
         <nav className="flex items-center gap-2">
           {isLoading ? (
             <Skeleton className="h-10 w-24" />
-          ) : ( // Corrected: This ')' closes the 'isLoading' true branch.
-            session ? ( // This is the start of the nested ternary for 'session'.
+          ) : (
+            session ? (
               <UserNav />
             ) : (
               <>

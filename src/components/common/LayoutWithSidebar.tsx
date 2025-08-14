@@ -53,7 +53,7 @@ const LayoutWithSidebar = ({ children }: LayoutWithSidebarProps) => {
                 "w-full justify-start px-4 py-2",
                 location.pathname === item.path
                   ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                  : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                  : "text-sidebar-foreground hover:bg-sidebar-accent hover:hover:text-sidebar-accent-foreground"
               )}
               asChild
               onClick={closeMobileMenu}
@@ -79,11 +79,8 @@ const LayoutWithSidebar = ({ children }: LayoutWithSidebarProps) => {
             </Button>
           </SheetTrigger>
           <SheetContent side="right" className="w-64 p-0 flex flex-col bg-sidebar border-l border-sidebar-border"> {/* Changed side to right, border-r to border-l */}
-            <div className="flex items-center justify-between p-4 h-16 border-b border-sidebar-border">
-              <Link to="/" className="flex items-center gap-2" onClick={() => setIsMobileMenuOpen(false)}>
-                <Award className="h-6 w-6 text-sidebar-primary" />
-                <span className="text-xl font-bold text-sidebar-foreground whitespace-nowrap">Global Gateway</span>
-              </Link>
+            <div className="flex items-center justify-end p-4 h-16 border-b border-sidebar-border"> {/* Changed justify-between to justify-end */}
+              {/* Removed the Link with Award and Global Gateway */}
               <SheetClose asChild>
                 <Button variant="ghost" size="icon">
                   <X className="h-5 w-5" />
@@ -95,6 +92,7 @@ const LayoutWithSidebar = ({ children }: LayoutWithSidebarProps) => {
               <div className="flex w-full justify-center">
                 <ThemeToggle isCollapsed={false} />
               </div>
+              {/* UserNav removed from here */}
             </div>
           </SheetContent>
         </Sheet>
@@ -104,7 +102,7 @@ const LayoutWithSidebar = ({ children }: LayoutWithSidebarProps) => {
 
       <div className="flex flex-col flex-grow">
         <Header />
-        <main className="flex-grow transition-all duration-200 ease-in-out"> {/* Removed ml classes */}
+        <main className="flex-grow transition-all duration-200 ease-in-out">
           {children}
         </main>
       </div>

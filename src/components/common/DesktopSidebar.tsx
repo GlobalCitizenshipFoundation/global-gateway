@@ -69,15 +69,15 @@ const DesktopSidebar = ({ isCollapsed, toggleCollapse }: DesktopSidebarProps) =>
       )}
       style={{ '--sidebar-width-expanded': '220px', '--sidebar-width-collapsed': '60px' } as React.CSSProperties} // Adjusted widths
     >
-      <div className="flex items-center justify-center p-4 h-16 border-b border-sidebar-border">
+      <div className="flex items-center justify-end p-4 h-16 border-b border-sidebar-border"> {/* Changed justify-center to justify-end */}
         <Button
           variant="ghost"
           size="icon"
           onClick={toggleCollapse}
-          className="w-full h-full flex items-center justify-center"
+          className="h-full w-full flex items-center justify-center" // Ensure button fills space and centers icon
         >
           <Menu className="h-6 w-6 text-sidebar-primary" />
-          {!isCollapsed && <span className="ml-2 text-xl font-bold text-sidebar-foreground whitespace-nowrap">Global Gateway</span>}
+          {/* Removed app name span */}
         </Button>
       </div>
 
@@ -87,7 +87,7 @@ const DesktopSidebar = ({ isCollapsed, toggleCollapse }: DesktopSidebarProps) =>
         <div className="flex w-full justify-center">
           <ThemeToggle isCollapsed={isCollapsed} />
         </div>
-        {/* UserNav removed from here as it's in the Header */}
+        {/* UserNav removed from here */}
         <Button
           variant="ghost"
           size="icon"
