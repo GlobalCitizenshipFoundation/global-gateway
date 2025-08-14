@@ -19,7 +19,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"; // Import DialogDescription
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
 import { useTagsData } from "@/hooks/tags/useTagsData";
@@ -192,9 +192,9 @@ const TagManagementPage = () => {
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>{selectedTag ? "Edit Tag" : "Create New Tag"}</DialogTitle>
-            <CardDescription>
+            <DialogDescription> {/* Changed from CardDescription */}
               {selectedTag ? "Update the details for this tag." : "Define a new tag for categorization."}
-            </CardDescription>
+            </DialogDescription>
           </DialogHeader>
           <TagForm
             initialData={selectedTag || undefined}
