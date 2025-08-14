@@ -1,0 +1,72 @@
+import {
+  FormControl,
+  FormField as FormFieldComponent,
+  FormItem,
+  FormLabel,
+  FormMessage,
+  FormDescription,
+} from "@/components/ui/form";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { UseFormReturn } from "react-hook-form";
+import { EvaluationTemplate } from "@/types";
+
+interface ReviewPropertiesProps {
+  form: UseFormReturn<any>;
+  publishedEvaluationTemplates: EvaluationTemplate[];
+}
+
+export const ReviewProperties = ({ form, publishedEvaluationTemplates }: ReviewPropertiesProps) => {
+  return (
+    <>
+      <FormFieldComponent
+        control={form.control}
+        name="evaluation_template_id"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Evaluation Template (Scorecard)</FormLabel>
+            <Select onValueChange={(value) => field.onChange(value === '__none__' ? null : value)} value={field.value || ''}>
+              <FormControl>
+                <SelectTrigger>
+                  <SelectValue placeholder="Choose a scorecard for this stage" />
+                </SelectTrigger>
+              </FormControl>
+              <SelectContent>
+                <SelectItem value="__none__">No scorecard attached</SelectItem>
+                {publishedEvaluationTemplates.map(template => (
+                  <SelectItem key={template.id} value={template.id}>{template.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <FormDescription>
+              Only published scorecards are available. This scorecard will be used by reviewers at this stage.
+            </FormDescription>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+      <FormFieldComponent
+        control={form.control}
+        name="anonymize_identity"
+        render={({ field }) => (
+          <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+            <FormControl>
+              <Checkbox
+                checked={field.value}
+                onCheckedChange={field.onChange}
+              />
+            </FormControl>
+            <div className="space-y-1 leading-none">
+              <FormLabel>
+                Anonymize applicant identity in this stage
+              </FormLabel>
+              <FormDescription>
+                If checked, reviewers will not see the applicant's name or email.
+              </FormDescription>
+            </div>
+          </FormItem>
+        )}
+      />
+    </>
+  );
+};

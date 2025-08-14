@@ -12,14 +12,16 @@ import {
   FormMessage,
   FormDescription,
 } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { WorkflowStage, Form as FormType, EmailTemplate, EvaluationTemplate } from "@/types";
 import { X } from "lucide-react";
-import { DecisionOptionsInput } from './DecisionOptionsInput';
-import RichTextEditor from '../common/RichTextEditor';
-import { Checkbox } from '../ui/checkbox';
+import { GeneralProperties } from './stage-properties/GeneralProperties.tsx';
+import { ReviewProperties } from './stage-properties/ReviewProperties.tsx';
+import { ResubmissionProperties } from './stage-properties/ResubmissionProperties.tsx';
+import { DecisionProperties } from './stage-properties/DecisionProperties.tsx';
+import { StatusProperties } from './stage-properties/StatusProperties.tsx';
+import { RecommendationProperties } from './stage-properties/RecommendationProperties.tsx';
+import { FormAttachmentProperties } from './stage-properties/FormAttachmentProperties.tsx';
 
 const editWorkflowStageSchema = z.object({
   name: z.string().min(1, { message: "Stage name cannot be empty." }),
@@ -38,12 +40,11 @@ const editWorkflowStageSchema = z.object({
   status_tag: z.string().optional(),
   status_custom_tag: z.string().optional(),
   resubmission_for_stage_order: z.number().nullable().optional(),
-  // New fields for 'recommendation' stage
   rec_form_id: z.string().nullable().optional(),
   rec_min_recommenders: z.preprocess((val) => (val === '' ? null : Number(val)), z.number().nullable().optional()),
   rec_max_recommenders: z.preprocess((val) => (val === '' ? null : Number(val)), z.number().nullable().optional()),
   rec_reminder_email_template_id: z.string().nullable().optional(),
-  rec_reminder_intervals_days: z.string().optional(), // Comma-separated numbers
+  rec_reminder_intervals_days: z.string().optional(),
   rec_anonymize_recommender_identity: z.boolean().optional(),
 }).refine(data => {
   if (data.step_type === 'status' && data.status_tag === 'Custom' && !data.status_custom_tag) {
@@ -76,7 +77,7 @@ const editWorkflowStageSchema = z.object({
   return true;
 }, {
   message: "Recommendation stage requires a form, min/max recommenders, and valid ranges.",
-  path: ["rec_form_id"], // Point to a relevant field for the error
+  path: ["rec_form_id"],
 });
 
 type EditWorkflowStageValues = z.infer<typeof editWorkflowStageSchema>;
@@ -240,12 +241,6 @@ export const WorkflowStagePropertiesPanel = ({
   };
 
   const selectedStageType = form.watch("step_type");
-  const selectedStatusTag = form.watch("status_tag");
-
-  const currentStageIndex = allStages.findIndex(s => s.id === stage.id);
-  const availableResubmissionStages = allStages.filter((s, index) =>
-    s.step_type === 'form' && index < currentStageIndex
-  );
 
   const publishedEvaluationTemplates = evaluationTemplates.filter(t => t.status === 'published');
   const publishedForms = forms.filter(f => f.status === 'published');
@@ -261,19 +256,6 @@ export const WorkflowStagePropertiesPanel = ({
       
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4">
-          <FormFieldComponent
-            control={form.control}
-            name="name"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Stage Name</FormLabel>
-                <FormControl>
-                  <Input placeholder="e.g., Initial Review" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
           <FormFieldComponent
             control={form.control}
             name="step_type"
@@ -303,360 +285,54 @@ export const WorkflowStagePropertiesPanel = ({
             )}
           />
 
+          <GeneralProperties
+            form={form}
+            emailTemplates={emailTemplates}
+            selectedStageType={selectedStageType}
+          />
+
           {selectedStageType === 'review' && (
-            <>
-              <FormFieldComponent
-                control={form.control}
-                name="evaluation_template_id"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Evaluation Template (Scorecard)</FormLabel>
-                    <Select onValueChange={(value) => field.onChange(value === '__none__' ? null : value)} value={field.value || ''}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Choose a scorecard for this stage" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="__none__">No scorecard attached</SelectItem>
-                        {publishedEvaluationTemplates.map(template => (
-                          <SelectItem key={template.id} value={template.id}>{template.name}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormDescription>
-                      Only published scorecards are available. This scorecard will be used by reviewers at this stage.
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormFieldComponent
-                control={form.control}
-                name="anonymize_identity"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
-                    <FormControl>
-                      <Checkbox
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
-                    </FormControl>
-                    <div className="space-y-1 leading-none">
-                      <FormLabel>
-                        Anonymize applicant identity in this stage
-                      </FormLabel>
-                      <FormDescription>
-                        If checked, reviewers will not see the applicant's name or email.
-                      </FormDescription>
-                    </div>
-                  </FormItem>
-                )}
-              />
-            </>
+            <ReviewProperties
+              form={form}
+              publishedEvaluationTemplates={publishedEvaluationTemplates}
+            />
           )}
 
           {selectedStageType === 'resubmission' && (
-            <FormFieldComponent
-              control={form.control}
-              name="resubmission_for_stage_order"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Form to Resubmit</FormLabel>
-                  <Select onValueChange={(val) => field.onChange(val ? parseInt(val) : null)} value={String(field.value || '')}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a previous form stage" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {availableResubmissionStages.map((formStage) => (
-                        <SelectItem key={formStage.id} value={String(formStage.order_index)}>
-                          {formStage.name} (Current Stage {formStage.order_index})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormDescription>
-                    The applicant will be asked to edit and resubmit the form from this stage.
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
+            <ResubmissionProperties
+              form={form}
+              allStages={allStages}
+              currentStageId={stage.id}
             />
           )}
 
           {selectedStageType === 'decision' && (
-            <FormFieldComponent
-              control={form.control}
-              name="decision_options"
-              render={() => (
-                <FormItem>
-                  <FormLabel>Decision Outcomes</FormLabel>
-                  <FormControl>
-                    <DecisionOptionsInput emailTemplates={emailTemplates} />
-                  </FormControl>
-                  <FormDescription>Define the possible outcomes and trigger an optional email for each.</FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
+            <DecisionProperties
+              form={form}
+              emailTemplates={emailTemplates}
             />
           )}
 
           {selectedStageType === 'status' && (
-            <>
-              <FormFieldComponent
-                control={form.control}
-                name="status_tag"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Message Tag</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select a tag" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="Info">Info</SelectItem>
-                        <SelectItem value="Guideline">Guideline</SelectItem>
-                        <SelectItem value="Update">Update</SelectItem>
-                        <SelectItem value="Instruction">Instruction</SelectItem>
-                        <SelectItem value="Custom">Custom</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              {selectedStatusTag === 'Custom' && (
-                <FormFieldComponent
-                  control={form.control}
-                  name="status_custom_tag"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Custom Tag Text</FormLabel>
-                      <FormControl>
-                        <Input {...field} placeholder="Enter custom tag" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              )}
-              <FormFieldComponent
-                control={form.control}
-                name="status_message"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Status Message</FormLabel>
-                    <FormControl>
-                      <RichTextEditor value={field.value || ''} onChange={field.onChange} />
-                    </FormControl>
-                    <FormDescription>This content will be displayed to the user at this stage.</FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </>
+            <StatusProperties
+              form={form}
+            />
           )}
 
           {selectedStageType === 'recommendation' && (
-            <>
-              <FormFieldComponent
-                control={form.control}
-                name="rec_form_id"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Recommendation Form</FormLabel>
-                    <Select onValueChange={(value) => field.onChange(value === '__none__' ? null : value)} value={field.value || ''}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select a form for recommenders" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="__none__">No form selected</SelectItem>
-                        {publishedForms.map(form => (
-                          <SelectItem key={form.id} value={form.id}>{form.name}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormDescription>
-                      The form recommenders will fill out. Only published forms are available.
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <div className="grid grid-cols-2 gap-4">
-                <FormFieldComponent
-                  control={form.control}
-                  name="rec_min_recommenders"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Minimum Recommenders</FormLabel>
-                      <FormControl>
-                        <Input type="number" {...field} value={field.value ?? ''} />
-                      </FormControl>
-                      <FormDescription>Minimum number of recommendations required.</FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormFieldComponent
-                  control={form.control}
-                  name="rec_max_recommenders"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Maximum Recommenders</FormLabel>
-                      <FormControl>
-                        <Input type="number" {...field} value={field.value ?? ''} />
-                      </FormControl>
-                      <FormDescription>Maximum number of recommendations allowed.</FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-              <FormFieldComponent
-                control={form.control}
-                name="rec_reminder_email_template_id"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Reminder Email Template</FormLabel>
-                    <Select onValueChange={(value) => field.onChange(value === '__none__' ? null : value)} value={field.value || ''}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select an email template for reminders" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="__none__">No reminder email</SelectItem>
-                        {emailTemplates.map(template => (
-                          <SelectItem key={template.id} value={template.id}>{template.name}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormDescription>
-                      This email will be sent to recommenders who haven't submitted.
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormFieldComponent
-                control={form.control}
-                name="rec_reminder_intervals_days"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Reminder Intervals (Days)</FormLabel>
-                    <FormControl>
-                      <Input {...field} placeholder="e.g., 3, 7, 14" />
-                    </FormControl>
-                    <FormDescription>
-                      Comma-separated days relative to the program deadline (e.g., "3, 7" for 3 and 7 days before deadline).
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormFieldComponent
-                control={form.control}
-                name="rec_anonymize_recommender_identity"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
-                    <FormControl>
-                      <Checkbox
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
-                    </FormControl>
-                    <div className="space-y-1 leading-none">
-                      <FormLabel>
-                        Anonymize recommender identity from reviewers
-                      </FormLabel>
-                      <FormDescription>
-                        If checked, recommender names and emails will be hidden from reviewers.
-                      </FormDescription>
-                    </div>
-                  </FormItem>
-                )}
-              />
-            </>
-          )}
-
-          {selectedStageType !== 'decision' && selectedStageType !== 'status' && selectedStageType !== 'resubmission' && selectedStageType !== 'recommendation' && (
-            <FormFieldComponent
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Description (Optional)</FormLabel>
-                  <FormControl>
-                    <Textarea placeholder="Describe the purpose of this stage" {...field} value={field.value || ''} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
+            <RecommendationProperties
+              form={form}
+              publishedForms={publishedForms}
+              emailTemplates={emailTemplates}
             />
           )}
 
           {['form', 'review'].includes(selectedStageType) && (
-            <FormFieldComponent
-              control={form.control}
-              name="form_id"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Attach Form (for Reviewer)</FormLabel>
-                  <Select onValueChange={(value) => field.onChange(value === '__none__' ? null : value)} value={field.value || ''}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Choose a form for this stage" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="__none__">No form attached</SelectItem>
-                      {forms.map(form => (
-                        <SelectItem key={form.id} value={form.id}>{form.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormDescription>
-                    This form can be assigned to users when they reach this stage.
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
+            <FormAttachmentProperties
+              form={form}
+              forms={forms}
             />
           )}
-
-          <FormFieldComponent
-            control={form.control}
-            name="email_template_id"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Trigger Email (Optional)</FormLabel>
-                <Select onValueChange={(value) => field.onChange(value === '__none__' ? null : value)} value={field.value || ''}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Choose an email template" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="__none__">No email attached</SelectItem>
-                    {emailTemplates.map(template => (
-                      <SelectItem key={template.id} value={template.id}>{template.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormDescription>
-                  This email will be sent when an applicant reaches this stage.
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
 
           <Button type="submit" className="w-full mt-4">Save Stage</Button>
         </form>
