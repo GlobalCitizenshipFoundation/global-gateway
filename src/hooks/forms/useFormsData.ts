@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useSession } from '@/contexts/auth/SessionContext';
-import { Form as FormType, Tag as TagType } from '@/types'; // Import TagType
+import { Form as FormType, Tag as TagType } from '@/types'; // Correctly import Tag as TagType
 import { showError } from '@/utils/toast';
 
 export const useFormsData = () => {

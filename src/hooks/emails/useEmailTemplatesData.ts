@@ -21,7 +21,7 @@ export const useEmailTemplatesData = () => {
 
     let query = supabase
       .from('email_templates')
-      .select('*')
+      .select('id, user_id, name, subject, body_html, is_default, status, created_at, updated_at, last_edited_by_user_id, last_edited_at') // Select body_html
       .order('name', { ascending: true });
 
     // If user is not an admin or super_admin, only fetch their own templates and default templates

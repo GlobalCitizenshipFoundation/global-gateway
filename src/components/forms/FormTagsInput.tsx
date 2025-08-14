@@ -2,9 +2,9 @@ import { useState } from "react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
-import { Check, ChevronsUpDown, Tag } from "lucide-react";
+import { Check, ChevronsUpDown, Tag as TagIcon } from "lucide-react"; // Renamed Tag to TagIcon to avoid conflict
 import { cn } from "@/lib/utils";
-import { Tag as TagType } from "@/types";
+import { Tag as TagType } from "@/types"; // Correctly import Tag as TagType
 import { TagDisplay } from "@/components/tags/TagDisplay";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Label } from "@/components/ui/label";
@@ -59,7 +59,7 @@ export const FormTagsInput = ({
             aria-expanded={open}
             className="w-full justify-between h-auto min-h-10 py-2"
           >
-            <Tag className="mr-2 h-4 w-4 shrink-0 opacity-50" />
+            <TagIcon className="mr-2 h-4 w-4 shrink-0 opacity-50" />
             <span className="flex-grow text-left truncate">
               {currentTags.length > 0 ? (
                 <div className="flex flex-wrap gap-1">

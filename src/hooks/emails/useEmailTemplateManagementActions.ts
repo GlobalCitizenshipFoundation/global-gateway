@@ -13,7 +13,7 @@ export const useEmailTemplateManagementActions = ({ setEmailTemplates, fetchEmai
   const { user } = useSession();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleCreateEmailTemplate = async (name: string, subject: string, body: string, isDefault: boolean) => {
+  const handleCreateEmailTemplate = async (name: string, subject: string, body_html: string, isDefault: boolean) => {
     if (!user) {
       showError("You must be logged in to create an email template.");
       return null;
@@ -27,7 +27,7 @@ export const useEmailTemplateManagementActions = ({ setEmailTemplates, fetchEmai
         user_id: user.id,
         name: name,
         subject: subject,
-        body: body,
+        body_html: body_html, // Changed to body_html
         is_default: isDefault,
         status: 'draft', // New templates start as draft
         last_edited_by_user_id: user.id,
@@ -48,7 +48,7 @@ export const useEmailTemplateManagementActions = ({ setEmailTemplates, fetchEmai
     }
   };
 
-  const handleUpdateEmailTemplate = async (templateId: string, values: { name?: string; subject?: string; body?: string; is_default?: boolean; status?: 'draft' | 'published'; }) => {
+  const handleUpdateEmailTemplate = async (templateId: string, values: { name?: string; subject?: string; body_html?: string; is_default?: boolean; status?: 'draft' | 'published'; }) => {
     if (!user) {
       showError("You must be logged in to update an email template.");
       return false;

@@ -100,12 +100,10 @@ export type Program = {
       last_edited_by_user_id: string | null; // New
       last_edited_at: string | null; // New
       is_anonymized: boolean; // New: For anonymization
-      // New date properties
       date_min: string | null; // ISO string for min date
       date_max: string | null; // ISO string for max date
       date_allow_past: boolean;
       date_allow_future: boolean;
-      // New rating properties
       rating_min_value: number | null;
       rating_max_value: number | null;
       rating_min_label: string | null;
@@ -128,7 +126,7 @@ export type Program = {
       user_id: string | null;
       name: string;
       subject: string;
-      body: string; // HTML content
+      body_html: string; // Changed from 'body' to 'body_html'
       is_default: boolean;
       status: 'draft' | 'published';
       created_at: string;
@@ -297,12 +295,6 @@ export type Program = {
 
     export type EmailTemplateTag = {
       email_template_id: string;
-      tag_id: string;
-      tags?: Tag; // For joining
-    };
-
-    export type EvaluationTemplateTag = {
-      evaluation_template_id: string;
       tag_id: string;
       tags?: Tag; // For joining
     };

@@ -1,18 +1,19 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { EmailTemplate } from '@/types';
+import { EmailTemplate, EvaluationCriterion } from '@/types'; // Import EvaluationCriterion
 import DOMPurify from 'dompurify';
+import { DynamicReviewForm } from '../review/DynamicReviewForm'; // Import DynamicReviewForm
 
 interface EmailTemplatePreviewDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  template: EmailTemplate | null;
+  template: EmailTemplate | null; // Correctly type template prop
 }
 
 export const EmailTemplatePreviewDialog = ({ isOpen, onClose, template }: EmailTemplatePreviewDialogProps) => {
   if (!template) return null;
 
-  const sanitizedBody = DOMPurify.sanitize(template.body, { USE_PROFILES: { html: true } });
+  const sanitizedBody = DOMPurify.sanitize(template.body_html, { USE_PROFILES: { html: true } });
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>

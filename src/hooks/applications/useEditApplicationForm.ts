@@ -68,7 +68,7 @@ export const useEditApplicationForm = () => {
 
   // Use the new form loader hook, passing the dynamically determined formId and application ID
   const {
-    program,
+    program: loadedProgram, // Renamed to avoid conflict with local 'program' state
     applicationForm,
     formSections,
     formFields,
@@ -85,7 +85,7 @@ export const useEditApplicationForm = () => {
 
   return {
     application,
-    program,
+    program: loadedProgram,
     applicationForm,
     formSections,
     formFields,

@@ -7,12 +7,13 @@ import { EmailTemplateForm } from "@/components/email/EmailTemplateForm";
 import { useEmailTemplateManagementActions } from "@/hooks/emails/useEmailTemplateManagementActions";
 import { useEmailTemplatesData } from "@/hooks/emails/useEmailTemplatesData";
 import { EmailTemplate } from "@/types";
-import { showError } from "@/utils/toast";
+import { showError, showSuccess } from "@/utils/toast"; // Import showSuccess
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useSession } from "@/contexts/auth/SessionContext";
 import { sendEmail } from "@/utils/emailSender";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"; // Import Select components
 
 const EmailComposerPage = () => {
   const { templateId } = useParams<{ templateId: string }>();
@@ -29,6 +30,8 @@ const EmailComposerPage = () => {
   const [isTestEmailDialogOpen, setIsTestEmailDialogOpen] = useState(false);
   const [testRecipientEmail, setTestRecipientEmail] = useState(user?.email || '');
   const [isSendingTestEmail, setIsSendingTestEmail] = useState(false);
+
+  const [selectedTemplateToLoad, setSelectedTemplateToLoad] = useState<string | null>(null); // State for "Use Template" dropdown
 
   useEffect(() => {
     if (!isNewTemplate && !fetchLoading) {
@@ -54,7 +57,7 @@ const EmailComposerPage = () => {
   const handleSubmit = async (values: any) => {
     let success = false;
     if (isNewTemplate) {
-      const newTemplate = await handleCreateEmailTemplate(values.name, values.subject, values.body, values.is_default);
+      const newTemplate = await handleCreateEmailTemplate(values.name, values.subject, values.body_html, values.is_default); // Use body_html
       if (newTemplate) {
         success = true;
       }
@@ -81,13 +84,27 @@ const EmailComposerPage = () => {
     const success = await sendEmail({
       to: testRecipientEmail,
       subject: `TEST: ${currentTemplate.subject}`,
-      htmlBody: currentTemplate.body,
+      htmlBody: currentTemplate.body_html, // Use body_html
     });
     if (success) {
     } else {
     }
     setIsSendingTestEmail(false);
     setIsTestEmailDialogOpen(false);
+  };
+
+  const handleLoadTemplate = (templateIdToLoad: string) => {
+    const templateToLoad = emailTemplates.find(t => t.id === templateIdToLoad);
+    if (templateToLoad) {
+      setCurrentTemplate(templateToLoad);
+      // Reset form with loaded template data
+      // This assumes EmailTemplateForm has a way to receive new initialData or reset its internal state
+      // For now, we'll rely on the useEffect that watches currentTemplate
+      showSuccess(`Template "${templateToLoad.name}" loaded.`);
+    } else {
+      showError("Selected template not found.");
+    }
+    setSelectedTemplateToLoad(templateIdToLoad);
   };
 
   if (pageLoading || fetchLoading) {
@@ -128,6 +145,22 @@ const EmailComposerPage = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
+          {isNewTemplate && (
+            <div className="mb-6">
+              <Label htmlFor="load-template">Use Template</Label>
+              <Select value={selectedTemplateToLoad || ''} onValueChange={handleLoadTemplate}>
+                <SelectTrigger id="load-template">
+                  <SelectValue placeholder="Load from existing template (optional)" />
+                </SelectTrigger>
+                <SelectContent>
+                  {emailTemplates.filter(t => t.status === 'published').map(template => (
+                    <SelectItem key={template.id} value={template.id}>{template.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-sm text-muted-foreground mt-1">Selecting a template will pre-fill the subject and body.</p>
+            </div>
+          )}
           <EmailTemplateForm
             initialData={currentTemplate}
             onSubmit={handleSubmit}

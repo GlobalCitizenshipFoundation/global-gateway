@@ -17,11 +17,12 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import RichTextEditor from "@/components/common/RichTextEditor"; // Updated import path
 import { EmailTemplate } from "@/types";
+import { useEffect } from "react"; // Import useEffect
 
 const emailTemplateSchema = z.object({
   name: z.string().min(1, { message: "Template name is required." }),
   subject: z.string().min(1, { message: "Subject is required." }),
-  body: z.string().min(1, { message: "Email body cannot be empty." }),
+  body_html: z.string().min(1, { message: "Email body cannot be empty." }), // Changed to body_html
   is_default: z.boolean().optional(),
 });
 
@@ -40,10 +41,30 @@ export const EmailTemplateForm = ({ initialData, onSubmit, isSubmitting, isNewTe
     defaultValues: {
       name: initialData?.name || "",
       subject: initialData?.subject || "",
-      body: initialData?.body || "",
+      body_html: initialData?.body_html || "", // Changed to body_html
       is_default: initialData?.is_default || false,
     },
   });
+
+  // Reset form when initialData changes (e.g., when a template is loaded via dropdown)
+  useEffect(() => {
+    if (initialData) {
+      form.reset({
+        name: initialData.name,
+        subject: initialData.subject,
+        body_html: initialData.body_html,
+        is_default: initialData.is_default,
+      });
+    } else if (isNewTemplate) {
+      // Clear form if it's a new template and initialData becomes null/undefined
+      form.reset({
+        name: "",
+        subject: "",
+        body_html: "",
+        is_default: false,
+      });
+    }
+  }, [initialData, isNewTemplate, form]);
 
   return (
     <Form {...form}>
@@ -79,7 +100,7 @@ export const EmailTemplateForm = ({ initialData, onSubmit, isSubmitting, isNewTe
         />
         <FormFieldComponent
           control={form.control}
-          name="body"
+          name="body_html" // Changed to body_html
           render={({ field }) => (
             <FormItem>
               <FormLabel>Email Body</FormLabel>

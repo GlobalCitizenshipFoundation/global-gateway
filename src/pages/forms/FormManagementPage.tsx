@@ -10,7 +10,7 @@ import { CreateFormFromTemplateDialog } from "@/components/forms/CreateFormFromT
 import { SaveAsTemplateDialog } from "@/components/forms/SaveAsTemplateDialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useState, useMemo } from "react"; // Import useMemo
-import { Form as FormType, Tag as TagType } from "@/types"; // Import TagType
+import { Form as FormType, Tag as TagType } from "@/types"; // Correctly import Tag as TagType
 import { Input } from "@/components/ui/input"; // Import Input
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"; // Import Select components
 import { useTagsData } from "@/hooks/tags/useTagsData"; // Import useTagsData
@@ -45,8 +45,8 @@ const FormManagementPage = () => {
   };
 
   const handleTagFilterChange = (tagId: string) => {
-    setSelectedTagIds(prev =>
-      prev.includes(tagId) ? prev.filter(id => id !== tagId) : [...prev, tagId]
+    setSelectedTagIds((prev: string[]) =>
+      prev.includes(tagId) ? prev.filter((id: string) => id !== tagId) : [...prev, tagId]
     );
   };
 
@@ -60,7 +60,7 @@ const FormManagementPage = () => {
       
       // New: Filter by selected tags
       const matchesTags = selectedTagIds.length === 0 ||
-                          (form.tags && selectedTagIds.every(tagId => form.tags?.some(formTag => formTag.id === tagId)));
+                          (form.tags && selectedTagIds.every((tagId: string) => form.tags?.some((formTag: TagType) => formTag.id === tagId)));
 
       return matchesSearch && matchesType && matchesTags;
     });
@@ -166,7 +166,7 @@ const FormManagementPage = () => {
               >
                 {selectedTagIds.length > 0 ? (
                   <div className="flex flex-wrap gap-1">
-                    {selectedTagIds.map(tagId => {
+                    {selectedTagIds.map((tagId: string) => {
                       const tag = allAvailableTags.find(t => t.id === tagId);
                       return tag ? <TagDisplay key={tag.id} tag={tag} /> : null;
                     })}

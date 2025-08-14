@@ -136,7 +136,7 @@ export const useFormLoader = ({ programId, formId: directFormId, applicationId }
 
       const { data: sectionsData, error: sectionsError } = await supabase
         .from('form_sections')
-        .select('*, description, tooltip')
+        .select('*, description, tooltip, display_rules, display_rules_logic_type')
         .eq('form_id', currentForm.id)
         .order('order', { ascending: true });
 
@@ -146,7 +146,12 @@ export const useFormLoader = ({ programId, formId: directFormId, applicationId }
         setFormSections(sectionsData || []);
       }
 
-      const { data: fieldsData, error: fieldsError } = await supabase.from('form_fields').select('id, form_id, section_id, label, field_type, options, is_required, order, display_rules, description, tooltip, placeholder, last_edited_by_user_id, last_edited_at, date_min, date_max, date_allow_past, date_allow_future, rating_min_value, rating_max_value, rating_min_label, rating_max_label').eq('form_id', currentForm.id).order('order', { ascending: true });
+      const { data: fieldsData, error: fieldsError } = await supabase
+        .from('form_fields')
+        .select('id, form_id, section_id, label, field_type, options, is_required, order, display_rules, display_rules_logic_type, description, tooltip, placeholder, last_edited_by_user_id, last_edited_at, date_min, date_max, date_allow_past, date_allow_future, rating_min_value, rating_max_value, rating_min_label, rating_max_label, is_anonymized')
+        .eq('form_id', currentForm.id)
+        .order('order', { ascending: true });
+
       if (fieldsError) {
         setError("Could not load application form fields.");
       } else {

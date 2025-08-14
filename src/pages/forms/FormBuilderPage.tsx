@@ -19,7 +19,7 @@ import { UncategorizedFieldsList } from "@/components/forms/form-builder/Uncateg
 import { FormFieldItem } from "@/components/forms/form-builder/FormFieldItem";
 import { FieldPropertiesPanel } from "@/components/forms/form-builder/FieldPropertiesPanel";
 import { SectionPropertiesPanel } from "@/components/forms/form-builder/SectionPropertiesPanel"; // Import new panel
-import { FormField, FormSection, Tag } from "@/types"; // Import Tag type
+import { FormField, FormSection, Tag } from "@/types"; // Correctly import Tag type
 import { FormTagsInput } from "@/components/forms/FormTagsInput"; // Import new component
 import { useTagsData } from "@/hooks/tags/useTagsData"; // Import useTagsData
 

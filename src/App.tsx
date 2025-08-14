@@ -37,6 +37,7 @@ import EditApplicationPage from "./pages/applications/EditApplicationPage";
 import EvaluationTemplatesPage from "./pages/evaluation/EvaluationTemplatesPage";
 import EditEvaluationTemplatePage from "./pages/evaluation/EditEvaluationTemplatePage";
 import TagManagementPage from "./pages/admin/TagManagementPage";
+import EmailLogsPage from "./pages/emails/EmailLogsPage"; // Import new EmailLogsPage
 
 
 const queryClient = new QueryClient();
@@ -95,6 +96,7 @@ const App = () => (
                   <Route element={<AdminProtectedRoute />}>
                     <Route path="/admin/user-management" element={<UserManagementPage />} />
                     <Route path="/admin/tags" element={<TagManagementPage />} />
+                    <Route path="/admin/email-logs" element={<EmailLogsPage />} /> {/* New: Email Logs Route */}
                   </Route>
 
                   <Route element={<SuperAdminProtectedRoute />}>
