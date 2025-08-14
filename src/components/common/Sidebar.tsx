@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, Award } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useSession } from "@/contexts/auth/SessionContext";
-import { ThemeToggle } from "./ThemeToggle";
+import { ThemeToggle } from "./ThemeToggle"; // Import the updated ThemeToggle
 import UserNav from "./UserNav";
 import DynamicIcon from "./DynamicIcon";
 import { NAVIGATION_ITEMS } from "@/constants/navigation";
@@ -45,7 +45,7 @@ const Sidebar = ({ children }: SidebarProps) => {
         onExpand={() => setIsCollapsed(false)}
         className={cn(
           "flex flex-col bg-sidebar border-r border-sidebar-border transition-all duration-200 ease-in-out",
-          isCollapsed && "min-w-[50px] md:min-w-[70px]"
+          // Removed redundant min-w classes as ResizablePanel's size props handle this
         )}
       >
         <div className="flex items-center justify-center p-4 h-16 border-b border-sidebar-border">
@@ -88,7 +88,7 @@ const Sidebar = ({ children }: SidebarProps) => {
 
         <div className="p-4 border-t border-sidebar-border flex flex-col items-center space-y-2">
           <div className="flex w-full justify-center">
-            <ThemeToggle />
+            <ThemeToggle isCollapsed={isCollapsed} /> {/* Pass the isCollapsed prop */}
           </div>
           <div className="w-full flex justify-center">
             <UserNav isCollapsed={isCollapsed} />
