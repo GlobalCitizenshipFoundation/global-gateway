@@ -51,7 +51,7 @@ const CustomCodeInjector = () => {
           if (settings.head_css_content) {
             const styleElement = document.createElement('style');
             // Sanitize CSS within a style tag context
-            styleElement.textContent = DOMPurify.sanitize(settings.head_css_content, { USE_PROFILES: { html: true, css: true } });
+            styleElement.textContent = DOMPurify.sanitize(settings.head_css_content, { USE_PROFILES: { html: true } });
             document.head.appendChild(styleElement);
           }
 
@@ -82,7 +82,7 @@ const CustomCodeInjector = () => {
           // CSS
           if (settings.body_end_css_content) {
             const styleElement = document.createElement('style');
-            styleElement.textContent = DOMPurify.sanitize(settings.body_end_css_content, { USE_PROFILES: { html: true, css: true } });
+            styleElement.textContent = DOMPurify.sanitize(settings.body_end_css_content, { USE_PROFILES: { html: true } });
             document.body.appendChild(styleElement);
           }
 
