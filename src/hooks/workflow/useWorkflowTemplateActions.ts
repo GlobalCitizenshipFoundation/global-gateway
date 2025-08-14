@@ -203,17 +203,6 @@ export const useWorkflowTemplateActions = ({ setTemplates, fetchTemplates }: Use
     return true;
   };
 
-  const handleUpdateStageOrder = async (updates: WorkflowStage[]) => {
-    if (!user) return;
-    const updatesWithMetadata = updates.map(u => ({ ...u, last_edited_by_user_id: user.id, last_edited_at: new Date().toISOString() }));
-    const { error } = await supabase.from('workflow_steps').upsert(updatesWithMetadata);
-    if (error) {
-      showError(`Failed to save new order: ${error.message}`);
-    } else {
-      showSuccess("Stage order saved.");
-    }
-  };
-
   const handleUpdateStageDetails = async (stageId: string, payload: Partial<WorkflowStage>) => {
     if (!user) return false;
     const now = new Date().toISOString();
@@ -287,6 +276,26 @@ export const useWorkflowTemplateActions = ({ setTemplates, fetchTemplates }: Use
     navigate(`/creator/workflows/${newTemplate.id}/edit`);
     return true;
   };
+
+  const handleReorderStage = async (workflowTemplateId: string, movedStageId: string, newOrderIndex: number) => {
+    if (!user) {
+      showError("You must be logged in to reorder stages.");
+      return false;
+    }
+    const { error } = await supabase.rpc('reorder_workflow_steps', {
+      p_workflow_template_id: workflowTemplateId,
+      p_moved_step_id: movedStageId,
+      p_new_order_index: newOrderIndex,
+      p_user_id: user.id,
+    });
+
+    if (error) {
+      showError(`Failed to reorder stage: ${error.message}`);
+      return false;
+    }
+    showSuccess("Stage reordered successfully.");
+    return true;
+  };
   
   return { 
     isSubmitting, 
@@ -296,8 +305,8 @@ export const useWorkflowTemplateActions = ({ setTemplates, fetchTemplates }: Use
     handleUpdateTemplateDetails,
     handleAddStage,
     handleDeleteStage,
-    handleUpdateStageOrder,
     handleUpdateStageDetails,
     handleDuplicateTemplate,
+    handleReorderStage, // Expose the new reorder function
   };
 };

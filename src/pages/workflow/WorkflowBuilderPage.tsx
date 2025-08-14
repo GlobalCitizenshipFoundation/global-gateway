@@ -26,7 +26,7 @@ const AUTO_SAVE_DEBOUNCE_TIME = 2000;
 const WorkflowBuilderPage = () => {
   const { user } = useSession();
   const { workflowId, template, setTemplate, stages, setStages, loading, fetchData, isAutoSaving, setIsAutoSaving, hasUnsavedChanges, setHasUnsavedChanges, lastSavedTimestamp, setLastSavedTimestamp, lastEditedByUserName, creatorUserName } = useWorkflowBuilderData();
-  const { isSubmitting, handleUpdateTemplateDetails, handleAddStage, handleDeleteStage, handleUpdateStageOrder, handleUpdateStageDetails, handleUpdateTemplateStatus, handleDuplicateTemplate } = useWorkflowTemplateActions({});
+  const { isSubmitting, handleUpdateTemplateDetails, handleAddStage, handleDeleteStage, handleUpdateStageDetails, handleUpdateTemplateStatus, handleDuplicateTemplate, handleReorderStage } = useWorkflowTemplateActions({});
 
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -146,14 +146,29 @@ const WorkflowBuilderPage = () => {
     }
   };
 
-  const handleDragEnd = (event: DragEndEvent) => {
+  const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
-    if (over && active.id !== over.id) {
-      const oldIndex = stages.findIndex(s => s.id === active.id);
-      const newIndex = stages.findIndex(s => s.id === over.id);
-      const newOrderedStages = arrayMove(stages, oldIndex, newIndex).map((stage, index) => ({ ...stage, order_index: index + 1 }));
-      setStages(newOrderedStages);
-      handleUpdateStageOrder(newOrderedStages);
+    if (!over || active.id === over.id) return;
+
+    const movedStage = stages.find(s => s.id === active.id);
+    const targetStage = stages.find(s => s.id === over.id);
+
+    if (!movedStage || !targetStage || !workflowId) {
+      showError("Could not reorder stage: missing data.");
+      return;
+    }
+
+    const oldIndex = stages.findIndex(s => s.id === active.id);
+    const newIndex = stages.findIndex(s => s.id === over.id);
+
+    // Optimistic update
+    const newOrderedStages = arrayMove(stages, oldIndex, newIndex).map((stage, index) => ({ ...stage, order_index: index + 1 }));
+    setStages(newOrderedStages);
+
+    const success = await handleReorderStage(workflowId, movedStage.id, newIndex + 1); // Call the RPC function
+    if (!success) {
+      // Revert optimistic update on failure
+      fetchData(); // Re-fetch to ensure consistency
     }
   };
 
@@ -229,7 +244,7 @@ const WorkflowBuilderPage = () => {
               </CardHeader>
               <CardContent>
                 <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-                  <SortableContext items={stages.map(s => s.id)} strategy={verticalListSortingStrategy}>
+                  <SortableContext items={stages.map(s => s.id)}>
                     {stages.map(stage => <WorkflowStageCard key={stage.id} stage={stage} validationError={validationErrors.get(stage.id) || null} onDelete={deleteStage} onEdit={setSelectedStage} />)}
                   </SortableContext>
                 </DndContext>
