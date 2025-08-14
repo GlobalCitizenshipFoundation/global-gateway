@@ -11,62 +11,64 @@ export const reorderEvaluationCriteria = (
     return { updatedCriteria: currentCriteria, updatesToSend: [] };
   }
 
-  let targetSectionId: string | null = null;
-  let overCriterion: EvaluationCriterion | undefined;
+  let newSectionId: string | null = null;
+  let newIndexInTargetSection: number = -1;
 
+  // Determine the target section ID based on where the item was dropped
   if (sections.some(s => s.id === overId)) {
-    targetSectionId = overId;
+    newSectionId = overId; // Dropped directly onto a section header
   } else if (overId === 'uncategorized-criteria-droppable-area') {
-    targetSectionId = null;
+    newSectionId = null; // Dropped onto the uncategorized droppable area
   } else {
-    overCriterion = currentCriteria.find(c => c.id === overId);
+    const overCriterion = currentCriteria.find(c => c.id === overId);
     if (overCriterion) {
-      targetSectionId = overCriterion.section_id;
+      newSectionId = overCriterion.section_id; // Dropped onto another criterion, so it stays in that criterion's section
     } else {
-      targetSectionId = activeCriterion.section_id;
+      // Fallback: if overId is not a known section or criterion, keep it in its original section
+      newSectionId = activeCriterion.section_id;
     }
   }
 
-  const mutableCriteria = [...currentCriteria];
-  const activeCriterionIndex = mutableCriteria.findIndex(c => c.id === activeCriterionId);
-  if (activeCriterionIndex === -1) {
-    return { updatedCriteria: currentCriteria, updatesToSend: [] };
-  }
-  const [movedCriterion] = mutableCriteria.splice(activeCriterionIndex, 1);
-  movedCriterion.section_id = targetSectionId;
+  // Create a new array for the updated criteria to avoid direct mutation issues
+  let updatedCriteria = currentCriteria.map(c => ({ ...c }));
 
-  let insertIndex = -1;
-  if (overCriterion) {
-    const criteriaInTargetSection = mutableCriteria.filter(c => c.section_id === targetSectionId).sort((a, b) => a.order - b.order);
-    insertIndex = criteriaInTargetSection.findIndex(c => c.id === overId);
-    if (insertIndex !== -1) {
-      criteriaInTargetSection.splice(insertIndex, 0, movedCriterion);
-      mutableCriteria.splice(0, mutableCriteria.length, ...mutableCriteria.filter(c => c.section_id !== targetSectionId), ...criteriaInTargetSection);
-    } else {
-      mutableCriteria.push(movedCriterion);
-    }
+  // Remove the active criterion from its current position in the array
+  updatedCriteria = updatedCriteria.filter(c => c.id !== activeCriterionId);
+
+  // Filter criteria that belong to the target section (excluding the moved one for now)
+  const targetSectionCriteria = updatedCriteria
+    .filter(c => c.section_id === newSectionId)
+    .sort((a, b) => a.order - b.order);
+
+  // Determine the insertion index within the target section's sorted list
+  const overCriterionIndex = targetSectionCriteria.findIndex(c => c.id === overId);
+  if (overCriterionIndex !== -1) {
+    newIndexInTargetSection = overCriterionIndex;
   } else {
-    mutableCriteria.push(movedCriterion);
+    // If dropped into an empty section or at the very end of a section/uncategorized list
+    newIndexInTargetSection = targetSectionCriteria.length;
   }
 
-  const allContainerIds = new Set([...sections.map(s => s.id), null]);
-  let finalUpdatedCriteria: EvaluationCriterion[] = [];
-  allContainerIds.forEach(containerId => {
-    const currentContainerCriteria = mutableCriteria.filter(c => c.section_id === containerId).sort((a, b) => a.order - b.order);
-    const updatedContainerCriteria = currentContainerCriteria.map((c, idx) => ({ ...c, order: idx + 1 }));
-    finalUpdatedCriteria = finalUpdatedCriteria.concat(updatedContainerCriteria);
-  });
+  // Insert the moved criterion into its new position in the target section's list
+  const movedCriterionWithNewSection: EvaluationCriterion = { ...activeCriterion, section_id: newSectionId };
+  targetSectionCriteria.splice(newIndexInTargetSection, 0, movedCriterionWithNewSection);
 
+  // Re-calculate orders for all criteria in the target section
+  const reorderedTargetSection: EvaluationCriterion[] = targetSectionCriteria.map((c, idx) => ({ ...c, order: idx + 1 }));
+
+  // Reconstruct the full list of criteria by combining other criteria with the reordered target section
+  const otherCriteria: EvaluationCriterion[] = updatedCriteria.filter(c => c.section_id !== newSectionId);
+  const finalUpdatedCriteria: EvaluationCriterion[] = [...otherCriteria, ...reorderedTargetSection];
+
+  // Prepare batch update for Supabase, including only criteria whose order or section_id has changed
   const updatesToSend: EvaluationCriterion[] = finalUpdatedCriteria.filter(c => {
     const originalCriterion = currentCriteria.find(orig => orig.id === c.id);
     return originalCriterion && (originalCriterion.order !== c.order || originalCriterion.section_id !== c.section_id);
   }).map(c => {
     const originalCriterion = currentCriteria.find(orig => orig.id === c.id);
-    if (!originalCriterion) {
-      return c;
-    }
+    // Return the full original object with updated order and section_id
     return {
-      ...originalCriterion,
+      ...originalCriterion!, 
       order: c.order,
       section_id: c.section_id,
     };

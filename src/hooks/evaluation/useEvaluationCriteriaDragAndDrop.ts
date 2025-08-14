@@ -5,6 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { EvaluationCriterion, EvaluationSection } from '@/types';
 import { showError, showSuccess } from '@/utils/toast';
 import { reorderEvaluationCriteria } from '@/utils/evaluation/reorderEvaluationCriteria';
+import { useSession } from '@/contexts/auth/SessionContext';
 
 interface UseEvaluationCriteriaDragAndDropProps {
   criteria: EvaluationCriterion[];
@@ -15,6 +16,7 @@ interface UseEvaluationCriteriaDragAndDropProps {
 
 export const useEvaluationCriteriaDragAndDrop = ({ criteria, setCriteria, sections, fetchData }: UseEvaluationCriteriaDragAndDropProps) => {
   const [activeDragItem, setActiveDragItem] = useState<EvaluationCriterion | null>(null);
+  const { user } = useSession();
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -30,7 +32,7 @@ export const useEvaluationCriteriaDragAndDrop = ({ criteria, setCriteria, sectio
   const onDragEnd = useCallback(async (event: DragEndEvent) => {
     setActiveDragItem(null);
     const { active, over } = event;
-    if (!over) return;
+    if (!over || !user) return;
 
     const activeCriterionId = active.id as string;
     const overId = over.id as string;
@@ -38,16 +40,24 @@ export const useEvaluationCriteriaDragAndDrop = ({ criteria, setCriteria, sectio
     const { updatedCriteria, updatesToSend } = reorderEvaluationCriteria(criteria, activeCriterionId, overId, sections);
 
     if (updatesToSend.length > 0) {
-      setCriteria(updatedCriteria);
-      const { error } = await supabase.from('evaluation_criteria').upsert(updatesToSend);
+      // Add last_edited_by_user_id and last_edited_at to each updated criterion
+      const updatesWithMetadata = updatesToSend.map(criterion => ({
+        ...criterion,
+        last_edited_by_user_id: user.id,
+        last_edited_at: new Date().toISOString(),
+      }));
+
+      setCriteria(updatedCriteria); // Optimistic update
+      const { error } = await supabase.from('evaluation_criteria').upsert(updatesWithMetadata);
       if (error) {
         showError(`Failed to save changes: ${error.message}. Reverting.`);
-        fetchData();
+        fetchData(); // Revert by re-fetching
       } else {
         showSuccess("Criteria updated successfully.");
+        fetchData(); // Re-fetch to ensure full consistency
       }
     }
-  }, [criteria, sections, setCriteria, fetchData]);
+  }, [criteria, sections, setCriteria, fetchData, user]);
 
   return { sensors, onDragStart, onDragEnd, activeDragItem };
 };
