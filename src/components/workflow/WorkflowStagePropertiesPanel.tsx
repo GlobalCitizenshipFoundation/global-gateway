@@ -24,153 +24,6 @@ import { StatusProperties } from './stage-properties/StatusProperties';
 import { RecommendationProperties } from './stage-properties/RecommendationProperties';
 import { FormAttachmentProperties } from './stage-properties/FormAttachmentProperties';
 
-const editWorkflowStageSchema = z.object({
-  name: z.string().min(1, { message: "Stage name cannot be empty." }),
-  description: z.string().nullable().optional(),
-  step_type: z.enum(['form', 'screening', 'review', 'resubmission', 'decision', 'email', 'scheduling', 'status', 'recommendation']),
-  form_id: z.string().nullable().optional(),
-  email_template_id: z.string().nullable().optional(),
-  evaluation_template_id: z.string().nullable().optional(),
-  anonymize_identity: z.boolean().optional(),
-  review_form_source_stage_order: z.number().nullable().optional(), // New field for review stage
-  decision_options: z.array(z.object({
-    name: z.string().min(1, "Outcome name cannot be empty."),
-    email_template_id: z.string().nullable().optional(),
-    icon: z.string().nullable().optional(),
-  })).optional(),
-  status_message: z.string().optional(),
-  status_tag: z.string().optional(),
-  status_custom_tag: z.string().optional(),
-  resubmission_for_stage_order: z.number().nullable().optional(),
-  rec_form_id: z.string().nullable().optional(),
-  rec_min_recommenders: z.preprocess((val) => (val === '' ? null : Number(val)), z.number().nullable().optional()),
-  rec_max_recommenders: z.preprocess((val) => (val === '' ? null : Number(val)), z.number().nullable().optional()),
-  rec_reminder_email_template_id: z.string().nullable().optional(),
-  rec_reminder_intervals_days: z.string().optional(),
-  rec_anonymize_recommender_identity: z.boolean().optional(),
-}).superRefine((data, ctx) => {
-  // Validation for 'form' type
-  if (data.step_type === 'form' && !data.form_id) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      message: "A form must be selected for this stage.",
-      path: ['form_id'],
-    });
-  }
-
-  // Validation for 'email' type
-  if (data.step_type === 'email' && !data.email_template_id) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      message: "An email template must be selected for this stage.",
-      path: ['email_template_id'],
-    });
-  }
-
-  // Validation for 'status' type
-  if (data.step_type === 'status') {
-    if (data.status_tag === 'Custom' && (!data.status_custom_tag || data.status_custom_tag.trim() === '')) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "Custom tag text is required when 'Custom' is selected.",
-        path: ['status_custom_tag'],
-      });
-    }
-    if (!data.status_message || data.status_message.trim() === '') {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "Status message cannot be empty.",
-        path: ['status_message'],
-      });
-    }
-  }
-
-  // Validation for 'resubmission' type
-  if (data.step_type === 'resubmission' && (data.resubmission_for_stage_order === null || data.resubmission_for_stage_order === undefined)) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      message: "A target form stage must be selected for resubmission.",
-      path: ['resubmission_for_stage_order'],
-    });
-  }
-
-  // Validation for 'review' type
-  if (data.step_type === 'review') {
-    if (data.evaluation_template_id === null || data.evaluation_template_id === undefined) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "An evaluation rubric must be selected for this stage.",
-        path: ['evaluation_template_id'],
-      });
-    }
-    if (data.review_form_source_stage_order === null || data.review_form_source_stage_order === undefined) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "A form to review must be selected.",
-        path: ['review_form_source_stage_order'],
-      });
-    }
-  }
-
-  // Validation for 'decision' type
-  if (data.step_type === 'decision') {
-    if (!data.decision_options || data.decision_options.length === 0) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "At least one decision outcome must be defined.",
-        path: ['decision_options'],
-      });
-    } else {
-      data.decision_options.forEach((outcome, index) => {
-        if (!outcome.name || outcome.name.trim() === '') {
-          ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            message: "Outcome name cannot be empty.",
-            path: ['decision_options', index, 'name'],
-          });
-        }
-      });
-    }
-  }
-
-  // Validation for 'recommendation' type
-  if (data.step_type === 'recommendation') {
-    if (!data.rec_form_id) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "A recommendation form must be selected.",
-        path: ['rec_form_id'],
-      });
-    }
-    if (data.rec_min_recommenders === null || data.rec_min_recommenders === undefined || data.rec_min_recommenders < 0) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "Minimum recommenders must be a non-negative number.",
-        path: ['rec_min_recommenders'],
-      });
-    }
-    if (data.rec_max_recommenders === null || data.rec_max_recommenders === undefined || data.rec_max_recommenders < (data.rec_min_recommenders || 0)) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "Maximum recommenders must be a number greater than or equal to minimum.",
-        path: ['rec_max_recommenders'],
-      });
-    }
-    if (data.rec_reminder_intervals_days) {
-      const intervals = data.rec_reminder_intervals_days.split(',').map(s => parseInt(s.trim())).filter(n => !isNaN(n));
-      if (intervals.some(n => n < 0)) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: "Reminder intervals must be non-negative numbers.",
-          path: ['rec_reminder_intervals_days'],
-        });
-      }
-    }
-  }
-});
-
-type EditWorkflowStageValues = z.infer<typeof editWorkflowStageSchema>;
-
 interface WorkflowStagePropertiesPanelProps {
   stage: WorkflowStage;
   allStages: WorkflowStage[];
@@ -190,6 +43,170 @@ export const WorkflowStagePropertiesPanel = ({
   onSave,
   onClose,
 }: WorkflowStagePropertiesPanelProps) => {
+  const editWorkflowStageSchema = z.object({
+    name: z.string().min(1, { message: "Stage name cannot be empty." }),
+    description: z.string().nullable().optional(),
+    step_type: z.enum(['form', 'screening', 'review', 'resubmission', 'decision', 'email', 'scheduling', 'status', 'recommendation']),
+    form_id: z.string().nullable().optional(),
+    email_template_id: z.string().nullable().optional(),
+    evaluation_template_id: z.string().nullable().optional(),
+    anonymize_identity: z.boolean().optional(),
+    review_form_source_stage_order: z.number().nullable().optional(),
+    decision_options: z.array(z.object({
+      name: z.string().min(1, "Outcome name cannot be empty."),
+      email_template_id: z.string().nullable().optional(),
+      icon: z.string().nullable().optional(),
+    })).optional(),
+    status_message: z.string().optional(),
+    status_tag: z.string().optional(),
+    status_custom_tag: z.string().optional(),
+    resubmission_for_stage_order: z.number().nullable().optional(),
+    rec_form_id: z.string().nullable().optional(),
+    rec_min_recommenders: z.preprocess((val) => (val === '' ? null : Number(val)), z.number().nullable().optional()),
+    rec_max_recommenders: z.preprocess((val) => (val === '' ? null : Number(val)), z.number().nullable().optional()),
+    rec_reminder_email_template_id: z.string().nullable().optional(),
+    rec_reminder_intervals_days: z.string().optional(),
+    rec_anonymize_recommender_identity: z.boolean().optional(),
+  }).superRefine((data, ctx) => {
+    // Validation for 'form' type
+    if (data.step_type === 'form' && !data.form_id) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "A form must be selected for this stage.",
+        path: ['form_id'],
+      });
+    }
+
+    // Validation for 'email' type
+    if (data.step_type === 'email' && !data.email_template_id) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "An email template must be selected for this stage.",
+        path: ['email_template_id'],
+      });
+    }
+
+    // Validation for 'status' type
+    if (data.step_type === 'status') {
+      if (data.status_tag === 'Custom' && (!data.status_custom_tag || data.status_custom_tag.trim() === '')) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Custom tag text is required when 'Custom' is selected.",
+          path: ['status_custom_tag'],
+        });
+      }
+      if (!data.status_message || data.status_message.trim() === '') {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Status message cannot be empty.",
+          path: ['status_message'],
+        });
+      }
+    }
+
+    // Validation for 'resubmission' type
+    if (data.step_type === 'resubmission' && (data.resubmission_for_stage_order === null || data.resubmission_for_stage_order === undefined)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "A target form stage must be selected for resubmission.",
+        path: ['resubmission_for_stage_order'],
+      });
+    }
+
+    // Validation for 'review' type
+    if (data.step_type === 'review') {
+      if (data.evaluation_template_id === null || data.evaluation_template_id === undefined) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "An evaluation rubric must be selected for this stage.",
+          path: ['evaluation_template_id'],
+        });
+      }
+
+      // Directly use the form field value for review_form_source_stage_order
+      if (data.review_form_source_stage_order === null || data.review_form_source_stage_order === undefined) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'A form to review must be selected.',
+          path: ['review_form_source_stage_order'],
+        });
+      } else {
+        const sourceStage = allStages.find((s: WorkflowStage) => s.order_index === data.review_form_source_stage_order);
+        if (!sourceStage) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: `The selected form to review (Stage ${data.review_form_source_stage_order}) does not exist.`,
+            path: ['review_form_source_stage_order'],
+          });
+        } else if (sourceStage.step_type !== 'form') {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: `The selected form to review ('${sourceStage.name}') is not a 'Form' stage.`,
+            path: ['review_form_source_stage_order'],
+          });
+        }
+      }
+    }
+
+    // Validation for 'decision' type
+    if (data.step_type === 'decision') {
+      if (!data.decision_options || data.decision_options.length === 0) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "At least one decision outcome must be defined.",
+          path: ['decision_options'],
+        });
+      } else {
+        data.decision_options.forEach((outcome, index) => {
+          if (!outcome.name || outcome.name.trim() === '') {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              message: "Outcome name cannot be empty.",
+              path: ['decision_options', index, 'name'],
+            });
+          }
+        });
+      }
+    }
+
+    // Validation for 'recommendation' type
+    if (data.step_type === 'recommendation') {
+      if (!data.rec_form_id) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "A recommendation form must be selected.",
+          path: ['rec_form_id'],
+        });
+      }
+      if (data.rec_min_recommenders === null || data.rec_min_recommenders === undefined || data.rec_min_recommenders < 0) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Minimum recommenders must be a non-negative number.",
+          path: ['rec_min_recommenders'],
+        });
+      }
+      if (data.rec_max_recommenders === null || data.rec_max_recommenders === undefined || data.rec_max_recommenders < (data.rec_min_recommenders || 0)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Maximum recommenders must be a number greater than or equal to minimum.",
+          path: ['rec_max_recommenders'],
+        });
+      }
+      if (data.rec_reminder_intervals_days) {
+        const intervals = data.rec_reminder_intervals_days.split(',').map(s => parseInt(s.trim())).filter(n => !isNaN(n));
+        if (intervals.some(n => n < 0)) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "Reminder intervals must be non-negative numbers.",
+            path: ['rec_reminder_intervals_days'],
+          });
+        }
+      }
+    }
+  });
+
+  type EditWorkflowStageValues = z.infer<typeof editWorkflowStageSchema>;
+
   const form = useForm<EditWorkflowStageValues>({
     resolver: zodResolver(editWorkflowStageSchema),
     defaultValues: {},
@@ -203,7 +220,7 @@ export const WorkflowStagePropertiesPanel = ({
       let status_custom_tag: string | undefined = undefined;
       let resubmission_for_stage_order: number | undefined | null = undefined;
       let anonymize_identity: boolean | undefined = undefined;
-      let review_form_source_stage_order: number | undefined | null = undefined; // New
+      let review_form_source_stage_order: number | undefined | null = undefined;
       let rec_form_id: string | undefined | null = undefined;
       let rec_min_recommenders: number | undefined | null = undefined;
       let rec_max_recommenders: number | undefined | null = undefined;
@@ -265,7 +282,7 @@ export const WorkflowStagePropertiesPanel = ({
         email_template_id: stage.email_template_id || null,
         evaluation_template_id: stage.evaluation_template_id || null,
         anonymize_identity: anonymize_identity || false,
-        review_form_source_stage_order: review_form_source_stage_order, // New
+        review_form_source_stage_order: review_form_source_stage_order,
         decision_options: decision_options || [
           { name: 'Accept', email_template_id: null, icon: 'CheckCircle' },
           { name: 'Decline', email_template_id: null, icon: 'XCircle' },
@@ -291,12 +308,12 @@ export const WorkflowStagePropertiesPanel = ({
 
   const onSubmit = (values: EditWorkflowStageValues) => {
     let descriptionPayload: string | null = values.description || null;
-    let formIdPayload: string | null = values.form_id || null; // Keep form_id for 'form' type
+    let formIdPayload: string | null = values.form_id || null;
 
     if (values.step_type === 'decision') {
       const validOutcomes = values.decision_options?.filter(o => o.name.trim() !== '') || [];
       descriptionPayload = JSON.stringify({ outcomes: validOutcomes });
-      formIdPayload = null; // Clear form_id for decision stages
+      formIdPayload = null;
     } else if (values.step_type === 'status') {
       const statusConfig: { message: string; tag: string; custom_tag?: string } = {
         message: values.status_message || '',
@@ -306,17 +323,16 @@ export const WorkflowStagePropertiesPanel = ({
         statusConfig.custom_tag = values.status_custom_tag || '';
       }
       descriptionPayload = JSON.stringify(statusConfig);
-      formIdPayload = null; // Clear form_id for status stages
+      formIdPayload = null;
     } else if (values.step_type === 'resubmission') {
       descriptionPayload = JSON.stringify({ resubmission_for_stage_order: values.resubmission_for_stage_order });
-      formIdPayload = null; // Clear form_id for resubmission stages
+      formIdPayload = null;
     } else if (values.step_type === 'review') {
       descriptionPayload = JSON.stringify({
         anonymize_identity: values.anonymize_identity,
-        // Removed evaluation_template_id from description JSON as it's a direct column
-        review_form_source_stage_order: values.review_form_source_stage_order, // New
+        review_form_source_stage_order: values.review_form_source_stage_order,
       });
-      formIdPayload = null; // Clear form_id for review stages
+      formIdPayload = null;
     } else if (values.step_type === 'recommendation') {
       const reminderIntervals = values.rec_reminder_intervals_days?.split(',').map(s => parseInt(s.trim())).filter(n => !isNaN(n)) || [];
       descriptionPayload = JSON.stringify({
@@ -327,16 +343,15 @@ export const WorkflowStagePropertiesPanel = ({
         reminder_intervals_days: reminderIntervals,
         anonymize_recommender_identity: values.rec_anonymize_recommender_identity,
       });
-      formIdPayload = null; // Clear form_id for recommendation stages
+      formIdPayload = null;
     } else if (values.step_type !== 'form') {
-      // For other types like 'screening', 'scheduling', 'email'
-      formIdPayload = null; // Ensure form_id is null if not a 'form' type
+      formIdPayload = null;
     }
 
     const finalValues: Partial<WorkflowStage> = {
       name: values.name,
       step_type: values.step_type,
-      form_id: formIdPayload, // Use the determined formIdPayload
+      form_id: formIdPayload,
       email_template_id: values.email_template_id,
       evaluation_template_id: values.evaluation_template_id,
       description: descriptionPayload,
@@ -361,7 +376,6 @@ export const WorkflowStagePropertiesPanel = ({
       
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4">
-          {/* Display general form errors if any */}
           {!form.formState.isValid && form.formState.isSubmitted && (
             <Alert variant="destructive">
               <AlertTriangle className="h-4 w-4" />
@@ -404,13 +418,11 @@ export const WorkflowStagePropertiesPanel = ({
             )}
           />
 
-          {/* General Properties (Name and generic Description) */}
           <GeneralProperties
             form={form}
             selectedStageType={selectedStageType}
           />
 
-          {/* Review Specific Properties */}
           {selectedStageType === 'review' && (
             <ReviewProperties
               form={form}
@@ -420,7 +432,6 @@ export const WorkflowStagePropertiesPanel = ({
             />
           )}
 
-          {/* Generic Email Trigger (for stages that aren't 'email' type itself) */}
           {selectedStageType !== 'email' && selectedStageType !== 'decision' && selectedStageType !== 'recommendation' && (
             <FormFieldComponent
               control={form.control}
@@ -432,7 +443,7 @@ export const WorkflowStagePropertiesPanel = ({
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Choose an email template" />
-                      </SelectTrigger>
+                    </SelectTrigger>
                     </FormControl>
                     <SelectContent>
                       <SelectItem value="__none__">No email attached</SelectItem>
@@ -450,7 +461,6 @@ export const WorkflowStagePropertiesPanel = ({
             />
           )}
 
-          {/* Resubmission Specific Properties */}
           {selectedStageType === 'resubmission' && (
             <ResubmissionProperties
               form={form}
@@ -459,7 +469,6 @@ export const WorkflowStagePropertiesPanel = ({
             />
           )}
 
-          {/* Decision Specific Properties */}
           {selectedStageType === 'decision' && (
             <DecisionProperties
               form={form}
@@ -467,14 +476,12 @@ export const WorkflowStagePropertiesPanel = ({
             />
           )}
 
-          {/* Status Specific Properties */}
           {selectedStageType === 'status' && (
             <StatusProperties
               form={form}
             />
           )}
 
-          {/* Recommendation Specific Properties */}
           {selectedStageType === 'recommendation' && (
             <RecommendationProperties
               form={form}
@@ -483,7 +490,6 @@ export const WorkflowStagePropertiesPanel = ({
             />
           )}
 
-          {/* Form Attachment Properties (only for 'form' type) */}
           {selectedStageType === 'form' && (
             <FormAttachmentProperties
               form={form}
