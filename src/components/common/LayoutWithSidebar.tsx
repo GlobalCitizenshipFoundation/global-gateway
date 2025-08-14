@@ -100,7 +100,12 @@ const LayoutWithSidebar = ({ children }: LayoutWithSidebarProps) => {
         <DesktopSidebar isCollapsed={isCollapsed} toggleCollapse={toggleCollapse} />
       )}
 
-      <div className="flex flex-col flex-grow overflow-x-hidden"> {/* Added overflow-x-hidden */}
+      <div
+        className={cn(
+          "flex flex-col flex-grow overflow-x-hidden",
+          !isMobile && (isCollapsed ? "ml-16" : "ml-56") // Apply margin-left only on desktop
+        )}
+      >
         <Header />
         <main className="flex-grow transition-all duration-200 ease-in-out">
           {children}
