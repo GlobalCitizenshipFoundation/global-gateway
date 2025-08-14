@@ -11,7 +11,7 @@ const CustomCodeInjector = () => {
       try {
         const { data, error } = await supabase
           .from('app_custom_code_settings')
-          .select('*')
+          .select('id, head_content, head_enabled, body_end_content, body_end_enabled, last_edited_by_user_id, updated_at')
           .eq('id', CUSTOM_CODE_SETTINGS_ID)
           .single();
 
@@ -28,25 +28,21 @@ const CustomCodeInjector = () => {
             id: CUSTOM_CODE_SETTINGS_ID,
             head_enabled: false,
             body_end_enabled: false,
+            head_content: null, // Initialize new columns
+            body_end_content: null, // Initialize new columns
           });
           return;
         }
 
-        // --- IMPORTANT DOMPurify Configuration for Mixed Content Injection ---
-        // By default, DOMPurify strips <script> and <style> tags to prevent XSS.
-        // To allow free-form HTML/CSS/JS injection, we must explicitly allow these tags.
-        // This means the responsibility for the safety of the injected code shifts entirely
-        // to the Super Admin.
         const DOMPurifyConfig = {
-          USE_PROFILES: { html: true }, // Basic HTML profile
-          ADD_TAGS: ['script', 'style'], // CRITICAL: Allow <script> and <style> tags
-          ADD_ATTR: ['type', 'src', 'charset', 'async', 'defer'], // Allow common attributes for scripts
-          // You might need to add more attributes depending on what your users inject (e.g., for iframes, custom data attributes)
+          USE_PROFILES: { html: true },
+          ADD_TAGS: ['script', 'style'],
+          ADD_ATTR: ['type', 'src', 'charset', 'async', 'defer'],
         };
 
         // --- Inject into <head> ---
-        if (settings.head_enabled && settings.head_html_content) {
-          const sanitizedContent = DOMPurify.sanitize(settings.head_html_content, DOMPurifyConfig);
+        if (settings.head_enabled && settings.head_content) {
+          const sanitizedContent = DOMPurify.sanitize(settings.head_content, DOMPurifyConfig);
           const tempDiv = document.createElement('div');
           tempDiv.innerHTML = sanitizedContent;
           while (tempDiv.firstChild) {
@@ -55,8 +51,8 @@ const CustomCodeInjector = () => {
         }
 
         // --- Inject before </body> ---
-        if (settings.body_end_enabled && settings.body_end_html_content) {
-          const sanitizedContent = DOMPurify.sanitize(settings.body_end_html_content, DOMPurifyConfig);
+        if (settings.body_end_enabled && settings.body_end_content) {
+          const sanitizedContent = DOMPurify.sanitize(settings.body_end_content, DOMPurifyConfig);
           const tempDiv = document.createElement('div');
           tempDiv.innerHTML = sanitizedContent;
           while (tempDiv.firstChild) {

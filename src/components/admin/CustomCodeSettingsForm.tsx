@@ -22,9 +22,9 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertTriangle } from "lucide-react";
 
 const customCodeSettingsSchema = z.object({
-  head_html_content: z.string().nullable().optional(),
+  head_content: z.string().nullable().optional(),
   head_enabled: z.boolean(),
-  body_end_html_content: z.string().nullable().optional(),
+  body_end_content: z.string().nullable().optional(),
   body_end_enabled: z.boolean(),
 });
 
@@ -41,9 +41,9 @@ export const CustomCodeSettingsForm = ({ initialData }: CustomCodeSettingsFormPr
   const form = useForm<CustomCodeSettingsFormValues>({
     resolver: zodResolver(customCodeSettingsSchema),
     defaultValues: {
-      head_html_content: initialData.head_html_content || '',
+      head_content: initialData.head_content || '',
       head_enabled: initialData.head_enabled,
-      body_end_html_content: initialData.body_end_html_content || '',
+      body_end_content: initialData.body_end_content || '',
       body_end_enabled: initialData.body_end_enabled,
     },
   });
@@ -55,13 +55,10 @@ export const CustomCodeSettingsForm = ({ initialData }: CustomCodeSettingsFormPr
     }
 
     const payload = {
-      head_html_content: values.head_html_content || null,
-      head_css_content: null, // Explicitly set to null as we are consolidating
-      head_js_content: null, // Explicitly set to null as we are consolidating
+      head_content: values.head_content || null,
       head_enabled: values.head_enabled,
-      body_end_html_content: values.body_end_html_content || null,
-      body_end_css_content: null, // Explicitly set to null as we are consolidating
-      body_end_js_content: null, // Explicitly set to null as we are consolidating
+      body_end_content: values.body_end_content || null,
+      body_end_enabled: values.body_end_enabled,
       last_edited_by_user_id: user.id,
       updated_at: new Date().toISOString(),
     };
@@ -125,7 +122,7 @@ export const CustomCodeSettingsForm = ({ initialData }: CustomCodeSettingsFormPr
           />
           <FormFieldComponent
             control={form.control}
-            name="head_html_content"
+            name="head_content"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Combined HTML, CSS, and JavaScript</FormLabel>
@@ -177,7 +174,7 @@ export const CustomCodeSettingsForm = ({ initialData }: CustomCodeSettingsFormPr
           />
           <FormFieldComponent
             control={form.control}
-            name="body_end_html_content"
+            name="body_end_content"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Combined HTML, CSS, and JavaScript</FormLabel>

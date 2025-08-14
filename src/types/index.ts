@@ -308,13 +308,9 @@ export type Program = {
     // New type for global custom code settings
     export type AppCustomCodeSettings = {
       id: string; // Will typically be a fixed UUID for the single row
-      head_html_content: string | null;
-      head_css_content: string | null;
-      head_js_content: string | null;
+      head_content: string | null; // Consolidated HTML, CSS, JS for head
       head_enabled: boolean;
-      body_end_html_content: string | null;
-      body_end_css_content: string | null;
-      body_end_js_content: string | null;
+      body_end_content: string | null; // Consolidated HTML, CSS, JS for body end
       body_end_enabled: boolean;
       last_edited_by_user_id: string | null;
       updated_at: string;
