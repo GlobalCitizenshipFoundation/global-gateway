@@ -32,7 +32,7 @@ import { ReviewerAssignment } from "@/components/review/ReviewerAssignment";
 import { YourReviewCard } from "@/components/review/YourReviewCard";
 import { DynamicReviewForm } from "@/components/review/DynamicReviewForm";
 import { useFormLoader, DynamicFormValues } from "@/hooks/forms/useFormLoader"; // Import useFormLoader
-import ApplicationFormSections from "@/components/application/ApplicationFormSections"; // Import ApplicationFormSections
+// import ApplicationFormSections from "@/components/application/ApplicationFormSections"; // Import ApplicationFormSections
 
 type SubmissionDetail = {
   id: string;
@@ -343,13 +343,20 @@ const SubmissionDetailPage = () => {
             <div className="space-y-6">
               <div>
                 <h3 className="font-semibold text-lg mb-4">Application Responses</h3>
-                <ApplicationFormSections
-                  formSections={formSections}
-                  displayedFormFields={formLoaderDisplayedFormFields} // Use fields filtered by their own logic
-                  allFormFields={formFields} // Pass all fields for section logic
-                  currentResponses={formLoaderCurrentResponses} // Pass current responses for section logic
-                  submitting={false} // Not submitting the form here
-                />
+                {/* Render ApplicationFormSections here */}
+                {applicationForm && (
+                  <Form {...formLoaderInstance}>
+                    <form>
+                      <ApplicationFormSections
+                        formSections={formSections}
+                        displayedFormFields={formLoaderDisplayedFormFields}
+                        allFormFields={formFields}
+                        currentResponses={formLoaderCurrentResponses}
+                        submitting={false}
+                      />
+                    </form>
+                  </Form>
+                )}
               </div>
             </div>
           </CardContent>
