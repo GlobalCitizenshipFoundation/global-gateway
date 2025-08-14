@@ -48,7 +48,7 @@ export const useFormBuilderData = (initialFormId?: string) => { // Accept initia
       setFormLastEditedAt(formData.last_edited_at);
       setFormLastEditedByUserId(formData.last_edited_by_user_id);
       // Correctly map the fetched data to the FormTag type
-      setFormTags(formData.form_tags.map((ft: { tags: TagType }) => ft.tags).filter(Boolean) as TagType[] || []); // Set tags
+      setFormTags(formData.form_tags.map((ft: { tags: TagType | null }) => ft.tags).filter(Boolean) as TagType[] || []); // Set tags
     }
 
     // Fetch sections for the form, including new conditional logic fields

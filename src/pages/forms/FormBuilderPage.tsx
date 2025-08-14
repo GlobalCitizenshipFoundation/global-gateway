@@ -61,7 +61,7 @@ const FormBuilderPage = () => {
   const formBuilderActions = useFormBuilderActions({
     formId: state.formId,
     setSections: state.setSections,
-    setFields: state.fields, // Pass fields directly
+    setFields: state.setFields, // Pass fields directly
     fetchData: state.fetchData,
   });
 
