@@ -18,8 +18,8 @@ const Header = ({ isMobile, onOpenMobileMenu }: HeaderProps) => {
     <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
       <div className="flex items-center justify-between px-4 py-4 md:px-8">
         <Link to="/" className="flex items-center gap-2">
-          <Award className="h-7 w-7 text-primary" /> {/* Changed from h-6 w-6 to h-7 w-7 */}
-          <span className="text-xl font-bold">Global Gateway</span>
+          <Award className="h-7 w-7 text-primary" />
+          <span className="text-xl font-bold whitespace-nowrap">Global Gateway</span>
         </Link>
         <nav className="flex items-center gap-2">
           {isLoading ? (
