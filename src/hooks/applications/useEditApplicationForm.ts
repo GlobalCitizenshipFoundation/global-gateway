@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Application } from "@/types";
@@ -14,7 +14,6 @@ export const useEditApplicationForm = () => {
   const [loadingApplicationData, setLoadingApplicationData] = useState(true);
   const [applicationDataError, setApplicationDataError] = useState<string | null>(null);
 
-  const [initialResponses, setInitialResponses] = useState<DynamicFormValues>({});
   const [targetFormId, setTargetFormId] = useState<string | undefined>(undefined);
 
   useEffect(() => {
@@ -62,29 +61,12 @@ export const useEditApplicationForm = () => {
         return;
       }
       setTargetFormId(resolvedTargetFormId);
-
-      const { data: responsesData, error: responsesError } = await supabase.from('application_responses').select('value, form_fields(id, field_type)').eq('application_id', applicationId);
-      if (responsesError) {
-        showError("Could not load your previous answers.");
-      } else if (responsesData) {
-        const defaultValues: DynamicFormValues = {};
-        responsesData.forEach(res => {
-          const field = Array.isArray(res.form_fields) ? res.form_fields[0] : res.form_fields;
-          if (field && res.value) {
-            let parsedValue: any = res.value;
-            if (field.field_type === 'checkbox') try { parsedValue = JSON.parse(res.value); } catch { parsedValue = []; }
-            else if (field.field_type === 'number' || field.field_type === 'rating') { parsedValue = parseFloat(res.value); if (isNaN(parsedValue)) parsedValue = undefined; }
-            defaultValues[field.id] = parsedValue;
-          }
-        });
-        setInitialResponses(defaultValues);
-      }
       setLoadingApplicationData(false);
     };
     fetchApplicationAndResponses();
   }, [applicationId, user]);
 
-  // Use the new form loader hook, passing the dynamically determined formId and initial responses
+  // Use the new form loader hook, passing the dynamically determined formId and application ID
   const {
     program,
     applicationForm,
@@ -96,7 +78,7 @@ export const useEditApplicationForm = () => {
     currentResponses,
     displayedFormFields,
     getFieldsForSection,
-  } = useFormLoader({ formId: targetFormId, initialResponses });
+  } = useFormLoader({ formId: targetFormId, applicationId }); // Pass applicationId here
 
   const loading = loadingApplicationData || formLoaderLoading;
   const error = applicationDataError || formLoaderError;

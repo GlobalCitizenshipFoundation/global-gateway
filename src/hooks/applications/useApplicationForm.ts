@@ -17,13 +17,14 @@ export const useApplicationForm = () => {
     program,
     applicationForm,
     formSections,
-    formFields,
+    formFields, // All form fields for logic evaluation
     loading: formLoaderLoading,
     error: formLoaderError,
     form,
-    currentResponses,
-    displayedFormFields,
-    getFieldsForSection,
+    displayedFormFields, // Fields displayed after their own logic
+    // user is not returned by useFormLoader, so keep it from useSession
+    // programId is not returned by useFormLoader, so keep it from useParams
+    currentResponses, // Current responses for section logic
   } = useFormLoader({ programId });
 
   const [loadingProfile, setLoadingProfile] = useState(true);
@@ -63,7 +64,7 @@ export const useApplicationForm = () => {
     form,
     currentResponses,
     displayedFormFields,
-    getFieldsForSection,
+    getFieldsForSection: (sectionId: string | null) => displayedFormFields.filter(field => field.section_id === sectionId).sort((a, b) => a.order - b.order),
     user,
     programId,
   };

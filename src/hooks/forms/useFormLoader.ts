@@ -13,23 +13,16 @@ export type DynamicFormValues = Record<string, string | string[] | number | unde
 interface UseFormLoaderProps {
   programId?: string;
   formId?: string; // Can be passed directly if programId is not available or form is standalone
-  initialResponses?: DynamicFormValues; // For pre-filling form (e.g., editing existing application)
+  applicationId?: string; // New: For pre-filling form with existing application responses
 }
 
-export const useFormLoader = ({ programId, formId: directFormId, initialResponses }: UseFormLoaderProps) => {
+export const useFormLoader = ({ programId, formId: directFormId, applicationId }: UseFormLoaderProps) => {
   const [program, setProgram] = useState<Program | null>(null);
   const [applicationForm, setApplicationForm] = useState<FormType | null>(null);
   const [formSections, setFormSections] = useState<FormSection[]>([]);
   const [formFields, setFormFields] = useState<FormField[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  // Determine the actual formId to use
-  const resolvedFormId = useMemo(() => {
-    if (directFormId) return directFormId;
-    if (program && program.form_id) return program.form_id;
-    return null;
-  }, [directFormId, program]);
 
   // Dynamic Zod schema based on formFields
   const dynamicFormSchema = useMemo(() => {
@@ -87,24 +80,7 @@ export const useFormLoader = ({ programId, formId: directFormId, initialResponse
 
   const form = useForm<DynamicFormValues>({
     resolver: zodResolver(dynamicFormSchema),
-    defaultValues: useMemo(() => {
-      // Prioritize initialResponses if provided, otherwise generate defaults
-      if (initialResponses) return initialResponses;
-
-      const defaults: DynamicFormValues = {};
-      formFields.forEach(field => {
-        if (field.field_type === 'checkbox') {
-          defaults[field.id] = [];
-        } else if (field.field_type === 'number') {
-          defaults[field.id] = undefined;
-        } else if (field.field_type === 'rating') {
-          defaults[field.id] = field.rating_min_value ?? 1;
-        } else {
-          defaults[field.id] = '';
-        }
-      });
-      return defaults;
-    }, [formFields, initialResponses]),
+    defaultValues: {}, // Start with empty defaults, will reset after data fetch
     mode: "onBlur",
   });
 
@@ -131,8 +107,8 @@ export const useFormLoader = ({ programId, formId: directFormId, initialResponse
         currentProgram = { ...programData, deadline: new Date(programData.deadline) } as Program;
         setProgram(currentProgram);
         targetFormId = currentProgram.form_id;
-      } else if (!directFormId) {
-        setError("No program ID or form ID provided.");
+      } else if (!directFormId && !applicationId) { // If no programId, no directFormId, and no applicationId
+        setError("No program ID, form ID, or application ID provided.");
         setLoading(false);
         return;
       }
@@ -175,21 +151,43 @@ export const useFormLoader = ({ programId, formId: directFormId, initialResponse
         setError("Could not load application form fields.");
       } else {
         setFormFields(fieldsData as FormField[]);
-        // Reset form with initial responses or generated defaults
+        
         const initialFormValues: DynamicFormValues = {};
-        fieldsData.forEach(field => {
-          if (initialResponses && initialResponses[field.id] !== undefined) {
-            initialFormValues[field.id] = initialResponses[field.id];
-          } else if (field.field_type === 'checkbox') {
-            initialFormValues[field.id] = [];
-          } else if (field.field_type === 'number') {
-            initialFormValues[field.id] = undefined;
-          } else if (field.field_type === 'rating') {
-            initialFormValues[field.id] = field.rating_min_value ?? 1;
-          } else {
-            initialFormValues[field.id] = '';
+
+        // If an applicationId is provided, fetch and populate responses
+        if (applicationId) {
+          const { data: responsesData, error: responsesError } = await supabase.from('application_responses').select('value, field_id').eq('application_id', applicationId);
+          if (responsesError) {
+            showError("Could not load existing responses.");
+          } else if (responsesData) {
+            responsesData.forEach(res => {
+              const field = fieldsData.find(f => f.id === res.field_id);
+              if (field && res.value !== null) {
+                let parsedValue: any = res.value;
+                if (field.field_type === 'checkbox') {
+                  try { parsedValue = JSON.parse(res.value); } catch { parsedValue = []; }
+                } else if (field.field_type === 'number' || field.field_type === 'rating') {
+                  parsedValue = parseFloat(res.value);
+                  if (isNaN(parsedValue)) parsedValue = undefined;
+                }
+                initialFormValues[field.id] = parsedValue;
+              }
+            });
           }
-        });
+        } else {
+          // Otherwise, set default empty values for a new form
+          fieldsData.forEach(field => {
+            if (field.field_type === 'checkbox') {
+              initialFormValues[field.id] = [];
+            } else if (field.field_type === 'number') {
+              initialFormValues[field.id] = undefined;
+            } else if (field.field_type === 'rating') {
+              initialFormValues[field.id] = field.rating_min_value ?? 1;
+            } else {
+              initialFormValues[field.id] = '';
+            }
+          });
+        }
         form.reset(initialFormValues);
       }
 
@@ -197,7 +195,7 @@ export const useFormLoader = ({ programId, formId: directFormId, initialResponse
     };
 
     fetchData();
-  }, [programId, directFormId, form, initialResponses]);
+  }, [programId, directFormId, applicationId, form]); // Added applicationId to dependencies
 
   const displayedFormFields = useMemo(() => {
     const allFormFields = formFields;

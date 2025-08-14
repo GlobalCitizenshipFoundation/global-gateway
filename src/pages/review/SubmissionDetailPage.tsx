@@ -70,7 +70,6 @@ const SubmissionDetailPage = () => {
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const [initialResponses, setInitialResponses] = useState<DynamicFormValues>({});
   const [targetFormIdForResponses, setTargetFormIdForResponses] = useState<string | undefined>(undefined);
 
   // Use the new form loader hook for application responses
@@ -84,7 +83,7 @@ const SubmissionDetailPage = () => {
     form: formLoaderInstance, // Renamed to avoid conflict with local 'form' state
     currentResponses: formLoaderCurrentResponses,
     displayedFormFields: formLoaderDisplayedFormFields, // Fields displayed after their own logic
-  } = useFormLoader({ programId, formId: targetFormIdForResponses, initialResponses });
+  } = useFormLoader({ formId: targetFormIdForResponses, applicationId: submissionId }); // Pass applicationId here
 
   const [stages, setStages] = useState<ProgramStage[]>([]); // Define stages state here
 
@@ -108,14 +107,9 @@ const SubmissionDetailPage = () => {
       .eq('application_id', submissionId)
       .order('created_at', { ascending: false });
 
-    const responsesPromise = supabase
-      .from('application_responses')
-      .select(`value, form_fields ( id, label, field_type, options, is_required, order, display_rules, description, tooltip )`)
-      .eq('application_id', submissionId);
-
     const stagesPromise = supabase.from('program_stages').select('*').eq('program_id', programId).order('order', { ascending: true });
 
-    const [{ data: submissionData, error: submissionError }, { data: reviewsData, error: reviewsError }, { data: responsesData, error: responsesError }, { data: stagesData, error: stagesError }] = await Promise.all([submissionPromise, reviewsPromise, responsesPromise, stagesPromise]);
+    const [{ data: submissionData, error: submissionError }, { data: reviewsData, error: reviewsError }, { data: stagesData, error: stagesError }] = await Promise.all([submissionPromise, reviewsPromise, stagesPromise]);
 
     if (submissionError) {
       setError(submissionError.message);
@@ -160,9 +154,9 @@ const SubmissionDetailPage = () => {
     if (formattedSubmissionData.program_stages?.step_type === 'review' && formattedSubmissionData.program_stages.description) {
       try {
         const config = JSON.parse(formattedSubmissionData.program_stages.description);
-        const reviewFormSourceStageOrder = config.review_form_source_stage_order;
-        if (typeof reviewFormSourceStageOrder === 'number') {
-          const sourceStage = (stagesData as ProgramStage[]).find(s => s.order === reviewFormSourceStageOrder);
+        const reviewFormSourceStageId = config.review_form_source_stage_id;
+        if (typeof reviewFormSourceStageId === 'string') {
+          const sourceStage = (stagesData as ProgramStage[]).find(s => s.id === reviewFormSourceStageId);
           if (sourceStage) {
             formIdForLoader = sourceStage.form_id;
           }
@@ -174,29 +168,9 @@ const SubmissionDetailPage = () => {
       }
     }
     setTargetFormIdForResponses(formIdForLoader || undefined);
-
-    if (responsesError) {
-      showError("Could not load application responses.");
-    } else if (responsesData) {
-      const initialValues: DynamicFormValues = {};
-      responsesData.forEach(res => {
-        const field = Array.isArray(res.form_fields) ? res.form_fields[0] : res.form_fields;
-        if (field && res.value !== null) {
-          if (field.field_type === 'checkbox') {
-            try { initialValues[field.id] = JSON.parse(res.value); } catch { initialValues[field.id] = []; }
-          } else if (field.field_type === 'number' || field.field_type === 'rating') {
-            initialValues[field.id] = parseFloat(res.value);
-          } else {
-            initialValues[field.id] = res.value;
-          }
-        }
-      });
-      formLoaderInstance.reset(initialValues); // Use formLoaderInstance to reset the form
-      setInitialResponses(initialValues);
-    }
     
     setLoadingPage(false);
-  }, [programId, submissionId, formLoaderInstance]); // Added formLoaderInstance to dependencies
+  }, [programId, submissionId]);
 
   useEffect(() => {
     fetchSubmissionDetails();
