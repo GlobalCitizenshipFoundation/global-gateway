@@ -13,7 +13,6 @@ import RichTextEditor from "@/components/common/RichTextEditor";
 import { FileText, FolderOpen } from "lucide-react";
 import { FormField, FormSection } from "@/types";
 import { UseFormReturn } from "react-hook-form";
-import { Switch } from "@/components/ui/switch";
 
 interface BasicPropertiesProps {
   form: UseFormReturn<any>;
@@ -199,26 +198,6 @@ export const BasicProperties = ({ form, sections, selectedFieldType }: BasicProp
                 Check this if the applicant must provide a response for this field.
               </FormDescription>
             </div>
-          </FormItem>
-        )}
-      />
-      <FormFieldComponent
-        control={form.control}
-        name="is_anonymized"
-        render={({ field }) => (
-          <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-            <div className="space-y-0.5">
-              <FormLabel className="text-base">Anonymize Field</FormLabel>
-              <FormDescription>
-                Hide this field's response from reviewers to reduce bias.
-              </FormDescription>
-            </div>
-            <FormControl>
-              <Switch
-                checked={field.value}
-                onCheckedChange={field.onChange}
-              />
-            </FormControl>
           </FormItem>
         )}
       />

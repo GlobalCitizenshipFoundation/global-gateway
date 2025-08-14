@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { FormField } from '@/types';
-import { GripVertical, Trash2, Eye, Pencil, Info, EyeOff } from 'lucide-react';
+import { GripVertical, Trash2, Eye, Pencil, Info } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
@@ -123,16 +123,6 @@ export const FormFieldItem = ({ field, onDelete, onToggleRequired, onSelectField
                 </TooltipTrigger>
                 <TooltipContent className="max-w-xs bg-gray-800 text-white p-2 rounded-md text-sm">
                   {field.tooltip}
-                </TooltipContent>
-              </Tooltip>
-            )}
-            {field.is_anonymized && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <EyeOff className="h-4 w-4 ml-2 inline-block text-orange-500" />
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>This field is anonymized for reviewers.</p>
                 </TooltipContent>
               </Tooltip>
             )}

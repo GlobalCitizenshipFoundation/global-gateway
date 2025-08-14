@@ -96,7 +96,6 @@ export type FormField = {
   placeholder: string | null; // New: Placeholder text for input fields
   last_edited_by_user_id: string | null; // New
   last_edited_at: string | null; // New
-  is_anonymized: boolean; // New: For anonymization
   // New date properties
   date_min: string | null; // ISO string for min date
   date_max: string | null; // ISO string for max date

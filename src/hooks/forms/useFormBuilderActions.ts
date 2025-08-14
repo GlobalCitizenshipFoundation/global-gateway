@@ -136,7 +136,6 @@ export const useFormBuilderActions = ({
         section_id: sectionId,
         options: (type === 'select' || type === 'radio' || type === 'checkbox') ? options.split(',').map(opt => opt.trim()) : null,
         is_required: false,
-        is_anonymized: false,
         display_rules: null,
         display_rules_logic_type: 'AND',
         description: description || null,
@@ -214,7 +213,6 @@ export const useFormBuilderActions = ({
     field_type: FormField['field_type'];
     options?: string;
     is_required: boolean;
-    is_anonymized?: boolean;
     description?: string | null;
     tooltip?: string | null;
     placeholder?: string | null;
@@ -238,7 +236,6 @@ export const useFormBuilderActions = ({
       field_type: values.field_type,
       options: updatedOptions,
       is_required: values.is_required,
-      is_anonymized: values.is_anonymized ?? false,
       description: values.description || null,
       tooltip: values.tooltip || null,
       placeholder: values.placeholder || null,
@@ -403,7 +400,6 @@ export const useFormBuilderActions = ({
         field_type: field.field_type,
         options: field.options,
         is_required: field.is_required,
-        is_anonymized: field.is_anonymized,
         order: field.order,
         display_rules: field.display_rules,
         display_rules_logic_type: field.display_rules_logic_type,
