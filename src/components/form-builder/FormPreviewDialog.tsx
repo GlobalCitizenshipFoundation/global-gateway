@@ -6,10 +6,10 @@ import { FormProvider, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import ApplicationFormSections from '@/components/application/ApplicationFormSections';
-import { ApplicantInfoCard } from '@/components/application/ApplicantInfoCard';
+import { ApplicantInfoCard } from '@/components/applications/ApplicantInfoCard';
 import DOMPurify from 'dompurify';
-import { TooltipProvider } from '@/components/ui/tooltip'; // Required for tooltips in preview
-import { shouldFieldBeDisplayed } from '@/utils/forms/formFieldUtils'; // Import the missing utility
+// Removed: import { TooltipProvider } from '@/components/ui/tooltip'; // This import is no longer needed here
+import { shouldFieldBeDisplayed } from '@/utils/forms/formFieldUtils';
 
 interface FormPreviewDialogProps {
   isOpen: boolean;
@@ -104,24 +104,23 @@ const FormPreviewDialog = ({
           </DialogDescription>
         </DialogHeader>
         <div className="py-4">
-          <TooltipProvider> {/* Wrap with TooltipProvider for tooltips to work */}
-            <FormProvider {...form}>
-              <form className="grid gap-6">
-                {/* Applicant Info Card is not dynamic, so it can be hardcoded for preview */}
-                <ApplicantInfoCard fullName="Preview Applicant" email="preview@example.com" />
+          {/* Removed TooltipProvider wrapper here */}
+          <FormProvider {...form}>
+            <form className="grid gap-6">
+              {/* Applicant Info Card is not dynamic, so it can be hardcoded for preview */}
+              <ApplicantInfoCard fullName="Preview Applicant" email="preview@example.com" />
 
-                <ApplicationFormSections
-                  formSections={formSections}
-                  displayedFormFields={displayedFormFields}
-                  submitting={false} // Always false for preview
-                />
+              <ApplicationFormSections
+                formSections={formSections}
+                displayedFormFields={displayedFormFields}
+                submitting={false} // Always false for preview
+              />
 
-                {formFields.length === 0 && (
-                  <p className="text-sm text-center text-muted-foreground">This form does not have any fields yet.</p>
-                )}
-              </form>
-            </FormProvider>
-          </TooltipProvider>
+              {formFields.length === 0 && (
+                <p className="text-sm text-center text-muted-foreground">This form does not have any fields yet.</p>
+              )}
+            </form>
+          </FormProvider>
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>Close Preview</Button>
