@@ -229,11 +229,13 @@ export type EvaluationCriterion = {
   id: string;
   template_id: string;
   label: string;
-  criterion_type: 'number_scale' | 'pass_fail' | 'short_text' | 'long_text' | 'select';
+  criterion_type: 'numerical_score' | 'number_scale' | 'single_select' | 'short_text' | 'long_text' | 'repeater_buttons';
   is_public: boolean;
-  options: string[] | null;
+  options: { label: string; value: string | number | null }[] | null;
   min_score: number | null;
   max_score: number | null;
+  min_label: string | null;
+  max_label: string | null;
   weight: number;
   order: number;
 };

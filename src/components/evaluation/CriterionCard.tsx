@@ -31,11 +31,12 @@ export const CriterionCard = ({ criterion, validationError, onDelete, onEdit }: 
   };
 
   const typeLabels: Record<EvaluationCriterion['criterion_type'], string> = {
+    numerical_score: "Numerical Score",
     number_scale: "Number Scale",
-    pass_fail: "Pass / Fail",
+    single_select: "Single Select",
+    repeater_buttons: "Repeater Buttons",
     short_text: "Short Text",
     long_text: "Long Text",
-    select: "Dropdown",
   };
 
   return (
@@ -71,7 +72,7 @@ export const CriterionCard = ({ criterion, validationError, onDelete, onEdit }: 
                 )}
               </CardTitle>
               <CardDescription>
-                <Badge variant="secondary" className="capitalize">{typeLabels[criterion.criterion_type]}</Badge>
+                <Badge variant="secondary" className="capitalize">{typeLabels[criterion.criterion_type] || 'Unknown'}</Badge>
               </CardDescription>
             </div>
           </div>
