@@ -1,10 +1,9 @@
 import React from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
-interface AvatarWithInitialsProps {
+interface AvatarWithInitialsProps extends React.HTMLAttributes<HTMLDivElement> {
   name: string | null | undefined;
   src?: string | null | undefined;
-  className?: string;
 }
 
 const stringToColor = (str: string) => {
@@ -29,18 +28,22 @@ const getInitials = (name: string | null | undefined) => {
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 };
 
-const AvatarWithInitials = ({ name, src, className }: AvatarWithInitialsProps) => {
-  const initials = getInitials(name);
-  const backgroundColor = name ? stringToColor(name) : '#ccc';
+const AvatarWithInitials = React.forwardRef<HTMLDivElement, AvatarWithInitialsProps>(
+  ({ name, src, className, ...props }, ref) => {
+    const initials = getInitials(name);
+    const backgroundColor = name ? stringToColor(name) : '#ccc';
 
-  return (
-    <Avatar className={className}>
-      <AvatarImage src={src || undefined} alt={name || 'User Avatar'} />
-      <AvatarFallback style={{ backgroundColor: src ? undefined : backgroundColor, color: 'white' }}>
-        {initials}
-      </AvatarFallback>
-    </Avatar>
-  );
-};
+    return (
+      <Avatar ref={ref} className={className} {...props}>
+        <AvatarImage src={src || undefined} alt={name || 'User Avatar'} />
+        <AvatarFallback style={{ backgroundColor: src ? undefined : backgroundColor, color: 'white' }}>
+          {initials}
+        </AvatarFallback>
+      </Avatar>
+    );
+  }
+);
+
+AvatarWithInitials.displayName = "AvatarWithInitials";
 
 export default AvatarWithInitials;
