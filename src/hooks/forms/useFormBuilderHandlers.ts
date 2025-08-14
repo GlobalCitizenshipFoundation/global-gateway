@@ -3,26 +3,18 @@ import { useSession } from '@/contexts/auth/SessionContext';
 import { showError, showSuccess } from '@/utils/toast';
 import { FormField, DisplayRule, Form as FormType } from '@/types';
 import { useFormBuilderState } from '@/hooks/forms/useFormBuilderState';
-import { useFormBuilderActions } from '@/hooks/forms/useFormBuilderActions'; // Import the actions hook
+import { useFormBuilderActions } from '@/hooks/forms/useFormBuilderActions';
+import { supabase } from '@/integrations/supabase/client';
 
 interface UseFormBuilderHandlersProps {
   state: ReturnType<typeof useFormBuilderState>;
-  // The properties 'performUpdateFormDetails' and 'performUpdateFormStatus'
-  // are no longer expected here as useFormBuilderHandlers now accesses
-  // them directly from useFormBuilderActions within this hook.
 }
 
 const AUTO_SAVE_DEBOUNCE_TIME = 2000; // 2 seconds
 const SAVED_CONFIRMATION_DISPLAY_TIME = 2000; // 2 seconds
 
 export const useFormBuilderHandlers = ({
-  state,
-}: UseFormBuilderHandlersProps) => {
-  const { user } = useSession();
-  const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const savedConfirmationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-
-  const {
+  state: {
     formId,
     formName, setFormName,
     formDescription, setFormDescription,
@@ -53,15 +45,17 @@ export const useFormBuilderHandlers = ({
     newFieldTooltip, setNewFieldTooltip,
     newFieldPlaceholder, setNewFieldPlaceholder,
     isAddingField, setIsAddingField,
-    formTags, // New: Destructure formTags
-  } = state;
+  },
+}: UseFormBuilderHandlersProps) => {
+  const { user } = useSession();
+  const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const savedConfirmationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Initialize actions from the dedicated hook
   const {
     handleAddSection: performAddSection,
     handleDeleteSection: performDeleteSection,
     handleSaveEditedSection: performSaveEditedSection,
-    handleSaveSectionLogic: performSaveSectionLogic, // Destructure new action
+    handleSaveSectionLogic: performSaveSectionLogic,
     handleAddField: performAddField,
     handleDeleteField: performDeleteField,
     handleToggleRequired: performToggleRequired,
@@ -71,7 +65,6 @@ export const useFormBuilderHandlers = ({
     handleUpdateFormStatus: performUpdateFormStatus,
     handleUpdateFormDetails: performUpdateFormDetails,
     handleSaveAsTemplate: performSaveAsTemplate,
-    handleUpdateFormTags: performUpdateFormTags, // Destructure new action
   } = useFormBuilderActions({ formId, setSections, setFields, fetchData });
 
   const showSavedFeedback = useCallback(() => {
@@ -212,16 +205,22 @@ export const useFormBuilderHandlers = ({
   }, [user, setHasUnsavedChanges, setFormLastEditedAt, setFormLastEditedByUserId, performToggleRequired, triggerAutoSave]);
 
   const handleSaveLogic = useCallback(async (fieldId: string, rules: DisplayRule[], logicType: 'AND' | 'OR') => {
-    if (!user) return;
-    const success = await performSaveLogic(fieldId, rules, logicType);
-    if (success) {
-      showSuccess("Display logic saved successfully!");
-      setHasUnsavedChanges(true);
-      setFormLastEditedAt(new Date().toISOString());
-      setFormLastEditedByUserId(user.id);
-      triggerAutoSave();
+    if (!user) return false;
+    
+    const { error } = await supabase
+      .from('form_fields')
+      .update({ display_rules: rules, display_rules_logic_type: logicType, last_edited_by_user_id: user.id, last_edited_at: new Date().toISOString() })
+      .eq('id', fieldId);
+
+    if (error) {
+      showError(`Failed to save display logic: ${error.message}.`);
+      fetchData(); // Re-fetch on error
+      return false;
+    } else {
+      fetchData(); // Re-fetch on success to ensure UI consistency
+      return true;
     }
-  }, [user, setHasUnsavedChanges, setFormLastEditedAt, setFormLastEditedByUserId, performSaveLogic, triggerAutoSave]);
+  }, [user, fetchData]);
 
   const handleSaveEditedField = useCallback(async (fieldId: string, values: {
     label: string;
@@ -242,139 +241,231 @@ export const useFormBuilderHandlers = ({
     rating_min_label?: string | null;
     rating_max_label?: string | null;
   }) => {
-    if (!user) return;
-    const success = await performSaveEditedField(fieldId, values);
-    if (success) {
-      showSuccess("Field updated successfully!");
-      setHasUnsavedChanges(true);
-      setFormLastEditedAt(new Date().toISOString());
-      setFormLastEditedByUserId(user.id);
-      triggerAutoSave();
-    }
-  }, [user, setHasUnsavedChanges, setFormLastEditedAt, setFormLastEditedByUserId, performSaveEditedField, triggerAutoSave]);
+    if (!user) return false;
+    const updatedOptions = (values.field_type === 'select' || values.field_type === 'radio' || values.field_type === 'checkbox')
+      ? values.options?.split(',').map(opt => opt.trim()) || null
+      : null;
 
-  const handleUpdateFieldLabel = useCallback(async (fieldId: string, newLabel: string) => {
-    if (!user) return;
-    const success = await performUpdateFieldLabel(fieldId, newLabel);
-    if (success) {
-      showSuccess("Field label updated.");
-      setHasUnsavedChanges(true);
-      setFormLastEditedAt(new Date().toISOString());
-      setFormLastEditedByUserId(user.id);
-      triggerAutoSave();
-    }
-  }, [user, setHasUnsavedChanges, setFormLastEditedAt, setFormLastEditedByUserId, performUpdateFieldLabel, triggerAutoSave]);
+    const updatePayload: Partial<FormField> = {
+      label: values.label,
+      field_type: values.field_type,
+      options: updatedOptions,
+      is_required: values.is_required,
+      is_anonymized: values.is_anonymized,
+      description: values.description || null,
+      tooltip: values.tooltip || null,
+      placeholder: values.placeholder || null,
+      section_id: values.section_id === 'none' ? null : values.section_id || null,
+      last_edited_by_user_id: user.id,
+      last_edited_at: new Date().toISOString(),
+    };
 
-  const handlePublishUnpublish = useCallback(async (status: 'draft' | 'published') => {
-    if (!formId || !user) return false;
-    setIsUpdatingStatus(true);
-    const now = new Date().toISOString();
-    const success = await performUpdateFormStatus(formId, status);
-    if (success) {
-      setFormStatus(status);
-      setHasUnsavedChanges(false);
-      setFormLastEditedAt(now);
-      setFormLastEditedByUserId(user.id);
-      showSavedFeedback();
-    }
-    setIsUpdatingStatus(false);
-    return success;
-  }, [formId, user, performUpdateFormStatus, setFormStatus, setHasUnsavedChanges, setFormLastEditedAt, setFormLastEditedByUserId, setIsUpdatingStatus, showSavedFeedback]);
-
-  const handleManualSaveDraft = useCallback(async () => {
-    if (!formId || !user) return;
-    setIsAutoSaving(true);
-    const now = new Date().toISOString();
-    const success = await performUpdateFormDetails(formId, formName, formDescription);
-    if (success) {
-      setLastSavedTimestamp(new Date(now));
-      setFormLastEditedAt(now);
-      setFormLastEditedByUserId(user.id);
-      setHasUnsavedChanges(false);
-      showSuccess("Form draft saved successfully!");
-      showSavedFeedback();
+    if (values.field_type === 'date') {
+      updatePayload.date_min = values.date_min || null;
+      updatePayload.date_max = values.date_max || null;
+      updatePayload.date_allow_past = values.date_allow_past ?? true;
+      updatePayload.date_allow_future = values.date_allow_future ?? true;
     } else {
-      showError("Failed to save draft. Please try again.");
+      updatePayload.date_min = null;
+      updatePayload.date_max = null;
+      updatePayload.date_allow_past = true;
+      updatePayload.date_allow_future = true;
     }
-    setIsAutoSaving(false);
-  }, [formId, formName, formDescription, user, performUpdateFormDetails, setIsAutoSaving, setLastSavedTimestamp, setHasUnsavedChanges, setFormLastEditedAt, setFormLastEditedByUserId, showSavedFeedback]);
 
-  const handleSaveAsTemplate = useCallback(async () => {
-    if (!formId || !state.newTemplateName.trim()) {
+    if (values.field_type === 'rating') {
+      updatePayload.rating_min_value = values.rating_min_value ?? 1;
+      updatePayload.rating_max_value = values.rating_max_value ?? 5;
+      updatePayload.rating_min_label = values.rating_min_label || "Poor";
+      updatePayload.rating_max_label = values.rating_max_label || "Excellent";
+    } else {
+      updatePayload.rating_min_value = null;
+      updatePayload.rating_max_value = null;
+      updatePayload.rating_min_label = null;
+      updatePayload.rating_max_label = null;
+    }
+
+    const { error } = await supabase
+      .from('form_fields')
+      .update(updatePayload)
+      .eq('id', fieldId);
+
+    if (error) {
+      showError(`Failed to update field: ${error.message}.`);
+      fetchData();
+      return false;
+    } else {
+      fetchData(); // Re-fetch on success to ensure UI consistency
+      return true;
+    }
+  }, [user, fetchData]);
+
+  const handleUpdateFieldLabel = async (fieldId: string, newLabel: string) => {
+    if (!user) return false;
+    setFields(prevFields =>
+      prevFields.map(f => (f.id === fieldId ? { ...f, label: newLabel } : f))
+    );
+    const { error } = await supabase
+      .from('form_fields')
+      .update({ label: newLabel, last_edited_by_user_id: user.id, last_edited_at: new Date().toISOString() })
+      .eq('id', fieldId);
+
+    if (error) {
+      showError(`Failed to update label: ${error.message}. Reverting.`);
+      fetchData();
+      return false;
+    } else {
+      return true;
+    }
+  };
+
+  const handleUpdateFormStatus = async (id: string, status: 'draft' | 'published') => {
+    if (!user) return false;
+    const { error } = await supabase
+      .from('forms')
+      .update({ status: status, updated_at: new Date().toISOString(), last_edited_by_user_id: user.id, last_edited_at: new Date().toISOString() })
+      .eq('id', id);
+
+    if (error) {
+      showError(`Failed to update form status: ${error.message}`);
+      return false;
+    } else {
+      return true;
+    }
+  };
+
+  const handleUpdateFormDetails = async (id: string, name: string, description: string | null) => {
+    if (!user) return false;
+    const { error } = await supabase
+      .from('forms')
+      .update({ name: name, description: description, updated_at: new Date().toISOString(), last_edited_by_user_id: user.id, last_edited_at: new Date().toISOString() })
+      .eq('id', id);
+
+    if (error) {
+      return false;
+    } else {
+      return true;
+    }
+  };
+
+  const handleSaveAsTemplate = async (templateFormToCopy: FormType, newTemplateName: string) => {
+    if (!templateFormToCopy || !newTemplateName.trim()) {
       showError("Template name cannot be empty.");
-      return;
+      return false;
     }
     if (!user) {
       showError("You must be logged in to save a template.");
-      return;
+      return false;
     }
 
-    setIsSavingTemplate(true);
-    const currentFormAsTemplateCopy: FormType = {
-      id: formId,
-      name: formName,
-      description: formDescription,
-      is_template: false, // This is the source form, not a template itself
-      status: formStatus,
-      user_id: user.id,
-      created_at: state.formLastEditedAt || new Date().toISOString(), // Use existing or current
-      updated_at: new Date().toISOString(),
-      last_edited_by_user_id: user.id,
-      last_edited_at: new Date().toISOString(),
-      tags: formTags, // Pass existing tags to be copied
-    };
+    try {
+      const now = new Date().toISOString();
+      const { data: newTemplateFormData, error: newTemplateFormError } = await supabase.from("forms").insert({
+        user_id: user.id,
+        name: newTemplateName,
+        is_template: true,
+        status: 'published',
+        description: templateFormToCopy.description,
+        last_edited_by_user_id: user.id,
+        last_edited_at: now,
+      }).select('id').single();
 
-    const success = await performSaveAsTemplate(currentFormAsTemplateCopy, state.newTemplateName);
+      if (newTemplateFormError || !newTemplateFormData) {
+        showError(`Failed to create template form: ${newTemplateFormError?.message}`);
+        return false;
+      }
 
-    if (success) {
-      showSuccess("Form saved as template successfully!");
-      setIsSaveAsTemplateDialogOpen(false);
-      setNewTemplateName('');
-      setFormLastEditedAt(new Date().toISOString());
-      setFormLastEditedByUserId(user.id);
-      triggerAutoSave();
-    } else {
-      showError("Failed to save as template. Please try again.");
+      const { data: currentSections, error: sectionsError } = await supabase
+        .from('form_sections')
+        .select('*')
+        .eq('form_id', templateFormToCopy.id)
+        .order('order', { ascending: true });
+
+      const { data: currentFields, error: fieldsError } = await supabase
+        .from('form_fields')
+        .select('*')
+        .eq('form_id', templateFormToCopy.id)
+        .order('order', { ascending: true });
+
+      if (sectionsError || fieldsError) {
+        showError(`Failed to load current form content: ${sectionsError?.message || fieldsError?.message}`);
+        await supabase.from('forms').delete().eq('id', newTemplateFormData.id);
+        return false;
+      }
+
+      const oldSectionIdMap = new Map<string, string>();
+      const newSectionsToInsert = currentSections.map(section => {
+        const newSectionId = crypto.randomUUID();
+        oldSectionIdMap.set(section.id, newSectionId);
+        return {
+          id: newSectionId,
+          form_id: newTemplateFormData.id,
+          name: section.name,
+          order: section.order,
+          description: section.description, // Copy section description
+          tooltip: section.tooltip, // Copy section tooltip
+          display_rules: section.display_rules, // Copy display rules
+          display_rules_logic_type: section.display_rules_logic_type, // Copy logic type
+          last_edited_by_user_id: user.id,
+          last_edited_at: now,
+        };
+      });
+
+      const newFieldsToInsert = currentFields.map(field => ({
+        id: crypto.randomUUID(),
+        form_id: newTemplateFormData.id,
+        section_id: field.section_id ? oldSectionIdMap.get(field.section_id) : null,
+        label: field.label,
+        field_type: field.field_type,
+        options: field.options,
+        is_required: field.is_required,
+        is_anonymized: field.is_anonymized,
+        order: field.order,
+        display_rules: field.display_rules,
+        display_rules_logic_type: field.display_rules_logic_type,
+        description: field.description,
+        tooltip: field.tooltip,
+        placeholder: field.placeholder,
+        last_edited_by_user_id: user.id,
+        last_edited_at: now,
+        date_min: field.date_min,
+        date_max: field.date_max,
+        date_allow_past: field.date_allow_past,
+        date_allow_future: field.date_allow_future,
+        rating_min_value: field.rating_min_value,
+        rating_max_value: field.rating_max_value,
+        rating_min_label: field.rating_min_label,
+        rating_max_label: field.rating_max_label,
+      }));
+
+      const { error: insertSectionsError } = await supabase.from('form_sections').insert(newSectionsToInsert);
+      const { error: insertFieldsError } = await supabase.from('form_fields').insert(newFieldsToInsert);
+
+      if (insertSectionsError || insertFieldsError) {
+        showError(`Failed to copy form content to template: ${insertSectionsError?.message || insertFieldsError?.message}`);
+        await supabase.from('forms').delete().eq('id', newTemplateFormData.id);
+        return false;
+      }
+
+      return true;
+    } catch (err: any) {
+      showError("An unexpected error occurred: " + err.message);
+      return false;
     }
-    setIsSavingTemplate(false);
-  }, [formId, formName, formDescription, formStatus, user, state.newTemplateName, state.formLastEditedAt, formTags, setIsSavingTemplate, performSaveAsTemplate, setIsSaveAsTemplateDialogOpen, setNewTemplateName, setFormLastEditedAt, setFormLastEditedByUserId, triggerAutoSave]);
-
-  const handleOpenPreview = useCallback(() => {
-    setIsFormPreviewOpen(true);
-  }, [setIsFormPreviewOpen]);
-
-  const handleUpdateFormTags = useCallback(async (tagIds: string[]) => {
-    if (!formId || !user) return;
-    setIsAutoSaving(true); // Use auto-saving indicator for tag changes
-    const success = await performUpdateFormTags(formId, tagIds);
-    if (success) {
-      setHasUnsavedChanges(true); // Mark as unsaved to trigger auto-save logic
-      setFormLastEditedAt(new Date().toISOString());
-      setFormLastEditedByUserId(user.id);
-      showSavedFeedback();
-      fetchData(); // Re-fetch to update formTags state
-    } else {
-      showError("Failed to update form tags.");
-    }
-    setIsAutoSaving(false);
-  }, [formId, user, performUpdateFormTags, setIsAutoSaving, setHasUnsavedChanges, setFormLastEditedAt, setFormLastEditedByUserId, showSavedFeedback, fetchData]);
+  };
 
   return {
-    triggerAutoSave,
     handleAddSection,
     handleDeleteSection,
     handleSaveEditedSection,
-    handleSaveSectionLogic, // Expose new handler
+    handleSaveSectionLogic,
     handleAddField,
     handleDeleteField,
     handleToggleRequired,
     handleSaveLogic,
     handleSaveEditedField,
     handleUpdateFieldLabel,
-    handlePublishUnpublish,
-    handleManualSaveDraft,
+    handleUpdateFormStatus,
+    handleUpdateFormDetails,
     handleSaveAsTemplate,
-    handleOpenPreview,
-    handleUpdateFormTags, // Expose new handler
   };
 };

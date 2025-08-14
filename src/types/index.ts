@@ -24,7 +24,7 @@ export type Program = {
       updated_at: string;
       last_edited_by_user_id: string | null; // New
       last_edited_at: string | null; // New
-      tags?: Tag[]; // Corrected: Associated tags are now directly Tag[]
+      // tags?: Tag[]; // Removed: Associated tags are no longer part of the Form type directly
     };
 
     export type ProgramStage = {
@@ -275,6 +275,7 @@ export type Program = {
       applicable_to: string[]; // e.g., ['programs', 'forms'] - references APPLICABLE_MODULES.value
     };
 
+    // These types are for join tables and are not directly used as main entity types
     export type FormTag = {
       form_id: string;
       tag_id: string;
@@ -295,12 +296,6 @@ export type Program = {
 
     export type EmailTemplateTag = {
       email_template_id: string;
-      tag_id: string;
-      tags?: Tag; // For joining
-    };
-
-    export type EvaluationTemplateTag = {
-      evaluation_template_id: string;
       tag_id: string;
       tags?: Tag; // For joining
     };

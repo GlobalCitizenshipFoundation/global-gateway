@@ -83,7 +83,7 @@ export const FormActions = ({ state, handlers }: FormActionsProps) => {
         newTemplateName={newTemplateName}
         setNewTemplateName={setNewTemplateName}
         isSaving={isSavingTemplate}
-        onSave={handleSaveAsTemplate}
+        onSave={() => handleSaveAsTemplate(state.formToCopy, newTemplateName)}
       />
 
       <FormPreviewDialog

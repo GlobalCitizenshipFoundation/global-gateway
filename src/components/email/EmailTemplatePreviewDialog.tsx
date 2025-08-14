@@ -6,7 +6,7 @@ import DOMPurify from 'dompurify';
 interface EmailTemplatePreviewDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  template: EmailTemplate | null;
+  template: EmailTemplate | null; // Correctly type template prop
 }
 
 export const EmailTemplatePreviewDialog = ({ isOpen, onClose, template }: EmailTemplatePreviewDialogProps) => {

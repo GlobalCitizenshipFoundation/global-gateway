@@ -9,21 +9,21 @@ import { DeleteFormDialog } from "@/components/forms/DeleteFormDialog";
 import { CreateFormFromTemplateDialog } from "@/components/forms/CreateFormFromTemplateDialog";
 import { SaveAsTemplateDialog } from "@/components/forms/SaveAsTemplateDialog";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useState, useMemo } from "react"; // Corrected useState import
-import { Form as FormType, Tag as TagType } from "@/types";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useTagsData } from "@/hooks/tags/useTagsData";
-import { TagDisplay } from "@/components/tags/TagDisplay";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
-import { Check, ChevronsUpDown } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { useState, useMemo } from "react"; // Import useMemo
+import { Form as FormType } from "@/types"; // Removed TagType import
+import { Input } from "@/components/ui/input"; // Import Input
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"; // Import Select components
+// import { useTagsData } from "@/hooks/tags/useTagsData"; // Removed: Import useTagsData
+// import { TagDisplay } from "@/components/tags/TagDisplay"; // Removed: Import TagDisplay
+// import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"; // Removed: Import Popover
+// import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"; // Removed: Import Command components
+// import { Check, ChevronsUpDown } from "lucide-react"; // Removed: Import icons
+// import { cn } from "@/lib/utils"; // Removed: Import cn
+// import { ScrollArea } from "@/components/ui/scroll-area"; // Removed: Import ScrollArea
 
 const FormManagementPage = () => {
   const { forms, setForms, templates, setTemplates, loading, error } = useFormsData();
-  const { tags: allAvailableTags, loading: loadingTags } = useTagsData();
+  // const { tags: allAvailableTags, loading: loadingTags } = useTagsData(); // Removed: Fetch all tags
   const {
     isDeleteDialogOpen, setIsDeleteDialogOpen, selectedForm, setSelectedForm, handleDeleteForm,
     isCreateFromTemplateDialogOpen, setIsCreateFromTemplateDialogOpen, selectedTemplateId, setSelectedTemplateId, newFormName, setNewFormName, isCreatingForm, handleCreateBlankForm, handleCreateFormFromTemplate,
@@ -33,10 +33,10 @@ const FormManagementPage = () => {
 
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState<'all' | 'form' | 'template'>('all');
-  const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
+  // const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]); // Removed: New state for tag filter
   const [sortBy, setSortBy] = useState<'name' | 'created_at' | 'updated_at'>('updated_at');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
-  const [isTagFilterOpen, setIsTagFilterOpen] = useState(false);
+  // const [isTagFilterOpen, setIsTagFilterOpen] = useState(false); // Removed: State for tag filter popover
 
   const openCreateDialog = () => {
     setSelectedTemplateId(null);
@@ -44,11 +44,12 @@ const FormManagementPage = () => {
     setIsCreateFromTemplateDialogOpen(true);
   };
 
-  const handleTagFilterChange = (tagId: string) => {
-    setSelectedTagIds((prev: string[]) =>
-      prev.includes(tagId) ? prev.filter((id: string) => id !== tagId) : [...prev, tagId]
-    );
-  };
+  // Removed: handleTagFilterChange function
+  // const handleTagFilterChange = (tagId: string) => {
+  //   setSelectedTagIds((prev: string[]) =>
+  //     prev.includes(tagId) ? prev.filter((id: string) => id !== tagId) : [...prev, tagId]
+  //   );
+  // };
 
   const filteredAndSortedForms = useMemo(() => {
     let filtered = forms.filter(form => {
@@ -58,10 +59,11 @@ const FormManagementPage = () => {
                           (filterType === 'form' && !form.is_template) ||
                           (filterType === 'template' && form.is_template);
       
-      const matchesTags = selectedTagIds.length === 0 ||
-                          (form.tags && selectedTagIds.every((tagId: string) => form.tags?.some((formTag: TagType) => formTag.id === tagId)));
+      // Removed: New: Filter by selected tags
+      // const matchesTags = selectedTagIds.length === 0 ||
+      //                     (form.tags && selectedTagIds.every((tagId: string) => form.tags?.some((formTag: TagType) => formTag.id === tagId)));
 
-      return matchesSearch && matchesType && matchesTags;
+      return matchesSearch && matchesType; // Removed matchesTags from condition
     });
 
     filtered.sort((a, b) => {
@@ -85,7 +87,7 @@ const FormManagementPage = () => {
     });
 
     return filtered;
-  }, [forms, searchTerm, filterType, selectedTagIds, sortBy, sortOrder]);
+  }, [forms, searchTerm, filterType, sortBy, sortOrder]); // Removed selectedTagIds from dependencies
 
   if (loading) {
     return (
@@ -154,7 +156,8 @@ const FormManagementPage = () => {
               <SelectItem value="template">Templates</SelectItem>
             </SelectContent>
           </Select>
-          <Popover open={isTagFilterOpen} onOpenChange={setIsTagFilterOpen}>
+          {/* Removed: Tag filter Popover */}
+          {/* <Popover open={isTagFilterOpen} onOpenChange={setIsTagFilterOpen}>
             <PopoverTrigger asChild>
               <Button
                 variant="outline"
@@ -204,7 +207,7 @@ const FormManagementPage = () => {
                 </CommandList>
               </Command>
             </PopoverContent>
-          </Popover>
+          </Popover> */}
           <Select value={sortBy} onValueChange={(value: 'name' | 'created_at' | 'updated_at') => setSortBy(value)}>
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Sort By" />

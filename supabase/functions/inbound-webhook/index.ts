@@ -1,7 +1,7 @@
 // @ts-nocheck
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
-import { verifyWebhookSignature } from 'https://unpkg.com/@mailgun/webhook-validation@1.0.2/dist/index.mjs'; // Changed to unpkg.com
+import { verifyWebhookSignature } from 'https://esm.sh/@mailgun/webhook-validation@1.0.0'; // For Mailgun webhook validation
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -94,9 +94,9 @@ serve(async (req: Request) => {
       status: 200,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
-  } catch (error: unknown) {
+  } catch (error: unknown) { // Explicitly type error as unknown
     console.error('Inbound Webhook Edge Function error:', error);
-    return new Response(JSON.stringify({ error: (error as Error).message }), {
+    return new Response(JSON.stringify({ error: (error as Error).message }), { // Cast to Error
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

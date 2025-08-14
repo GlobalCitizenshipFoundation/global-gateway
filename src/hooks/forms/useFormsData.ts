@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useSession } from '@/contexts/auth/SessionContext';
-import { Form as FormType, Tag as TagType } from '@/types'; // Correctly import Tag as TagType
+import { Form as FormType } from '@/types'; // Removed TagType import
 import { showError } from '@/utils/toast';
 
 export const useFormsData = () => {
@@ -22,7 +22,7 @@ export const useFormsData = () => {
 
     let query = supabase
       .from('forms')
-      .select('*, form_tags(tags(*))') // Select all form fields and nested tags
+      .select('*') // Removed form_tags select
       .order('created_at', { ascending: false }); // Default sort
 
     // If user is not an admin or super_admin, only fetch their own forms
@@ -38,7 +38,7 @@ export const useFormsData = () => {
     } else {
       const formattedForms = data.map(form => ({
         ...form,
-        tags: form.form_tags.map((ft: { tags: TagType }) => ft.tags), // Map nested tags
+        // tags: form.form_tags.map((ft: { tags: TagType }) => ft.tags), // Removed: Map nested tags
       }));
       setForms(formattedForms as FormType[]);
       setTemplates(formattedForms.filter(f => f.is_template) as FormType[]);
