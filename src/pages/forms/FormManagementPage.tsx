@@ -10,12 +10,20 @@ import { CreateFormFromTemplateDialog } from "@/components/forms/CreateFormFromT
 import { SaveAsTemplateDialog } from "@/components/forms/SaveAsTemplateDialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useState, useMemo } from "react"; // Import useMemo
-import { Form as FormType } from "@/types";
+import { Form as FormType, Tag as TagType } from "@/types"; // Import TagType
 import { Input } from "@/components/ui/input"; // Import Input
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"; // Import Select components
+import { useTagsData } from "@/hooks/tags/useTagsData"; // Import useTagsData
+import { TagDisplay } from "@/components/tags/TagDisplay"; // Import TagDisplay
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"; // Import Popover
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"; // Import Command components
+import { Check, ChevronsUpDown } from "lucide-react"; // Import icons
+import { cn } from "@/lib/utils"; // Import cn
+import { ScrollArea } from "@/components/ui/scroll-area"; // Import ScrollArea
 
 const FormManagementPage = () => {
   const { forms, setForms, templates, setTemplates, loading, error } = useFormsData();
+  const { tags: allAvailableTags, loading: loadingTags } = useTagsData(); // Fetch all tags
   const {
     isDeleteDialogOpen, setIsDeleteDialogOpen, selectedForm, setSelectedForm, handleDeleteForm,
     isCreateFromTemplateDialogOpen, setIsCreateFromTemplateDialogOpen, selectedTemplateId, setSelectedTemplateId, newFormName, setNewFormName, isCreatingForm, handleCreateBlankForm, handleCreateFormFromTemplate,
@@ -25,13 +33,21 @@ const FormManagementPage = () => {
 
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState<'all' | 'form' | 'template'>('all');
+  const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]); // New state for tag filter
   const [sortBy, setSortBy] = useState<'name' | 'created_at' | 'updated_at'>('updated_at');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [isTagFilterOpen, setIsTagFilterOpen] = useState(false); // State for tag filter popover
 
-  const openCreateFromTemplateDialog = () => {
+  const openCreateDialog = () => {
     setSelectedTemplateId(null);
     setNewFormName('');
     setIsCreateFromTemplateDialogOpen(true);
+  };
+
+  const handleTagFilterChange = (tagId: string) => {
+    setSelectedTagIds(prev =>
+      prev.includes(tagId) ? prev.filter(id => id !== tagId) : [...prev, tagId]
+    );
   };
 
   const filteredAndSortedForms = useMemo(() => {
@@ -41,7 +57,12 @@ const FormManagementPage = () => {
       const matchesType = filterType === 'all' ||
                           (filterType === 'form' && !form.is_template) ||
                           (filterType === 'template' && form.is_template);
-      return matchesSearch && matchesType;
+      
+      // New: Filter by selected tags
+      const matchesTags = selectedTagIds.length === 0 ||
+                          (form.tags && selectedTagIds.every(tagId => form.tags?.some(formTag => formTag.id === tagId)));
+
+      return matchesSearch && matchesType && matchesTags;
     });
 
     filtered.sort((a, b) => {
@@ -65,7 +86,7 @@ const FormManagementPage = () => {
     });
 
     return filtered;
-  }, [forms, searchTerm, filterType, sortBy, sortOrder]);
+  }, [forms, searchTerm, filterType, selectedTagIds, sortBy, sortOrder]);
 
   if (loading) {
     return (
@@ -111,7 +132,7 @@ const FormManagementPage = () => {
             <Button onClick={handleCreateBlankForm} disabled={isCreatingForm}>
               <Plus className="mr-2 h-4 w-4" /> Create Blank Form
             </Button>
-            <Button variant="outline" onClick={openCreateFromTemplateDialog} disabled={templates.length === 0 || isCreatingForm}>
+            <Button variant="outline" onClick={openCreateDialog} disabled={templates.length === 0 || isCreatingForm}>
               Create from Template
             </Button>
           </div>
@@ -134,6 +155,57 @@ const FormManagementPage = () => {
               <SelectItem value="template">Templates</SelectItem>
             </SelectContent>
           </Select>
+          <Popover open={isTagFilterOpen} onOpenChange={setIsTagFilterOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                role="combobox"
+                aria-expanded={isTagFilterOpen}
+                className="w-[180px] justify-between"
+                disabled={loadingTags}
+              >
+                {selectedTagIds.length > 0 ? (
+                  <div className="flex flex-wrap gap-1">
+                    {selectedTagIds.map(tagId => {
+                      const tag = allAvailableTags.find(t => t.id === tagId);
+                      return tag ? <TagDisplay key={tag.id} tag={tag} /> : null;
+                    })}
+                  </div>
+                ) : (
+                  "Filter by Tag"
+                )}
+                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+              <Command>
+                <CommandInput placeholder="Search tags..." />
+                <CommandList>
+                  <CommandEmpty>No tags found.</CommandEmpty>
+                  <CommandGroup>
+                    <ScrollArea className="h-48">
+                      {allAvailableTags.filter(tag => tag.applicable_to.includes('forms')).map(tag => (
+                        <CommandItem
+                          key={tag.id}
+                          value={tag.name}
+                          onSelect={() => handleTagFilterChange(tag.id)}
+                          className="cursor-pointer"
+                        >
+                          <Check
+                            className={cn(
+                              "mr-2 h-4 w-4",
+                              selectedTagIds.includes(tag.id) ? "opacity-100" : "opacity-0"
+                            )}
+                          />
+                          <TagDisplay tag={tag} />
+                        </CommandItem>
+                      ))}
+                    </ScrollArea>
+                  </CommandGroup>
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
           <Select value={sortBy} onValueChange={(value: 'name' | 'created_at' | 'updated_at') => setSortBy(value)}>
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Sort By" />

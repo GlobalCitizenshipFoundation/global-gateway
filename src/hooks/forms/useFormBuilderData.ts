@@ -6,7 +6,7 @@ import { showError } from '@/utils/toast';
 
 export const useFormBuilderData = (initialFormId?: string) => { // Accept initialFormId as prop
   const { formId: paramFormId } = useParams<{ formId: string }>(); // Get formId from URL
-  const currentFormId = initialFormId || paramFormId; // Use prop or URL param
+  const currentFormId = initialFormId || paramFormId;
 
   const [formName, setFormName] = useState('');
   const [formDescription, setFormDescription] = useState<string | null>(null); // New state for description
@@ -48,11 +48,7 @@ export const useFormBuilderData = (initialFormId?: string) => { // Accept initia
       setFormLastEditedAt(formData.last_edited_at);
       setFormLastEditedByUserId(formData.last_edited_by_user_id);
       // Correctly map the fetched data to the FormTag type
-      setFormTags(formData.form_tags.map((ft: { tags: TagType }) => ({
-        form_id: currentFormId, // Assuming currentFormId is the form_id
-        tag_id: ft.tags.id,
-        tags: ft.tags,
-      })) || []); // Set tags
+      setFormTags(formData.form_tags.map((ft: { tags: TagType }) => ft.tags).filter(Boolean) as TagType[] || []); // Set tags
     }
 
     // Fetch sections for the form, including new conditional logic fields

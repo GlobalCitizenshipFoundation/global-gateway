@@ -8,9 +8,9 @@ import { Separator } from "@/components/ui/separator";
 import { FormField, FormSection, DisplayRule } from "@/types";
 import ConditionalLogicBuilder from "@/components/forms/ConditionalLogicBuilder";
 import { X } from "lucide-react";
-import { BasicProperties } from '@/components/forms/form-builder/field-properties/BasicProperties';
-import { DateProperties } from '@/components/forms/form-builder/field-properties/DateProperties';
-import { RatingProperties } from '@/components/forms/form-builder/field-properties/RatingProperties';
+import { BasicProperties } from './field-properties/BasicProperties';
+import { DateProperties } from './field-properties/DateProperties';
+import { RatingProperties } from './field-properties/RatingProperties';
 
 const editFormFieldSchema = z.object({
   label: z.string().min(1, { message: "Label cannot be empty." }),
@@ -128,7 +128,7 @@ export const FieldPropertiesPanel = ({
 
       <h3 className="text-lg font-semibold mb-4">Conditional Logic</h3>
       <ConditionalLogicBuilder
-        fieldToEdit={field}
+        itemToEdit={field}
         allFields={allFields}
         onSave={onSaveLogic}
         isOpen={true}

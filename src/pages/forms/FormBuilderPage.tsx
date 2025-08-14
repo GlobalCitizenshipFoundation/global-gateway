@@ -61,7 +61,7 @@ const FormBuilderPage = () => {
   const formBuilderActions = useFormBuilderActions({
     formId: state.formId,
     setSections: state.setSections,
-    setFields: state.setFields,
+    setFields: state.fields, // Pass fields directly
     fetchData: state.fetchData,
   });
 
@@ -277,7 +277,7 @@ const FormBuilderPage = () => {
       <div className="mt-8 pt-4 border-t">
         <FormTagsInput
           formId={state.formId}
-          currentTags={formTags?.map(ft => ft.tag_id) || []}
+          currentTags={formTags?.map(ft => ft.id) || []}
           allAvailableTags={allAvailableTags.filter(tag => tag.applicable_to.includes('forms'))}
           onTagsChange={handleUpdateFormTags}
           loading={loadingTags}

@@ -24,7 +24,7 @@ export type Program = {
       updated_at: string;
       last_edited_by_user_id: string | null; // New
       last_edited_at: string | null; // New
-      tags?: FormTag[]; // New: Associated tags
+      tags?: Tag[]; // Corrected: Associated tags are now directly Tag[]
     };
 
     export type ProgramStage = {
@@ -277,14 +277,14 @@ export type Program = {
       applicable_to: string[]; // e.g., ['programs', 'forms'] - references APPLICABLE_MODULES.value
     };
 
-    export type ProgramTag = {
-      program_id: string;
+    export type FormTag = {
+      form_id: string;
       tag_id: string;
       tags?: Tag; // For joining
     };
 
-    export type FormTag = {
-      form_id: string;
+    export type ProgramTag = {
+      program_id: string;
       tag_id: string;
       tags?: Tag; // For joining
     };

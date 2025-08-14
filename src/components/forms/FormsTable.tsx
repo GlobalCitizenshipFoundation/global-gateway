@@ -22,6 +22,7 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { TagDisplay } from "@/components/tags/TagDisplay"; // Import TagDisplay
 
 interface FormsTableProps {
   forms: FormType[];
@@ -77,6 +78,7 @@ export const FormsTable = ({ forms, onUpdateStatus, onSaveAsTemplate, onDelete }
           <TableHead className="hidden lg:table-cell">Publishing Status</TableHead>
           <TableHead className="hidden xl:table-cell">Created</TableHead>
           <TableHead className="hidden 2xl:table-cell">Last Updated</TableHead>
+          <TableHead className="hidden 2xl:table-cell">Tags</TableHead> {/* New Table Head for Tags */}
           <TableHead className="text-right">Actions</TableHead>
         </TableRow>
       </TableHeader>
@@ -111,6 +113,17 @@ export const FormsTable = ({ forms, onUpdateStatus, onSaveAsTemplate, onDelete }
                   By: {userNames.get(form.last_edited_by_user_id) || 'Loading...'}
                 </div>
               )}
+            </TableCell>
+            <TableCell className="hidden 2xl:table-cell"> {/* New Table Cell for Tags */}
+              <div className="flex flex-wrap gap-1">
+                {form.tags && form.tags.length > 0 ? (
+                  form.tags.map(tag => (
+                    <TagDisplay key={tag.id} tag={tag} />
+                  ))
+                ) : (
+                  <span className="text-muted-foreground text-xs">No tags</span>
+                )}
+              </div>
             </TableCell>
             <TableCell className="text-right">
               <DropdownMenu>
@@ -156,7 +169,7 @@ export const FormsTable = ({ forms, onUpdateStatus, onSaveAsTemplate, onDelete }
           </TableRow>
         )) : (
           <TableRow>
-            <TableCell colSpan={6} className="text-center h-24">
+            <TableCell colSpan={7} className="text-center h-24"> {/* Adjusted colspan */}
               You haven't created any forms or templates yet.
             </TableCell>
           </TableRow>
