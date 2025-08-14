@@ -285,18 +285,18 @@ export const WorkflowStagePropertiesPanel = ({
             )}
           />
 
-          <GeneralProperties
-            form={form}
-            emailTemplates={emailTemplates}
-            selectedStageType={selectedStageType}
-          />
-
           {selectedStageType === 'review' && (
             <ReviewProperties
               form={form}
               publishedEvaluationTemplates={publishedEvaluationTemplates}
             />
           )}
+
+          <GeneralProperties
+            form={form}
+            emailTemplates={emailTemplates}
+            selectedStageType={selectedStageType}
+          />
 
           {selectedStageType === 'resubmission' && (
             <ResubmissionProperties

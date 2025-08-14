@@ -24,7 +24,7 @@ export const ReviewProperties = ({ form, publishedEvaluationTemplates }: ReviewP
         name="evaluation_template_id"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Evaluation Template (Scorecard)</FormLabel>
+            <FormLabel>Evaluation Rubric</FormLabel>
             <Select onValueChange={(value) => field.onChange(value === '__none__' ? null : value)} value={field.value || ''}>
               <FormControl>
                 <SelectTrigger>
