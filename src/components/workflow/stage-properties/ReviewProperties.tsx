@@ -55,16 +55,7 @@ export const ReviewProperties = ({ form, publishedEvaluationTemplates, allStages
           </FormItem>
         )}
       />
-      {availableFormStages.length === 0 && (
-        <Alert variant="destructive">
-          <Info className="h-4 w-4" />
-          <AlertTitle>Missing Form Stage</AlertTitle>
-          <AlertDescription>
-            To configure this review stage, you must have at least one "Form" stage placed *before* it in the workflow.
-            Please add a form stage or reorder your workflow.
-          </AlertDescription>
-        </Alert>
-      )}
+      {/* Removed the redundant alert here, as ReviewFormSourceStageSelect handles the empty state */}
       <ReviewFormSourceStageSelect
         form={form}
         allStages={allStages}
