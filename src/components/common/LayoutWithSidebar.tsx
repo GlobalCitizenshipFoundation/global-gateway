@@ -75,11 +75,7 @@ const LayoutWithSidebar = ({ children }: LayoutWithSidebarProps) => {
     <div className="flex flex-row-reverse min-h-screen bg-background">
       {isMobile ? (
         <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
-          <SheetTrigger asChild>
-            <Button variant="ghost" size="icon" className="fixed top-4 right-4 z-40">
-              <Menu className="h-6 w-6" />
-            </Button>
-          </SheetTrigger>
+          {/* SheetTrigger is now inside the Header component */}
           <SheetContent side="right" className="w-64 p-0 flex flex-col bg-sidebar border-l border-sidebar-border">
             <div className="flex items-center justify-end p-4 h-16 border-b border-sidebar-border">
               <SheetClose asChild>
@@ -106,7 +102,7 @@ const LayoutWithSidebar = ({ children }: LayoutWithSidebarProps) => {
           !isMobile && (isCollapsed ? "ml-16" : "ml-56") // Apply margin-left only on desktop
         )}
       >
-        <Header />
+        <Header isMobile={isMobile} onOpenMobileMenu={() => setIsMobileMenuOpen(true)} />
         <main className="flex-grow transition-all duration-200 ease-in-out">
           {children}
         </main>

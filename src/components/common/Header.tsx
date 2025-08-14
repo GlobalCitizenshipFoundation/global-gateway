@@ -1,11 +1,17 @@
 import { Button } from "@/components/ui/button";
-import { Award } from "lucide-react";
+import { Award, Menu } from "lucide-react"; // Import Menu icon
 import { Link } from "react-router-dom";
 import UserNav from "./UserNav";
 import { useSession } from "@/contexts/auth/SessionContext";
 import { Skeleton } from "@/components/ui/skeleton";
+import { SheetTrigger } from "@/components/ui/sheet"; // Import SheetTrigger
 
-const Header = () => {
+interface HeaderProps {
+  isMobile: boolean;
+  onOpenMobileMenu: () => void;
+}
+
+const Header = ({ isMobile, onOpenMobileMenu }: HeaderProps) => {
   const { session, isLoading } = useSession();
 
   return (
@@ -31,6 +37,13 @@ const Header = () => {
                 </Button>
               </>
             )
+          )}
+          {isMobile && (
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="icon" onClick={onOpenMobileMenu}>
+                <Menu className="h-6 w-6" />
+              </Button>
+            </SheetTrigger>
           )}
         </nav>
       </div>
