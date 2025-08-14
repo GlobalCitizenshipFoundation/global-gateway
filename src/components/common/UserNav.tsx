@@ -13,14 +13,14 @@ import { Link, useNavigate } from "react-router-dom";
 import { useSession } from "@/contexts/auth/SessionContext";
 import { supabase } from "@/integrations/supabase/client";
 import { showError, showSuccess } from "@/utils/toast";
+import { cn } from "@/lib/utils";
 
-const REVIEWER_ROLES = ['reviewer', 'lead_reviewer', 'admin', 'super_admin'];
-const CREATOR_ROLES = ['creator', 'admin', 'super_admin'];
-const ADMIN_ROLES = ['admin', 'super_admin'];
-const SUPER_ADMIN_ROLES = ['super_admin'];
+interface UserNavProps {
+  isCollapsed?: boolean; // New prop to handle collapsed state
+}
 
-const UserNav = () => {
-  const { user, profile } = useSession();
+const UserNav = ({ isCollapsed = false }: UserNavProps) => {
+  const { user } = useSession();
   const navigate = useNavigate();
 
   const handleLogout = async () => {
@@ -39,15 +39,28 @@ const UserNav = () => {
   const avatarUrl = user?.user_metadata?.avatar_url;
 
   const fullName = [firstName, middleName, lastName].filter(Boolean).join(' ').trim();
-  const canAccessReviewerTools = profile && REVIEWER_ROLES.includes(profile.role);
-  const canAccessCreatorTools = profile && CREATOR_ROLES.includes(profile.role);
-  const canAccessAdminTools = profile && ADMIN_ROLES.includes(profile.role);
-  const canAccessSuperAdminTools = profile && SUPER_ADMIN_ROLES.includes(profile.role);
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <AvatarWithInitials name={fullName} src={avatarUrl} className="h-8 w-8 cursor-pointer" />
+        <Button
+          variant="ghost"
+          className={cn(
+            "relative h-8 flex items-center justify-center",
+            isCollapsed ? "w-8 p-0" : "w-full px-2 py-2",
+            "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+          )}
+        >
+          <AvatarWithInitials name={fullName} src={avatarUrl} className="h-8 w-8 cursor-pointer" />
+          {!isCollapsed && (
+            <div className="ml-3 flex-grow text-left">
+              <p className="text-sm font-medium leading-none text-sidebar-foreground">{fullName || 'User'}</p>
+              <p className="text-xs leading-none text-muted-foreground">
+                {user?.email}
+              </p>
+            </div>
+          )}
+        </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-56" align="end" forceMount>
         <DropdownMenuLabel className="font-normal">
@@ -62,97 +75,10 @@ const UserNav = () => {
         <DropdownMenuGroup>
           <DropdownMenuItem asChild>
             <Button variant="ghost" className="w-full justify-start" asChild>
-              <Link to="/dashboard">My Submissions</Link>
-            </Button>
-          </DropdownMenuItem>
-          <DropdownMenuItem asChild>
-            <Button variant="ghost" className="w-full justify-start" asChild>
               <Link to="/profile">Profile</Link>
             </Button>
           </DropdownMenuItem>
         </DropdownMenuGroup>
-        
-        {canAccessReviewerTools && (
-          <>
-            <DropdownMenuSeparator />
-            <DropdownMenuGroup>
-              <DropdownMenuLabel>Reviewer</DropdownMenuLabel>
-              <DropdownMenuItem asChild>
-                <Button variant="ghost" className="w-full justify-start" asChild>
-                  <Link to="/reviewer/dashboard">Reviewer Dashboard</Link>
-                </Button>
-              </DropdownMenuItem>
-            </DropdownMenuGroup>
-          </>
-        )}
-
-        {canAccessCreatorTools && (
-          <>
-            <DropdownMenuSeparator />
-            <DropdownMenuGroup>
-              <DropdownMenuLabel>Creator</DropdownMenuLabel>
-              <DropdownMenuItem asChild>
-                <Button variant="ghost" className="w-full justify-start" asChild>
-                  <Link to="/creator/dashboard">Manage Programs</Link>
-                </Button>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Button variant="ghost" className="w-full justify-start" asChild>
-                  <Link to="/creator/forms">Manage Forms</Link>
-                </Button>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Button variant="ghost" className="w-full justify-start" asChild>
-                  <Link to="/creator/workflows">Manage Workflows</Link>
-                </Button>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Button variant="ghost" className="w-full justify-start" asChild>
-                  <Link to="/creator/emails">Manage Email Templates</Link>
-                </Button>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Button variant="ghost" className="w-full justify-start" asChild>
-                  <Link to="/creator/evaluation-templates">Manage Evaluation Templates</Link>
-                </Button>
-              </DropdownMenuItem>
-            </DropdownMenuGroup>
-          </>
-        )}
-
-        {canAccessAdminTools && (
-          <>
-            <DropdownMenuSeparator />
-            <DropdownMenuGroup>
-              <DropdownMenuLabel>Admin</DropdownMenuLabel>
-              <DropdownMenuItem asChild>
-                <Button variant="ghost" className="w-full justify-start" asChild>
-                  <Link to="/admin/user-management">User Management</Link>
-                </Button>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Button variant="ghost" className="w-full justify-start" asChild>
-                  <Link to="/admin/tags">Manage Tags</Link>
-                </Button>
-              </DropdownMenuItem>
-            </DropdownMenuGroup>
-          </>
-        )}
-
-        {canAccessSuperAdminTools && (
-          <>
-            <DropdownMenuSeparator />
-            <DropdownMenuGroup>
-              <DropdownMenuLabel>Super Admin</DropdownMenuLabel>
-              <DropdownMenuItem asChild>
-                <Button variant="ghost" className="w-full justify-start" asChild>
-                  <Link to="/admin/account-deletion">Deletion Requests</Link>
-                </Button>
-              </DropdownMenuItem>
-            </DropdownMenuGroup>
-          </>
-        )}
-
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleLogout}>
           Log out
