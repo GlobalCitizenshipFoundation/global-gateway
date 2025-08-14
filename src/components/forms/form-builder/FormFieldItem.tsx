@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { FormField } from '@/types';
-import { GripVertical, Trash2, Eye, Pencil, Info, Shield } from 'lucide-react'; // Import Shield icon
+import { GripVertical, Trash2, Eye, Pencil, Info, Shield } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
@@ -103,7 +103,7 @@ export const FormFieldItem = ({ field, onDelete, onToggleRequired, onSelectField
             ) : (
                 <span className="font-medium cursor-pointer" onDoubleClick={handleLabelDoubleClick}>
                     {field.label}
-                    {field.is_required && <span className="text-destructive ml-1">*</span>} {/* Added asterisk here */}
+                    {field.is_required && <span className="text-destructive ml-1">*</span>}
                 </span>
             )}
             <Badge variant="outline" className="ml-2 capitalize">{field.field_type}</Badge>

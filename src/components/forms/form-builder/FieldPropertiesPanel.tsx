@@ -8,7 +8,9 @@ import { Separator } from "@/components/ui/separator";
 import { FormField, FormSection, DisplayRule } from "@/types";
 import ConditionalLogicBuilder from "@/components/forms/ConditionalLogicBuilder";
 import { X } from "lucide-react";
-import { BasicProperties, DateProperties, RatingProperties } from './field-properties';
+import { BasicProperties } from './field-properties/BasicProperties';
+import { DateProperties } from './field-properties/DateProperties';
+import { RatingProperties } from './field-properties/RatingProperties';
 
 const editFormFieldSchema = z.object({
   label: z.string().min(1, { message: "Label cannot be empty." }),
