@@ -61,10 +61,14 @@ const UserNav = () => {
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
           <DropdownMenuItem asChild>
-            <Link to="/dashboard">My Submissions</Link>
+            <Button variant="ghost" className="w-full justify-start" asChild>
+              <Link to="/dashboard">My Submissions</Link>
+            </Button>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
-            <Link to="/profile">Profile</Link>
+            <Button variant="ghost" className="w-full justify-start" asChild>
+              <Link to="/profile">Profile</Link>
+            </Button>
           </DropdownMenuItem>
         </DropdownMenuGroup>
         
@@ -74,7 +78,9 @@ const UserNav = () => {
             <DropdownMenuGroup>
               <DropdownMenuLabel>Reviewer</DropdownMenuLabel>
               <DropdownMenuItem asChild>
-                <Link to="/reviewer/dashboard">Reviewer Dashboard</Link>
+                <Button variant="ghost" className="w-full justify-start" asChild>
+                  <Link to="/reviewer/dashboard">Reviewer Dashboard</Link>
+                </Button>
               </DropdownMenuItem>
             </DropdownMenuGroup>
           </>
@@ -86,19 +92,29 @@ const UserNav = () => {
             <DropdownMenuGroup>
               <DropdownMenuLabel>Creator</DropdownMenuLabel>
               <DropdownMenuItem asChild>
-                <Link to="/creator/dashboard">Manage Programs</Link>
+                <Button variant="ghost" className="w-full justify-start" asChild>
+                  <Link to="/creator/dashboard">Manage Programs</Link>
+                </Button>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
-                <Link to="/creator/forms">Manage Forms</Link>
+                <Button variant="ghost" className="w-full justify-start" asChild>
+                  <Link to="/creator/forms">Manage Forms</Link>
+                </Button>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
-                <Link to="/creator/workflows">Manage Workflows</Link>
+                <Button variant="ghost" className="w-full justify-start" asChild>
+                  <Link to="/creator/workflows">Manage Workflows</Link>
+                </Button>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
-                <Link to="/creator/emails">Manage Email Templates</Link>
+                <Button variant="ghost" className="w-full justify-start" asChild>
+                  <Link to="/creator/emails">Manage Email Templates</Link>
+                </Button>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
-                <Link to="/creator/evaluation-templates">Manage Evaluation Templates</Link>
+                <Button variant="ghost" className="w-full justify-start" asChild>
+                  <Link to="/creator/evaluation-templates">Manage Evaluation Templates</Link>
+                </Button>
               </DropdownMenuItem>
             </DropdownMenuGroup>
           </>
@@ -110,10 +126,14 @@ const UserNav = () => {
             <DropdownMenuGroup>
               <DropdownMenuLabel>Admin</DropdownMenuLabel>
               <DropdownMenuItem asChild>
-                <Link to="/admin/user-management">User Management</Link>
+                <Button variant="ghost" className="w-full justify-start" asChild>
+                  <Link to="/admin/user-management">User Management</Link>
+                </Button>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
-                <Link to="/admin/tags">Manage Tags</Link> {/* New Tag Management Link */}
+                <Button variant="ghost" className="w-full justify-start" asChild>
+                  <Link to="/admin/tags">Manage Tags</Link>
+                </Button>
               </DropdownMenuItem>
             </DropdownMenuGroup>
           </>
@@ -125,7 +145,9 @@ const UserNav = () => {
             <DropdownMenuGroup>
               <DropdownMenuLabel>Super Admin</DropdownMenuLabel>
               <DropdownMenuItem asChild>
-                <Link to="/admin/account-deletion">Deletion Requests</Link>
+                <Button variant="ghost" className="w-full justify-start" asChild>
+                  <Link to="/admin/account-deletion">Deletion Requests</Link>
+                </Button>
               </DropdownMenuItem>
             </DropdownMenuGroup>
           </>
