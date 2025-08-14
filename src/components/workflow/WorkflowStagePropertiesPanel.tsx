@@ -241,7 +241,7 @@ export const WorkflowStagePropertiesPanel = ({
         try {
           const config = JSON.parse(stage.description);
           anonymize_identity = config.anonymize_identity || false;
-          review_form_source_stage_order = config.review_form_source_stage_order; // New
+          review_form_source_stage_order = config.review_form_source_stage_order;
           standard_description = ''; // Review stage description is for config only
         } catch (e) { /* Not valid JSON */ }
       } else if (stage.step_type === 'recommendation' && stage.description) {
@@ -313,7 +313,7 @@ export const WorkflowStagePropertiesPanel = ({
     } else if (values.step_type === 'review') {
       descriptionPayload = JSON.stringify({
         anonymize_identity: values.anonymize_identity,
-        evaluation_template_id: values.evaluation_template_id, // Ensure evaluation_template_id is part of description for review stage
+        // Removed evaluation_template_id from description JSON as it's a direct column
         review_form_source_stage_order: values.review_form_source_stage_order, // New
       });
       formIdPayload = null; // Clear form_id for review stages
