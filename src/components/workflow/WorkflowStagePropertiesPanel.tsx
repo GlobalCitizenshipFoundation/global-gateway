@@ -106,7 +106,10 @@ export const WorkflowStagePropertiesPanel = ({
         try {
           const config = JSON.parse(stage.description);
           anonymize_identity = config.anonymize_identity ?? false; // Default to false if undefined
-          review_form_source_stage_id = config.review_form_source_stage_id ?? null; // Changed from _order to _id
+          // Ensure review_form_source_stage_id is always a string when read from description
+          review_form_source_stage_id = typeof config.review_form_source_stage_id === 'number'
+            ? String(config.review_form_source_stage_id)
+            : config.review_form_source_stage_id ?? null;
           standard_description = '';
         } catch (e) { /* Not valid JSON */ }
       } else if (stage.step_type === 'recommendation' && stage.description) {

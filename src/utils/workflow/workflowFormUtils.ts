@@ -211,7 +211,10 @@ export const createStagePayload = (values: any): Partial<WorkflowStage> => {
     case 'review':
       descriptionPayload = JSON.stringify({
         anonymize_identity: values.anonymize_identity ?? false, // Ensure boolean, default to false
-        review_form_source_stage_id: values.review_form_source_stage_id ?? null, // Ensure string ID or null
+        // Ensure review_form_source_stage_id is always a string when writing to description
+        review_form_source_stage_id: typeof values.review_form_source_stage_id === 'number'
+          ? String(values.review_form_source_stage_id)
+          : values.review_form_source_stage_id ?? null,
       });
       formIdPayload = null;
       emailTemplateIdPayload = null;
