@@ -238,7 +238,8 @@ export type EvaluationCriterion = {
   template_id: string;
   section_id: string | null;
   label: string;
-  criterion_type: 'numerical_score' | 'number_scale' | 'single_select' | 'short_text' | 'long_text' | 'repeater_buttons';
+  description: string | null;
+  criterion_type: 'numerical_score' | 'number_scale' | 'single_select' | 'short_text' | 'long_text' | 'repeater_buttons' | 'status';
   is_public: boolean;
   options: { label: string; value: string | number | null }[] | null;
   min_score: number | null;

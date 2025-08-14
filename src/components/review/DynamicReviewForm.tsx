@@ -19,7 +19,7 @@ import { RadioGroup, RadioGroupItem } from "../ui/radio-group";
 import { Label } from "../ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import { Input } from "../ui/input";
-import { Info } from "lucide-react";
+import { Info, CheckCircle, XCircle, Clock, Pencil, ArrowRight, Wrench } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 
 interface DynamicReviewFormProps {
@@ -28,6 +28,15 @@ interface DynamicReviewFormProps {
   isSubmitting: boolean;
   isPreview?: boolean;
 }
+
+const statusOptions = [
+  { label: 'Accept', value: 'Accept', icon: <CheckCircle className="h-4 w-4 mr-2" /> },
+  { label: 'Decline', value: 'Decline', icon: <XCircle className="h-4 w-4 mr-2" /> },
+  { label: 'Waitlist / Hold', value: 'Waitlist / Hold', icon: <Clock className="h-4 w-4 mr-2" /> },
+  { label: 'Needs Revision', value: 'Needs Revision / Resubmission', icon: <Pencil className="h-4 w-4 mr-2" /> },
+  { label: 'Advance', value: 'Advance to Next Stage', icon: <ArrowRight className="h-4 w-4 mr-2" /> },
+  { label: 'Custom', value: 'Custom', icon: <Wrench className="h-4 w-4 mr-2" /> },
+];
 
 export const DynamicReviewForm = ({ criteria, onSubmit, isSubmitting, isPreview = false }: DynamicReviewFormProps) => {
   const formSchemaObject = criteria.reduce((acc, criterion) => {
@@ -39,6 +48,7 @@ export const DynamicReviewForm = ({ criteria, onSubmit, isSubmitting, isPreview 
         break;
       case 'single_select':
       case 'repeater_buttons':
+      case 'status':
         schema = z.string().min(1, "Please select an option.");
         break;
       case 'short_text':
@@ -92,20 +102,21 @@ export const DynamicReviewForm = ({ criteria, onSubmit, isSubmitting, isPreview 
                 name={criterion.id as keyof ReviewFormValues}
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="flex items-center gap-2">
-                      {criterion.label}
+                    <div className="flex items-center gap-2">
+                      <FormLabel>{criterion.label}</FormLabel>
                       {criterion.is_public && (
                         <Tooltip>
                           <TooltipTrigger asChild><Info className="h-4 w-4 text-muted-foreground cursor-help" /></TooltipTrigger>
                           <TooltipContent><p className="max-w-xs">Aggregated and anonymized feedback for this criterion may be shared with applicants.</p></TooltipContent>
                         </Tooltip>
                       )}
-                    </FormLabel>
+                    </div>
+                    {criterion.description && <FormDescription dangerouslySetInnerHTML={{ __html: criterion.description }} />}
                     <FormControl>
                       <>
                         {criterion.criterion_type === 'numerical_score' && <Input type="number" min={criterion.min_score || undefined} max={criterion.max_score || undefined} {...field} onChange={e => field.onChange(e.target.value === '' ? null : Number(e.target.value))} disabled={isSubmitting} />}
                         {criterion.criterion_type === 'number_scale' && (
-                          <div className="grid gap-2">
+                          <div className="grid gap-2 pt-2">
                             <Slider min={criterion.min_score || 1} max={criterion.max_score || 5} step={1} value={[field.value as number]} onValueChange={(val) => field.onChange(val[0])} disabled={isSubmitting} />
                             <div className="flex justify-between text-sm text-muted-foreground">
                               <span>{criterion.min_label || criterion.min_score}</span>
@@ -115,12 +126,22 @@ export const DynamicReviewForm = ({ criteria, onSubmit, isSubmitting, isPreview 
                           </div>
                         )}
                         {criterion.criterion_type === 'repeater_buttons' && (
-                          <RadioGroup onValueChange={field.onChange} defaultValue={String(field.value || '')} className="flex gap-4">
+                          <RadioGroup onValueChange={field.onChange} value={String(field.value || '')} className="flex flex-wrap gap-2">
                             {criterion.options?.map(opt => (
-                              <FormItem key={opt.label} className="flex items-center space-x-2">
-                                <FormControl><RadioGroupItem value={String(opt.value || opt.label)} /></FormControl>
-                                <Label>{opt.label}</Label>
-                              </FormItem>
+                              <FormControl key={opt.label}>
+                                <RadioGroupItem value={String(opt.value || opt.label)} className="sr-only" />
+                                <Button type="button" variant={field.value === (opt.value || opt.label) ? 'default' : 'outline'} onClick={() => field.onChange(opt.value || opt.label)}>{opt.label}</Button>
+                              </FormControl>
+                            ))}
+                          </RadioGroup>
+                        )}
+                        {criterion.criterion_type === 'status' && (
+                          <RadioGroup onValueChange={field.onChange} value={String(field.value || '')} className="flex flex-wrap gap-2">
+                            {statusOptions.map(opt => (
+                              <FormControl key={opt.label}>
+                                <RadioGroupItem value={opt.value} className="sr-only" />
+                                <Button type="button" variant={field.value === opt.value ? 'default' : 'outline'} onClick={() => field.onChange(opt.value)}>{opt.icon}{opt.label}</Button>
+                              </FormControl>
                             ))}
                           </RadioGroup>
                         )}

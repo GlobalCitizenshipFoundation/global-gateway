@@ -37,6 +37,7 @@ export const CriterionCard = ({ criterion, validationError, onDelete, onEdit }: 
     repeater_buttons: "Repeater Buttons",
     short_text: "Short Text",
     long_text: "Long Text",
+    status: "Status",
   };
 
   return (

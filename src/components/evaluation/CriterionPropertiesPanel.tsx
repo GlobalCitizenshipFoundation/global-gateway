@@ -19,10 +19,12 @@ import { Info, X } from "lucide-react";
 import { Switch } from '../ui/switch';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import { CriterionOptionsInput } from './CriterionOptionsInput';
+import RichTextEditor from '../common/RichTextEditor';
 
 const criterionSchema = z.object({
   label: z.string().min(1, "Label is required."),
-  criterion_type: z.enum(['numerical_score', 'number_scale', 'single_select', 'short_text', 'long_text', 'repeater_buttons']),
+  description: z.string().optional().nullable(),
+  criterion_type: z.enum(['numerical_score', 'number_scale', 'single_select', 'short_text', 'long_text', 'repeater_buttons', 'status']),
   is_public: z.boolean(),
   options: z.array(z.object({
     label: z.string().min(1, "Label cannot be empty."),
@@ -53,6 +55,7 @@ export const CriterionPropertiesPanel = ({ criterion, onSave, onClose }: Criteri
     if (criterion) {
       form.reset({
         label: criterion.label,
+        description: criterion.description,
         criterion_type: criterion.criterion_type,
         is_public: criterion.is_public,
         options: Array.isArray(criterion.options) ? criterion.options.map(o => ({ label: o.label, value: String(o.value || '') })) : [],
@@ -91,6 +94,7 @@ export const CriterionPropertiesPanel = ({ criterion, onSave, onClose }: Criteri
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
           <FormFieldComponent control={form.control} name="label" render={({ field }) => (<FormItem><FormLabel>Label</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+          <FormFieldComponent control={form.control} name="description" render={({ field }) => (<FormItem><FormLabel>Description (Optional)</FormLabel><FormControl><RichTextEditor value={field.value || ''} onChange={field.onChange} /></FormControl><FormMessage /></FormItem>)} />
           <FormFieldComponent control={form.control} name="criterion_type" render={({ field }) => (
             <FormItem>
               <FormLabel>Criterion Type</FormLabel>
@@ -101,6 +105,7 @@ export const CriterionPropertiesPanel = ({ criterion, onSave, onClose }: Criteri
                   <SelectItem value="number_scale">Number Scale</SelectItem>
                   <SelectItem value="single_select">Single Select</SelectItem>
                   <SelectItem value="repeater_buttons">Repeater Buttons</SelectItem>
+                  <SelectItem value="status">Status</SelectItem>
                   <SelectItem value="short_text">Short Text</SelectItem>
                   <SelectItem value="long_text">Long Text</SelectItem>
                 </SelectContent>
