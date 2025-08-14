@@ -18,7 +18,7 @@ interface LayoutWithSidebarProps {
 }
 
 const LayoutWithSidebar = ({ children }: LayoutWithSidebarProps) => {
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(true); // Set to true for collapsed by default
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const location = useLocation();
   const { profile } = useSession();
@@ -42,9 +42,11 @@ const LayoutWithSidebar = ({ children }: LayoutWithSidebarProps) => {
     <nav className="flex-grow overflow-y-auto p-2 space-y-2">
       {filteredNavigationItems.map((section, sectionIndex) => (
         <div key={sectionIndex} className="space-y-1">
-          <h3 className="px-2 py-1 text-sm font-semibold text-sidebar-foreground/70">
-            {section.title}
-          </h3>
+          {section.title && ( // Conditionally render title
+            <h3 className="px-2 py-1 text-sm font-semibold text-sidebar-foreground/70">
+              {section.title}
+            </h3>
+          )}
           {section.links.map((item) => (
             <Button
               key={item.path}
@@ -79,7 +81,7 @@ const LayoutWithSidebar = ({ children }: LayoutWithSidebarProps) => {
             </Button>
           </SheetTrigger>
           <SheetContent side="right" className="w-64 p-0 flex flex-col bg-sidebar border-l border-sidebar-border">
-            <div className="flex items-center justify-end p-4 h-16 border-b border-sidebar-border"> {/* Changed justify-between to justify-end */}
+            <div className="flex items-center justify-end p-4 h-16 border-b border-sidebar-border">
               <SheetClose asChild>
                 <Button variant="ghost" size="icon">
                   <X className="h-5 w-5" />
