@@ -37,8 +37,7 @@ import EditApplicationPage from "./pages/applications/EditApplicationPage";
 import EvaluationTemplatesPage from "./pages/evaluation/EvaluationTemplatesPage";
 import EditEvaluationTemplatePage from "./pages/evaluation/EditEvaluationTemplatePage";
 import TagManagementPage from "./pages/admin/TagManagementPage";
-import CustomCodeManagementPage from "./pages/admin/CustomCodeManagementPage"; // Import the new page
-import CustomCodeInjector from "./components/common/CustomCodeInjector"; // Import the injector
+
 
 const queryClient = new QueryClient();
 
@@ -54,7 +53,6 @@ const App = () => (
         <Sonner position="top-right" />
         <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
           <SessionContextProvider>
-            <CustomCodeInjector /> {/* Add the CustomCodeInjector here */}
             <LayoutWithSidebar>
               <Routes>
                 <Route path="/" element={<Index />} />
@@ -101,7 +99,6 @@ const App = () => (
 
                   <Route element={<SuperAdminProtectedRoute />}>
                     <Route path="/admin/account-deletion" element={<AccountDeletionPage />} />
-                    <Route path="/admin/custom-code" element={<CustomCodeManagementPage />} /> {/* New Super Admin Route */}
                   </Route>
                 </Route>
 

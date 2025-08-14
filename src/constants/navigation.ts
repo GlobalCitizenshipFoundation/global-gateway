@@ -32,7 +32,6 @@ export const NAVIGATION_ITEMS = [
     title: "Super Admin",
     links: [
       { label: "Account Deletion", path: "/admin/account-deletion", icon: "Trash2", roles: ["super_admin"] },
-      { label: "Custom Code", path: "/admin/custom-code", icon: "Code", roles: ["super_admin"] }, // New entry
     ],
   },
 ];

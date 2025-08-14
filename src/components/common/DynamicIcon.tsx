@@ -16,7 +16,6 @@ export const availableIcons = {
   ClipboardCheck: icons.ClipboardCheck,
   Clock: icons.Clock,
   Coins: icons.Coins,
-  Code: icons.Code, // Added Code icon
   Compass: icons.Compass,
   Contact: icons.Contact,
   Edit: icons.Edit,
