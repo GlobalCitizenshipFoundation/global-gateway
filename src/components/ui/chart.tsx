@@ -14,7 +14,6 @@ import {
   YAxis,
   Tooltip, // Import Tooltip from recharts
   type TooltipProps,
-  type Payload, // Import Payload type
 } from "recharts";
 
 import { cn } from "@/lib/utils";
@@ -30,8 +29,13 @@ export type ChartConfig = {
 };
 
 // Define a type for the payload if TooltipPayload is not directly exported
-type CustomTooltipPayload = Payload & { // Extend Payload type
+type CustomTooltipPayload = {
+  dataKey?: string | number;
+  name?: string;
+  value?: number | string | Array<any>;
   unit?: string;
+  color?: string;
+  payload?: any;
   inactive?: boolean;
 };
 
@@ -116,7 +120,7 @@ const ChartTooltipContent = React.forwardRef<
     >
       {!hideLabel && label && <div className="text-sm text-muted-foreground">{label}</div>}
       <div className="grid gap-1">
-        {(payload as CustomTooltipPayload[]).map((item, index) => { // Cast payload to CustomTooltipPayload[]
+        {(payload as CustomTooltipPayload[]).map((item, index) => {
           const key = item.dataKey || item.name || index;
           const configItem = item.dataKey ? config[item.dataKey] : undefined;
           return (
