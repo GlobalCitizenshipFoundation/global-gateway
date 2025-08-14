@@ -23,7 +23,7 @@ import { StatusProperties } from './stage-properties/StatusProperties';
 import { RecommendationProperties } from './stage-properties/RecommendationProperties';
 import { FormAttachmentProperties } from './stage-properties/FormAttachmentProperties';
 import { createWorkflowStageSchema, createStagePayload } from '@/utils/workflow/workflowFormUtils';
-import { zodResolver } from "@hookform/resolvers/zod"; // Added this import
+import { zodResolver } from "@hookform/resolvers/zod";
 
 interface WorkflowStagePropertiesPanelProps {
   stage: WorkflowStage;
@@ -161,9 +161,6 @@ export const WorkflowStagePropertiesPanel = ({
   };
 
   const selectedStageType = form.watch("step_type");
-
-  const publishedEvaluationTemplates = evaluationTemplates.filter(t => t.status === 'published');
-  const publishedForms = forms.filter(f => f.status === 'published');
 
   return (
     <div className="p-6 h-full overflow-y-auto bg-background border-l">
