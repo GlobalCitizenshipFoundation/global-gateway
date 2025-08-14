@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useSession } from '@/contexts/auth/SessionContext';
 import { showError, showSuccess } from '@/utils/toast';
 import { useNavigate } from 'react-router-dom';
-import { WorkflowTemplate, WorkflowStage, EvaluationCriterion, EmailTemplate } from '@/types';
+import { WorkflowTemplate, WorkflowStage, EvaluationCriterion, EmailTemplate, Form } from '@/types';
 import { isWorkflowPublishable } from '@/utils/workflow/workflowValidation';
 import { isEvaluationTemplatePublishable } from '@/utils/evaluation/evaluationValidation';
 
@@ -77,7 +77,7 @@ export const useWorkflowTemplateActions = ({ setTemplates, fetchTemplates }: Use
 
       const { data: publishedEmailTemplates, error: emailTemplatesError } = await supabase
         .from('email_templates')
-        .select('id')
+        .select('*') // Select all to get status
         .eq('status', 'published');
 
       if (emailTemplatesError) {
@@ -85,7 +85,17 @@ export const useWorkflowTemplateActions = ({ setTemplates, fetchTemplates }: Use
         return false;
       }
 
-      const { publishable: basePublishable, errors: baseErrors } = isWorkflowPublishable(stages as WorkflowStage[], publishedEmailTemplates as EmailTemplate[]);
+      const { data: publishedForms, error: formsError } = await supabase
+        .from('forms')
+        .select('*') // Select all to get status
+        .eq('status', 'published');
+
+      if (formsError) {
+        showError("Could not verify forms before publishing.");
+        return false;
+      }
+
+      const { publishable: basePublishable, errors: baseErrors } = isWorkflowPublishable(stages as WorkflowStage[], publishedEmailTemplates as EmailTemplate[], publishedForms as Form[]);
       let combinedErrors = new Map(baseErrors);
       let isFullyPublishable = basePublishable;
 

@@ -24,7 +24,7 @@ import { Checkbox } from '../ui/checkbox';
 const editWorkflowStageSchema = z.object({
   name: z.string().min(1, { message: "Stage name cannot be empty." }),
   description: z.string().nullable().optional(),
-  step_type: z.enum(['form', 'screening', 'review', 'resubmission', 'decision', 'email', 'scheduling', 'status']),
+  step_type: z.enum(['form', 'screening', 'review', 'resubmission', 'decision', 'email', 'scheduling', 'status', 'recommendation']),
   form_id: z.string().nullable().optional(),
   email_template_id: z.string().nullable().optional(),
   evaluation_template_id: z.string().nullable().optional(),
@@ -38,6 +38,13 @@ const editWorkflowStageSchema = z.object({
   status_tag: z.string().optional(),
   status_custom_tag: z.string().optional(),
   resubmission_for_stage_order: z.number().nullable().optional(),
+  // New fields for 'recommendation' stage
+  rec_form_id: z.string().nullable().optional(),
+  rec_min_recommenders: z.preprocess((val) => (val === '' ? null : Number(val)), z.number().nullable().optional()),
+  rec_max_recommenders: z.preprocess((val) => (val === '' ? null : Number(val)), z.number().nullable().optional()),
+  rec_reminder_email_template_id: z.string().nullable().optional(),
+  rec_reminder_intervals_days: z.string().optional(), // Comma-separated numbers
+  rec_anonymize_recommender_identity: z.boolean().optional(),
 }).refine(data => {
   if (data.step_type === 'status' && data.status_tag === 'Custom' && !data.status_custom_tag) {
     return false;
@@ -45,10 +52,31 @@ const editWorkflowStageSchema = z.object({
   if (data.step_type === 'resubmission' && (data.resubmission_for_stage_order === null || data.resubmission_for_stage_order === undefined)) {
     return false;
   }
+  if (data.step_type === 'recommendation') {
+    if (!data.rec_form_id) return false;
+    if (data.rec_min_recommenders === null || data.rec_min_recommenders === undefined || data.rec_min_recommenders < 0) return false;
+    if (data.rec_max_recommenders === null || data.rec_max_recommenders === undefined || data.rec_max_recommenders < data.rec_min_recommenders) return false;
+  }
   return true;
 }, {
   message: "A target form stage must be selected for resubmission.",
   path: ["resubmission_for_stage_order"],
+}).refine(data => {
+  if (data.step_type === 'recommendation') {
+    if (!data.rec_form_id) {
+      return false;
+    }
+    if (data.rec_min_recommenders === null || data.rec_min_recommenders === undefined || data.rec_min_recommenders < 0) {
+      return false;
+    }
+    if (data.rec_max_recommenders === null || data.rec_max_recommenders === undefined || data.rec_max_recommenders < data.rec_min_recommenders) {
+      return false;
+    }
+  }
+  return true;
+}, {
+  message: "Recommendation stage requires a form, min/max recommenders, and valid ranges.",
+  path: ["rec_form_id"], // Point to a relevant field for the error
 });
 
 type EditWorkflowStageValues = z.infer<typeof editWorkflowStageSchema>;
@@ -85,6 +113,12 @@ export const WorkflowStagePropertiesPanel = ({
       let status_custom_tag: string | undefined = undefined;
       let resubmission_for_stage_order: number | undefined | null = undefined;
       let anonymize_identity: boolean | undefined = undefined;
+      let rec_form_id: string | undefined | null = undefined;
+      let rec_min_recommenders: number | undefined | null = undefined;
+      let rec_max_recommenders: number | undefined | null = undefined;
+      let rec_reminder_email_template_id: string | undefined | null = undefined;
+      let rec_reminder_intervals_days: string | undefined = undefined;
+      let rec_anonymize_recommender_identity: boolean | undefined = undefined;
       let standard_description = stage.description || '';
 
       if (stage.step_type === 'decision' && stage.description) {
@@ -118,6 +152,17 @@ export const WorkflowStagePropertiesPanel = ({
           anonymize_identity = config.anonymize_identity || false;
           standard_description = ''; // Review stage description is for config only
         } catch (e) { /* Not valid JSON */ }
+      } else if (stage.step_type === 'recommendation' && stage.description) {
+        try {
+          const config = JSON.parse(stage.description);
+          rec_form_id = config.form_id || null;
+          rec_min_recommenders = config.min_recommenders ?? null;
+          rec_max_recommenders = config.max_recommenders ?? null;
+          rec_reminder_email_template_id = config.reminder_email_template_id || null;
+          rec_reminder_intervals_days = Array.isArray(config.reminder_intervals_days) ? config.reminder_intervals_days.join(', ') : '';
+          rec_anonymize_recommender_identity = config.anonymize_recommender_identity || false;
+          standard_description = '';
+        } catch (e) { /* Not valid JSON */ }
       }
 
       form.reset({
@@ -141,6 +186,12 @@ export const WorkflowStagePropertiesPanel = ({
         status_tag: status_tag || 'Info',
         status_custom_tag: status_custom_tag || '',
         resubmission_for_stage_order: resubmission_for_stage_order,
+        rec_form_id: rec_form_id,
+        rec_min_recommenders: rec_min_recommenders,
+        rec_max_recommenders: rec_max_recommenders,
+        rec_reminder_email_template_id: rec_reminder_email_template_id,
+        rec_reminder_intervals_days: rec_reminder_intervals_days,
+        rec_anonymize_recommender_identity: rec_anonymize_recommender_identity,
       });
     }
   }, [stage, form]);
@@ -164,6 +215,16 @@ export const WorkflowStagePropertiesPanel = ({
       descriptionPayload = JSON.stringify({ resubmission_for_stage_order: values.resubmission_for_stage_order });
     } else if (values.step_type === 'review') {
       descriptionPayload = JSON.stringify({ anonymize_identity: values.anonymize_identity });
+    } else if (values.step_type === 'recommendation') {
+      const reminderIntervals = values.rec_reminder_intervals_days?.split(',').map(s => parseInt(s.trim())).filter(n => !isNaN(n)) || [];
+      descriptionPayload = JSON.stringify({
+        form_id: values.rec_form_id,
+        min_recommenders: values.rec_min_recommenders,
+        max_recommenders: values.rec_max_recommenders,
+        reminder_email_template_id: values.rec_reminder_email_template_id,
+        reminder_intervals_days: reminderIntervals,
+        anonymize_recommender_identity: values.rec_anonymize_recommender_identity,
+      });
     }
 
     const finalValues: Partial<WorkflowStage> = {
@@ -187,6 +248,7 @@ export const WorkflowStagePropertiesPanel = ({
   );
 
   const publishedEvaluationTemplates = evaluationTemplates.filter(t => t.status === 'published');
+  const publishedForms = forms.filter(f => f.status === 'published');
 
   return (
     <div className="p-6 h-full overflow-y-auto bg-background border-l">
@@ -233,6 +295,7 @@ export const WorkflowStagePropertiesPanel = ({
                     <SelectItem value="email">Email</SelectItem>
                     <SelectItem value="scheduling">Scheduling</SelectItem>
                     <SelectItem value="status">Status / Message</SelectItem>
+                    <SelectItem value="recommendation">Recommendation Request</SelectItem>
                   </SelectContent>
                 </Select>
                 <FormMessage />
@@ -398,7 +461,132 @@ export const WorkflowStagePropertiesPanel = ({
             </>
           )}
 
-          {selectedStageType !== 'decision' && selectedStageType !== 'status' && selectedStageType !== 'resubmission' && (
+          {selectedStageType === 'recommendation' && (
+            <>
+              <FormFieldComponent
+                control={form.control}
+                name="rec_form_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Recommendation Form</FormLabel>
+                    <Select onValueChange={(value) => field.onChange(value === '__none__' ? null : value)} value={field.value || ''}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a form for recommenders" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="__none__">No form selected</SelectItem>
+                        {publishedForms.map(form => (
+                          <SelectItem key={form.id} value={form.id}>{form.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormDescription>
+                      The form recommenders will fill out. Only published forms are available.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <div className="grid grid-cols-2 gap-4">
+                <FormFieldComponent
+                  control={form.control}
+                  name="rec_min_recommenders"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Minimum Recommenders</FormLabel>
+                      <FormControl>
+                        <Input type="number" {...field} value={field.value ?? ''} />
+                      </FormControl>
+                      <FormDescription>Minimum number of recommendations required.</FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormFieldComponent
+                  control={form.control}
+                  name="rec_max_recommenders"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Maximum Recommenders</FormLabel>
+                      <FormControl>
+                        <Input type="number" {...field} value={field.value ?? ''} />
+                      </FormControl>
+                      <FormDescription>Maximum number of recommendations allowed.</FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              <FormFieldComponent
+                control={form.control}
+                name="rec_reminder_email_template_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Reminder Email Template</FormLabel>
+                    <Select onValueChange={(value) => field.onChange(value === '__none__' ? null : value)} value={field.value || ''}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select an email template for reminders" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="__none__">No reminder email</SelectItem>
+                        {emailTemplates.map(template => (
+                          <SelectItem key={template.id} value={template.id}>{template.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormDescription>
+                      This email will be sent to recommenders who haven't submitted.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormFieldComponent
+                control={form.control}
+                name="rec_reminder_intervals_days"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Reminder Intervals (Days)</FormLabel>
+                    <FormControl>
+                      <Input {...field} placeholder="e.g., 3, 7, 14" />
+                    </FormControl>
+                    <FormDescription>
+                      Comma-separated days relative to the program deadline (e.g., "3, 7" for 3 and 7 days before deadline).
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormFieldComponent
+                control={form.control}
+                name="rec_anonymize_recommender_identity"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel>
+                        Anonymize recommender identity from reviewers
+                      </FormLabel>
+                      <FormDescription>
+                        If checked, recommender names and emails will be hidden from reviewers.
+                      </FormDescription>
+                    </div>
+                  </FormItem>
+                )}
+              />
+            </>
+          )}
+
+          {selectedStageType !== 'decision' && selectedStageType !== 'status' && selectedStageType !== 'resubmission' && selectedStageType !== 'recommendation' && (
             <FormFieldComponent
               control={form.control}
               name="description"

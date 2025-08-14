@@ -32,7 +32,7 @@ export type ProgramStage = {
   name: string;
   order: number;
   created_at: string;
-  step_type: 'form' | 'screening' | 'review' | 'resubmission' | 'decision' | 'email' | 'scheduling' | 'status';
+  step_type: 'form' | 'screening' | 'review' | 'resubmission' | 'decision' | 'email' | 'scheduling' | 'status' | 'recommendation';
   description: string | null;
   form_id: string | null;
   email_template_id: string | null;
@@ -151,7 +151,7 @@ export type WorkflowStage = {
   workflow_template_id: string;
   name: string;
   description: string | null;
-  step_type: 'form' | 'screening' | 'review' | 'resubmission' | 'decision' | 'email' | 'scheduling' | 'status';
+  step_type: 'form' | 'screening' | 'review' | 'resubmission' | 'decision' | 'email' | 'scheduling' | 'status' | 'recommendation';
   order_index: number;
   created_at: string;
   updated_at: string;
@@ -162,15 +162,13 @@ export type WorkflowStage = {
   evaluation_template_id: string | null; // New
 };
 
-export type ReviewScore = {
-  id: string;
-  review_id: string;
-  criterion_id: string;
-  value: string | null;
-  evaluation_criteria?: {
-    label: string;
-    criterion_type: EvaluationCriterion['criterion_type'];
-  } | null;
+export type RecommendationStageConfig = {
+  form_id: string;
+  min_recommenders: number;
+  max_recommenders: number;
+  reminder_email_template_id: string | null;
+  reminder_intervals_days: number[]; // e.g., [3, 7] for 3 and 7 days before deadline
+  anonymize_recommender_identity: boolean;
 };
 
 export type ApplicationReview = {
@@ -191,6 +189,17 @@ export type ApplicationReview = {
     avatar_url: string | null;
   } | null;
   review_scores?: ReviewScore[];
+};
+
+export type ReviewScore = {
+  id: string;
+  review_id: string;
+  criterion_id: string;
+  value: string | null;
+  evaluation_criteria?: {
+    label: string;
+    criterion_type: EvaluationCriterion['criterion_type'];
+  } | null;
 };
 
 export type ApplicationAssignment = {

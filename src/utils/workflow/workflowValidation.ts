@@ -1,11 +1,11 @@
-import { WorkflowStage, EmailTemplate } from '@/types';
+import { WorkflowStage, EmailTemplate, Form } from '@/types';
 
 export interface StageValidationResult {
   isValid: boolean;
   message: string | null;
 }
 
-export const validateWorkflowStage = (stage: WorkflowStage, publishedEmailTemplates: EmailTemplate[]): StageValidationResult => {
+export const validateWorkflowStage = (stage: WorkflowStage, publishedEmailTemplates: EmailTemplate[], publishedForms: Form[]): StageValidationResult => {
   switch (stage.step_type) {
     case 'form':
       if (!stage.form_id) {
@@ -49,6 +49,36 @@ export const validateWorkflowStage = (stage: WorkflowStage, publishedEmailTempla
       }
       break;
     
+    case 'recommendation':
+      try {
+        const config = JSON.parse(stage.description || '{}');
+        if (!config.form_id) {
+          return { isValid: false, message: 'A recommendation form must be selected.' };
+        }
+        const formExistsAndIsPublished = publishedForms.some(f => f.id === config.form_id);
+        if (!formExistsAndIsPublished) {
+          return { isValid: false, message: 'The selected recommendation form is not published or does not exist.' };
+        }
+        if (typeof config.min_recommenders !== 'number' || config.min_recommenders < 0) {
+          return { isValid: false, message: 'Minimum recommenders must be a non-negative number.' };
+        }
+        if (typeof config.max_recommenders !== 'number' || config.max_recommenders < config.min_recommenders) {
+          return { isValid: false, message: 'Maximum recommenders must be a number greater than or equal to minimum.' };
+        }
+        if (config.reminder_email_template_id) {
+          const templateExistsAndIsPublished = publishedEmailTemplates.some(t => t.id === config.reminder_email_template_id);
+          if (!templateExistsAndIsPublished) {
+            return { isValid: false, message: 'The selected reminder email template is not published or does not exist.' };
+          }
+        }
+        if (config.reminder_intervals_days && (!Array.isArray(config.reminder_intervals_days) || config.reminder_intervals_days.some((n: any) => typeof n !== 'number' || n < 0))) {
+          return { isValid: false, message: 'Reminder intervals must be a comma-separated list of non-negative numbers.' };
+        }
+      } catch (e) {
+        return { isValid: false, message: 'Recommendation stage configuration is invalid or incomplete.' };
+      }
+      break;
+
     case 'screening':
     case 'review':
     case 'scheduling':
@@ -60,12 +90,12 @@ export const validateWorkflowStage = (stage: WorkflowStage, publishedEmailTempla
   return { isValid: true, message: null };
 };
 
-export const isWorkflowPublishable = (stages: WorkflowStage[], publishedEmailTemplates: EmailTemplate[]): { publishable: boolean; errors: Map<string, string> } => {
+export const isWorkflowPublishable = (stages: WorkflowStage[], publishedEmailTemplates: EmailTemplate[], publishedForms: Form[]): { publishable: boolean; errors: Map<string, string> } => {
   const errors = new Map<string, string>();
   let publishable = true;
 
   stages.forEach(stage => {
-    const { isValid, message } = validateWorkflowStage(stage, publishedEmailTemplates);
+    const { isValid, message } = validateWorkflowStage(stage, publishedEmailTemplates, publishedForms);
     if (!isValid && message) {
       publishable = false;
       errors.set(stage.id, message);

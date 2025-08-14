@@ -17,7 +17,7 @@ import { WorkflowStagePropertiesPanel } from "@/components/workflow/WorkflowStag
 import { WorkflowStage, Form as FormType, EmailTemplate, EvaluationTemplate, EvaluationCriterion } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/contexts/auth/SessionContext";
-import { isWorkflowPublishable } from '@/utils/workflowValidation';
+import { isWorkflowPublishable } from '@/utils/workflow/workflowValidation';
 import { isEvaluationTemplatePublishable } from "@/utils/evaluation/evaluationValidation";
 import { WorkflowActions } from "@/components/workflow/WorkflowActions";
 
@@ -50,7 +50,7 @@ const WorkflowBuilderPage = () => {
   }, [template]);
 
   useEffect(() => {
-    const { errors: stageErrors } = isWorkflowPublishable(stages);
+    const { errors: stageErrors } = isWorkflowPublishable(stages, emailTemplates.filter(t => t.status === 'published'), forms.filter(f => f.status === 'published'));
     const combinedErrors = new Map(stageErrors);
 
     stages.forEach(stage => {
@@ -65,7 +65,7 @@ const WorkflowBuilderPage = () => {
     });
 
     setValidationErrors(combinedErrors);
-  }, [stages, allCriteria, evaluationTemplates]);
+  }, [stages, allCriteria, evaluationTemplates, emailTemplates, forms]);
 
   useEffect(() => {
     const fetchDropdownData = async () => {
