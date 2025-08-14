@@ -298,3 +298,9 @@ export type Program = {
       tag_id: string;
       tags?: Tag; // For joining
     };
+
+    export type EvaluationTemplateTag = {
+      evaluation_template_id: string;
+      tag_id: string;
+      tags?: Tag; // For joining
+    };

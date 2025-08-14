@@ -1,13 +1,12 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { EmailTemplate, EvaluationCriterion } from '@/types'; // Import EvaluationCriterion
+import { EmailTemplate } from '@/types';
 import DOMPurify from 'dompurify';
-import { DynamicReviewForm } from '../review/DynamicReviewForm'; // Import DynamicReviewForm
 
 interface EmailTemplatePreviewDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  template: EmailTemplate | null; // Correctly type template prop
+  template: EmailTemplate | null;
 }
 
 export const EmailTemplatePreviewDialog = ({ isOpen, onClose, template }: EmailTemplatePreviewDialogProps) => {

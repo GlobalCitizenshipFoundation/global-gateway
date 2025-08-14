@@ -123,9 +123,9 @@ serve(async (req: Request) => {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
-  } catch (error: unknown) { // Explicitly type error as unknown
+  } catch (error: unknown) {
     console.error('Edge Function error:', error);
-    return new Response(JSON.stringify({ error: (error as Error).message }), { // Cast to Error
+    return new Response(JSON.stringify({ error: (error as Error).message }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

@@ -9,21 +9,21 @@ import { DeleteFormDialog } from "@/components/forms/DeleteFormDialog";
 import { CreateFormFromTemplateDialog } from "@/components/forms/CreateFormFromTemplateDialog";
 import { SaveAsTemplateDialog } from "@/components/forms/SaveAsTemplateDialog";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useState, useMemo } from "react"; // Import useMemo
-import { Form as FormType, Tag as TagType } from "@/types"; // Correctly import Tag as TagType
-import { Input } from "@/components/ui/input"; // Import Input
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"; // Import Select components
-import { useTagsData } from "@/hooks/tags/useTagsData"; // Import useTagsData
-import { TagDisplay } from "@/components/tags/TagDisplay"; // Import TagDisplay
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"; // Import Popover
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"; // Import Command components
-import { Check, ChevronsUpDown } from "lucide-react"; // Import icons
-import { cn } from "@/lib/utils"; // Import cn
-import { ScrollArea } from "@/components/ui/scroll-area"; // Import ScrollArea
+import { useState, useMemo } from "react"; // Corrected useState import
+import { Form as FormType, Tag as TagType } from "@/types";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useTagsData } from "@/hooks/tags/useTagsData";
+import { TagDisplay } from "@/components/tags/TagDisplay";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Check, ChevronsUpDown } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 const FormManagementPage = () => {
   const { forms, setForms, templates, setTemplates, loading, error } = useFormsData();
-  const { tags: allAvailableTags, loading: loadingTags } = useTagsData(); // Fetch all tags
+  const { tags: allAvailableTags, loading: loadingTags } = useTagsData();
   const {
     isDeleteDialogOpen, setIsDeleteDialogOpen, selectedForm, setSelectedForm, handleDeleteForm,
     isCreateFromTemplateDialogOpen, setIsCreateFromTemplateDialogOpen, selectedTemplateId, setSelectedTemplateId, newFormName, setNewFormName, isCreatingForm, handleCreateBlankForm, handleCreateFormFromTemplate,
@@ -33,10 +33,10 @@ const FormManagementPage = () => {
 
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState<'all' | 'form' | 'template'>('all');
-  const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]); // New state for tag filter
+  const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState<'name' | 'created_at' | 'updated_at'>('updated_at');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
-  const [isTagFilterOpen, setIsTagFilterOpen] = useState(false); // State for tag filter popover
+  const [isTagFilterOpen, setIsTagFilterOpen] = useState(false);
 
   const openCreateDialog = () => {
     setSelectedTemplateId(null);
@@ -58,7 +58,6 @@ const FormManagementPage = () => {
                           (filterType === 'form' && !form.is_template) ||
                           (filterType === 'template' && form.is_template);
       
-      // New: Filter by selected tags
       const matchesTags = selectedTagIds.length === 0 ||
                           (form.tags && selectedTagIds.every((tagId: string) => form.tags?.some((formTag: TagType) => formTag.id === tagId)));
 
