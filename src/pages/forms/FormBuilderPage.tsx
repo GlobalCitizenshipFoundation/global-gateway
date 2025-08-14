@@ -169,8 +169,6 @@ const FormBuilderPage = () => {
                 handleDeleteSection={handlers.handleDeleteSection}
                 handleDeleteField={handlers.handleDeleteField}
                 handleToggleRequired={handlers.handleToggleRequired}
-                onEditLogic={(field) => setSelectedField(field)}
-                onEditField={(field) => setSelectedField(field)}
                 onUpdateLabel={handlers.handleUpdateFieldLabel}
                 onSelectField={setSelectedField}
                 onQuickAddField={handleQuickAddField}
@@ -181,8 +179,6 @@ const FormBuilderPage = () => {
                 uncategorizedFields={uncategorizedFields}
                 handleDeleteField={handlers.handleDeleteField}
                 handleToggleRequired={handlers.handleToggleRequired}
-                onEditLogic={(field) => setSelectedField(field)}
-                onEditField={(field) => setSelectedField(field)}
                 onUpdateLabel={handlers.handleUpdateFieldLabel}
                 onSelectField={setSelectedField}
               />
@@ -210,11 +206,11 @@ const FormBuilderPage = () => {
                   setNewFieldSectionId={setNewFieldSectionId}
                   newFieldDescription={newFieldDescription}
                   setNewFieldDescription={setNewFieldDescription}
-                  newFieldTooltip={newFieldTooltip}
+                  newFieldTooltip={setNewFieldTooltip}
                   setNewFieldTooltip={setNewFieldTooltip}
                   newFieldPlaceholder={newFieldPlaceholder}
                   setNewFieldPlaceholder={setNewFieldPlaceholder}
-                  isSubmitting={isAddingField}
+                  isAddingField={isAddingField}
                   handleAddField={handlers.handleAddField}
                   sections={sections}
                 />

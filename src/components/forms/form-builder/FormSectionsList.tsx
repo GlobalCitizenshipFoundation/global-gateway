@@ -1,7 +1,7 @@
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { FormFieldItem } from "@/components/forms/form-builder/FormFieldItem";
+import { FormFieldItem } from "@/components/form-builder/FormFieldItem"; // Corrected import path
 import { FormField, FormSection } from "@/types";
 import { GripVertical, Trash2, Info, Plus, Pencil } from "lucide-react";
 import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
@@ -30,8 +30,8 @@ interface FormSectionsListProps {
   handleDeleteSection: (sectionId: string, fieldAction: 'delete_fields' | 'uncategorize_fields' | 'move_to_section', targetSectionId?: string | null) => Promise<void>;
   handleDeleteField: (fieldId: string) => Promise<void>;
   handleToggleRequired: (fieldId: string, isRequired: boolean) => Promise<void>;
-  onEditLogic: (field: FormField) => void;
-  onEditField: (field: FormField) => void;
+  // Removed onEditLogic: (field: FormField) => void;
+  // Removed onEditField: (field: FormField) => void;
   onUpdateLabel: (fieldId: string, newLabel: string) => void;
   onSelectField: (field: FormField) => void;
   onQuickAddField: (sectionId: string) => void;
@@ -90,15 +90,9 @@ const SortableAccordionItem = ({ section, children, confirmDeleteSection, onQuic
           </div>
         </AccordionTrigger>
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); onSelectSection(section); }}>
-            <Pencil className="h-4 w-4 text-muted-foreground" />
-          </Button>
-          <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); onQuickAddField(section.id); }}>
-            <Plus className="h-4 w-4 text-primary" />
-          </Button>
-          <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); confirmDeleteSection(section); }}>
-            <Trash2 className="h-4 w-4 text-destructive" />
-          </Button>
+          <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); onSelectSection(section); }}><Pencil className="h-4 w-4 text-muted-foreground" /></Button>
+          <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); onQuickAddField(section.id); }}><Plus className="h-4 w-4 text-primary" /></Button>
+          <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); confirmDeleteSection(section); }}><Trash2 className="h-4 w-4 text-destructive" /></Button>
         </div>
       </div>
       <AccordionContent className="px-6 pb-4">
@@ -119,8 +113,8 @@ export const FormSectionsList = ({
   handleDeleteSection,
   handleDeleteField,
   handleToggleRequired,
-  onEditLogic,
-  onEditField,
+  // Removed onEditLogic,
+  // Removed onEditField,
   onUpdateLabel,
   onSelectField,
   onQuickAddField,
