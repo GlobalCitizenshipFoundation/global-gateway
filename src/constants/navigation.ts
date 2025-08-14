@@ -1,10 +1,8 @@
 export const NAVIGATION_ITEMS = [
   {
-    // title: "General", // Removed 'General' heading
     links: [
-      { label: "Home", path: "/", icon: "Home" },
+      { label: "Home", path: "/", icon: "House" }, // Changed icon from "Home" to "House"
       { label: "My Submissions", path: "/dashboard", icon: "FileText", roles: ["applicant", "reviewer", "lead_reviewer", "creator", "admin", "super_admin"] },
-      // { label: "Profile", path: "/profile", icon: "User", roles: ["applicant", "reviewer", "lead_reviewer", "creator", "admin", "super_admin"] }, // Removed Profile
     ],
   },
   {
@@ -16,18 +14,18 @@ export const NAVIGATION_ITEMS = [
   {
     title: "Creator Tools",
     links: [
-      { label: "Programs", path: "/creator/dashboard", icon: "Award", roles: ["creator", "admin", "super_admin"] }, // Removed 'Manage'
-      { label: "Forms", path: "/creator/forms", icon: "FileText", roles: ["creator", "admin", "super_admin"] }, // Removed 'Manage'
-      { label: "Workflows", path: "/creator/workflows", icon: "GitPullRequest", roles: ["creator", "admin", "super_admin"] }, // Removed 'Manage'
-      { label: "Email Templates", path: "/creator/emails", icon: "Mail", roles: ["creator", "admin", "super_admin"] }, // Removed 'Manage'
-      { label: "Evaluation Rubrics", path: "/creator/evaluation-templates", icon: "Scale", roles: ["creator", "admin", "super_admin"] }, // Removed 'Manage'
+      { label: "Programs", path: "/creator/dashboard", icon: "Award", roles: ["creator", "admin", "super_admin"] },
+      { label: "Forms", path: "/creator/forms", icon: "FileText", roles: ["creator", "admin", "super_admin"] },
+      { label: "Workflows", path: "/creator/workflows", icon: "GitPullRequest", roles: ["creator", "admin", "super_admin"] },
+      { label: "Email Templates", path: "src/pages/emails/EmailManagementPage.tsx", icon: "Mail", roles: ["creator", "admin", "super_admin"] },
+      { label: "Evaluation Rubrics", path: "/creator/evaluation-templates", icon: "Scale", roles: ["creator", "admin", "super_admin"] },
     ],
   },
   {
     title: "Admin Tools",
     links: [
       { label: "User Management", path: "/admin/user-management", icon: "Users", roles: ["admin", "super_admin"] },
-      { label: "Tags Manager", path: "/admin/tags", icon: "Tag", roles: ["admin", "super_admin"] }, // Renamed
+      { label: "Tags Manager", path: "/admin/tags", icon: "Tag", roles: ["admin", "super_admin"] },
     ],
   },
   {

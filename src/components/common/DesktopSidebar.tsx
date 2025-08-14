@@ -51,19 +51,19 @@ const DesktopSidebar = ({ isCollapsed, toggleCollapse }: DesktopSidebarProps) =>
       </div>
 
       <nav className="flex-grow overflow-y-auto px-1 py-2 space-y-1">
-        {filteredNavigationItems.map((section, sectionIndex) => ( // 'section' is now correctly scoped here
+        {filteredNavigationItems.map((section, sectionIndex) => (
           <div key={sectionIndex} className="space-y-1">
             {!isCollapsed && (
-              <h3 className="px-2 py-1 text-sm font-semibold text-sidebar-foreground/70">
+              <h3 className="px-2 py-1 text-sm font-semibold text-sidebar-foreground/70 text-right"> {/* Added text-right */}
                 {section.title}
               </h3>
             )}
-            {section.links.map((item) => ( // 'item' is now correctly typed from 'section.links'
+            {section.links.map((item) => (
               <Button
                 key={item.path}
                 variant="ghost"
                 className={cn(
-                  "w-full justify-start",
+                  "w-full justify-end", // Changed justify-start to justify-end
                   isCollapsed ? "px-2 py-2" : "px-3 py-2",
                   location.pathname === item.path
                     ? "bg-sidebar-accent text-sidebar-accent-foreground"
@@ -72,8 +72,8 @@ const DesktopSidebar = ({ isCollapsed, toggleCollapse }: DesktopSidebarProps) =>
                 asChild
               >
                 <Link to={item.path}>
-                  <DynamicIcon name={item.icon} className={cn("h-5 w-5", !isCollapsed && "mr-2")} />
-                  {!isCollapsed && <span className="whitespace-nowrap">{item.label}</span>}
+                  {!isCollapsed && <span className="whitespace-nowrap text-right">{item.label}</span>} {/* Added text-right */}
+                  <DynamicIcon name={item.icon} className={cn("h-5 w-5", !isCollapsed && "ml-2")} /> {/* Changed mr-2 to ml-2 */}
                 </Link>
               </Button>
             ))}
