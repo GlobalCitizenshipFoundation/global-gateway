@@ -29,20 +29,18 @@ const getInitials = (name: string | null | undefined) => {
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 };
 
-const AvatarWithInitials = React.forwardRef<HTMLSpanElement, AvatarWithInitialsProps>(({ name, src, className }, ref) => {
+const AvatarWithInitials = ({ name, src, className }: AvatarWithInitialsProps) => {
   const initials = getInitials(name);
   const backgroundColor = name ? stringToColor(name) : '#ccc';
 
   return (
-    <Avatar className={className} ref={ref}>
+    <Avatar className={className}>
       <AvatarImage src={src || undefined} alt={name || 'User Avatar'} />
       <AvatarFallback style={{ backgroundColor: src ? undefined : backgroundColor, color: 'white' }}>
         {initials}
       </AvatarFallback>
     </Avatar>
   );
-});
-
-AvatarWithInitials.displayName = 'AvatarWithInitials'; // Add display name for better debugging
+};
 
 export default AvatarWithInitials;
