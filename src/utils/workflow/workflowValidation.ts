@@ -74,6 +74,11 @@ export const validateWorkflowStage = (stage: WorkflowStage, allStages: WorkflowS
       if (sourceStage.step_type !== 'form') {
         return { isValid: false, message: `The selected form to review ('${sourceStage.name}') is not a 'Form' stage.` };
       }
+      // Ensure the source stage is BEFORE the current stage
+      const currentStageOrder = allStages.find(s => s.id === stage.id)?.order_index;
+      if (currentStageOrder !== undefined && sourceStage.order_index >= currentStageOrder) {
+        return { isValid: false, message: `The selected form to review ('${sourceStage.name}') must be a stage that comes before this review stage.` };
+      }
       break;
 
     case 'recommendation':
