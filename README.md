@@ -1,5 +1,6 @@
-Global Gateway
-Unified Platform for Programs, Fellowships, Hiring, and Awards Management
+# Global Gateway
+A Unified Platform for Programs, Fellowships, Hiring, and Awards Management
+
 1. Introduction
 
 The Global Citizenship Foundation (GCF) manages a wide range of programs — including fellowships, leadership development initiatives, awards, grants, hiring, and training programs. Each of these requires a structured application, evaluation, scheduling, and decision-making process.
