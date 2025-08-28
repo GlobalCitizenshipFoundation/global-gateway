@@ -124,13 +124,25 @@ ${colorConfig
   );
 };
 
-type ChartTooltipProps = Omit<React.ComponentPropsWithoutRef<typeof RechartsPrimitive.Tooltip>, 'className'> & {
-  wrapperClassName?: string; // Use wrapperClassName for the outer div
+// Props that Recharts' Tooltip component passes to its content prop
+type RechartsTooltipContentProps = {
+  active?: boolean;
+  payload?: RechartsPrimitive.TooltipPayload[];
+  label?: string | number;
+  coordinate?: { x: number; y: number };
+  viewBox?: { x: number; y: number; width: number; height: number };
+  offset?: number;
+  wrapperStyle?: React.CSSProperties;
+};
+
+type ChartTooltipProps = RechartsTooltipContentProps & {
+  // Custom props for the wrapper div
+  className?: string; // For the outer div
   hideIndicator?: boolean;
   indicator?: "dot" | "line" | "dashed";
-  labelFormatter?: (value: string | number, payload: any[]) => React.ReactNode;
+  labelFormatter?: (value: string | number, payload: RechartsPrimitive.TooltipPayload[]) => React.ReactNode;
   labelClassName?: string;
-  formatter?: (value: string | number, name: string, item: any, index: number) => React.ReactNode;
+  formatter?: (value: string | number, name: string, item: RechartsPrimitive.TooltipPayload, index: number) => React.ReactNode;
   color?: string;
   nameKey?: string;
   labelKey?: string;
@@ -144,7 +156,7 @@ const ChartTooltip = React.forwardRef<
     {
       active,
       payload,
-      wrapperClassName, // Changed from className
+      className, // This className is for the outer div
       indicator = "dot",
       hideIndicator = false,
       label,
@@ -154,13 +166,13 @@ const ChartTooltip = React.forwardRef<
       color,
       nameKey,
       labelKey,
-      ...props // Collect other props
+      ...props // Collect any other props that might be passed by Recharts
     },
     ref
   ) => {
     const { config } = useChart();
     const nestLabel = React.useCallback(
-      (item: any) => {
+      (item: RechartsPrimitive.TooltipPayload) => {
         if (labelKey && item.dataKey === labelKey) {
           return false;
         }
@@ -174,7 +186,7 @@ const ChartTooltip = React.forwardRef<
         return labelFormatter(label as string | number, payload || []);
       }
       if (labelKey && payload?.length) {
-        const item = payload.find((item: any) => item.dataKey === labelKey);
+        const item = payload.find((item: RechartsPrimitive.TooltipPayload) => item.dataKey === labelKey);
         if (item) {
           return item.value;
         }
@@ -188,9 +200,9 @@ const ChartTooltip = React.forwardRef<
           ref={ref}
           className={cn(
             "grid min-w-[8rem] items-start gap-y-1 border border-border bg-background px-2.5 py-1.5 text-sm shadow-xl",
-            wrapperClassName // Changed from className
+            className // Apply the className to the outer div
           )}
-          {...props} // Pass other props to the wrapper div
+          {...props} // Spread any other Recharts-passed props here if they are valid HTMLDivElement attributes
         >
           {customLabel ? (
             <div className={cn("font-medium", labelClassName)}>
@@ -198,7 +210,7 @@ const ChartTooltip = React.forwardRef<
             </div>
           ) : null}
           <div className="grid gap-1.5">
-            {payload.map((item: any, index: number) => {
+            {payload.map((item: RechartsPrimitive.TooltipPayload, index: number) => {
               const key = `${nameKey || item.name || item.dataKey || "value"}`;
               const itemConfig = config[key];
               const indicatorColor = color || itemConfig?.color || item.stroke || item.fill;
@@ -234,7 +246,7 @@ const ChartTooltip = React.forwardRef<
                     ) : null}
                   </div>
                   {formatter ? (
-                    formatter(item.value, item.name, item, index)
+                    formatter(item.value, item.name || '', item, index)
                   ) : (
                     <span className="font-mono font-medium tabular-nums text-foreground">
                       {item.value?.toLocaleString()}
@@ -282,7 +294,7 @@ const ChartLegend = React.forwardRef<
           className
         )}
       >
-        {payload.map((item: any) => {
+        {payload.map((item: RechartsPrimitive.LegendPayload) => {
           const key = `${nameKey || item.dataKey || "value"}`;
           const itemConfig = config[key];
 

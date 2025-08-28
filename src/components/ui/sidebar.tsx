@@ -3,7 +3,7 @@
 import * as React from "react";
 import { Slot } from "@radix-ui/react-slot";
 import { VariantProps, cva } from "class-variance-authority";
-import { PanelLeft } from "lucide-react";
+import { PanelLeft, X } from "lucide-react"; // Added X import
 
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -17,16 +17,12 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { TooltipProvider } from "@/components/ui/tooltip";
-
-const SIDEBAR_COOKIE_NAME = "sidebar-open";
-const SIDEBAR_COOKIE_MAX_AGE = 31536000; // 1 year
-const SIDEBAR_KEYBOARD_SHORTCUT = "b";
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip"; // Added Tooltip imports
 
 type SidebarContextProps = {
   open: boolean;
   toggleSidebar: () => void;
-  setOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  setOpen: (open: boolean) => void; // Changed to accept boolean directly
 };
 
 const SidebarContext = React.createContext<SidebarContextProps | undefined>(
@@ -44,7 +40,7 @@ function useSidebar() {
 type SidebarProps = {
   defaultOpen?: boolean;
   open?: boolean;
-  onOpenChange?: (open: boolean) => void;
+  onOpenChange?: (open: boolean) => void; // Changed to accept boolean directly
 } & React.ComponentPropsWithoutRef<"div">;
 
 const Sidebar = React.forwardRef<HTMLDivElement, SidebarProps>(
@@ -64,7 +60,12 @@ const Sidebar = React.forwardRef<HTMLDivElement, SidebarProps>(
     const [openState, setOpenState] = React.useState(defaultOpen);
 
     const open = openProp ?? openState;
-    const setOpen = setOpenProp ?? setOpenState;
+    // Unified setOpen function to handle both internal state and external prop
+    const setOpen = React.useCallback((newOpen: boolean) => {
+      setOpenState(newOpen);
+      setOpenProp?.(newOpen); // Call external onOpenChange if provided
+    }, [setOpenProp]);
+
 
     React.useEffect(() => {
       if (typeof document !== "undefined") {

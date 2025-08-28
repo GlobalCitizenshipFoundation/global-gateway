@@ -12,11 +12,13 @@ import { Button } from "@/components/ui/button";
 type CarouselContextProps = {
   carouselRef: UseEmblaCarouselType[0];
   api: UseEmblaCarouselType[1];
+  opts?: Parameters<typeof useEmblaCarousel>[0]; // Added opts
+  orientation: "horizontal" | "vertical"; // Added orientation
   scrollPrev: () => void;
   scrollNext: () => void;
   canScrollPrev: boolean;
   canScrollNext: boolean;
-} & React.ComponentPropsWithoutRef<"div">;
+};
 
 const CarouselContext = React.createContext<CarouselContextProps | null>(null);
 
@@ -82,15 +84,23 @@ const Carousel = React.forwardRef<
 
     const handleKeyDown = React.useCallback(
       (event: React.KeyboardEvent) => {
-        if (event.key === "ArrowLeft") {
+        if (
+          event.key === "ArrowLeft" &&
+          api &&
+          api.canScrollPrev()
+        ) {
           event.preventDefault();
           scrollPrev();
-        } else if (event.key === "ArrowRight") {
+        } else if (
+          event.key === "ArrowRight" &&
+          api &&
+          api.canScrollNext()
+        ) {
           event.preventDefault();
           scrollNext();
         }
       },
-      [scrollPrev, scrollNext]
+      [api, scrollPrev, scrollNext]
     );
 
     React.useEffect(() => {
@@ -124,6 +134,8 @@ const Carousel = React.forwardRef<
           ref={ref}
           onKeyDown={handleKeyDown}
           className={cn("relative", className)}
+          role="region"
+          aria-roledescription="carousel"
           {...props}
         >
           <div
