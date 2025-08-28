@@ -15,7 +15,7 @@ All UI/UX elements must adhere to the following M3 principles:
 The application will implement a system where colors adapt based on a primary seed color, generating a full palette of tonal colors.
 
 ### 2.1 Primary Seed Color
-The primary seed color for the application is `#004D40`. This will drive the generation of the full M3 tonal palette.
+The primary seed color for the application is `#880E4F`. This will drive the generation of the full M3 tonal palette.
 
 ### 2.2 Color Roles and Mapping
 Colors are defined using HSL (Hue, Saturation, Lightness) values in `src/app/globals.css` and mapped to Tailwind CSS custom properties.
@@ -23,10 +23,10 @@ Colors are defined using HSL (Hue, Saturation, Lightness) values in `src/app/glo
 **Light Theme:**
 *   `--background`: `0 0% 100%` (White) - Primary background for the app.
 *   `--foreground`: `0 0% 10%` (Near Black) - Primary text color.
-*   `--primary`: `172 100% 15%` (`#004D40`) - Key interactive elements, buttons, primary accents.
+*   `--primary`: `328 81% 29%` (`#880E4F`) - Key interactive elements, buttons, primary accents.
 *   `--primary-foreground`: `0 0% 100%` (White) - Text on primary colored elements.
-*   `--primary-container`: `172 100% 90%` (Very Light Teal)
-*   `--on-primary-container`: `172 100% 10%` (Darker Teal)
+*   `--primary-container`: `328 81% 90%` (Very Light Magenta/Purple)
+*   `--on-primary-container`: `328 81% 10%` (Darker Magenta/Purple)
 *   `--secondary`: `200 20% 90%` (Light Grayish Blue)
 *   `--secondary-foreground`: `200 20% 20%` (Dark Grayish Blue)
 *   `--secondary-container`: `200 20% 80%` (Medium Light Grayish Blue)
@@ -39,32 +39,32 @@ Colors are defined using HSL (Hue, Saturation, Lightness) values in `src/app/glo
 *   `--popover-foreground`: `0 0% 20%` (Dark Gray) - Text on popovers.
 *   `--muted`: `0 0% 90%` (Light Gray) - For less prominent text or elements.
 *   `--muted-foreground`: `0 0% 40%` (Medium Gray) - Text on muted elements.
-*   `--accent`: `172 100% 90%` (Same as primary container) - Hover/active states for interactive elements.
-*   `--accent-foreground`: `172 100% 10%` (Same as on primary container) - Text on accent elements.
+*   `--accent`: `328 81% 90%` (Same as primary container) - Hover/active states for interactive elements.
+*   `--accent-foreground`: `328 81% 10%` (Same as on primary container) - Text on accent elements.
 *   `--destructive`: `0 80% 50%` (Red) - Error states, destructive actions.
 *   `--destructive-foreground`: `0 0% 100%` (White) - Text on destructive elements.
 *   `--destructive-container`: `0 80% 90%` (Very Light Red)
 *   `--on-destructive-container`: `0 80% 15%` (Darker Red)
 *   `--border`: `0 0% 80%` (Light Gray) - Borders for components.
 *   `--input`: `0 0% 70%` (Medium Gray) - Input field borders.
-*   `--ring`: `172 100% 15%` (Primary color) - Focus ring color.
+*   `--ring`: `328 81% 29%` (Primary color) - Focus ring color.
 *   **Sidebar Colors**: Specific variables for sidebar background, foreground, primary, accent, etc., to ensure distinct theming.
     *   `--sidebar-background`: `0 0% 95%`
     *   `--sidebar-foreground`: `0 0% 20%`
-    *   `--sidebar-primary`: `172 100% 15%`
+    *   `--sidebar-primary`: `328 81% 29%`
     *   `--sidebar-primary-foreground`: `0 0% 100%`
-    *   `--sidebar-accent`: `172 100% 90%`
-    *   `--sidebar-accent-foreground`: `172 100% 10%`
+    *   `--sidebar-accent`: `328 81% 90%`
+    *   `--sidebar-accent-foreground`: `328 81% 10%`
     *   `--sidebar-border`: `0 0% 80%`
-    *   `--sidebar-ring`: `172 100% 15%`
+    *   `--sidebar-ring`: `328 81% 29%`
 
 **Dark Theme:**
 *   `--background`: `240 10% 5%` (Deep Indigo) - Primary background for the app.
 *   `--foreground`: `210 20% 98%` (Light Grey) - Primary text color.
-*   `--primary`: `172 100% 70%` (Lighter Teal for dark mode) - Key interactive elements, buttons, primary accents.
-*   `--primary-foreground`: `172 100% 10%` (Dark Teal) - Text on primary colored elements.
-*   `--primary-container`: `172 100% 20%` (Darker Teal)
-*   `--on-primary-container`: `172 100% 90%` (Very Light Teal)
+*   `--primary`: `328 81% 70%` (Lighter Magenta/Purple for dark mode) - Key interactive elements, buttons, primary accents.
+*   `--primary-foreground`: `328 81% 10%` (Dark Magenta/Purple) - Text on primary colored elements.
+*   `--primary-container`: `328 81% 20%` (Darker Magenta/Purple)
+*   `--on-primary-container`: `328 81% 90%` (Very Light Magenta/Purple)
 *   `--secondary`: `200 20% 30%` (Dark Grayish Blue)
 *   `--secondary-foreground`: `200 20% 80%` (Light Grayish Blue)
 *   `--secondary-container`: `200 20% 40%` (Medium Dark Grayish Blue)
@@ -77,15 +77,15 @@ Colors are defined using HSL (Hue, Saturation, Lightness) values in `src/app/glo
 *   `--popover-foreground`: `210 20% 90%` (Lighter Grey) - Text on popovers.
 *   `--muted`: `240 8% 25%` (Lighter muted background) - For less prominent text or elements.
 *   `--muted-foreground`: `210 10% 85%` (Lighter Grey) - Text on muted elements.
-*   `--accent`: `172 100% 20%` (Darker primary container) - Hover/active states for interactive elements.
-*   `--accent-foreground`: `172 100% 90%` (Lighter primary container) - Text on accent elements.
+*   `--accent`: `328 81% 20%` (Darker primary container) - Hover/active states for interactive elements.
+*   `--accent-foreground`: `328 81% 90%` (Lighter primary container) - Text on accent elements.
 *   `--destructive`: `0 60% 40%` (Darker Red) - Error states, destructive actions.
 *   `--destructive-foreground`: `0 0% 98%` (Off-White) - Text on destructive elements.
 *   `--destructive-container`: `0 60% 20%` (Even Darker Red)
 *   `--on-destructive-container`: `0 60% 90%` (Lighter Red)
 *   `--border`: `240 8% 30%` (More visible border) - Borders for components.
 *   `--input`: `240 8% 20%` (Darker indigo) - Input field borders.
-*   `--ring`: `172 100% 70%` (Primary color) - Focus ring color.
+*   `--ring`: `328 81% 70%` (Primary color) - Focus ring color.
 
     --chart-1: 336 70% 60%;
     --chart-2: 200 50% 70%;
@@ -95,12 +95,12 @@ Colors are defined using HSL (Hue, Saturation, Lightness) values in `src/app/glo
 
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 172 100% 70%;
-    --sidebar-primary-foreground: 172 100% 10%;
-    --sidebar-accent: 172 100% 20%;
-    --sidebar-accent-foreground: 172 100% 90%;
+    --sidebar-primary: 328 81% 70%;
+    --sidebar-primary-foreground: 328 81% 10%;
+    --sidebar-accent: 328 81% 20%;
+    --sidebar-accent-foreground: 328 81% 90%;
     --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 172 100% 70%;
+    --sidebar-ring: 328 81% 70%;
   }
 }
 

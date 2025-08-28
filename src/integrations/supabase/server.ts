@@ -1,7 +1,9 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 
-export const createClient = (cookieStore: ReturnType<typeof cookies>) => {
+export const createClient = async () => { // Make the function async
+  const cookieStore = await cookies(); // Await the cookies() call to resolve the Promise type
+
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -12,7 +14,7 @@ export const createClient = (cookieStore: ReturnType<typeof cookies>) => {
         },
         set(name: string, value: string, options: CookieOptions) {
           try {
-            cookieStore.set({ name, value, ...options });
+            cookieStore.set(name, value, options);
           } catch (error) {
             // The `cookies().set()` method can only be called from a Server Component or Route Handler.
             // This error is typically caught and handled by the middleware.
@@ -20,7 +22,7 @@ export const createClient = (cookieStore: ReturnType<typeof cookies>) => {
         },
         remove(name: string, options: CookieOptions) {
           try {
-            cookieStore.set({ name, value: '', ...options });
+            cookieStore.set(name, '', options);
           } catch (error) {
             // The `cookies().set()` method can only be called from a Server Component or Route Handler.
             // This error is typically caught and handled by the middleware.
