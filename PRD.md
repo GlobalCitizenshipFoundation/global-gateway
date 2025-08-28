@@ -261,6 +261,10 @@ Here's a breakdown of the proposed structure for our project:
 /(workbench): Great for grouping routes for internal users like managers, coordinators, and reviewers, reflecting their specific tools and views.
 /(admin): Clearly designates routes for platform owners and administrators, ensuring their specialized console is distinct.
 
+(Example for specific dasbhoards: /auth/portal/home;
+/auth/workbench/desk;
+/auth/admin/console)
+
 /api: Standard for Next.js Route Handlers, allowing for versioned RESTful APIs as needed. This directly supports our API-driven platform requirement.
 /components: This will house all shared UI components.
 
@@ -281,7 +285,7 @@ Functions here would orchestrate interactions with the database (via Supabase cl
 
 /context: This is the appropriate place for global state management using React Context API, as per AI_RULES.md.
 
-/styles: While src/app/globals.css and tailwind.config.ts are the primary styling files, this directory could be used for any additional global styling configurations or theme-related utilities if they become necessary beyond the core setup.
+/styles: While src/app/globals.css and tailwind.config.ts are the primary styling files, this directory could be used for any additional global styling configurations or theme-related utilities if they become necessary beyond the core setup. Adhere to Material Design 3 Principles.
 
 /tests: Standard practice for housing all unit and integration tests.
 
