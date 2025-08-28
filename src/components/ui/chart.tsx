@@ -162,11 +162,15 @@ function ChartTooltip({
 }
 ChartTooltip.displayName = "ChartTooltip";
 
-// Define a local interface to explicitly include 'name', 'fill', 'stroke'
-interface ChartLegendItem extends RechartsPrimitive.Payload<any, any> {
+// Define a custom interface for legend items to explicitly include all expected properties
+interface ChartLegendItem {
+  dataKey?: string | number | ((data: any) => string | number);
+  value?: any;
   name?: string;
+  color?: string;
   fill?: string;
   stroke?: string;
+  payload?: any; // The original data object for this item
 }
 
 type ChartLegendProps<TData extends Record<string, any> = Record<string, any>> = React.ComponentProps<typeof RechartsPrimitive.Legend> & {
