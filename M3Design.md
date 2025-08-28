@@ -15,7 +15,7 @@ All UI/UX elements must adhere to the following M3 principles:
 The application will implement a system where colors adapt based on a primary seed color, generating a full palette of tonal colors.
 
 ### 2.1 Primary Seed Color
-The primary seed color for the application is `#004D40`. This will drive the generation of the full M3 tonal palette.
+The primary seed color for the application is `#880E4F`. This will drive the generation of the full M3 tonal palette.
 
 ### 2.2 Color Roles and Mapping
 Colors are defined using HSL (Hue, Saturation, Lightness) values in `src/app/globals.css` and mapped to Tailwind CSS custom properties.
