@@ -162,8 +162,12 @@ function ChartTooltip({
 }
 ChartTooltip.displayName = "ChartTooltip";
 
-// Derive LegendPayload type from RechartsPrimitive.LegendProps
-type RechartsLegendPayload = NonNullable<RechartsPrimitive.LegendProps['payload']>[number];
+// Define a local interface to explicitly include 'name', 'fill', 'stroke'
+interface ChartLegendItem extends RechartsPrimitive.Payload<any, any> {
+  name?: string;
+  fill?: string;
+  stroke?: string;
+}
 
 type ChartLegendProps<TData extends Record<string, any> = Record<string, any>> = React.ComponentProps<typeof RechartsPrimitive.Legend> & {
   hideIcon?: boolean;
@@ -189,7 +193,7 @@ function ChartLegend<TData extends Record<string, any> = Record<string, any>>(
         className
       )}
     >
-      {payload.map((item: RechartsLegendPayload) => { // Using the defined RechartsLegendPayload type
+      {payload.map((item: ChartLegendItem) => { // Use the new ChartLegendItem type here
         const rawData = item.payload as unknown as TData | undefined;
         
         let derivedKey: string | number | symbol | undefined;
@@ -200,9 +204,10 @@ function ChartLegend<TData extends Record<string, any> = Record<string, any>>(
                 derivedKey = value;
             }
         } else {
+            // item.dataKey can be a function, so we need to handle that
             if (typeof item.dataKey === 'string' || typeof item.dataKey === 'number' || typeof item.dataKey === 'symbol') {
                 derivedKey = item.dataKey;
-            } else if (typeof item.name === 'string') {
+            } else if (typeof item.name === 'string') { // item.name is now explicitly on ChartLegendItem
                 derivedKey = item.name;
             }
         }
@@ -218,7 +223,7 @@ function ChartLegend<TData extends Record<string, any> = Record<string, any>>(
           return null;
         }
 
-        const itemColor = item.color || item.fill || item.stroke;
+        const itemColor = item.color || item.fill || item.stroke; // fill and stroke are now explicitly on ChartLegendItem
 
         return (
           <div
