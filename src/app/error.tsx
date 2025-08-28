@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import React, { useEffect } from "react"; // Import React
 import { Button } from "@/components/ui/button";
 import { Frown } from "lucide-react";
 

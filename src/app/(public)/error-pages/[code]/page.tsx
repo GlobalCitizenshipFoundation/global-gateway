@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { ShieldOff, Ban, Frown, ServerCrash } from "lucide-react";
+import React from "react"; // Import React
 
 interface ErrorPageProps {
   params: {

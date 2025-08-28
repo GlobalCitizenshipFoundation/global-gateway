@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Globe, Award, Briefcase } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import React from "react";
+import React from "react"; // Import React
 
 export default function HomePage() {
   return (
@@ -23,7 +23,7 @@ export default function HomePage() {
 
       <main className="flex-grow">
         {/* Hero Section */}
-        <section className="relative w-full py-20 md:py-32 text-center bg-gradient-to-br from-primary to-primary-container text-primary-on-container flex items-center justify-center">
+        <section className="relative w-full py-20 md:py-32 text-center bg-gradient-to-br from-primary to-primary-container text-primary-foreground flex items-center justify-center">
           <div className="container mx-auto px-4 py-8 md:py-16">
             <h1 className="text-display-medium md:text-display-large mb-6">
               Empowering Global Citizens Through Opportunity

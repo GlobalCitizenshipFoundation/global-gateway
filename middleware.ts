@@ -5,10 +5,10 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // List of public routes that do not require authentication
-  const publicRoutes = ['/', '/login', '/auth/callback']; // Add any other public routes here
+  const publicRoutes: string[] = ['/', '/login', '/auth/callback']; // Add any other public routes here
 
   // Check if the current route is a public route
-  const isPublicRoute = publicRoutes.some(route => pathname.startsWith(route));
+  const isPublicRoute = publicRoutes.some((route: string) => pathname.startsWith(route));
 
   // Create a Supabase client for the middleware
   const supabase = await createClient();
@@ -24,7 +24,7 @@ export async function middleware(request: NextRequest) {
     if (isPublicRoute && pathname !== '/auth/callback') {
       if (userRole === 'admin') {
         return NextResponse.redirect(new URL('/admin/dashboard', request.url));
-      } else if (['coordinator', 'evaluator', 'screener'].includes(userRole)) { // Use includes on string array
+      } else if (['coordinator', 'evaluator', 'screener'].includes(userRole)) {
         return NextResponse.redirect(new URL('/workbench/dashboard', request.url));
       } else { // Default for applicants or other roles
         return NextResponse.redirect(new URL('/portal/dashboard', request.url));

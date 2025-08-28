@@ -1,5 +1,6 @@
 import { createClient } from "@/integrations/supabase/server";
 import { redirect } from "next/navigation";
+import React from "react"; // Import React
 
 export default async function WorkbenchDashboardPage() {
   const supabase = await createClient();

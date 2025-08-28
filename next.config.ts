@@ -1,10 +1,10 @@
 import type { NextConfig } from "next";
-import type { Configuration } from "webpack"; // Import Configuration type from webpack
+import type { Configuration } from "webpack";
 
 const nextConfig: NextConfig = {
-  webpack: (config: Configuration) => { // Explicitly type config as Configuration
+  webpack: (config: Configuration) => {
     if (process.env.NODE_ENV === "development") {
-      if (config.module && config.module.rules) { // Explicitly check if module and rules exist
+      if (config.module && config.module.rules) {
         config.module.rules.push({
           test: /\.(jsx|tsx)$/,
           exclude: /node_modules/,

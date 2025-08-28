@@ -1,5 +1,6 @@
 import { createClient } from "@/integrations/supabase/server";
 import { redirect } from "next/navigation";
+import React from "react"; // Import React
 
 export default async function AdminDashboardPage() {
   const supabase = await createClient();
@@ -9,7 +10,7 @@ export default async function AdminDashboardPage() {
     redirect("/login");
   }
 
-  const userRole = user.user_metadata?.role;
+  const userRole: string = user.user_metadata?.role;
 
   if (userRole !== 'admin') {
     redirect("/login"); // Or a 403 forbidden page

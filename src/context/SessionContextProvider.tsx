@@ -10,7 +10,7 @@ import React, {
 import {
   Session,
   User,
-  AuthChangeEvent, // Import AuthChangeEvent
+  AuthChangeEvent,
 } from "@supabase/supabase-js";
 import { createBrowserClient } from "@supabase/ssr";
 import { createClient } from "@/integrations/supabase/client";
@@ -48,7 +48,7 @@ export const SessionContextProvider = ({
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event: AuthChangeEvent, session: Session | null) => { // Explicitly type _event and session
+    } = supabase.auth.onAuthStateChange((_event: AuthChangeEvent, session: Session | null) => {
       setSession(session);
       setUser(session?.user || null);
       setIsLoading(false);

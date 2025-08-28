@@ -4,7 +4,7 @@ import "./globals.css";
 import { SessionContextProvider } from "@/context/SessionContextProvider";
 import { Toaster } from "@/components/ui/sonner";
 import React from "react";
-import { ThemeProvider } from "next-themes"; // Corrected import path
+import { ThemeProvider } from "next-themes";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -23,9 +23,9 @@ export const metadata: Metadata = {
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
     <html lang="en" suppressHydrationWarning>
       <body
