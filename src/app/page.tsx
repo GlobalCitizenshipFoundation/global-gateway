@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Globe, Award, Briefcase } from "lucide-react";
+import { ThemeToggle } from "@/components/ThemeToggle"; // Import ThemeToggle
 
 export default function HomePage() {
   return (
@@ -11,7 +12,8 @@ export default function HomePage() {
         <Link href="/" className="text-title-large text-primary">
           Global Gateway
         </Link>
-        <nav>
+        <nav className="flex items-center space-x-4"> {/* Added flex and space-x for alignment */}
+          <ThemeToggle /> {/* Add ThemeToggle here */}
           <Button asChild variant="default" className="rounded-full">
             <Link href="/login">Login / Sign Up</Link>
           </Button>

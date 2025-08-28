@@ -3,7 +3,8 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { SessionContextProvider } from "@/context/SessionContextProvider";
 import { Toaster } from "@/components/ui/sonner";
-import React from "react"; // Import React
+import React from "react";
+import { ThemeProvider } from "next-themes/providers"; // Import ThemeProvider
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -26,17 +27,23 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <SessionContextProvider>
-          {/* Wrap children and Toaster in a fragment to pass as a single child */}
-          <React.Fragment>
-            {children}
-            <Toaster />
-          </React.Fragment>
-        </SessionContextProvider>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <SessionContextProvider>
+            <React.Fragment>
+              {children}
+              <Toaster />
+            </React.Fragment>
+          </SessionContextProvider>
+        </ThemeProvider>
       </body>
     </html>
   );
