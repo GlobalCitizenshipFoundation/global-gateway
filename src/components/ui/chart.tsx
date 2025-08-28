@@ -5,6 +5,29 @@ import * as RechartsPrimitive from "recharts";
 
 import { cn } from "@/lib/utils";
 
+// Define local interfaces for Recharts payload types
+interface RechartsTooltipPayload {
+  dataKey?: string | number;
+  name?: string;
+  value?: string | number | Array<any>;
+  color?: string;
+  stroke?: string;
+  fill?: string;
+  payload?: any; // The original data object
+  [key: string]: any;
+}
+
+interface RechartsLegendPayload {
+  value?: string | number;
+  id?: string;
+  type?: "line" | "square" | "rect" | "circle" | "cross" | "diamond" | "star" | "triangle" | "wye";
+  color?: string;
+  payload?: any; // The original data object
+  inactive?: boolean;
+  dataKey?: string | number;
+  [key: string]: any;
+}
+
 // Format: { light: CSS_VAR_NAME, dark: CSS_VAR_NAME }
 const COLOR_VARIANTS = {
   area: {
@@ -127,7 +150,7 @@ ${colorConfig
 // Props that Recharts' Tooltip component passes to its content prop
 type RechartsTooltipContentProps = {
   active?: boolean;
-  payload?: RechartsPrimitive.TooltipPayload[];
+  payload?: RechartsTooltipPayload[]; // Use local RechartsTooltipPayload
   label?: string | number;
   coordinate?: { x: number; y: number };
   viewBox?: { x: number; y: number; width: number; height: number };
@@ -140,9 +163,9 @@ type ChartTooltipProps = RechartsTooltipContentProps & {
   className?: string; // For the outer div
   hideIndicator?: boolean;
   indicator?: "dot" | "line" | "dashed";
-  labelFormatter?: (value: string | number, payload: RechartsPrimitive.TooltipPayload[]) => React.ReactNode;
+  labelFormatter?: (value: string | number, payload: RechartsTooltipPayload[]) => React.ReactNode; // Use local RechartsTooltipPayload
   labelClassName?: string;
-  formatter?: (value: string | number, name: string, item: RechartsPrimitive.TooltipPayload, index: number) => React.ReactNode;
+  formatter?: (value: string | number, name: string, item: RechartsTooltipPayload, index: number) => React.ReactNode; // Use local RechartsTooltipPayload
   color?: string;
   nameKey?: string;
   labelKey?: string;
@@ -172,7 +195,7 @@ const ChartTooltip = React.forwardRef<
   ) => {
     const { config } = useChart();
     const nestLabel = React.useCallback(
-      (item: RechartsPrimitive.TooltipPayload) => {
+      (item: RechartsTooltipPayload) => { // Use local RechartsTooltipPayload
         if (labelKey && item.dataKey === labelKey) {
           return false;
         }
@@ -186,7 +209,7 @@ const ChartTooltip = React.forwardRef<
         return labelFormatter(label as string | number, payload || []);
       }
       if (labelKey && payload?.length) {
-        const item = payload.find((item: RechartsPrimitive.TooltipPayload) => item.dataKey === labelKey);
+        const item = payload.find((item: RechartsTooltipPayload) => item.dataKey === labelKey); // Use local RechartsTooltipPayload
         if (item) {
           return item.value;
         }
@@ -210,7 +233,7 @@ const ChartTooltip = React.forwardRef<
             </div>
           ) : null}
           <div className="grid gap-1.5">
-            {payload.map((item: RechartsPrimitive.TooltipPayload, index: number) => {
+            {payload.map((item: RechartsTooltipPayload, index: number) => { // Use local RechartsTooltipPayload
               const key = `${nameKey || item.name || item.dataKey || "value"}`;
               const itemConfig = config[key];
               const indicatorColor = color || itemConfig?.color || item.stroke || item.fill;
@@ -294,7 +317,7 @@ const ChartLegend = React.forwardRef<
           className
         )}
       >
-        {payload.map((item: RechartsPrimitive.LegendPayload) => {
+        {payload.map((item: RechartsLegendPayload) => { // Use local RechartsLegendPayload
           const key = `${nameKey || item.dataKey || "value"}`;
           const itemConfig = config[key];
 

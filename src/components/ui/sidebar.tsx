@@ -3,7 +3,7 @@
 import * as React from "react";
 import { Slot } from "@radix-ui/react-slot";
 import { VariantProps, cva } from "class-variance-authority";
-import { PanelLeft, X } from "lucide-react"; // Added X import
+import { PanelLeft, X } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -17,12 +17,17 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip"; // Added Tooltip imports
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
+
+// Define missing constants
+const SIDEBAR_COOKIE_NAME = "sidebar-open";
+const SIDEBAR_COOKIE_MAX_AGE = 31536000; // 1 year
+const SIDEBAR_KEYBOARD_SHORTCUT = "b";
 
 type SidebarContextProps = {
   open: boolean;
   toggleSidebar: () => void;
-  setOpen: (open: boolean) => void; // Changed to accept boolean directly
+  setOpen: (open: boolean) => void;
 };
 
 const SidebarContext = React.createContext<SidebarContextProps | undefined>(
@@ -40,7 +45,7 @@ function useSidebar() {
 type SidebarProps = {
   defaultOpen?: boolean;
   open?: boolean;
-  onOpenChange?: (open: boolean) => void; // Changed to accept boolean directly
+  onOpenChange?: (open: boolean) => void;
 } & React.ComponentPropsWithoutRef<"div">;
 
 const Sidebar = React.forwardRef<HTMLDivElement, SidebarProps>(
