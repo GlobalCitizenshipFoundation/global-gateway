@@ -20,11 +20,11 @@ interface RechartsTooltipPayload {
 interface RechartsLegendPayload {
   value?: string | number;
   id?: string;
-  type?: "line" | "square" | "rect" | "circle" | "cross" | "diamond" | "star" | "triangle" | "wye" | "none" | "plainline"; // Added "plainline"
+  type?: "line" | "square" | "rect" | "circle" | "cross" | "diamond" | "star" | "triangle" | "wye" | "none" | "plainline";
   color?: string;
   payload?: any; // The original data object
   inactive?: boolean;
-  dataKey?: string | number;
+  dataKey?: string | number | ((obj: any) => any); // Updated to include function type
   [key: string]: any;
 }
 
@@ -323,7 +323,7 @@ const ChartLegend = React.forwardRef<
         )}
       >
         {payload.map((item: RechartsLegendPayload) => { // Use local RechartsLegendPayload
-          const key = `${nameKey || item.dataKey || "value"}`;
+          const key = `${nameKey || (typeof item.dataKey === 'function' ? item.dataKey(item.payload) : item.dataKey) || "value"}`; // Handle dataKey as function
           const itemConfig = config[key];
 
           return (
