@@ -9,6 +9,18 @@ export default {
   ],
   theme: {
   	extend: {
+        // Material Design 3 Typography Scale (1.25 ratio)
+        fontSize: {
+            'xs': ['0.75rem', { lineHeight: '1.4', letterSpacing: '0.05em' }], // 12px
+            'sm': ['0.9375rem', { lineHeight: '1.4', letterSpacing: '0' }], // 15px
+            'base': ['1.125rem', { lineHeight: '1.5', letterSpacing: '0' }], // 18px
+            'lg': ['1.5rem', { lineHeight: '1.2', letterSpacing: '-0.02em' }], // 24px
+            'xl': ['1.875rem', { lineHeight: '1.2', letterSpacing: '-0.02em' }], // 30px
+            '2xl': ['2.3125rem', { lineHeight: '1.2', letterSpacing: '-0.02em' }], // 37px
+            '3xl': ['2.875rem', { lineHeight: '1.2', letterSpacing: '-0.02em' }], // 46px
+            '4xl': ['3.6rem', { lineHeight: '1.2', letterSpacing: '-0.02em' }], // ~58px (for hero titles)
+            '5xl': ['4.5rem', { lineHeight: '1.2', letterSpacing: '-0.02em' }], // ~72px (for hero titles)
+        },
   		colors: {
   			background: 'hsl(var(--background))',
   			foreground: 'hsl(var(--foreground))',
@@ -48,7 +60,7 @@ export default {
   				DEFAULT: 'hsl(var(--destructive))',
   				foreground: 'hsl(var(--destructive-foreground))',
                 container: 'hsl(var(--destructive-container))',
-                'on-container': 'hsl(var(--on-destructive-container))' // Fixed: Added missing ')'
+                'on-container': 'hsl(var(--on-destructive-container))'
   			},
   			border: 'hsl(var(--border))',
   			input: 'hsl(var(--input))',
@@ -72,10 +84,41 @@ export default {
   			}
   		},
   		borderRadius: {
-  			lg: 'var(--radius)',
-  			md: 'calc(var(--radius) - 2px)',
-  			sm: 'calc(var(--radius) - 4px)'
+            'none': '0',
+            'sm': '2px', // 2px
+            'md': '4px', // 4px
+  			lg: 'var(--radius)', // 8px (default)
+            'xl': '12px', // 12px
+            '2xl': '16px', // 16px
+            'full': '9999px',
   		},
+        spacing: {
+            '0': '0px',
+            '1': '4px',
+            '2': '8px',
+            '3': '12px',
+            '4': '16px',
+            '5': '20px',
+            '6': '24px',
+            '7': '28px',
+            '8': '32px',
+            '9': '36px',
+            '10': '40px',
+            '11': '44px',
+            '12': '48px',
+            '14': '56px',
+            '16': '64px',
+            '20': '80px',
+            '24': '96px',
+            '32': '128px',
+            '40': '160px',
+            '48': '192px',
+            '56': '224px',
+            '64': '256px',
+            '72': '288px',
+            '80': '320px',
+            '96': '384px',
+        },
   		keyframes: {
   			'accordion-down': {
   				from: {
