@@ -27,7 +27,7 @@
     --tertiary-foreground: 280 40% 20%; /* Dark Purple */
 
     --muted: 0 0% 90%; /* Light Gray */
-    --muted-foreground: 0 0% 40%; /* Medium Gray */
+    --muted-foreground: 0 0% 25%; /* Darker for AAA contrast */
 
     --accent: 170 100% 90%; /* Same as primary container */
     --accent-foreground: 170 100% 10%; /* Same as on primary container */
@@ -83,7 +83,7 @@
     --tertiary-foreground: 280 40% 80%; /* Light Purple */
 
     --muted: 240 8% 25%; /* Lighter muted background */
-    --muted-foreground: 210 10% 85%; /* Lighter Grey */
+    --muted-foreground: 210 10% 95%; /* Lighter for AAA contrast */
 
     --accent: 170 100% 20%; /* Darker primary container */
     --accent-foreground: 170 100% 90%; /* Lighter primary container */
@@ -145,7 +145,7 @@
 
   .text-body-large { @apply text-base font-normal leading-body tracking-normal; }
   .text-body-medium { @apply text-sm font-normal leading-body tracking-normal; }
-  .text-body-small { @apply text-xs font-normal leading-body tracking-small-caps; }
+  .text-body-small { @apply text-sm font-normal leading-body tracking-normal; } /* Changed from text-xs */
 
   .text-label-large { @apply text-sm font-semibold leading-ui tracking-small-caps; }
   .text-label-medium { @apply text-xs font-semibold leading-ui tracking-small-caps; }

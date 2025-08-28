@@ -7,12 +7,12 @@ export default function HomePage() {
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground">
       {/* Header */}
-      <header className="container mx-auto p-4 flex justify-between items-center border-b border-border">
+      <header className="container mx-auto p-4 flex justify-between items-center shadow-sm"> {/* Replaced border with shadow-sm for MD3 elevation */}
         <Link href="/" className="text-title-large font-bold text-primary">
           Global Gateway
         </Link>
         <nav>
-          <Button asChild variant="default" className="rounded-md">
+          <Button asChild variant="default" className="rounded-full"> {/* Changed to rounded-full for MD3 button shape */}
             <Link href="/login">Login / Sign Up</Link>
           </Button>
         </nav>
@@ -22,17 +22,17 @@ export default function HomePage() {
         {/* Hero Section */}
         <section className="relative w-full py-20 md:py-32 text-center bg-gradient-to-br from-primary to-primary-container text-primary-foreground flex items-center justify-center">
           <div className="container mx-auto px-4 py-8 md:py-16">
-            <h1 className="text-display-medium md:text-display-large font-extrabold mb-6">
+            <h1 className="text-display-medium md:text-display-large font-bold mb-6"> {/* Changed font-extrabold to font-bold */}
               Empowering Global Citizens Through Opportunity
             </h1>
             <p className="text-body-large md:text-headline-small max-w-3xl mx-auto mb-8 opacity-90">
               Your gateway to global programs, fellowships, hiring, and awards management.
             </p>
             <div className="flex justify-center space-x-4">
-              <Button asChild variant="secondary" className="px-6 py-3 text-label-large rounded-md">
+              <Button asChild variant="secondary" className="px-6 py-3 text-label-large rounded-full"> {/* Changed to rounded-full */}
                 <Link href="/login">Explore Programs</Link>
               </Button>
-              <Button asChild variant="outline" className="px-6 py-3 text-label-large rounded-md border-primary-foreground text-primary-foreground hover:bg-primary-foreground/10">
+              <Button asChild variant="secondary" className="px-6 py-3 text-label-large rounded-full"> {/* Changed variant to secondary for AAA contrast */}
                 <Link href="/about">Learn More</Link>
               </Button>
             </div>
@@ -43,7 +43,7 @@ export default function HomePage() {
         <section className="container mx-auto px-4 py-16 md:py-24">
           <h2 className="text-headline-large md:text-display-small font-bold text-center mb-12 text-foreground">Featured Opportunities</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            <Card className="flex flex-col h-full rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300">
+            <Card className="flex flex-col h-full rounded-xl shadow-md hover:shadow-lg hover:-translate-y-1 transition-all duration-300"> {/* Added hover transform */}
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-headline-small text-primary"><Globe className="h-6 w-6" /> Global Fellowship</CardTitle>
                 <CardDescription className="text-body-medium">A prestigious program for emerging leaders.</CardDescription>
@@ -58,7 +58,7 @@ export default function HomePage() {
               </CardFooter>
             </Card>
 
-            <Card className="flex flex-col h-full rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300">
+            <Card className="flex flex-col h-full rounded-xl shadow-md hover:shadow-lg hover:-translate-y-1 transition-all duration-300"> {/* Added hover transform */}
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-headline-small text-primary"><Briefcase className="h-6 w-6" /> Impact Hiring Initiative</CardTitle>
                 <CardDescription className="text-body-medium">Join our team and make a difference.</CardDescription>
@@ -73,7 +73,7 @@ export default function HomePage() {
               </CardFooter>
             </Card>
 
-            <Card className="flex flex-col h-full rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300">
+            <Card className="flex flex-col h-full rounded-xl shadow-md hover:shadow-lg hover:-translate-y-1 transition-all duration-300"> {/* Added hover transform */}
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-headline-small text-primary"><Award className="h-6 w-6" /> Annual Innovation Awards</CardTitle>
                 <CardDescription className="text-body-medium">Recognizing groundbreaking contributions.</CardDescription>
@@ -99,7 +99,7 @@ export default function HomePage() {
             Your internal platform to engage in Global Certification and Accreditation at the Global Citizenship Foundation.
             The Portal is globalcertification.org, the Global Gateway is hosted on my.globalcertification.org.
           </p>
-          <p className="text-label-small text-muted-foreground mt-4">&copy; {new Date().getFullYear()} Global Citizenship Foundation. All rights reserved.</p>
+          <p className="text-body-small text-muted-foreground mt-4">&copy; {new Date().getFullYear()} Global Citizenship Foundation. All rights reserved.</p> {/* Changed to text-body-small */}
         </div>
       </footer>
     </div>
