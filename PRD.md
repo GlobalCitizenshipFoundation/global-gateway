@@ -261,7 +261,7 @@ Here's a breakdown of the proposed structure for our project:
 /(workbench): Great for grouping routes for internal users like managers, coordinators, and reviewers, reflecting their specific tools and views.
 /(admin): Clearly designates routes for platform owners and administrators, ensuring their specialized console is distinct.
 
-(Example for specific dasbhoards: /auth/portal/home;
+(To avoid NetxJs naming convention for dashboards, apply clear routes. Example for specific dasbhoards: /auth/portal/home;
 /auth/workbench/desk;
 /auth/admin/console)
 
@@ -288,5 +288,3 @@ Functions here would orchestrate interactions with the database (via Supabase cl
 /styles: While src/app/globals.css and tailwind.config.ts are the primary styling files, this directory could be used for any additional global styling configurations or theme-related utilities if they become necessary beyond the core setup. Adhere to Material Design 3 Principles.
 
 /tests: Standard practice for housing all unit and integration tests.
-
-The specific dasbboards of each would be as follows
