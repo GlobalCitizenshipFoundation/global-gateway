@@ -9,17 +9,27 @@ export default {
   ],
   theme: {
   	extend: {
-        // Material Design 3 Typography Scale (1.25 ratio)
+        // Material Design 3 Typography Scale
         fontSize: {
-            'xs': ['0.75rem', { lineHeight: '1.4', letterSpacing: '0.05em' }], // 12px
-            'sm': ['0.9375rem', { lineHeight: '1.4', letterSpacing: '0' }], // 15px
-            'base': ['1.125rem', { lineHeight: '1.5', letterSpacing: '0' }], // 18px
-            'lg': ['1.5rem', { lineHeight: '1.2', letterSpacing: '-0.02em' }], // 24px
-            'xl': ['1.875rem', { lineHeight: '1.2', letterSpacing: '-0.02em' }], // 30px
-            '2xl': ['2.3125rem', { lineHeight: '1.2', letterSpacing: '-0.02em' }], // 37px
-            '3xl': ['2.875rem', { lineHeight: '1.2', letterSpacing: '-0.02em' }], // 46px
-            '4xl': ['3.6rem', { lineHeight: '1.2', letterSpacing: '-0.02em' }], // ~58px (for hero titles)
-            '5xl': ['4.5rem', { lineHeight: '1.2', letterSpacing: '-0.02em' }], // ~72px (for hero titles)
+            'display-large': ['3.5625rem', { lineHeight: '1.15', letterSpacing: '-0.02em' }], // 57px
+            'display-medium': ['2.8125rem', { lineHeight: '1.2', letterSpacing: '-0.02em' }], // 45px
+            'display-small': ['2.25rem', { lineHeight: '1.25', letterSpacing: '-0.02em' }], // 36px
+
+            'headline-large': ['2rem', { lineHeight: '1.3', letterSpacing: '0' }], // 32px
+            'headline-medium': ['1.75rem', { lineHeight: '1.35', letterSpacing: '0' }], // 28px
+            'headline-small': ['1.5rem', { lineHeight: '1.4', letterSpacing: '0' }], // 24px
+
+            'title-large': ['1.375rem', { lineHeight: '1.45', letterSpacing: '0' }], // 22px
+            'title-medium': ['1rem', { lineHeight: '1.5', letterSpacing: '0.01em' }], // 16px
+            'title-small': ['0.875rem', { lineHeight: '1.55', letterSpacing: '0.01em' }], // 14px
+
+            'body-large': ['1rem', { lineHeight: '1.5', letterSpacing: '0.01em' }], // 16px
+            'body-medium': ['0.875rem', { lineHeight: '1.55', letterSpacing: '0.02em' }], // 14px
+            'body-small': ['0.75rem', { lineHeight: '1.6', letterSpacing: '0.03em' }], // 12px
+
+            'label-large': ['0.875rem', { lineHeight: '1.45', letterSpacing: '0.01em' }], // 14px
+            'label-medium': ['0.75rem', { lineHeight: '1.5', letterSpacing: '0.02em' }], // 12px
+            'label-small': ['0.6875rem', { lineHeight: '1.55', letterSpacing: '0.03em' }], // 11px
         },
   		colors: {
   			background: 'hsl(var(--background))',
@@ -118,16 +128,6 @@ export default {
             '72': '288px',
             '80': '320px',
             '96': '384px',
-        },
-        lineHeight: {
-            'heading': '1.2', // For h1, h2, h3, h4, h5, h6
-            'body': '1.5',   // For p, body text
-            'ui': '1.4',     // For UI elements like buttons, labels
-        },
-        letterSpacing: {
-            'tight-lg': '-0.02em', // For large headings
-            'normal': '0',        // For body text and most UI
-            'small-caps': '0.05em', // For small caps or labels
         },
   		keyframes: {
   			'accordion-down': {

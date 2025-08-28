@@ -18,10 +18,10 @@ export default async function PortalDashboardPage() {
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen p-4 bg-background text-foreground">
-      <h1 className="text-4xl font-bold mb-4">Welcome to the Applicant Portal!</h1>
-      <p className="text-lg text-muted-foreground">Hello, {user.user_metadata?.first_name || user.email}!</p>
-      <p className="text-md text-muted-foreground mt-2">Your role: {userRole}</p>
-      <p className="mt-8 text-center">This is your personalized dashboard where you can track your applications and progress.</p>
+      <h1 className="text-display-medium mb-4">Welcome to the Applicant Portal!</h1>
+      <p className="text-headline-small text-muted-foreground">Hello, {user.user_metadata?.first_name || user.email}!</p>
+      <p className="text-title-medium text-muted-foreground mt-2">Your role: {userRole}</p>
+      <p className="mt-8 text-center text-body-large">This is your personalized dashboard where you can track your applications and progress.</p>
     </div>
   );
 }

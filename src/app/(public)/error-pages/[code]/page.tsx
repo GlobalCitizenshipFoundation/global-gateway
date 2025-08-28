@@ -54,15 +54,15 @@ export default function ErrorPage({ params }: ErrorPageProps) {
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-background text-foreground p-4 text-center">
       <Icon className="h-24 w-24 text-destructive mb-6" />
-      <h1 className="text-5xl font-bold mb-4">{title}</h1>
-      <p className="text-lg text-muted-foreground mb-8 max-w-md">{message}</p>
+      <h1 className="text-display-large font-bold mb-4">{title}</h1>
+      <p className="text-headline-small text-muted-foreground mb-8 max-w-md">{message}</p>
       <Button asChild size="lg">
         <Link href={buttonHref}>
           {buttonText}
         </Link>
       </Button>
       {code === "500" && (
-        <p className="text-sm text-muted-foreground mt-4">
+        <p className="text-body-medium text-muted-foreground mt-4">
           If the issue persists, please <Link href="mailto:support@globalcitizenshipfoundation.org" className="text-primary hover:underline">contact support</Link>.
         </p>
       )}

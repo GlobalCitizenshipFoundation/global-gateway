@@ -17,10 +17,10 @@ export default async function AdminDashboardPage() {
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen p-4 bg-background text-foreground">
-      <h1 className="text-4xl font-bold mb-4">Welcome to the Admin Console!</h1>
-      <p className="text-lg text-muted-foreground">Hello, {user.user_metadata?.first_name || user.email}!</p>
-      <p className="text-md text-muted-foreground mt-2">Your role: {userRole}</p>
-      <p className="mt-8 text-center">This is where you manage users, system settings, and overall platform configuration.</p>
+      <h1 className="text-display-medium mb-4">Welcome to the Admin Console!</h1>
+      <p className="text-headline-small text-muted-foreground">Hello, {user.user_metadata?.first_name || user.email}!</p>
+      <p className="text-title-medium text-muted-foreground mt-2">Your role: {userRole}</p>
+      <p className="mt-8 text-center text-body-large">This is where you manage users, system settings, and overall platform configuration.</p>
     </div>
   );
 }

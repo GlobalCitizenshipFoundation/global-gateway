@@ -19,8 +19,8 @@ export default function Error({
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-background text-foreground p-4 text-center">
       <Frown className="h-24 w-24 text-destructive mb-6" />
-      <h2 className="text-4xl font-bold mb-4">Oops! Something went wrong.</h2>
-      <p className="text-lg text-muted-foreground mb-8 max-w-md">
+      <h2 className="text-display-medium font-bold mb-4">Oops! Something went wrong.</h2>
+      <p className="text-headline-small text-muted-foreground mb-8 max-w-md">
         We're sorry, but an unexpected error occurred. Please try refreshing the page or going back to the homepage.
       </p>
       <div className="flex space-x-4">
@@ -31,7 +31,7 @@ export default function Error({
           <a href="/">Go Home</a>
         </Button>
       </div>
-      <p className="text-sm text-muted-foreground mt-4">
+      <p className="text-body-medium text-muted-foreground mt-4">
         If the issue persists, please contact support.
       </p>
     </div>

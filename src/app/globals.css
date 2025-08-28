@@ -119,35 +119,35 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground font-normal text-body-large leading-body; /* Apply base typography */
+    @apply bg-background text-foreground font-normal text-body-large; /* Apply base typography */
   }
 
   h1, h2, h3, h4, h5, h6 {
-    @apply font-semibold leading-heading tracking-tight-lg; /* Apply heading typography */
+    /* Remove generic heading styles, specific M3 classes will handle it */
   }
 
   p {
-    @apply leading-body tracking-normal;
+    /* Remove generic paragraph styles, specific M3 classes will handle it */
   }
 
   /* Specific overrides for M3 type scale */
-  .text-display-large { @apply text-5xl font-bold leading-heading tracking-tight-lg; }
-  .text-display-medium { @apply text-4xl font-bold leading-heading tracking-tight-lg; }
-  .text-display-small { @apply text-3xl font-bold leading-heading tracking-tight-lg; }
+  .text-display-large { @apply text-display-large font-bold; }
+  .text-display-medium { @apply text-display-medium font-bold; }
+  .text-display-small { @apply text-display-small font-bold; }
 
-  .text-headline-large { @apply text-2xl font-semibold leading-heading tracking-tight-lg; }
-  .text-headline-medium { @apply text-xl font-semibold leading-heading tracking-tight-lg; }
-  .text-headline-small { @apply text-lg font-semibold leading-heading tracking-tight-lg; }
+  .text-headline-large { @apply text-headline-large font-semibold; }
+  .text-headline-medium { @apply text-headline-medium font-semibold; }
+  .text-headline-small { @apply text-headline-small font-semibold; }
 
-  .text-title-large { @apply text-base font-semibold leading-ui tracking-normal; }
-  .text-title-medium { @apply text-sm font-semibold leading-ui tracking-normal; }
-  .text-title-small { @apply text-xs font-semibold leading-ui tracking-small-caps; }
+  .text-title-large { @apply text-title-large font-semibold; }
+  .text-title-medium { @apply text-title-medium font-medium; }
+  .text-title-small { @apply text-title-small font-medium; }
 
-  .text-body-large { @apply text-base font-normal leading-body tracking-normal; }
-  .text-body-medium { @apply text-sm font-normal leading-body tracking-normal; }
-  .text-body-small { @apply text-sm font-normal leading-body tracking-normal; } /* Changed from text-xs */
+  .text-body-large { @apply text-body-large font-normal; }
+  .text-body-medium { @apply text-body-medium font-normal; }
+  .text-body-small { @apply text-body-small font-normal; }
 
-  .text-label-large { @apply text-sm font-semibold leading-ui tracking-small-caps; }
-  .text-label-medium { @apply text-xs font-semibold leading-ui tracking-small-caps; }
-  .text-label-small { @apply text-xs font-normal leading-ui tracking-small-caps; }
+  .text-label-large { @apply text-label-large font-medium; }
+  .text-label-medium { @apply text-label-medium font-medium; }
+  .text-label-small { @apply text-label-small font-medium; }
 }
