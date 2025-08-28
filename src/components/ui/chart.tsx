@@ -63,15 +63,18 @@ const ChartContainer = React.forwardRef<
 ));
 ChartContainer.displayName = "ChartContainer";
 
+// Derive TooltipPayload type from RechartsPrimitive.TooltipProps
+type RechartsTooltipPayload = NonNullable<RechartsPrimitive.TooltipProps<any, any>["payload"]>[number];
+
 type ChartTooltipProps = {
   hideLabel?: boolean;
   hideIndicator?: boolean;
   formatter?: (
     value: number,
     name: string,
-    item: RechartsPrimitive.Payload<any, any>, // Using RechartsPrimitive.Payload directly
+    item: RechartsTooltipPayload, // Corrected type for individual item
     index: number,
-    payload: RechartsPrimitive.Payload<any, any>[] // Using RechartsPrimitive.Payload directly
+    payload: RechartsTooltipPayload[] // Corrected type for payload array
   ) => React.ReactNode;
   className?: string;
 };
@@ -105,7 +108,7 @@ function ChartTooltip({
                 {payload.map((item, index) => {
                   const key = item.dataKey || item.name || index;
                   // Ensure key is a valid string or number for config lookup
-                  const configKey = (typeof key === 'string' || typeof key === 'number') ? String(key) : undefined;
+                  const configKey = (typeof key === 'string' || typeof key === 'number') ? key : undefined;
                   const itemConfig = configKey !== undefined && configKey in config ? config[configKey] : undefined;
                   const hide = itemConfig?.hide;
 
@@ -159,6 +162,9 @@ function ChartTooltip({
 }
 ChartTooltip.displayName = "ChartTooltip";
 
+// Derive LegendPayload type from RechartsPrimitive.LegendProps
+type RechartsLegendPayload = NonNullable<RechartsPrimitive.LegendProps['payload']>[number];
+
 type ChartLegendProps<TData extends Record<string, any> = Record<string, any>> = React.ComponentProps<typeof RechartsPrimitive.Legend> & {
   hideIcon?: boolean;
   nameKey?: keyof TData;
@@ -183,10 +189,20 @@ function ChartLegend<TData extends Record<string, any> = Record<string, any>>(
         className
       )}
     >
-      {payload.map((item: RechartsPrimitive.LegendPayload) => { // Explicitly type item as RechartsPrimitive.LegendPayload
+      {payload.map((item: RechartsLegendPayload) => { // Explicitly type item as RechartsLegendPayload
+        // Fix for Error 1: TS2352 - Cast item.payload to unknown first, then TData
+        const rawData = item.payload as unknown as TData | undefined;
+        
+        let derivedKey: string | number | symbol | undefined;
+
+        if (nameKey && rawData) {
+            derivedKey = rawData[nameKey];
+        } else {
+            derivedKey = item.dataKey;
+        }
+
         // Ensure key is a string or number for config lookup
-        const key = nameKey ? (item.payload as TData)?.[nameKey] : item.dataKey;
-        const configKey = (typeof key === 'string' || typeof key === 'number') ? String(key) : undefined;
+        const configKey = (typeof derivedKey === 'string' || typeof derivedKey === 'number') ? derivedKey : undefined;
         if (configKey === undefined) return null;
 
         const itemConfig = configKey in config ? config[configKey] : undefined;
@@ -196,7 +212,8 @@ function ChartLegend<TData extends Record<string, any> = Record<string, any>>(
           return null;
         }
 
-        // Access fill/stroke directly from item, as RechartsPrimitive.LegendPayload includes these
+        // Fix for Errors 2 & 3: Property 'fill'/'stroke' does not exist on type 'Payload'.
+        // This now works because 'item' is explicitly typed as RechartsLegendPayload
         const itemColor = item.color || item.fill || item.stroke;
 
         return (
