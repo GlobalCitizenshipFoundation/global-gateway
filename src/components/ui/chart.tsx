@@ -63,15 +63,18 @@ const ChartContainer = React.forwardRef<
 ));
 ChartContainer.displayName = "ChartContainer";
 
+// Define RechartsPayload by extracting it from TooltipProps using a robust conditional type
+type RechartsPayload = RechartsPrimitive.TooltipProps<any, any>['payload'] extends (infer P)[] ? P : never;
+
 type ChartTooltipProps = {
   hideLabel?: boolean;
   hideIndicator?: boolean;
   formatter?: (
     value: number,
     name: string,
-    item: RechartsPrimitive.TooltipPayload, // Corrected type
+    item: RechartsPayload, // Using the extracted type
     index: number,
-    payload: RechartsPrimitive.TooltipPayload[] // Corrected type
+    payload: RechartsPayload[] // Using the extracted type
   ) => React.ReactNode;
   className?: string;
 };
@@ -182,7 +185,15 @@ function ChartLegend<TData extends Record<string, any> = Record<string, any>>(
       )}
     >
       {payload.map((item) => {
-        const key = nameKey ? (item.payload as TData)?.[nameKey] : item.dataKey;
+        const dataItem = item.payload as TData | undefined;
+
+        let key: string | number | undefined;
+        if (nameKey && dataItem && (typeof dataItem[nameKey] === 'string' || typeof dataItem[nameKey] === 'number')) {
+          key = dataItem[nameKey] as string | number;
+        } else if (typeof item.dataKey === 'string' || typeof item.dataKey === 'number') {
+          key = item.dataKey;
+        }
+
         if (!key) return null;
 
         const itemConfig = key in config ? config[key] : undefined;
@@ -192,7 +203,7 @@ function ChartLegend<TData extends Record<string, any> = Record<string, any>>(
           return null;
         }
 
-        const itemColor = item.color || (item.payload as TData)?.fill || (item.payload as TData)?.stroke;
+        const itemColor = item.color || dataItem?.fill || dataItem?.stroke;
 
         return (
           <div
