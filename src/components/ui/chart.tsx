@@ -69,9 +69,9 @@ type ChartTooltipProps = {
   formatter?: (
     value: number,
     name: string,
-    item: RechartsPrimitive.TooltipProps<any, any>["payload"][number], // Corrected type inference
+    item: RechartsPrimitive.Payload<any, any>, // Using RechartsPrimitive.Payload directly
     index: number,
-    payload: RechartsPrimitive.TooltipProps<any, any>["payload"] // Corrected type inference
+    payload: RechartsPrimitive.Payload<any, any>[] // Using RechartsPrimitive.Payload directly
   ) => React.ReactNode;
   className?: string;
 };
@@ -104,7 +104,9 @@ function ChartTooltip({
               <div className="grid gap-1">
                 {payload.map((item, index) => {
                   const key = item.dataKey || item.name || index;
-                  const itemConfig = key in config ? config[key] : undefined;
+                  // Ensure key is a valid string or number for config lookup
+                  const configKey = (typeof key === 'string' || typeof key === 'number') ? String(key) : undefined;
+                  const itemConfig = configKey !== undefined && configKey in config ? config[configKey] : undefined;
                   const hide = itemConfig?.hide;
 
                   if (hide) {
@@ -113,14 +115,14 @@ function ChartTooltip({
 
                   return (
                     <div
-                      key={key}
+                      key={String(key)} // Ensure key is string for React key prop
                       className="flex items-center justify-between gap-4"
                     >
                       <div className="flex items-center gap-2">
                         {!hideIndicator ? (
                           <span
                             className={cn("h-3 w-3 shrink-0 rounded-full", {
-                              [`bg-[--color-${key}]`]: key in config,
+                              [`bg-[--color-${String(configKey)}]`]: configKey !== undefined && configKey in config,
                             })}
                             style={{
                               backgroundColor: item.color || itemConfig?.color,
@@ -181,29 +183,31 @@ function ChartLegend<TData extends Record<string, any> = Record<string, any>>(
         className
       )}
     >
-      {payload.map((item: RechartsPrimitive.LegendProps<any, any>["payload"][number]) => { // Explicitly type item
-        // Ensure key is a string or number for indexing config
-        const key = (nameKey ? (item.payload as TData)?.[nameKey] : item.dataKey) as string | number;
-        if (!key) return null;
+      {payload.map((item: RechartsPrimitive.LegendPayload) => { // Explicitly type item as RechartsPrimitive.LegendPayload
+        // Ensure key is a string or number for config lookup
+        const key = nameKey ? (item.payload as TData)?.[nameKey] : item.dataKey;
+        const configKey = (typeof key === 'string' || typeof key === 'number') ? String(key) : undefined;
+        if (configKey === undefined) return null;
 
-        const itemConfig = key in config ? config[key] : undefined;
+        const itemConfig = configKey in config ? config[configKey] : undefined;
         const hide = itemConfig?.hide;
 
         if (hide) {
           return null;
         }
 
-        const itemColor = item.color || (item.payload as TData)?.fill || (item.payload as TData)?.stroke;
+        // Access fill/stroke directly from item, as RechartsPrimitive.LegendPayload includes these
+        const itemColor = item.color || item.fill || item.stroke;
 
         return (
           <div
-            key={item.value}
+            key={String(item.value)} // Ensure key is string for React key prop
             className="flex items-center gap-1.5"
           >
             {!hideIcon ? (
               <span
                 className={cn("h-3 w-3 shrink-0 rounded-full", {
-                  [`bg-[--color-${String(key)}]`]: key in config, // Cast key to string for template literal
+                  [`bg-[--color-${String(configKey)}]`]: configKey in config,
                 })}
                 style={{
                   backgroundColor: itemColor,
