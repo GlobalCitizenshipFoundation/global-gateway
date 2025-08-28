@@ -63,18 +63,15 @@ const ChartContainer = React.forwardRef<
 ));
 ChartContainer.displayName = "ChartContainer";
 
-// Derive TooltipPayload type from RechartsPrimitive.TooltipProps
-type RechartsTooltipPayload = NonNullable<RechartsPrimitive.TooltipProps<any, any>["payload"]>[number];
-
 type ChartTooltipProps = {
   hideLabel?: boolean;
   hideIndicator?: boolean;
   formatter?: (
     value: number,
     name: string,
-    item: RechartsTooltipPayload, // Corrected type for individual item
+    item: RechartsPrimitive.TooltipProps<any, any>["payload"][number], // Corrected type inference
     index: number,
-    payload: RechartsTooltipPayload[] // Corrected type for payload array
+    payload: RechartsPrimitive.TooltipProps<any, any>["payload"] // Corrected type inference
   ) => React.ReactNode;
   className?: string;
 };
@@ -107,9 +104,7 @@ function ChartTooltip({
               <div className="grid gap-1">
                 {payload.map((item, index) => {
                   const key = item.dataKey || item.name || index;
-                  // Ensure key is a valid string or number for config lookup
-                  const configKey = (typeof key === 'string' || typeof key === 'number') ? key : undefined;
-                  const itemConfig = configKey !== undefined && configKey in config ? config[configKey] : undefined;
+                  const itemConfig = key in config ? config[key] : undefined;
                   const hide = itemConfig?.hide;
 
                   if (hide) {
@@ -118,14 +113,14 @@ function ChartTooltip({
 
                   return (
                     <div
-                      key={String(key)} // Ensure key is string for React key prop
+                      key={key}
                       className="flex items-center justify-between gap-4"
                     >
                       <div className="flex items-center gap-2">
                         {!hideIndicator ? (
                           <span
                             className={cn("h-3 w-3 shrink-0 rounded-full", {
-                              [`bg-[--color-${String(configKey)}]`]: configKey !== undefined && configKey in config,
+                              [`bg-[--color-${key}]`]: key in config,
                             })}
                             style={{
                               backgroundColor: item.color || itemConfig?.color,
@@ -162,9 +157,6 @@ function ChartTooltip({
 }
 ChartTooltip.displayName = "ChartTooltip";
 
-// Derive LegendPayload type from RechartsPrimitive.LegendProps
-type RechartsLegendPayload = NonNullable<RechartsPrimitive.LegendProps['payload']>[number];
-
 type ChartLegendProps<TData extends Record<string, any> = Record<string, any>> = React.ComponentProps<typeof RechartsPrimitive.Legend> & {
   hideIcon?: boolean;
   nameKey?: keyof TData;
@@ -189,31 +181,29 @@ function ChartLegend<TData extends Record<string, any> = Record<string, any>>(
         className
       )}
     >
-      {payload.map((item: RechartsLegendPayload) => { // Explicitly type item as RechartsLegendPayload
-        // Ensure key is a string or number for config lookup
-        const key = nameKey ? (item.payload as TData)?.[nameKey] : item.dataKey;
-        const configKey = (typeof key === 'string' || typeof key === 'number') ? key : undefined;
-        if (configKey === undefined) return null;
+      {payload.map((item: RechartsPrimitive.LegendProps<any, any>["payload"][number]) => { // Explicitly type item
+        // Ensure key is a string or number for indexing config
+        const key = (nameKey ? (item.payload as TData)?.[nameKey] : item.dataKey) as string | number;
+        if (!key) return null;
 
-        const itemConfig = configKey in config ? config[configKey] : undefined;
+        const itemConfig = key in config ? config[key] : undefined;
         const hide = itemConfig?.hide;
 
         if (hide) {
           return null;
         }
 
-        // Access fill/stroke directly from item, as RechartsLegendPayload includes these
-        const itemColor = item.color || item.fill || item.stroke;
+        const itemColor = item.color || (item.payload as TData)?.fill || (item.payload as TData)?.stroke;
 
         return (
           <div
-            key={String(item.value)} // Ensure key is string for React key prop
+            key={item.value}
             className="flex items-center gap-1.5"
           >
             {!hideIcon ? (
               <span
                 className={cn("h-3 w-3 shrink-0 rounded-full", {
-                  [`bg-[--color-${String(configKey)}]`]: configKey in config,
+                  [`bg-[--color-${String(key)}]`]: key in config, // Cast key to string for template literal
                 })}
                 style={{
                   backgroundColor: itemColor,
