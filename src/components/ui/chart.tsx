@@ -20,7 +20,7 @@ interface RechartsTooltipPayload {
 interface RechartsLegendPayload {
   value?: string | number;
   id?: string;
-  type?: "line" | "square" | "rect" | "circle" | "cross" | "diamond" | "star" | "triangle" | "wye";
+  type?: "line" | "square" | "rect" | "circle" | "cross" | "diamond" | "star" | "triangle" | "wye" | "none" | "plainline"; // Added "plainline"
   color?: string;
   payload?: any; // The original data object
   inactive?: boolean;
@@ -269,7 +269,12 @@ const ChartTooltip = React.forwardRef<
                     ) : null}
                   </div>
                   {formatter ? (
-                    formatter(item.value, item.name || '', item, index)
+                    formatter(
+                      (typeof item.value === 'string' || typeof item.value === 'number') ? item.value : '', // Ensure value is string or number
+                      item.name || '',
+                      item,
+                      index
+                    )
                   ) : (
                     <span className="font-mono font-medium tabular-nums text-foreground">
                       {item.value?.toLocaleString()}
