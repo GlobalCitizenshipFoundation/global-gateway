@@ -22,12 +22,20 @@ export default {
   			},
   			primary: {
   				DEFAULT: 'hsl(var(--primary))',
-  				foreground: 'hsl(var(--primary-foreground))'
+  				foreground: 'hsl(var(--primary-foreground))',
+                container: 'hsl(var(--primary-container))',
+                'on-container': 'hsl(var(--on-primary-container))'
   			},
   			secondary: {
   				DEFAULT: 'hsl(var(--secondary))',
-  				foreground: 'hsl(var(--secondary-foreground))'
+  				foreground: 'hsl(var(--secondary-foreground))',
+                container: 'hsl(var(--secondary-container))',
+                'on-container': 'hsl(var(--on-secondary-container))'
   			},
+            tertiary: {
+                DEFAULT: 'hsl(var(--tertiary))',
+                foreground: 'hsl(var(--tertiary-foreground))'
+            },
   			muted: {
   				DEFAULT: 'hsl(var(--muted))',
   				foreground: 'hsl(var(--muted-foreground))'
@@ -38,7 +46,9 @@ export default {
   			},
   			destructive: {
   				DEFAULT: 'hsl(var(--destructive))',
-  				foreground: 'hsl(var(--destructive-foreground))'
+  				foreground: 'hsl(var(--destructive-foreground))',
+                container: 'hsl(var(--destructive-container))',
+                'on-container': 'hsl(var(--on-destructive-container))' // Fixed: Added missing ')'
   			},
   			border: 'hsl(var(--border))',
   			input: 'hsl(var(--input))',
