@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { SessionContextProvider } from "@/context/SessionContextProvider"; // Import SessionContextProvider
-import { Toaster } from "@/components/ui/sonner"; // Import Toaster
+import { SessionContextProvider } from "@/context/SessionContextProvider";
+import { Toaster } from "@/components/ui/sonner";
+import React from "react"; // Import React
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -15,8 +16,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Global Gateway", // Updated title
-  description: "A Unified Platform for Programs, Fellowships, Hiring, and Awards Management", // Updated description
+  title: "Global Gateway",
+  description: "A Unified Platform for Programs, Fellowships, Hiring, and Awards Management",
 };
 
 export default function RootLayout({
@@ -30,8 +31,11 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <SessionContextProvider>
-          {children}
-          <Toaster />
+          {/* Wrap children and Toaster in a fragment to pass as a single child */}
+          <React.Fragment>
+            {children}
+            <Toaster />
+          </React.Fragment>
         </SessionContextProvider>
       </body>
     </html>
