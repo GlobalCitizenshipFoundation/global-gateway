@@ -2,6 +2,36 @@
 
 This document outlines the technology stack and specific library usage guidelines for this Next.js application. Adhering to these rules will help maintain consistency, improve collaboration, and ensure the AI assistant can effectively understand and modify the codebase.
 
+## Product Requirement Document VERY <!IMPORTANT!>
+
+As you execute the plan strictly follow: 
+
+
+1. Please refer to the 'PRD.md' file for Product Requirements.
+
+2. Refer to the 'VIS.md' file For Vertical Implementation Strategy.
+
+To accelerate development, you may reference the features from @Global Gateway App 3.0, but do not copy code directly (as it may be corrupt or error-prone). Instead, use it only as a functional benchmark.
+
+3. Provide a short summary of what you have done and what you intend to do next at the end of  every execution. This would allow me to correct you before you proceeding or ask you to keep going.
+
+4. After implementing every vertical successfully please document it in 'docs.md' file according to the predefined conventions. Remember you don't need to repeat info that already exists in project files, rather describe the implementation--and point to the file where the implementation can be found--so that it can be referenced by human.
+
+5. Log errors should be documented in the 'errors.md' file and not in the 'docs.md' file. You will have to refer to the errors file when asked.
+
+6. You do not have permission to edit, modify, or delete any aspect of AI_RULES.md' or 'PRD.md' files.
+
+## Design
+
+Strictly enforce achieving full Material Design 3 specifications and compliance going beyond just using the base components. Therefore involve the below but not limited to:
+
+Dynamic Color Theming: Implementing a system where colors adapt based on a primary seed color, generating a full palette of tonal colors.
+Specific Elevation and Shape: Applying precise shadow depths and corner radii as defined by M3 specifications.
+Typography: Using M3's defined type scale (e.g., display, headline, title, body, label with specific sizes and weights).
+Motion: Incorporating M3-specific animations and transitions.
+
+Refer toM3Design.md to strictly enforce Material Design 3 Specifications.
+
 ## Tech Stack Overview
 
 The application is built using the following core technologies:
@@ -69,5 +99,85 @@ To ensure consistency and leverage the chosen stack effectively, please follow t
 13. **TypeScript**:
     *   Write all new code in TypeScript.
     *   Strive for strong typing and leverage TypeScript's features to improve code quality and maintainability. Avoid using `any` where possible.
+
+
+# UI/UX Integration in VIS
+1. Design Principles
+
+Material Design 3 (M3) Compliance: Utilize dynamic color theming, elevation, shape, and typography from M3 for all components.
+
+Modern & Intuitive: Soft shadows, motion, and rounded corners to create a friendly and professional interface.
+
+Consistency: Uniform spacing, component sizing, and iconography across Pathways, Phases, Campaigns, Dashboards, and User Management.
+
+Accessibility: Maintain WCAG 2.1 AA compliance, with M3 tokens for high contrast and readability.
+
+Responsiveness & Adaptivity: Desktop-first with responsive layouts; adaptive UI for tablet and mobile where feasible.
+
+2. Navigation & Layout
+
+Top App Bar + Navigation Drawer: Persistent navigation with clear section labeling: Programs, Campaigns, Pathways, Users, Dashboards.
+
+Breadcrumbs & Tabs: Show hierarchy and allow quick switching between Campaign > Campaign Phase > Applications.
+
+Adaptive Multi-View Layouts: Kanban, Table/List, Calendar, and Dashboard views with modern M3-style cards and elevation effects.
+
+3. Module UI/UX
+
+User Profiles & Management:
+
+Profile cards with M3 surfaces, role tags, and visual status indicators.
+
+Search, filters, and bulk actions with M3 input fields and chips.
+
+Pathways & Phases:
+
+Visual builder with drag-and-drop using M3 surfaces, elevation cues, and motion feedback.
+
+Phase configuration panels with M3 dialogs and expandable panels.
+
+Color-coded phase distinction (applicant-facing vs internal-only) with dynamic theming.
+
+Campaigns & Campaign Phases:
+
+Dashboard cards with progress indicators and motion-based transitions.
+
+Expand/collapse campaign phases using M3 list components and chevron animations.
+
+Forms / Emails / Scheduling / Status:
+
+Form builder with M3 input fields, validation messages, and outlined/filled variants.
+
+Email composer previews using M3 surfaces with elevation.
+
+Scheduling calendar with interactive cards, conflict detection, and drag-drop.
+
+Recommendations:
+
+Invite interface using M3 dialogs and chips for recommenders.
+
+Status indicators with badges and color-coded submission states.
+
+Dashboards & Insights:
+
+Dynamic M3 cards with charts, tables, and clickable metrics linking to filtered views.
+
+Toasts and snackbars for alerts on stalled applications or pending actions.
+
+4. Interaction & Feedback
+
+Motion & Animation: Elevation shifts, fade-ins, and smooth transitions for draggable elements.
+
+Hover & Focus States: Clear visual feedback for accessibility and usability.
+
+Inline Feedback: Modals, snackbars, and tooltips for errors, success, and system prompts.
+
+5. Implementation Notes
+
+Use a component-based framework for reusable elements as outlined in the 'AI_RULES.md' file.
+
+API-driven UI updates for real-time reflection of phase changes, form submissions, and campaign progress.
+
+MVP prioritization: focus on functional M3 components first, then polish with motion and advanced theming.
 
 By following these guidelines, we can build a more robust, maintainable, and consistent application.
