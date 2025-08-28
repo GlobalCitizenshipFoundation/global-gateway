@@ -9,9 +9,7 @@ As you execute the plan strictly follow:
 
 1. Please refer to the 'PRD.md' file for Product Requirements.
 
-2. Refer to 'Architecture.md' file to understand the app architecture.
-
-2. Refer to the 'VIS.md' file For Vertical Implementation Strategy.
+2. Refer to 'Architecture.md' file to understand the app architecture and refer to the 'VIS.md' file For Vertical Implementation Strategy.
 
 To accelerate development, you may reference the features from @Global Gateway App 3.0, but do not copy code directly (as it may be corrupt or error-prone). Instead, use it only as a functional benchmark.
 
