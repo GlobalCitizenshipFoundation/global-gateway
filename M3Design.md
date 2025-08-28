@@ -263,9 +263,4 @@ Internal tools and decisions must be completely hidden from applicants and only 
 
 This comprehensive set of guidelines ensures that Material Design 3 principles and WCAG 2.1 AA accessibility are deeply embedded in every design decision, from color and typography to interactive elements and motion, across both web and mobile experiences.
 
----
-
-**Summary of what has been done:**
-I have updated the `M3Design.md` file to include comprehensive guidelines on Material Design 3 aligned interactions across web and mobile experiences. This new content details input modalities (mouse/keyboard, touch/gestures), feedback mechanisms (toasts, dialogs, inline validation), and adaptive interactions (drag-and-drop, expand/collapse), all while explicitly integrating WCAG 2.1 AA accessibility requirements. The primary color HSL values for `##880E4F` have also been re-verified and corrected.
-
-The UI strictly adheres to the defined M3 and accessibility guidelines.
+ The UI should strictly adheres to the defined M3 and accessibility guidelines in 'M3Design.md' file.
