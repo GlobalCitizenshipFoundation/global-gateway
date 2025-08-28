@@ -1,95 +1,119 @@
 # Global Gateway Architecture Plan
 
-This document outlines the architecture for the Global Gateway platform, designed to streamline program, fellowship, hiring, and awards management for the Global Citizenship Foundation (GCF). The architecture adheres to the principles of modularity, clean architecture, and user-centric design, leveraging the specified Next.js, TypeScript, Tailwind CSS, Shadcn/UI, and Supabase stack.
+This refined architecture plan builds upon the initial structure, emphasizing a lean, modular, and scalable approach. It prioritizes clear separation of concerns, efficient data flow, and a consistent user experience, all while strictly adhering to Material Design 3 specifications and robust security practices.
 
-## 1. Core Modules and Interconnections
+### 1. Core Principles & Design Philosophy
 
-The platform is structured around key functional modules, each representing a distinct area of program management. These modules are designed to be highly cohesive and loosely coupled, facilitating independent development and maintenance.
+*   **Vertical Slicing (Feature-First):** Each major feature (e.g., Pathway Templates, Campaign Management) is treated as a vertical slice, encompassing its own UI, business logic, and data interactions. This promotes self-contained, independently deployable, and easily maintainable modules.
+*   **API-First & Server-Centric:** While the frontend is rich, critical data operations and business logic are primarily handled on the server. This ensures security, performance, and a seamless user experience by pre-fetching data and validating actions server-side.
+*   **Material Design 3 (M3) Driven:** Beyond component usage, M3 principles for dynamic color theming, elevation, shape, typography, and motion will be deeply integrated across all layers, ensuring a cohesive and accessible user interface.
+*   **Security by Design:** Role-Based Access Control (RBAC) and Row Level Security (RLS) are fundamental, enforced at both the application (middleware, API routes, Server Actions) and database layers (Supabase).
+*   **Efficiency & Performance:** Leverage Next.js features like Server Components, Server Actions, and intelligent caching to minimize client-side JavaScript and optimize data fetching.
 
-**Core Modules:**
+### 2. Core Modules and Interconnections (Refined)
 
-1.  **User & Role Management (Foundation):** Manages user accounts, authentication, authorization (RBAC), and profiles. This module underpins all other modules.
-2.  **Pathway Template Management:** Allows administrators to design and manage reusable workflow templates (Pathways) composed of various phases (e.g., Application, Review, Scheduling, Decision).
-3.  **Campaign Management:** Enables program managers to create live instances (Campaigns) from Pathway Templates, configure campaign-specific settings, and monitor overall progress.
-4.  **Application Management:** Handles the entire application lifecycle, including dynamic form rendering, submission, document uploads, and applicant-specific data.
-5.  **Evaluation & Review Management:** Provides tools for screeners and reviewers to assess applications using structured rubrics, manage assignments, and track completion.
-6.  **Scheduling & Interview Coordination:** Facilitates the booking and management of interviews, allowing hosts to define availability and applicants to self-schedule.
-7.  **Recommendations Management:** Manages the process of requesting and submitting recommendations, typically via secure, external links.
-8.  **Decision & Status Tracking:** Orchestrates the final decision-making process, records outcomes, and updates applicant statuses.
-9.  **Communication & Notifications:** Manages all internal and external communications, including email and in-app notifications triggered by workflow events.
-10. **Reporting & Insights:** Provides dashboards and data export capabilities for monitoring campaign performance, diversity metrics, and overall program effectiveness.
+The core functional modules remain consistent, but their implementation will strongly align with the `src/features` directory structure. Each module will be a self-contained unit, reducing cross-module dependencies and promoting reusability.
 
-**Interconnections:**
+1.  **User & Role Management:** (Foundation) Handles authentication, authorization, user profiles, and role assignments. This is a cross-cutting concern, integrated via middleware and shared services.
+2.  **Pathway Template Management:** Design and manage reusable workflow templates.
+3.  **Campaign Management:** Create live instances from Pathway Templates, configure settings, and monitor progress.
+4.  **Application Management:** Dynamic forms, submission handling, document uploads, and applicant data.
+5.  **Evaluation & Review Management:** Tools for screeners and reviewers, rubrics, assignments, and feedback.
+6.  **Scheduling & Interview Coordination:** Availability management, booking, and calendar synchronization.
+7.  **Recommendations Management:** Requesting and submitting recommendations via secure links.
+8.  **Decision & Status Tracking:** Final decision-making, outcome recording, and status updates.
+9.  **Communication & Notifications:** Internal and external communications, email, and in-app notifications.
+10. **Reporting & Insights:** Dashboards, analytics, and data export.
 
-*   **User & Role Management** provides authentication and authorization for all interactions.
-*   **Pathway Templates** are the blueprints for **Campaigns**.
-*   **Campaigns** define the sequence of **Phases** (Application, Review, Scheduling, Recommendation, Decision).
-*   **Application Management** feeds data into **Evaluation & Review**.
-*   **Evaluation & Review** outcomes inform **Decision & Status Tracking**.
-*   **Scheduling** and **Recommendations** are specific types of phases within a **Campaign**.
-*   **Communication & Notifications** are triggered by events across all operational modules.
-*   **Reporting & Insights** aggregate data from all modules to provide a holistic view.
+**Interconnections:** Modules interact primarily through well-defined interfaces (services, API routes, Server Actions), minimizing direct coupling. User & Role Management underpins all interactions, while Pathway Templates serve as blueprints for Campaigns, which then orchestrate Phases involving Application, Evaluation, Scheduling, and Decision modules.
 
-## 2. Role-Based Interfaces and User Flows
+### 3. Role-Based Interfaces and User Flows (Reinforced)
 
-The platform provides tailored experiences for different user roles, ensuring relevant information and functionalities are presented.
+The existing Next.js App Router structure (`/(public)`, `/(portal)`, `/(workbench)`, `/(admin)`) is ideal.
 
-**Frontend Routing Structure (`src/app`):**
+*   **`/(public)`:** Unauthenticated access for marketing, public campaign listings, and secure external links (e.g., for recommenders).
+*   **`/(portal)`:** Participant-facing dashboard and workflows.
+*   **`/(workbench)`:** Central hub for internal operational roles (Coordinators, Recruiters, Evaluators).
+*   **`/(admin)`:** Exclusive console for platform administrators.
 
-*   **`/(public)`:** Unauthenticated routes for marketing pages, public program listings, magic links (e.g., for recommenders), and initial sign-up/login.
-*   **`/(portal)`:** Dedicated dashboard and workflows for **Applicants/Nominees/Participants**.
-    *   **Flow:** View open campaigns, apply, track application status, schedule interviews, view decisions, receive notifications.
-*   **`/(workbench)`:** Central hub for **Coordinators/Recruiters/Program Officers** and **Evaluators/Hiring Managers/Review Panelists**.
-    *   **Coordinator Flow:** Create/manage campaigns, configure settings, assign reviewers, monitor progress, manage communications.
-    *   **Evaluator Flow:** View assigned applications, score using rubrics, provide feedback, manage availability for interviews.
-*   **`/(admin)`:** Exclusive console for **Admins/Platform Owners**.
-    *   **Flow:** Create/edit Pathway Templates, manage user roles and permissions, configure system-wide settings, access advanced reporting.
+**Access Control:** A robust `middleware.ts` will be the primary gatekeeper, performing server-side session validation and role-based authorization *before* rendering any page content. This ensures a "server-first" session check, preventing screen flickers and unauthorized access, aligning with the seamless authentication requirement.
 
-## 3. Service Layers
+### 4. Service Layers (Optimized for Next.js & Supabase)
 
-The architecture employs a layered approach to ensure separation of concerns, maintainability, and scalability.
+The architecture leverages Next.js's full-stack capabilities and Supabase's integrated services for a lean and efficient structure.
 
 *   **Frontend (UI Layer):**
-    *   **Location:** `src/app`, `src/components`, `src/features`, `src/hooks`, `src/context`.
-    *   **Technologies:** Next.js (App Router), React, TypeScript, Tailwind CSS, Shadcn/UI.
-    *   **Responsibilities:** User interface rendering, client-side state management (`useState`, `useReducer`, React Context), form handling (`react-hook-form`), interaction with backend APIs.
+    *   **Location:** `src/app`, `src/components`, `src/features/[feature-name]/components`, `src/hooks`, `src/context`.
+    *   **Technologies:** Next.js (Server & Client Components), React, TypeScript, Tailwind CSS, Shadcn/UI.
+    *   **Responsibilities:** Rendering M3-compliant UI, client-side interactivity, local state management, and invoking Server Actions or API routes for data operations.
+    *   **M3 Integration:** All UI components will strictly follow M3 specifications for dynamic color, elevation, shape, typography, and motion, ensuring a consistent and modern aesthetic.
 
-*   **Backend (API Layer):**
-    *   **Location:** `src/app/api`.
-    *   **Technologies:** Next.js API Routes (TypeScript).
-    *   **Responsibilities:** Exposing RESTful endpoints for frontend consumption, input validation, orchestrating calls to the business logic layer (`src/services`), handling authentication and authorization checks.
+*   **Backend (Server-Side Logic & Data Access):**
+    *   **Server Actions:**
+        *   **Location:** Primarily within `src/features/[feature-name]/actions.ts` or directly in Server Components.
+        *   **Technologies:** Next.js Server Actions (TypeScript), Supabase client (`src/integrations/supabase/server.ts`).
+        *   **Responsibilities:** Handling data mutations (create, update, delete), form submissions, and complex business logic directly on the server. This significantly reduces the need for explicit API routes for every operation, leading to a leaner and more efficient backend.
+        *   **Security:** Server Actions will perform authorization checks and interact with Supabase, ensuring RLS is respected.
+    *   **API Routes (`src/app/api`):**
+        *   **Location:** `src/app/api/[version]/[resource]/route.ts`.
+        *   **Technologies:** Next.js Route Handlers (TypeScript), Supabase client (`src/integrations/supabase/server.ts`).
+        *   **Responsibilities:** Reserved for more complex data fetching, third-party integrations, or scenarios requiring a traditional RESTful endpoint (e.g., webhooks, external API consumption). They will also perform token validation and session checks.
+    *   **Business Logic (Service Layer):**
+        *   **Location:** `src/services` (for global/cross-cutting logic like `authService.ts`, `notificationService.ts`) and `src/features/[feature-name]/services.ts` (for feature-specific business logic).
+        *   **Technologies:** TypeScript.
+        *   **Responsibilities:** Encapsulating domain rules, orchestrating data operations, and integrating with external services. This clear separation ensures that business logic is reusable and testable, independent of the UI or API layer.
+    *   **Data Access Layer (DAL):**
+        *   **Location:** `src/integrations/supabase/client.ts` (for client-side read-only access, e.g., public data) and `src/integrations/supabase/server.ts` (for server-side authenticated access). `src/db` will contain schema definitions and types.
+        *   **Technologies:** Supabase (PostgreSQL, Supabase client library).
+        *   **Responsibilities:** Abstracting database interactions, performing CRUD operations, and ensuring data integrity. All database interactions will be secured by **Row Level Security (RLS)** policies, which are mandatory for every table.
 
-*   **Business Logic (Service Layer):**
-    *   **Location:** `src/services`.
-    *   **Technologies:** TypeScript.
-    *   **Responsibilities:** Encapsulating domain-specific business rules and logic for each module (e.g., `pathwayService.ts`, `campaignService.ts`, `applicationService.ts`). These services coordinate operations, interact with the data access layer, and integrate with external services.
-
-*   **Data Access Layer (DAL):**
-    *   **Location:** `src/integrations/supabase`, `src/db` (for schema/types).
-    *   **Technologies:** Supabase (PostgreSQL database, Supabase client library).
-    *   **Responsibilities:** Abstracting database interactions, performing CRUD operations, handling data modeling, and ensuring data integrity.
-
-*   **Integrations Layer:**
+*   **Integrations Layer (`src/integrations`):**
     *   **Location:** `src/integrations`.
-    *   **Technologies:** Supabase client, SendGrid API, Twilio API, Google/Outlook Calendar APIs.
-    *   **Responsibilities:** Managing connections and interactions with all third-party services.
+    *   **Technologies:** Supabase client, Mailgun API, Google/Outlook Calendar APIs, etc.
+    *   **Responsibilities:** Managing connections and interactions with all third-party services. This layer will also handle sensitive API tokens securely, potentially via Supabase Edge Functions for server-to-server communication.
 
-## 4. Extensibility Strategy
+### 5. Data Model Clarity
 
-The platform is designed to be extensible to accommodate future features and evolving requirements.
+The data model will strictly follow the `Templates → Campaigns → Phases → Submissions → Reviews` hierarchy.
 
-*   **Modular `src/features` Directory:** New features (vertical slices) can be developed within their own `src/features` subdirectories, containing all related UI, logic, and data fetching, minimizing impact on existing modules.
-*   **Configurable Pathway Templates:** The core concept of Pathway Templates allows for the introduction of new "Phase Types" (e.g., AI-driven evaluation, digital credentialing, external HR system sync) without requiring changes to the fundamental campaign execution logic.
-*   **API-First Design:** Well-defined API routes (`src/app/api`) ensure that the backend can easily integrate with new frontend clients or external systems in the future.
-*   **Supabase Ecosystem:** Leveraging Supabase's capabilities (PostgreSQL functions, Edge Functions, webhooks) provides powerful hooks for extending server-side logic, integrating with external services, or implementing complex data transformations.
-*   **Service Layer Abstraction:** The `src/services` layer acts as an abstraction point, allowing underlying implementations (e.g., changing an email provider from SendGrid to another service) to be swapped out with minimal impact on the business logic.
-*   **Data Model Flexibility:** A well-designed relational database schema in Supabase will allow for easy expansion to store new types of data or relationships as features are added.
+*   **Pathway Templates:** Define the structure of phases.
+*   **Campaigns:** Instances of Pathway Templates, with campaign-specific configurations.
+*   **Campaign Phases:** Deep-copied instances of template phases, linked to a specific campaign.
+*   **Applications/Submissions:** Participant data for a specific campaign phase.
+*   **Reviews:** Evaluator feedback and scores for applications.
 
-## 5. Initial Implementation Steps (Vertical Slicing)
+**RLS Enforcement:** Every table will have RLS enabled with granular policies (SELECT, INSERT, UPDATE, DELETE) to ensure users can only access data they are authorized to see or modify. For instance, users can only see their own applications, and reviewers only their assigned submissions.
 
-Following the Vertical Implementation Strategy, we will begin with foundational elements and then build out end-to-end slices.
+### 6. Error Handling Strategy
 
-1.  **Supabase Integration:** Set up Supabase for authentication and database.
-2.  **Basic Layouts & Navigation:** Implement the `/(public)`, `/(portal)`, `/(workbench)`, and `/(admin)` layouts with basic navigation.
-3.  **User & Role Management (Slice 0 - Foundation):** Implement user registration, login, and basic role assignment using Supabase Auth.
-4.  **Pathway Template Management (Slice 1):** Develop the full vertical slice for creating, editing, and managing Pathway Templates, including the database schema, service layer, and admin UI. This will be the first demonstrable value increment.
+A comprehensive error handling strategy will be implemented across all layers:
+
+*   **Server-Side (API Routes & Server Actions):**
+    *   API routes and Server Actions will catch errors, log them (to `errors.md` during development, and to a robust logging service in production), and return standardized error responses (e.g., JSON with `statusCode` and `message`).
+    *   Specific handling for Supabase `AuthApiError` will ensure graceful authentication error messages.
+*   **Client-Side (UI Layer):**
+    *   Global error boundaries will catch React rendering errors.
+    *   `Sonner` toasts will display user-friendly messages for API/Server Action failures.
+    *   Dedicated error pages (`src/app/(public)/error-pages/[code]/page.tsx`) will be implemented for common HTTP status codes (401, 403, 404, 500), providing clear messages and actionable next steps (e.g., "Login button" for 401, "Home/Dashboard button" for 404).
+    *   Form validation errors will be handled gracefully using `react-hook-form` and `zod`, providing inline feedback.
+
+### 7. Extensibility Strategy (Enhanced)
+
+*   **Feature Modules (`src/features`):** New features are developed as self-contained vertical slices, minimizing impact on existing code. This is the primary mechanism for growth.
+*   **Configurable Phase Types:** The system is designed to easily introduce new "Phase Types" (e.g., AI-driven evaluation, digital credentialing) without altering core campaign execution logic.
+*   **Supabase Edge Functions:** For complex server-side logic, API-to-API communication, or handling sensitive secrets, Edge Functions will be utilized. This provides a scalable, performant, and secure environment for backend tasks.
+*   **Webhooks:** Supabase webhooks can be used to trigger external services or internal logic in response to database changes, further enhancing automation and integration capabilities.
+*   **Service Layer Abstraction:** Allows for swapping out underlying implementations (e.g., changing email providers) with minimal impact on business logic.
+
+### 8. Initial Implementation Steps (High-Level)
+
+This architecture supports the `VIS.md` MVP build order:
+
+1.  **Vertical 0 (Foundation):** Public Homepage, Authentication, Role-Based Dashboards, and core M3 styling.
+2.  **Vertical 1: Pathway Templates & Phase Configuration:** Database schema, services, and UI for creating and managing templates.
+3.  **Vertical 2: Campaign Management & Campaign Phases:** Instantiate campaigns from templates, dashboard views.
+4.  **Vertical 4: Participant Interaction & Notifications:** Form submission, status tracking, automated emails.
+5.  **Vertical 5: Review & Decision Phases:** Reviewer dashboards, rubrics, decision recording.
+6.  **Vertical 3: Packages & Individual Assignments:** Manage collections of pathways.
+7.  **Vertical 6: Dashboard & Insights:** Analytics and reporting.
+8.  **Vertical 7: Security & Access Control:** (Continuous across all verticals) RBAC, auditability, secure links.
