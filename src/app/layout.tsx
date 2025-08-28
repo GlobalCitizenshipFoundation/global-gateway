@@ -4,7 +4,7 @@ import "./globals.css";
 import { SessionContextProvider } from "@/context/SessionContextProvider";
 import { Toaster } from "@/components/ui/sonner";
 import React from "react";
-import { ThemeProvider } from "next-themes/providers"; // Import ThemeProvider
+import { ThemeProvider } from "next-themes"; // Corrected import path
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
