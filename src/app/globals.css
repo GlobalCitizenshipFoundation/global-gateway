@@ -122,32 +122,6 @@
     @apply bg-background text-foreground font-normal text-body-large; /* Apply base typography */
   }
 
-  h1, h2, h3, h4, h5, h6 {
-    /* Remove generic heading styles, specific M3 classes will handle it */
-  }
-
-  p {
-    /* Remove generic paragraph styles, specific M3 classes will handle it */
-  }
-
-  /* Specific overrides for M3 type scale */
-  .text-display-large { @apply text-display-large font-bold; }
-  .text-display-medium { @apply text-display-medium font-bold; }
-  .text-display-small { @apply text-display-small font-bold; }
-
-  .text-headline-large { @apply text-headline-large font-semibold; }
-  .text-headline-medium { @apply text-headline-medium font-semibold; }
-  .text-headline-small { @apply text-headline-small font-semibold; }
-
-  .text-title-large { @apply text-title-large font-semibold; }
-  .text-title-medium { @apply text-title-medium font-medium; }
-  .text-title-small { @apply text-title-small font-medium; }
-
-  .text-body-large { @apply text-body-large font-normal; }
-  .text-body-medium { @apply text-body-medium font-normal; }
-  .text-body-small { @apply text-body-small font-normal; }
-
-  .text-label-large { @apply text-label-large font-medium; }
-  .text-label-medium { @apply text-label-medium font-medium; }
-  .text-label-small { @apply text-label-small font-medium; }
+  /* Removed specific overrides for M3 type scale to avoid circular dependency.
+     These classes are now defined in tailwind.config.ts and should be applied directly in components. */
 }

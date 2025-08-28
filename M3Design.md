@@ -109,35 +109,55 @@ Colors are defined using HSL (Hue, Saturation, Lightness) values in `src/app/glo
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground font-normal text-body-large leading-body; /* Apply base typography */
+    @apply bg-background text-foreground font-normal text-body-large; /* Apply base typography */
   }
 
-  h1, h2, h3, h4, h5, h6 {
-    @apply font-semibold leading-heading tracking-tight-lg; /* Apply heading typography */
-  }
-
-  p {
-    @apply leading-body tracking-normal;
-  }
-
-  /* Specific overrides for M3 type scale */
-  .text-display-large { @apply text-5xl font-bold leading-heading tracking-tight-lg; }
-  .text-display-medium { @apply text-4xl font-bold leading-heading tracking-tight-lg; }
-  .text-display-small { @apply text-3xl font-bold leading-heading tracking-tight-lg; }
-
-  .text-headline-large { @apply text-2xl font-semibold leading-heading tracking-tight-lg; }
-  .text-headline-medium { @apply text-xl font-semibold leading-heading tracking-tight-lg; }
-  .text-headline-small { @apply text-lg font-semibold leading-heading tracking-tight-lg; }
-
-  .text-title-large { @apply text-base font-semibold leading-ui tracking-normal; }
-  .text-title-medium { @apply text-sm font-semibold leading-ui tracking-normal; }
-  .text-title-small { @apply text-xs font-semibold leading-ui tracking-small-caps; }
-
-  .text-body-large { @apply text-base font-normal leading-body tracking-normal; }
-  .text-body-medium { @apply text-sm font-normal leading-body tracking-normal; }
-  .text-body-small { @apply text-sm font-normal leading-body tracking-normal; } /* Changed from text-xs */
-
-  .text-label-large { @apply text-sm font-semibold leading-ui tracking-small-caps; }
-  .text-label-medium { @apply text-xs font-semibold leading-ui tracking-small-caps; }
-  .text-label-small { @apply text-xs font-normal leading-ui tracking-small-caps; }
+  /* Generic heading and paragraph styles are removed.
+     M3 typography classes (e.g., text-display-large, text-headline-medium)
+     should be applied directly to elements in components. */
 }
+
+## 3. Typography
+
+The application will use M3's defined type scale, with specific font sizes, line heights, and letter spacing. These are configured in `tailwind.config.ts` as custom `fontSize` utilities.
+
+**Implementation Strategy:**
+*   **`tailwind.config.ts`**: Defines the full M3 type scale (e.g., `display-large`, `headline-medium`, `body-small`) with precise `rem` values, `lineHeight`, and `letterSpacing`.
+*   **Components**: Apply these Tailwind utility classes directly to text elements (e.g., `<h1 className="text-display-large font-bold">...</h1>`, `<p className="text-body-medium">...</p>`).
+*   **`src/app/globals.css`**: Only sets a base `font-normal text-body-large` for the `body` tag. It *does not* contain `@apply` rules for specific M3 typography classes (e.g., `.text-display-large { @apply text-display-large font-bold; }`) to avoid circular dependencies. Font weights are applied directly in components alongside the size utility.
+
+**M3 Type Scale (defined in `tailwind.config.ts`):**
+*   **Display**: `display-large` (57px), `display-medium` (45px), `display-small` (36px) - Bold
+*   **Headline**: `headline-large` (32px), `headline-medium` (28px), `headline-small` (24px) - Semibold
+*   **Title**: `title-large` (22px), `title-medium` (16px), `title-small` (14px) - Semibold/Medium
+*   **Body**: `body-large` (16px), `body-medium` (14px), `body-small` (12px) - Normal
+*   **Label**: `label-large` (14px), `label-medium` (12px), `label-small` (11px) - Medium
+
+### 3.1 Font Families
+The application uses `Geist` for sans-serif and `Geist_Mono` for monospace, as defined in `src/app/layout.tsx`.
+
+## 4. Specific Elevation and Shape
+
+Applying precise shadow depths and corner radii as defined by M3 specifications.
+*   **Border Radius**: Custom `borderRadius` values are defined in `tailwind.config.ts` (e.g., `sm: 2px`, `md: 4px`, `xl: 12px`, `2xl: 16px`). Default `lg` is `8px`.
+*   **Elevation**: Achieved using Tailwind's `shadow-sm`, `shadow-md`, `shadow-lg`, etc., which should be visually consistent with M3's elevation system.
+
+## 5. Motion
+
+Incorporating M3-specific animations and transitions.
+*   **Animations**: `tailwindcss-animate` plugin is used for predefined animations.
+*   **Transitions**: Custom `transition-all` and `duration-` utilities are used for smooth state changes (e.g., hover effects on cards).
+
+## 6. Layout & Spacing
+
+*   **8dp Grid System**: All spacing (margins, paddings, gaps) should primarily adhere to multiples of `8px` (e.g., `p-2` for 8px, `gap-4` for 16px). Custom `spacing` values are defined in `tailwind.config.ts`.
+*   **Responsiveness**: Layouts are designed desktop-first with responsive adjustments for tablet and mobile, using Tailwind's responsive prefixes (e.g., `md:`, `lg:`).
+
+## 7. Accessibility
+
+*   **WCAG 2.1 AAA Compliance**:
+    *   **Contrast**: All text and interactive elements must meet a contrast ratio of at least 7:1 for AAA. Color variables in `globals.css` are adjusted to achieve this.
+    *   **Font Sizes**: Minimum font sizes are ensured, especially for body and label text.
+    *   **Keyboard Navigation**: All interactive elements must be reachable and operable via keyboard, with clear focus indicators.
+    *   **ARIA Roles**: Appropriate ARIA attributes should be used for complex components to enhance screen reader compatibility.
+*   **Motion**: Avoid excessive or flashing animations that could cause discomfort. Provide options to reduce motion if necessary (future consideration).
