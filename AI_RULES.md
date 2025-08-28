@@ -4,6 +4,8 @@ This document outlines the technology stack and specific library usage guideline
 
 ## Product Requirement Document VERY <!IMPORTANT!>
 
+'Readme.md' file provides the concept note for the Global Gateway app.
+
 As you execute the plan strictly follow: 
 
 
