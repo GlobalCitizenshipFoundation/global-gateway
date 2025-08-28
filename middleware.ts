@@ -18,13 +18,13 @@ export async function middleware(request: NextRequest) {
 
   // If the user is authenticated
   if (session) {
-    const userRole = session.user?.user_metadata?.role;
+    const userRole: string = session.user?.user_metadata?.role || ''; // Ensure userRole is a string
 
     // If an authenticated user tries to access a public route, redirect them to their dashboard
     if (isPublicRoute && pathname !== '/auth/callback') {
       if (userRole === 'admin') {
         return NextResponse.redirect(new URL('/admin/dashboard', request.url));
-      } else if (userRole === 'coordinator' || userRole === 'evaluator' || userRole === 'screener') {
+      } else if (['coordinator', 'evaluator', 'screener'].includes(userRole)) { // Use includes on string array
         return NextResponse.redirect(new URL('/workbench/dashboard', request.url));
       } else { // Default for applicants or other roles
         return NextResponse.redirect(new URL('/portal/dashboard', request.url));

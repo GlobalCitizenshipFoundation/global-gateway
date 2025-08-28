@@ -9,7 +9,7 @@ export default async function WorkbenchDashboardPage() {
     redirect("/login");
   }
 
-  const userRole = user.user_metadata?.role;
+  const userRole: string = user.user_metadata?.role; // Explicitly type userRole as string
 
   if (!['coordinator', 'evaluator', 'screener', 'admin'].includes(userRole)) {
     redirect("/login"); // Or a 403 forbidden page

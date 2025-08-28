@@ -119,6 +119,16 @@ export default {
             '80': '320px',
             '96': '384px',
         },
+        lineHeight: {
+            'heading': '1.2', // For h1, h2, h3, h4, h5, h6
+            'body': '1.5',   // For p, body text
+            'ui': '1.4',     // For UI elements like buttons, labels
+        },
+        letterSpacing: {
+            'tight-lg': '-0.02em', // For large headings
+            'normal': '0',        // For body text and most UI
+            'small-caps': '0.05em', // For small caps or labels
+        },
   		keyframes: {
   			'accordion-down': {
   				from: {

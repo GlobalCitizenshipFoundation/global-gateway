@@ -10,7 +10,7 @@ export default async function PortalDashboardPage() {
   }
 
   // In a real app, you'd fetch user-specific data here
-  const userRole = user.user_metadata?.role || 'applicant';
+  const userRole: string = user.user_metadata?.role || 'applicant'; // Explicitly type userRole as string
 
   if (!['applicant', 'coordinator', 'evaluator', 'screener', 'admin'].includes(userRole)) {
     redirect("/login"); // Or a 403 forbidden page
