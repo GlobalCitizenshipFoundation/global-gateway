@@ -1,8 +1,8 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 
-export const createClient = async () => { // Made createClient async
-  const cookieStore = await cookies(); // Await cookies() to ensure correct type
+export const createClient = async () => {
+  const cookieStore = await cookies();
 
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -22,8 +22,8 @@ export const createClient = async () => { // Made createClient async
         },
         remove(name: string, options: CookieOptions) {
           try {
-            // Use cookieStore.delete for removing cookies
-            cookieStore.delete(name, options);
+            // Reverting to use set with empty value for removal, as delete API is different
+            cookieStore.set(name, '', options);
           } catch (error) {
             // The `cookies().set()` method can only be called from a Server Component or Route Handler.
             // This error is typically caught and handled by the middleware.

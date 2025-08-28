@@ -189,20 +189,26 @@ function ChartLegend<TData extends Record<string, any> = Record<string, any>>(
         className
       )}
     >
-      {payload.map((item: RechartsLegendPayload) => { // Explicitly type item as RechartsLegendPayload
-        // Fix for Error 1: TS2352 - Cast item.payload to unknown first, then TData
+      {payload.map((item: RechartsLegendPayload) => { // Using the defined RechartsLegendPayload type
         const rawData = item.payload as unknown as TData | undefined;
         
         let derivedKey: string | number | symbol | undefined;
 
         if (nameKey && rawData) {
-            derivedKey = rawData[nameKey];
+            const value = rawData[nameKey];
+            if (typeof value === 'string' || typeof value === 'number' || typeof value === 'symbol') {
+                derivedKey = value;
+            }
         } else {
-            derivedKey = item.dataKey;
+            if (typeof item.dataKey === 'string' || typeof item.dataKey === 'number' || typeof item.dataKey === 'symbol') {
+                derivedKey = item.dataKey;
+            } else if (typeof item.name === 'string') {
+                derivedKey = item.name;
+            }
         }
 
-        // Ensure key is a string or number for config lookup
-        const configKey = (typeof derivedKey === 'string' || typeof derivedKey === 'number') ? derivedKey : undefined;
+        // Ensure configKey is a string for config lookup
+        const configKey = (typeof derivedKey === 'string' || typeof derivedKey === 'number') ? String(derivedKey) : undefined;
         if (configKey === undefined) return null;
 
         const itemConfig = configKey in config ? config[configKey] : undefined;
@@ -212,8 +218,6 @@ function ChartLegend<TData extends Record<string, any> = Record<string, any>>(
           return null;
         }
 
-        // Fix for Errors 2 & 3: Property 'fill'/'stroke' does not exist on type 'Payload'.
-        // This now works because 'item' is explicitly typed as RechartsLegendPayload
         const itemColor = item.color || item.fill || item.stroke;
 
         return (
