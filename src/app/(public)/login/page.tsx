@@ -53,7 +53,6 @@ export default function LoginPage() {
                   inputBorderHover: "hsl(var(--ring))",
                   inputBorderFocus: "hsl(var(--ring))",
                   inputText: "hsl(var(--foreground))",
-                  inputLabel: "hsl(var(--muted-foreground))",
                   messageText: "hsl(var(--foreground))",
                   messageBackground: "hsl(var(--card))",
                   messageBorder: "hsl(var(--border))",
