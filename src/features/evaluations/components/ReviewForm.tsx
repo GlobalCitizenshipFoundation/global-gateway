@@ -25,13 +25,14 @@ import { createReviewAction, updateReviewAction } from "../actions";
 import { getCampaignPhasesAction } from "@/features/campaigns/actions"; // To fetch phase config
 import { CampaignPhase } from "@/features/campaigns/services/campaign-service";
 import { useSession } from "@/context/SessionContextProvider";
+import { Skeleton } from "@/components/ui/skeleton"; // Added Skeleton import
 
 // Zod schema for a single rubric score
 const rubricScoreSchema = z.object({
   criterionId: z.string(),
   criterionName: z.string(),
   maxScore: z.number(),
-  score: z.coerce.number().min(0, "Score cannot be negative.").optional(), // Score can be null if not yet entered
+  score: z.coerce.number().min(0, "Score cannot be negative.").nullable(), // Changed to .nullable()
 });
 
 // Zod schema for the entire review form

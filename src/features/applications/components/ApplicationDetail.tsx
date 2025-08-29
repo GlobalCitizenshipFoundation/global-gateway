@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, UserCircle2, Briefcase, Workflow, CalendarDays, CheckCircle, XCircle, Clock, FileText, Info, Award, Edit } from "lucide-react";
+import { ArrowLeft, UserCircle2, Briefcase, Workflow, CalendarDays, CheckCircle, XCircle, Clock, FileText, Info, Award, Edit, PlusCircle } from "lucide-react"; // Added PlusCircle
 import { Application } from "../services/application-service";
 import { getApplicationByIdAction, updateApplicationAction } from "../actions";
 import { toast } from "sonner";
@@ -16,10 +16,12 @@ import { Badge } from "@/components/ui/badge";
 import { ChecklistItemFormType, ScreeningChecklist } from "./ScreeningChecklist";
 import { CollaborativeNotes } from "./CollaborativeNotes";
 import { WorkflowParticipation } from "./WorkflowParticipation";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"; // Import Dialog components
-import { ReviewForm } from "@/features/evaluations/components/ReviewForm"; // Import ReviewForm
-import { getReviewsAction, getReviewerAssignmentsAction } from "@/features/evaluations/actions"; // Import evaluation actions
-import { Review, ReviewerAssignment } from "@/features/evaluations/services/evaluation-service"; // Import evaluation types
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { ReviewForm } from "@/features/evaluations/components/ReviewForm";
+import { getReviewsAction, getReviewerAssignmentsAction, getDecisionsAction } from "@/features/evaluations/actions"; // Added getDecisionsAction
+import { Review, ReviewerAssignment, Decision } from "@/features/evaluations/services/evaluation-service";
+import { DecisionForm } from "@/features/evaluations/components/DecisionForm"; // Import DecisionForm
+import { DecisionList } from "@/features/evaluations/components/DecisionList"; // Import DecisionList
 
 interface ApplicationDetailProps {
   applicationId: string;
@@ -33,6 +35,8 @@ export function ApplicationDetail({ applicationId }: ApplicationDetailProps) {
   const [isReviewFormOpen, setIsReviewFormOpen] = useState(false);
   const [currentReview, setCurrentReview] = useState<Review | undefined>(undefined);
   const [reviewerAssignment, setReviewerAssignment] = useState<ReviewerAssignment | null>(null);
+  const [isDecisionFormOpen, setIsDecisionFormOpen] = useState(false); // State for decision form dialog
+  const [editingDecision, setEditingDecision] = useState<Decision | undefined>(undefined); // State for editing decision
 
   const fetchApplicationDetails = async () => {
     setIsLoading(true);
@@ -76,6 +80,17 @@ export function ApplicationDetail({ applicationId }: ApplicationDetailProps) {
   const handleReviewSaved = () => {
     setIsReviewFormOpen(false);
     fetchApplicationDetails(); // Re-fetch to update review status
+  };
+
+  const handleDecisionSaved = () => {
+    setIsDecisionFormOpen(false);
+    setEditingDecision(undefined);
+    fetchApplicationDetails(); // Re-fetch to update application status if needed
+  };
+
+  const handleEditDecision = (decision: Decision) => {
+    setEditingDecision(decision);
+    setIsDecisionFormOpen(true);
   };
 
   const getStatusColor = (status: Application['screening_status']) => {
@@ -123,9 +138,13 @@ export function ApplicationDetail({ applicationId }: ApplicationDetailProps) {
   const isReviewer = ['reviewer', 'admin', 'coordinator', 'evaluator'].includes(userRole); // Roles that can review
   const canModifyApplication: boolean = isAdminOrRecruiter || application.applicant_id === user?.id;
   const canAddNotes: boolean = isAdminOrRecruiter;
+  const canModifyDecisions: boolean = isAdminOrRecruiter; // Only admin/campaign creator can manage decisions
 
   const isCurrentPhaseReview = application.current_campaign_phases?.type === 'Review';
   const canSubmitReview = isReviewer && isCurrentPhaseReview && reviewerAssignment?.status === 'accepted';
+
+  const isCurrentPhaseDecision = application.current_campaign_phases?.type === 'Decision';
+  const canRecordDecision = isAdminOrRecruiter && isCurrentPhaseDecision;
 
   // Pre-process initialChecklistData to ensure it strictly conforms to ChecklistItemFormType
   const processedChecklistData: ChecklistItemFormType[] = (application.data?.screeningChecklist || []).map((item: any) => ({
@@ -143,11 +162,18 @@ export function ApplicationDetail({ applicationId }: ApplicationDetailProps) {
             <ArrowLeft className="mr-2 h-5 w-5" /> Back to Screening
           </Link>
         </Button>
-        {canSubmitReview && (
-          <Button onClick={() => setIsReviewFormOpen(true)} className="rounded-full px-6 py-3 text-label-large">
-            {currentReview ? <><Edit className="mr-2 h-5 w-5" /> Edit Review</> : <><Award className="mr-2 h-5 w-5" /> Submit Review</>}
-          </Button>
-        )}
+        <div className="flex space-x-2">
+          {canSubmitReview && (
+            <Button onClick={() => setIsReviewFormOpen(true)} className="rounded-full px-6 py-3 text-label-large">
+              {currentReview ? <><Edit className="mr-2 h-5 w-5" /> Edit Review</> : <><Award className="mr-2 h-5 w-5" /> Submit Review</>}
+            </Button>
+          )}
+          {canRecordDecision && (
+            <Button onClick={() => { setEditingDecision(undefined); setIsDecisionFormOpen(true); }} className="rounded-full px-6 py-3 text-label-large">
+              <PlusCircle className="mr-2 h-5 w-5" /> Record Decision
+            </Button>
+          )}
+        </div>
       </div>
 
       <Card className="rounded-xl shadow-lg p-6">
@@ -229,6 +255,14 @@ export function ApplicationDetail({ applicationId }: ApplicationDetailProps) {
         />
       </div>
 
+      {/* Application Decisions Section */}
+      <DecisionList
+        applicationId={application.id}
+        canModifyDecisions={canModifyDecisions}
+        onDecisionModified={fetchApplicationDetails}
+        onEditDecision={handleEditDecision}
+      />
+
       {/* Workflow Participation Section */}
       <Card className="rounded-xl shadow-lg p-6">
         <CardHeader className="p-0 mb-4">
@@ -263,6 +297,27 @@ export function ApplicationDetail({ applicationId }: ApplicationDetailProps) {
               initialReview={currentReview}
               onReviewSaved={handleReviewSaved}
               onCancel={() => setIsReviewFormOpen(false)}
+            />
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* Decision Form Dialog */}
+      {application.current_campaign_phase_id && user && (
+        <Dialog open={isDecisionFormOpen} onOpenChange={setIsDecisionFormOpen}>
+          <DialogContent className="sm:max-w-[800px] rounded-xl shadow-lg bg-card text-card-foreground border-border max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="text-headline-small">
+                {editingDecision ? "Edit Decision" : "Record New Decision"}
+              </DialogTitle>
+            </DialogHeader>
+            <DecisionForm
+              applicationId={application.id}
+              campaignPhaseId={application.current_campaign_phases?.id || application.current_campaign_phase_id}
+              deciderId={user.id}
+              initialDecision={editingDecision}
+              onDecisionSaved={handleDecisionSaved}
+              onCancel={() => setIsDecisionFormOpen(false)}
             />
           </DialogContent>
         </Dialog>
