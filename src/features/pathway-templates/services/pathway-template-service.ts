@@ -1,3 +1,5 @@
+"use client";
+
 import { createClient } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -186,5 +188,82 @@ export const pathwayTemplateService = {
     }
     toast.success("Phase deleted successfully!");
     return true;
+  },
+
+  async clonePathwayTemplate(
+    templateId: string,
+    newName: string,
+    creatorId: string
+  ): Promise<PathwayTemplate | null> {
+    const { data: originalTemplate, error: templateError } = await this.supabase
+      .from("pathway_templates")
+      .select("*")
+      .eq("id", templateId)
+      .single();
+
+    if (templateError || !originalTemplate) {
+      console.error("Error fetching original template for cloning:", templateError?.message);
+      toast.error("Failed to find original template for cloning.");
+      return null;
+    }
+
+    const { data: originalPhases, error: phasesError } = await this.supabase
+      .from("phases")
+      .select("*")
+      .eq("pathway_template_id", templateId)
+      .order("order_index", { ascending: true });
+
+    if (phasesError) {
+      console.error("Error fetching original phases for cloning:", phasesError.message);
+      toast.error("Failed to find original phases for cloning.");
+      return null;
+    }
+
+    // Create the new template
+    const { data: newTemplate, error: newTemplateError } = await this.supabase
+      .from("pathway_templates")
+      .insert([
+        {
+          name: newName,
+          description: originalTemplate.description,
+          is_private: originalTemplate.is_private, // Cloned template retains privacy setting
+          creator_id: creatorId, // New template owned by the cloner
+        },
+      ])
+      .select()
+      .single();
+
+    if (newTemplateError || !newTemplate) {
+      console.error("Error creating new template during cloning:", newTemplateError?.message);
+      toast.error("Failed to create new template during cloning.");
+      return null;
+    }
+
+    // Create new phases for the cloned template
+    const newPhasesData = originalPhases.map((phase) => ({
+      pathway_template_id: newTemplate.id,
+      name: phase.name,
+      type: phase.type,
+      description: phase.description,
+      order_index: phase.order_index,
+      config: phase.config,
+    }));
+
+    if (newPhasesData.length > 0) {
+      const { error: newPhasesError } = await this.supabase
+        .from("phases")
+        .insert(newPhasesData);
+
+      if (newPhasesError) {
+        console.error("Error creating new phases during cloning:", newPhasesError.message);
+        toast.error("Failed to create phases for the cloned template.");
+        // Optionally, delete the newly created template if phase creation fails
+        await this.supabase.from("pathway_templates").delete().eq("id", newTemplate.id);
+        return null;
+      }
+    }
+
+    toast.success(`Pathway template "${newName}" cloned successfully!`);
+    return newTemplate;
   },
 };

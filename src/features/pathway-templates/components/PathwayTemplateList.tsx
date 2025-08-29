@@ -4,7 +4,7 @@ import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { PlusCircle, Edit, Trash2, Workflow, Lock, Globe } from "lucide-react";
+import { PlusCircle, Edit, Trash2, Workflow, Lock, Globe, Copy } from "lucide-react"; // Import Copy icon
 import { PathwayTemplate } from "../services/pathway-template-service";
 import { toast } from "sonner";
 import { useSession } from "@/context/SessionContextProvider";
@@ -13,7 +13,8 @@ import { getTemplatesAction, deletePathwayTemplateAction } from "../actions";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"; // Import Tooltip components
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { CloneTemplateDialog } from "./CloneTemplateDialog"; // Import CloneTemplateDialog
 
 export function PathwayTemplateList() {
   const { user, isLoading: isSessionLoading } = useSession();
@@ -22,6 +23,8 @@ export function PathwayTemplateList() {
   const [isLoading, setIsLoading] = useState(true);
   const [filter, setFilter] = useState<"all" | "my" | "public">("all");
   const [searchTerm, setSearchTerm] = useState("");
+  const [isCloneDialogOpen, setIsCloneDialogOpen] = useState(false); // State for clone dialog
+  const [templateToClone, setTemplateToClone] = useState<PathwayTemplate | null>(null); // State for template being cloned
 
   const fetchTemplates = async () => {
     setIsLoading(true);
@@ -79,6 +82,11 @@ export function PathwayTemplateList() {
     } catch (error: any) {
       toast.error(error.message || "Failed to delete pathway template.");
     }
+  };
+
+  const handleClone = (template: PathwayTemplate) => {
+    setTemplateToClone(template);
+    setIsCloneDialogOpen(true);
   };
 
   if (isLoading) {
@@ -184,6 +192,10 @@ export function PathwayTemplateList() {
                     <p>Last Updated: {new Date(template.updated_at).toLocaleDateString()}</p>
                   </CardContent>
                   <div className="flex justify-end p-4 pt-0 space-x-2">
+                    <Button variant="outline" size="icon" className="rounded-md" onClick={() => handleClone(template)}>
+                      <Copy className="h-4 w-4" />
+                      <span className="sr-only">Clone Template</span>
+                    </Button>
                     <Button asChild variant="outline" size="icon" className="rounded-md">
                       <Link href={`/workbench/pathway-templates/${template.id}`}>
                         <Edit className="h-4 w-4" />
@@ -223,6 +235,15 @@ export function PathwayTemplateList() {
             })}
           </TooltipProvider>
         </div>
+      )}
+
+      {templateToClone && (
+        <CloneTemplateDialog
+          isOpen={isCloneDialogOpen}
+          onClose={() => { setIsCloneDialogOpen(false); setTemplateToClone(null); fetchTemplates(); }}
+          templateId={templateToClone.id}
+          originalTemplateName={templateToClone.name}
+        />
       )}
     </div>
   );

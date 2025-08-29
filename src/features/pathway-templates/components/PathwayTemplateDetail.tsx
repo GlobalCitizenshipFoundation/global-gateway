@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, PlusCircle, Workflow, Lock, Globe, Edit } from "lucide-react";
+import { ArrowLeft, PlusCircle, Workflow, Lock, Globe, Edit, Copy } from "lucide-react"; // Import Copy icon
 import { PathwayTemplate, Phase } from "../services/pathway-template-service";
 import { toast } from "sonner";
 import { useSession } from "@/context/SessionContextProvider";
@@ -15,8 +15,9 @@ import { PhaseFormDialog } from "./PhaseFormDialog";
 import { PhaseCard } from "./PhaseCard";
 import { DragDropContext, Droppable, DropResult } from "@hello-pangea/dnd";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"; // Import Dialog components for configuration
-import { PhaseConfigurationPanel } from "./PhaseConfigurationPanel"; // Import the new panel
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { PhaseConfigurationPanel } from "./PhaseConfigurationPanel";
+import { CloneTemplateDialog } from "./CloneTemplateDialog"; // Import CloneTemplateDialog
 
 interface PathwayTemplateDetailProps {
   templateId: string;
@@ -30,8 +31,9 @@ export function PathwayTemplateDetail({ templateId }: PathwayTemplateDetailProps
   const [isLoading, setIsLoading] = useState(true);
   const [isPhaseFormOpen, setIsPhaseFormOpen] = useState(false);
   const [editingPhase, setEditingPhase] = useState<Phase | undefined>(undefined);
-  const [isConfigDialogOpen, setIsConfigDialogOpen] = useState(false); // State for config dialog
-  const [configuringPhase, setConfiguringPhase] = useState<Phase | undefined>(undefined); // State for phase being configured
+  const [isConfigDialogOpen, setIsConfigDialogOpen] = useState(false);
+  const [configuringPhase, setConfiguringPhase] = useState<Phase | undefined>(undefined);
+  const [isCloneDialogOpen, setIsCloneDialogOpen] = useState(false); // State for clone dialog
 
   const fetchTemplateAndPhases = async () => {
     setIsLoading(true);
@@ -174,13 +176,18 @@ export function PathwayTemplateDetail({ templateId }: PathwayTemplateDetailProps
             <ArrowLeft className="mr-2 h-5 w-5" /> Back to Templates
           </Link>
         </Button>
-        {canModifyTemplate && (
-          <Button asChild className="rounded-full px-6 py-3 text-label-large">
-            <Link href={`/workbench/pathway-templates/${currentTemplate.id}/edit`}>
-              <Edit className="mr-2 h-5 w-5" /> Edit Template Details
-            </Link>
+        <div className="flex space-x-2">
+          <Button variant="outline" className="rounded-full px-6 py-3 text-label-large" onClick={() => setIsCloneDialogOpen(true)}>
+            <Copy className="mr-2 h-5 w-5" /> Clone Template
           </Button>
-        )}
+          {canModifyTemplate && (
+            <Button asChild className="rounded-full px-6 py-3 text-label-large">
+              <Link href={`/workbench/pathway-templates/${currentTemplate.id}/edit`}>
+                <Edit className="mr-2 h-5 w-5" /> Edit Template Details
+              </Link>
+            </Button>
+          )}
+        </div>
       </div>
 
       <Card className="rounded-xl shadow-lg p-6">
@@ -252,7 +259,7 @@ export function PathwayTemplateDetail({ templateId }: PathwayTemplateDetailProps
                     index={index}
                     onEdit={handleEditPhase}
                     onDelete={handleDeletePhase}
-                    onConfigure={handleConfigurePhase} // Pass the new handler
+                    onConfigure={handleConfigurePhase}
                     canEditOrDelete={canModifyTemplate}
                   />
                 ))}
@@ -290,6 +297,16 @@ export function PathwayTemplateDetail({ templateId }: PathwayTemplateDetailProps
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Clone Template Dialog */}
+      {template && (
+        <CloneTemplateDialog
+          isOpen={isCloneDialogOpen}
+          onClose={() => { setIsCloneDialogOpen(false); }}
+          templateId={template.id}
+          originalTemplateName={template.name}
+        />
+      )}
     </div>
   );
 }
