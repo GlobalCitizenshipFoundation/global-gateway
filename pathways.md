@@ -71,7 +71,8 @@ This section details the management of phases within a specific pathway template
     *   **Interaction:** Clicking an "Edit" button on a phase card will open a `Dialog` pre-populated with the phase's details.
     *   **Updates:** Users can modify `Phase Name`, `Phase Type`, and `Description`.
     *   **Access Logic:** Only the `creator_id` of the parent template or a 'super admin' can edit phase details.
-    *   **Validation & Feedback:** Client-side and server-side validation, `sonner` toasts.
+    *   **Validation & Feedback:** Same as creation.
+    *   **Post-update:** `sonner` toast for success, update `updated_at` timestamp, and refresh the displayed information.
 *   **Reorder Phases (Drag-and-Drop):**
     *   **Interaction:** Users can drag and drop phase cards to change their sequence.
     *   **Visual Feedback:** Clear visual cues (e.g., elevated shadow on drag, placeholder for drop target, subtle animation) will guide the user.
@@ -312,6 +313,14 @@ The implementation will proceed in distinct vertical slices, ensuring end-to-end
         *   Renders UI for defining form fields. Uses `react-hook-form` for managing a dynamic array of field objects. M3 `Input`, `Select`, `Switch` components.
     *   **`src/features/pathway-templates/components/phase-configs/ReviewPhaseConfig.tsx` (Client Component):**
         *   Renders UI for defining rubric criteria. Uses `react-hook-form` for managing a dynamic array of criteria objects. M3 `Input`, `Textarea`, `Select`, `RadioGroup`, `Switch` components.
+    *   **`src/features/pathway-templates/components/phase-configs/EmailPhaseConfig.tsx` (Client Component):**
+        *   Renders UI for defining email subject, body, recipient roles, and trigger events.
+    *   **`src/features/pathway-templates/components/phase-configs/SchedulingPhaseConfig.tsx` (Client Component):**
+        *   Renders UI for defining interview duration, buffer time, and host selection.
+    *   **`src/features/pathway-templates/components/phase-configs/DecisionPhaseConfig.tsx` (Client Component):**
+        *   Renders UI for defining decision outcomes, associated email templates, and automated next steps.
+    *   **`src/features/pathway-templates/components/phase-configs/RecommendationPhaseConfig.tsx` (Client Component):**
+        *   Renders UI for defining number of recommenders, recommender information fields, and reminder schedules.
 
 ### Vertical 1.4: Template Cloning
 
@@ -345,24 +354,16 @@ The implementation will proceed in distinct vertical slices, ensuring end-to-end
 ## 7. Summary of Current Progress and Next Steps
 
 **What has been done:**
-Vertical 0 (Public Homepage & Role-Based Dashboards) is complete, providing a solid foundation with:
-*   Full Material Design 3 styling and dynamic color theming, with the primary seed color confirmed as `#880E4F`.
-*   Supabase client integration and `SessionContextProvider` for global session management.
-*   A functional login page using Supabase Auth UI.
-*   Role-based dashboard placeholders for `/admin`, `/workbench`, and `/portal`.
-*   Robust authentication middleware (`middleware.ts`) for server-first session checks and role-based access control.
-*   A public homepage (`src/app/page.tsx`) with M3 design elements.
-*   Comprehensive error handling with dynamic error pages (`src/app/(public)/error-pages/[code]/page.tsx`) and a global error boundary (`src/app/error.tsx`).
-*   An `authService` for common authentication operations.
-*   The database schema for `pathway_templates` and `phases` is conceptually defined, and a basic `pathwayTemplateService` exists for client-side data interaction.
-*   A basic `PathwayTemplateList` component is present, demonstrating the listing of templates.
+*   **Vertical 0 (Public Homepage & Role-Based Dashboards)** is complete, providing a solid foundation with M3 styling, Supabase integration, session management, login, role-based dashboards, authentication middleware, and comprehensive error handling.
+*   **Vertical 1 (Pathway Templates & Phase Configuration)** is now fully implemented. This includes:
+    *   Basic Pathway Template Management (CRUD & Listing) with full authorization.
+    *   Basic Phase Management (Add, Delete, Reorder) within templates, also with full authorization.
+    *   Phase-Specific Configuration for all defined phase types (Form, Review, Email, Scheduling, Decision, Recommendation).
+    *   Template Cloning functionality, allowing users to duplicate templates and their phases.
 
 **What to do next:**
-The immediate next step is to fully implement **Vertical 1.1: Basic Pathway Template Management (CRUD & Listing)**, incorporating the revised access control logic. This will involve:
-1.  **Database Schema Update:** Executing the SQL command to add the `is_private` column to `public.pathway_templates` and updating the RLS policies as specified in Section 5.1.
-2.  **Server Actions:** Creating/updating the `createPathwayTemplateAction`, `updatePathwayTemplateAction`, `deletePathwayTemplateAction`, `getTemplatesAction`, and `getTemplateByIdAction` in `src/features/pathway-templates/actions.ts`, ensuring the new authorization logic (creator ownership OR 'admin' role) is correctly implemented.
-3.  **Frontend UI:**
-    *   Updating `src/features/pathway-templates/components/PathwayTemplateList.tsx` to display `is_private` status and conditionally render/enable action buttons based on the new access rules.
-    *   Updating `src/features/pathway-templates/components/PathwayTemplateForm.tsx` to include the M3 `Switch` for `is_private`.
-    *   Integrating these components with the updated Server Actions.
-4.  **Feedback & Loading:** Ensuring all interactions provide clear `sonner` toasts and display `Skeleton` components during loading.
+The immediate next step is to begin **Vertical 2: Campaign Management & Campaign Phases**, as outlined in the `Architecture.md` and `PRD.md` documents. This will involve:
+1.  **Database Schema:** The `campaigns` table has been created with appropriate columns and RLS policies.
+2.  **Service Layer:** Developing a new service (`src/features/campaigns/services/campaign-service.ts`) for campaign CRUD operations.
+3.  **Backend (Server Actions):** Creating Server Actions (`src/features/campaigns/actions.ts`) to interact with the campaign service.
+4.  **Frontend (UI):** Building the UI for listing campaigns (`src/app/(workbench)/campaigns/page.tsx`) and creating new campaigns (`src/app/(workbench)/campaigns/new/page.tsx`), including a form to select a pathway template and define campaign-specific details.
