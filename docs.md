@@ -219,6 +219,21 @@ The project follows a modular and domain-driven directory structure, aligning wi
             *   Applicants can `SELECT`, `INSERT`, `UPDATE` their own applications.
             *   Recruiters/Admins can `SELECT` applications within campaigns they have access to.
             *   Recruiters/Admins can `UPDATE` `screening_status` and `current_campaign_phase_id` for applications within campaigns they manage.
+*   **Vertical 4.2: Application Service & Server Actions**
+    *   **Feature Module (`src/features/applications/index.ts`):** Entry point created.
+    *   **Service Layer (`src/features/applications/services/application-service.ts`):**
+        *   New interface `Application` defined, including nested `Campaign`, `Profile`, and `ApplicationPhase` types for joined data.
+        *   Functions `getApplications`, `getApplicationById`, `createApplication`, `updateApplication`, `deleteApplication` are implemented for direct database interaction.
+    *   **Backend (Next.js Server Actions - `src/features/applications/actions.ts`):**
+        *   Server Actions `getApplicationsAction`, `getApplicationByIdAction`, `createApplicationAction`, `updateApplicationAction`, `deleteApplicationAction` are implemented.
+        *   Server-side authorization logic (`authorizeApplicationAction`) is applied to all actions, checking `applicant_id`, `campaign.creator_id`, `campaign.is_public`, and `user_metadata.role` (for 'admin' override) to enforce granular access control. Unauthorized access attempts redirect to appropriate error pages.
+        *   Specific logic for `updateApplicationAction` ensures only authorized roles can modify `screening_status` and `current_campaign_phase_id`.
+*   **Vertical 4.3: Screening Phase UI (Dashboard View)**
+    *   **Frontend (UI):**
+        *   `src/features/applications/components/ScreeningDashboard.tsx` (Client Component) is created. This component provides a dashboard view for recruiters, displaying a list of applications with filtering (by status, campaign) and search capabilities.
+        *   Each application is rendered as an M3-compliant `Card` showing applicant name, campaign, current phase, and screening status with visual indicators.
+        *   Action buttons allow recruiters to quickly update an application's screening status (Accept, On Hold, Deny) via `DropdownMenu` and `AlertDialog` for confirmation.
+        *   `src/app/(workbench)/applications/screening/page.tsx` renders the `ScreeningDashboard` component. Access to this page is restricted to 'admin', 'coordinator', 'evaluator', and 'screener' roles.
 
 **Next Steps:**
-Now that the `applications` table is set up, the next step is to create the service layer and Server Actions for Application Management, and then begin building the UI for the Screening Phase, starting with a basic dashboard view for recruiters.
+The next steps for **Vertical 4** will involve building out the `Applicant Detail View` for recruiters, which will include internal decision tools like a checklist repeater, collaborative notes, and a full audit trail, as well as the ability to view workflow participation.

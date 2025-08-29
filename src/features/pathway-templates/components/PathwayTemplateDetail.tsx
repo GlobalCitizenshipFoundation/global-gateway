@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, PlusCircle, Workflow, Lock, Globe, Edit, Copy } from "lucide-react"; // Import Copy icon
+import { ArrowLeft, PlusCircle, Workflow, Lock, Globe, Edit, Copy } from "lucide-react";
 import { PathwayTemplate, Phase } from "../services/pathway-template-service";
 import { toast } from "sonner";
 import { useSession } from "@/context/SessionContextProvider";
@@ -17,7 +17,7 @@ import { DragDropContext, Droppable, DropResult } from "@hello-pangea/dnd";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { PhaseConfigurationPanel } from "./PhaseConfigurationPanel";
-import { CloneTemplateDialog } from "./CloneTemplateDialog"; // Import CloneTemplateDialog
+import { CloneTemplateDialog } from "./CloneTemplateDialog";
 
 interface PathwayTemplateDetailProps {
   templateId: string;
@@ -33,7 +33,7 @@ export function PathwayTemplateDetail({ templateId }: PathwayTemplateDetailProps
   const [editingPhase, setEditingPhase] = useState<Phase | undefined>(undefined);
   const [isConfigDialogOpen, setIsConfigDialogOpen] = useState(false);
   const [configuringPhase, setConfiguringPhase] = useState<Phase | undefined>(undefined);
-  const [isCloneDialogOpen, setIsCloneDialogOpen] = useState(false); // State for clone dialog
+  const [isCloneDialogOpen, setIsCloneDialogOpen] = useState(false);
 
   const fetchTemplateAndPhases = async () => {
     setIsLoading(true);
@@ -68,7 +68,7 @@ export function PathwayTemplateDetail({ templateId }: PathwayTemplateDetailProps
   }, [user, isSessionLoading, templateId]);
 
   const handlePhaseSaved = () => {
-    fetchTemplateAndPhases(); // Re-fetch to update list and order indices
+    fetchTemplateAndPhases();
     setIsPhaseFormOpen(false);
     setEditingPhase(undefined);
   };
@@ -84,7 +84,7 @@ export function PathwayTemplateDetail({ templateId }: PathwayTemplateDetailProps
   };
 
   const handleConfigSaved = () => {
-    fetchTemplateAndPhases(); // Re-fetch to update phases with new config
+    fetchTemplateAndPhases();
     setIsConfigDialogOpen(false);
     setConfiguringPhase(undefined);
   };
@@ -94,7 +94,7 @@ export function PathwayTemplateDetail({ templateId }: PathwayTemplateDetailProps
       const success = await deletePhaseAction(phaseId, templateId);
       if (success) {
         toast.success("Phase deleted successfully!");
-        fetchTemplateAndPhases(); // Re-fetch to update list and order indices
+        fetchTemplateAndPhases();
       }
     } catch (error: any) {
       toast.error(error.message || "Failed to delete phase.");
@@ -115,7 +115,7 @@ export function PathwayTemplateDetail({ templateId }: PathwayTemplateDetailProps
       order_index: index,
     }));
 
-    setPhases(updatedPhases); // Optimistic update
+    setPhases(updatedPhivatedPhases);
 
     try {
       const success = await reorderPhasesAction(
@@ -124,13 +124,13 @@ export function PathwayTemplateDetail({ templateId }: PathwayTemplateDetailProps
       );
       if (!success) {
         toast.error("Failed to reorder phases. Reverting changes.");
-        fetchTemplateAndPhases(); // Revert on failure
+        fetchTemplateAndPhases();
       } else {
         toast.success("Phases reordered successfully!");
       }
     } catch (error: any) {
       toast.error(error.message || "Failed to reorder phases. Reverting changes.");
-      fetchTemplateAndPhases(); // Revert on failure
+      fetchTemplateAndPhases();
     }
   };
 
@@ -290,7 +290,7 @@ export function PathwayTemplateDetail({ templateId }: PathwayTemplateDetailProps
           {configuringPhase && (
             <PhaseConfigurationPanel
               phase={configuringPhase}
-              parentId={templateId} {/* Corrected prop name from pathwayTemplateId to parentId */}
+              parentId={templateId}
               onConfigSaved={handleConfigSaved}
               canModify={canModifyTemplate}
             />

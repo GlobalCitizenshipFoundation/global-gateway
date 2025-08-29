@@ -1,0 +1,123 @@
+"use client";
+
+import { createClient } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import { Campaign } from "@/features/campaigns/services/campaign-service";
+import { BaseConfigurableItem } from "@/features/pathway-templates/services/pathway-template-service";
+
+// Extend BaseConfigurableItem for current_campaign_phase to reuse its structure
+export interface ApplicationPhase extends BaseConfigurableItem {
+  campaign_id: string;
+  original_phase_id: string | null;
+}
+
+export interface Application {
+  id: string;
+  campaign_id: string;
+  applicant_id: string;
+  current_campaign_phase_id: string | null;
+  status: 'draft' | 'submitted' | 'in_review' | 'accepted' | 'rejected' | 'on_hold';
+  screening_status: 'Pending' | 'Accepted' | 'On Hold' | 'Denied';
+  data: Record<string, any>; // JSONB field for dynamic form data
+  created_at: string;
+  updated_at: string;
+  campaigns?: Campaign; // For joining with campaign data
+  profiles?: { first_name: string; last_name: string; avatar_url: string | null }; // For joining with applicant profile data
+  current_campaign_phases?: ApplicationPhase; // For joining with current phase data
+}
+
+export const applicationService = {
+  supabase: createClient(),
+
+  async getApplications(): Promise<Application[] | null> {
+    const { data, error } = await this.supabase
+      .from("applications")
+      .select("*, campaigns(*), profiles(first_name, last_name, avatar_url), current_campaign_phases(*)")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error("Error fetching applications:", error.message);
+      toast.error("Failed to load applications.");
+      return null;
+    }
+    return data as Application[];
+  },
+
+  async getApplicationById(id: string): Promise<Application | null> {
+    const { data, error } = await this.supabase
+      .from("applications")
+      .select("*, campaigns(*), profiles(first_name, last_name, avatar_url), current_campaign_phases(*)")
+      .eq("id", id)
+      .single();
+
+    if (error) {
+      console.error(`Error fetching application ${id}:`, error.message);
+      toast.error(`Failed to load application ${id}.`);
+      return null;
+    }
+    return data as Application;
+  },
+
+  async createApplication(
+    campaignId: string,
+    applicantId: string,
+    initialData: Record<string, any> = {},
+    initialStatus: Application['status'] = 'draft',
+    initialScreeningStatus: Application['screening_status'] = 'Pending'
+  ): Promise<Application | null> {
+    const { data, error } = await this.supabase
+      .from("applications")
+      .insert([{
+        campaign_id: campaignId,
+        applicant_id: applicantId,
+        data: initialData,
+        status: initialStatus,
+        screening_status: initialScreeningStatus,
+      }])
+      .select("*, campaigns(*), profiles(first_name, last_name, avatar_url), current_campaign_phases(*)")
+      .single();
+
+    if (error) {
+      console.error("Error creating application:", error.message);
+      toast.error("Failed to create application.");
+      return null;
+    }
+    toast.success("Application created successfully!");
+    return data as Application;
+  },
+
+  async updateApplication(
+    id: string,
+    updates: Partial<Omit<Application, "id" | "applicant_id" | "campaign_id" | "created_at">>
+  ): Promise<Application | null> {
+    const { data, error } = await this.supabase
+      .from("applications")
+      .update({ ...updates, updated_at: new Date().toISOString() })
+      .eq("id", id)
+      .select("*, campaigns(*), profiles(first_name, last_name, avatar_url), current_campaign_phases(*)")
+      .single();
+
+    if (error) {
+      console.error(`Error updating application ${id}:`, error.message);
+      toast.error("Failed to update application.");
+      return null;
+    }
+    toast.success("Application updated successfully!");
+    return data as Application;
+  },
+
+  async deleteApplication(id: string): Promise<boolean> {
+    const { error } = await this.supabase
+      .from("applications")
+      .delete()
+      .eq("id", id);
+
+    if (error) {
+      console.error(`Error deleting application ${id}:`, error.message);
+      toast.error("Failed to delete application.");
+      return false;
+    }
+    toast.success("Application deleted successfully!");
+    return true;
+  },
+};
