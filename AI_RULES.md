@@ -22,46 +22,95 @@ As you execute the plan strictly follow:
 
 6. You do not have permission to edit, modify, or delete any aspect of AI_RULES.md' or 'PRD.md' files.
 
-##  Development Principles: SOLID & OOP Adherence
+## **Development Principles: SOLID & OOP Adherence**
 
-To ensure a robust, maintainable, and scalable application, all development must strictly adhere to SOLID principles and core Object-Oriented Programming (OOP) concepts. These principles guide the design of modules, services, and components, promoting clarity and efficiency.
+To build a robust, maintainable, and scalable application, all development must follow **SOLID principles** and core **Object-Oriented Programming (OOP)** concepts. These principles guide the design of modules, services, and components, ensuring clarity, efficiency, and reusability.
 
-### SOLID Principles
-Single Responsibility Principle (SRP): Each module, component, or function must have only one reason to change.
+---
 
-Application: A PathwayTemplateCard displays template data and handles its own actions; it does not fetch the entire list of templates. A Server Action performs a single, defined operation (e.g., createPathwayTemplateAction creates a template, it does not also fetch all templates). Services (e.g., pathwayTemplateService) manage a single domain's data operations.
-Open/Closed Principle (OCP): Software entities should be open for extension but closed for modification.
+### **SOLID Principles**
 
-Application: New phase types (e.g., "Scheduling") should extend the PhaseConfigurationPanel by adding new configuration components without altering the panel's core logic. Components should be configurable via props to extend behavior without internal code changes.
-Liskov Substitution Principle (LSP): Objects of a supertype should be replaceable with objects of its subtypes without altering the correctness of the program.
+**Single Responsibility Principle (SRP)**
 
-Application: TypeScript interfaces (e.g., PathwayTemplate) define contracts. Any object conforming to this interface, or extending it, must behave as expected wherever the base interface is used.
-Interface Segregation Principle (ISP): Clients should not be forced to depend on interfaces they do not use.
+* **Definition:** Each module, component, or function should have **only one reason to change**.
+* **Example:**
 
-Application: Use focused TypeScript interfaces (e.g., UserProfile, UserAuthDetails) rather than monolithic ones. Functions and components should only accept the specific data structures they require.
-Dependency Inversion Principle (DIP): High-level modules should not depend on low-level modules; both should depend on abstractions.
+  * `PathwayTemplateCard` displays template data and handles its own actions; it does not fetch the full template list.
+  * `createPathwayTemplateAction` creates a template without fetching others.
+  * `pathwayTemplateService` manages only pathway template operations.
 
-Application: UI components and Server Actions (high-level) depend on abstract service layers (e.g., pathwayTemplateService), not directly on concrete database implementations (low-level).
+**Open/Closed Principle (OCP)**
 
-### Core OOP Concepts
-Encapsulation: Bundle data and methods that operate on that data within a single unit, hiding internal implementation details.
+* **Definition:** Software entities should be **open for extension but closed for modification**.
+* **Example:**
 
-Application: Service modules (e.g., pathwayTemplateService) encapsulate all logic for interacting with a specific domain, exposing only public methods. React components encapsulate their internal state and logic.
-Polymorphism: The ability of an object to take on many forms, allowing a single interface to represent different underlying implementations.
+  * Add new phase types (e.g., "Scheduling") by extending `PhaseConfigurationPanel` with new components, without altering core logic.
+  * Components should be configurable via props to extend behavior.
 
-Application: The PhaseConfigurationPanel dynamically renders different configuration forms based on phase.type, each adhering to a common conceptual interaction pattern.
-Abstraction: Hide complex implementation details, showing only essential features.
+**Liskov Substitution Principle (LSP)**
 
-Application: Service layers abstract direct database interactions. Shadcn/UI components abstract underlying Radix UI primitives and Tailwind CSS. Server Actions abstract server-side logic from client-side components.
+* **Definition:** Subtypes should **replace their base types without breaking behavior**.
+* **Example:**
 
-### Integration & Practical Application
-src/features: Each feature module embodies SRP and OCP.
-src/services & src/features/[feature-name]/services: These layers are critical for SRP, Encapsulation, and DIP.
-src/integrations: Supports Abstraction and DIP by centralizing third-party service interactions.
-TypeScript: Essential for enforcing LSP and ISP through strong typing and clear interface definitions.
-Actionable: Prioritize a single purpose for each unit of code. Design for extension, not modification. Define clear data contracts with TypeScript. Abstract complex operations behind simple interfaces.
+  * TypeScript interfaces like `PathwayTemplate` define contracts; objects implementing these interfaces must behave consistently wherever the base type is expected.
 
-## Design
+**Interface Segregation Principle (ISP)**
+
+* **Definition:** Clients should not depend on interfaces they do not use.
+* **Example:**
+
+  * Use focused interfaces (`UserProfile`, `UserAuthDetails`) instead of monolithic ones.
+  * Functions/components accept only the specific data structures they require.
+
+**Dependency Inversion Principle (DIP)**
+
+* **Definition:** High-level modules should depend on **abstractions**, not low-level modules.
+* **Example:**
+
+  * UI components and server actions depend on abstract services (e.g., `pathwayTemplateService`) rather than concrete database implementations.
+
+---
+
+### **Core OOP Concepts**
+
+**Encapsulation**
+
+* **Definition:** Bundle data and methods, hiding internal details.
+* **Example:** `pathwayTemplateService` exposes only public methods; React components encapsulate internal state and logic.
+
+**Polymorphism**
+
+* **Definition:** Objects can take many forms, allowing a single interface to represent different implementations.
+* **Example:** `PhaseConfigurationPanel` renders different configuration forms based on `phase.type` while following a common interaction pattern.
+
+**Abstraction**
+
+* **Definition:** Hide complex details, exposing only essential features.
+* **Example:**
+
+  * Service layers abstract database interactions.
+  * Shadcn/UI abstracts Radix UI primitives and Tailwind styling.
+  * Server Actions abstract server-side logic from client components.
+
+---
+
+### **Integration & Practical Application**
+
+* **`src/features`** → Each module embodies SRP and OCP.
+* **`src/services` & `src/features/[feature]/services`** → Ensure SRP, Encapsulation, and DIP.
+* **`src/integrations`** → Centralizes third-party interactions, supporting Abstraction and DIP.
+* **TypeScript** → Enforces LSP and ISP via strong typing and clear interfaces.
+
+**Actionable Guidelines:**
+
+* Prioritize a single purpose per unit.
+* Design for extension, not modification.
+* Define clear data contracts with TypeScript.
+* Abstract complex operations behind simple interfaces.
+
+---
+
+## Design Guidelines
 
 Strictly enforce achieving full Material Design 3 specifications and compliance going beyond just using the base components. Therefore involve the below but not limited to:
 
@@ -71,6 +120,8 @@ Typography: Using M3's defined type scale (e.g., display, headline, title, body,
 Motion: Incorporating M3-specific animations and transitions.
 
 Refer toM3Design.md to strictly enforce Material Design 3 Specifications.
+
+---
 
 ## Tech Stack Overview
 
@@ -86,6 +137,9 @@ The application is built using the following core technologies:
 *   **Notifications/Toasts**: Sonner for displaying non-intrusive notifications.
 *   **Charts**: Recharts for data visualization.
 *   **Animation**: `tailwindcss-animate` and animation capabilities built into Radix UI components.
+
+---
+
 
 ## Library Usage Guidelines
 
@@ -139,6 +193,8 @@ To ensure consistency and leverage the chosen stack effectively, please follow t
 13. **TypeScript**:
     *   Write all new code in TypeScript.
     *   Strive for strong typing and leverage TypeScript's features to improve code quality and maintainability. Avoid using `any` where possible.
+
+---
 
 
 # UI/UX Integration in VIS
