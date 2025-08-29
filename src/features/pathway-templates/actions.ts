@@ -97,7 +97,7 @@ export async function createPathwayTemplateAction(formData: FormData): Promise<P
 
   const name = formData.get("name") as string;
   const description = formData.get("description") as string | null;
-  const is_private = formData.get("is_private") === "on";
+  const is_private = formData.get("is_private") === "on"; // Checkbox value
 
   if (!name) {
     throw new Error("Template name is required.");
@@ -230,6 +230,26 @@ export async function updatePhaseAction(phaseId: string, pathwayTemplateId: stri
     return updatedPhase;
   } catch (error: any) {
     console.error("Error in updatePhaseAction:", error.message);
+    if (error.message === "Unauthorized to modify this template.") {
+      redirect("/error-pages/403");
+    }
+    throw error; // Re-throw to be caught by client-side toast
+  }
+}
+
+export async function updatePhaseConfigAction(phaseId: string, pathwayTemplateId: string, configUpdates: Record<string, any>): Promise<Phase | null> {
+  try {
+    await authorizeTemplateAction(pathwayTemplateId, 'write'); // User must have write access to the parent template
+
+    const updatedPhase = await pathwayTemplateService.updatePhase(
+      phaseId,
+      { config: configUpdates }
+    );
+
+    revalidatePath(`/workbench/pathway-templates/${pathwayTemplateId}`);
+    return updatedPhase;
+  } catch (error: any) {
+    console.error("Error in updatePhaseConfigAction:", error.message);
     if (error.message === "Unauthorized to modify this template.") {
       redirect("/error-pages/403");
     }

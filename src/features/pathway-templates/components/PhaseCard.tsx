@@ -3,7 +3,7 @@
 import React from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Edit, Trash2, GripVertical } from "lucide-react";
+import { Edit, Trash2, GripVertical, Settings } from "lucide-react"; // Import Settings icon
 import { Phase } from "../services/pathway-template-service";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Draggable } from "@hello-pangea/dnd"; // Using a dnd library
@@ -13,10 +13,11 @@ interface PhaseCardProps {
   index: number;
   onEdit: (phase: Phase) => void;
   onDelete: (phaseId: string) => void;
+  onConfigure: (phase: Phase) => void; // New prop for configuration
   canEditOrDelete: boolean;
 }
 
-export function PhaseCard({ phase, index, onEdit, onDelete, canEditOrDelete }: PhaseCardProps) {
+export function PhaseCard({ phase, index, onEdit, onDelete, onConfigure, canEditOrDelete }: PhaseCardProps) {
   return (
     <Draggable draggableId={phase.id} index={index}>
       {(provided, snapshot) => (
@@ -44,6 +45,10 @@ export function PhaseCard({ phase, index, onEdit, onDelete, canEditOrDelete }: P
           <CardContent className="flex-shrink-0 flex items-center space-x-2 p-0 pl-4">
             {canEditOrDelete && (
               <>
+                <Button variant="outline" size="icon" className="rounded-md" onClick={() => onConfigure(phase)}>
+                  <Settings className="h-4 w-4" />
+                  <span className="sr-only">Configure Phase</span>
+                </Button>
                 <Button variant="outline" size="icon" className="rounded-md" onClick={() => onEdit(phase)}>
                   <Edit className="h-4 w-4" />
                   <span className="sr-only">Edit Phase</span>

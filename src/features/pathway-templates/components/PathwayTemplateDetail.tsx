@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, PlusCircle, Workflow, Lock, Globe, Edit } from "lucide-react"; // Import Edit icon
+import { ArrowLeft, PlusCircle, Workflow, Lock, Globe, Edit } from "lucide-react";
 import { PathwayTemplate, Phase } from "../services/pathway-template-service";
 import { toast } from "sonner";
 import { useSession } from "@/context/SessionContextProvider";
@@ -13,8 +13,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { getTemplateByIdAction, getPhasesAction, reorderPhasesAction, deletePhaseAction } from "../actions";
 import { PhaseFormDialog } from "./PhaseFormDialog";
 import { PhaseCard } from "./PhaseCard";
-import { DragDropContext, Droppable, DropResult } from "@hello-pangea/dnd"; // DND library
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"; // Import Tooltip components
+import { DragDropContext, Droppable, DropResult } from "@hello-pangea/dnd";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"; // Import Dialog components for configuration
+import { PhaseConfigurationPanel } from "./PhaseConfigurationPanel"; // Import the new panel
 
 interface PathwayTemplateDetailProps {
   templateId: string;
@@ -28,6 +30,8 @@ export function PathwayTemplateDetail({ templateId }: PathwayTemplateDetailProps
   const [isLoading, setIsLoading] = useState(true);
   const [isPhaseFormOpen, setIsPhaseFormOpen] = useState(false);
   const [editingPhase, setEditingPhase] = useState<Phase | undefined>(undefined);
+  const [isConfigDialogOpen, setIsConfigDialogOpen] = useState(false); // State for config dialog
+  const [configuringPhase, setConfiguringPhase] = useState<Phase | undefined>(undefined); // State for phase being configured
 
   const fetchTemplateAndPhases = async () => {
     setIsLoading(true);
@@ -70,6 +74,17 @@ export function PathwayTemplateDetail({ templateId }: PathwayTemplateDetailProps
   const handleEditPhase = (phase: Phase) => {
     setEditingPhase(phase);
     setIsPhaseFormOpen(true);
+  };
+
+  const handleConfigurePhase = (phase: Phase) => {
+    setConfiguringPhase(phase);
+    setIsConfigDialogOpen(true);
+  };
+
+  const handleConfigSaved = () => {
+    fetchTemplateAndPhases(); // Re-fetch to update phases with new config
+    setIsConfigDialogOpen(false);
+    setConfiguringPhase(undefined);
   };
 
   const handleDeletePhase = async (phaseId: string) => {
@@ -144,9 +159,8 @@ export function PathwayTemplateDetail({ templateId }: PathwayTemplateDetailProps
     );
   }
 
-  // At this point, user and template are guaranteed to be non-null due to early returns
-  const currentUser = user!; // Assert user is not null
-  const currentTemplate = template!; // Assert template is not null
+  const currentUser = user!;
+  const currentTemplate = template!;
 
   const userRole: string = currentUser.user_metadata?.role || '';
   const isAdmin = userRole === 'admin';
@@ -238,6 +252,7 @@ export function PathwayTemplateDetail({ templateId }: PathwayTemplateDetailProps
                     index={index}
                     onEdit={handleEditPhase}
                     onDelete={handleDeletePhase}
+                    onConfigure={handleConfigurePhase} // Pass the new handler
                     canEditOrDelete={canModifyTemplate}
                   />
                 ))}
@@ -256,6 +271,25 @@ export function PathwayTemplateDetail({ templateId }: PathwayTemplateDetailProps
         onPhaseSaved={handlePhaseSaved}
         nextOrderIndex={phases.length}
       />
+
+      {/* Phase Configuration Dialog */}
+      <Dialog open={isConfigDialogOpen} onOpenChange={setIsConfigDialogOpen}>
+        <DialogContent className="sm:max-w-[800px] rounded-xl shadow-lg bg-card text-card-foreground border-border max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-headline-small">
+              Configure Phase
+            </DialogTitle>
+          </DialogHeader>
+          {configuringPhase && (
+            <PhaseConfigurationPanel
+              phase={configuringPhase}
+              pathwayTemplateId={templateId}
+              onConfigSaved={handleConfigSaved}
+              canModify={canModifyTemplate}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
