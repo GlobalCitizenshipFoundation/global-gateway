@@ -4,7 +4,7 @@ import { Auth } from "@supabase/auth-ui-react";
 import { ThemeSupa } from "@supabase/auth-ui-shared";
 import { useSession } from "@/context/SessionContextProvider";
 import { useRouter } from "next/navigation";
-import React, { useEffect } from "react"; // Import React
+import React, { useEffect } from "react";
 import { toast } from "sonner";
 
 export default function LoginPage() {
@@ -36,7 +36,7 @@ export default function LoginPage() {
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-background p-4">
-      <div className="w-full max-w-lg p-8 space-y-6 bg-card shadow-lg rounded-lg border border-border">
+      <div className="w-full max-w-lg p-8 space-y-6 bg-card shadow-lg rounded-lg border border-border mx-auto">
         <h2 className="text-headline-large text-center text-foreground">Welcome to Global Gateway</h2>
         <Auth
           supabaseClient={supabase}
