@@ -60,8 +60,9 @@ The project follows a modular and domain-driven directory structure, aligning wi
 **Implementation Details:**
 
 *   **Material Design 3 Styling:**
-    *   The `src/app/globals.css` file has been updated to incorporate the Material Design 3 color palette, defining HSL values for both light and dark themes, based on the primary seed color `#880E4F`.
-    *   `tailwind.config.ts` has been extended to map these new CSS variables to Tailwind utility classes, including primary, secondary, tertiary, destructive, card, popover, muted, accent, border, input, ring, and specific sidebar and chart colors. This ensures M3 compliance across the application's visual elements.
+    *   The `src/app/globals.css` file has been updated to incorporate the Material Design 3 color palette, defining HSL values for both light and dark themes. This palette is derived from the primary brand seed color `#E91E63` and brand extension color `#880E4F`, ensuring M3 compliance and WCAG AA contrast ratios.
+    *   `tailwind.config.ts` has been extended to map these new CSS variables to Tailwind utility classes, including primary, secondary, tertiary, destructive, card, popover, muted, accent, border, input, ring, and specific sidebar and chart colors. The `borderRadius` values have also been updated to align with M3 specifications (4px, 8px, 12px, 16px, 24px).
+    *   The `src/components/ui/button.tsx` component now includes `onPrimary` and `onSecondary` variants to support text on primary and secondary color backgrounds, respectively.
 *   **Supabase Client Integration:**
     *   The existing `src/integrations/supabase/client.ts` is used for browser-side Supabase interactions.
     *   `@supabase/supabase-js`, `@supabase/auth-ui-react`, and `@supabase/auth-ui-shared` packages have been added to `package.json`.
@@ -85,7 +86,7 @@ The project follows a modular and domain-driven directory structure, aligning wi
     *   It enforces role-based access control, ensuring users can only access routes corresponding to their assigned roles (e.g., only 'admin' can access `/admin` routes).
     *   It also handles redirection for logged-in users attempting to access public pages, sending them to their appropriate dashboard.
 *   **Public Homepage (`src/app/page.tsx`):**
-    *   The public homepage has been enhanced with a welcoming message, a description of Global Gateway's offerings (Programs, Hiring, Awards), and clear calls to action for new and returning users. It uses `Card` components and Lucide icons for a visually appealing layout, adhering to M3 design principles.
+    *   The public homepage has been enhanced with a welcoming message, a description of Global Gateway's offerings (Programs, Hiring, Awards), and clear calls to action for new and returning users. It uses `Card` components and Lucide icons for a visually appealing layout, adhering to M3 design principles, and now utilizes the new `onPrimary` button variant in the hero section.
 *   **Error Handling (`src/app/error.tsx` and `src/app/(public)/error-pages/[code]/page.tsx`):**
     *   A global client-side error boundary (`src/app/error.tsx`) has been implemented to catch unexpected React errors and provide a user-friendly fallback.
     *   Dynamic error pages (`src/app/(public)/error-pages/[code]/page.tsx`) have been created to handle specific HTTP status codes (401, 403, 404, 500) with tailored messages, icons, and actionable buttons, ensuring a consistent and helpful user experience during errors.
@@ -93,4 +94,4 @@ The project follows a modular and domain-driven directory structure, aligning wi
     *   A utility service `authService` has been created to abstract common Supabase authentication operations like `signOut`, `getUser`, and `getSession`. This promotes reusability and keeps component logic clean.
 
 **Next Steps:**
-With Vertical 0 complete, the application now has a robust authentication system, role-based routing, a consistent M3-compliant design foundation, a public homepage, and comprehensive error handling. The next step, following the `VIS.md` MVP build order, will be to implement **Vertical 1: Pathway Templates & Phase Configuration**. This will involve defining the database schema for pathway templates and phases, and then building the UI and backend services required for their creation and management.
+With Vertical 0 now fully styled according to Material Design 3, the application has a robust authentication system, role-based routing, a consistent M3-compliant design foundation, a public homepage, and comprehensive error handling. The next step, following the `VIS.md` MVP build order, will be to implement **Vertical 1.1: Basic Pathway Template Management (CRUD & Listing)**, which involves defining the database schema for pathway templates and phases, and then building the UI and backend services required for their creation and management.

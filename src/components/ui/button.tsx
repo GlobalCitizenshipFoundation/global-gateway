@@ -17,11 +17,12 @@ const buttonVariants = cva(
         outline:
           "border border-input bg-background hover:bg-accent hover:text-accent-foreground",
         secondary:
-          "bg-secondary text-secondary-foreground hover:bg-secondary/80",
+          "bg-secondary text-secondary-foreground hover:bg-secondary/90",
         ghost: "hover:bg-accent hover:text-accent-foreground",
         link: "text-primary underline-offset-4 hover:underline",
-        // New variant for high contrast on primary backgrounds
+        // New M3 variants
         onPrimary: "bg-primary-foreground text-primary hover:bg-primary-foreground/90",
+        onSecondary: "bg-secondary-foreground text-secondary hover:bg-secondary-foreground/90",
       },
       size: {
         default: "h-10 px-4 py-2",

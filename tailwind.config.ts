@@ -6,6 +6,7 @@ export default {
     "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
+    "./src/features/**/*.{js,ts,jsx,tsx,mdx}", // Ensure feature modules are included
   ],
   theme: {
   	extend: {
@@ -56,7 +57,9 @@ export default {
   			},
             tertiary: {
                 DEFAULT: 'hsl(var(--tertiary))',
-                foreground: 'hsl(var(--tertiary-foreground))'
+                foreground: 'hsl(var(--on-tertiary))', // Corrected to on-tertiary
+                container: 'hsl(var(--tertiary-container))',
+                'on-container': 'hsl(var(--on-tertiary-container))'
             },
   			muted: {
   				DEFAULT: 'hsl(var(--muted))',
@@ -95,11 +98,11 @@ export default {
   		},
   		borderRadius: {
             'none': '0',
-            'sm': '2px', // 2px
-            'md': '4px', // 4px
-  			lg: 'var(--radius)', // 8px (default)
-            'xl': '12px', // 12px
-            '2xl': '16px', // 16px
+            'sm': '4px', // M3 small
+            'md': '8px', // M3 medium (default for many components)
+  			lg: '12px', // M3 large
+            'xl': '16px', // M3 extra large
+            '2xl': '24px', // M3 extra extra large
             'full': '9999px',
   		},
         spacing: {
