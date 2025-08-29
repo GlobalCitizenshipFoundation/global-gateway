@@ -9,6 +9,7 @@ This document provides an overview of the project's architecture, key features, 
 *   [Vertical 1: Pathway Templates & Phase Configuration](#vertical-1-pathway-templates--phase-configuration)
 *   [Vertical 2: Campaign Management & Campaign Phases](#vertical-2-campaign-management--campaign-phases)
 *   [Vertical 4: Application Management & Screening Phase](#vertical-4-application-management--screening-phase)
+*   [Vertical 5: Review & Decision Phases](#vertical-5-review--decision-phases)
 
 ---
 
@@ -248,9 +249,49 @@ The project follows a modular and domain-driven directory structure, aligning wi
             *   **Collaborative Notes (Implemented):** The `CollaborativeNotes` component is integrated, allowing authorized users (campaign creators/admins) to add, view, edit, and delete private notes with an audit trail (author, timestamp).
             *   **Workflow Participation (Implemented):** The `WorkflowParticipation` component is integrated, providing a visual timeline of campaign phases and highlighting the applicant's current status within the workflow.
 
+---
+
+## Vertical 5: Review & Decision Phases
+
+**Objective:** To provide tools for reviewers to evaluate applications and for administrators/campaign creators to make and track final decisions.
+
+**Implementation Details:**
+
+*   **Vertical 5.1: Reviewer Dashboard & My Reviews**
+    *   **Database Schema (`public.reviews`, `public.reviewer_assignments`):**
+        *   Tables `reviews` and `reviewer_assignments` were created with appropriate columns and RLS policies in the previous step.
+    *   **Service Layer (`src/features/evaluations/services/evaluation-service.ts`):**
+        *   Interfaces `Review` and `ReviewerAssignment` defined.
+        *   Functions `getReviewerAssignments`, `createReviewerAssignment`, `updateReviewerAssignment`, `deleteReviewerAssignment`, `getReviews`, `createReview`, `updateReview`, `deleteReview` are implemented for direct database interaction.
+    *   **Backend (Next.js Server Actions - `src/features/evaluations/actions.ts`):**
+        *   Server Actions `getReviewerAssignmentsAction`, `createReviewerAssignmentAction`, `updateReviewerAssignmentAction`, `deleteReviewerAssignmentAction`, `getReviewsAction`, `createReviewAction`, `updateReviewAction`, `deleteReviewAction` are implemented.
+        *   Robust server-side authorization logic (`authorizeApplicationAccessForEvaluation`) is applied to all actions, ensuring only authorized users (reviewers for their own reviews/assignments, or admins/campaign creators for all) can perform operations.
+    *   **Frontend (UI):**
+        *   `src/features/evaluations/components/ReviewerDashboard.tsx` (Client Component) displays a dashboard for reviewers, listing their assigned applications and submitted reviews. It includes filtering, search, and actions to update assignment status (Accept, Decline, Complete) and navigate to application details.
+        *   `src/app/(workbench)/evaluations/my-reviews/page.tsx` renders the `ReviewerDashboard` component. Access is restricted to 'reviewer', 'admin', 'coordinator', 'evaluator', and 'screener' roles.
+        *   The `Sidebar` component (`src/components/layout/Sidebar.tsx`) has been updated to include a link to the "My Reviews" page.
+*   **Vertical 5.2: Review Submission & Editing**
+    *   **Frontend (UI):**
+        *   `src/features/evaluations/components/ReviewForm.tsx` (Client Component) is created. This form allows reviewers to submit and edit their evaluations. It dynamically generates rubric score inputs based on the `Review` phase configuration, includes a comments section, and interacts with `createReviewAction` and `updateReviewAction`.
+        *   The `ApplicationDetail` component (`src/features/applications/components/ApplicationDetail.tsx`) has been updated to:
+            *   Conditionally render a "Submit Review" or "Edit Review" button if the current user is an assigned reviewer for the application's current phase.
+            *   Display the `ReviewForm` within a `Dialog` when the button is clicked, pre-populating it with existing review data if available.
+*   **Vertical 5.3: Decision Recording & Tracking**
+    *   **Database Schema (`public.decisions`):**
+        *   Table `decisions` was created with appropriate columns and RLS policies in the previous step.
+    *   **Service Layer (`src/features/evaluations/services/evaluation-service.ts`):**
+        *   Interface `Decision` defined.
+        *   Functions `getDecisions`, `createDecision`, `updateDecision`, `deleteDecision` are implemented.
+    *   **Backend (Next.js Server Actions - `src/features/evaluations/actions.ts`):**
+        *   Server Actions `getDecisionsAction`, `createDecisionAction`, `updateDecisionAction`, `deleteDecisionAction` are implemented.
+        *   Authorization checks ensure only admins or campaign creators can manage decisions.
+    *   **Frontend (UI):**
+        *   `src/features/evaluations/components/DecisionForm.tsx` (Client Component) is created. This form allows authorized users to record or update a decision for an application, including the outcome (dynamically loaded from phase config), notes, and a flag for `is_final`.
+        *   `src/features/evaluations/components/DecisionList.tsx` (Client Component) is created. This component displays all recorded decisions for an application, showing the decider, outcome, notes, and final status. It includes options to edit or delete decisions for authorized users.
+        *   The `ApplicationDetail` component (`src/features/applications/components/ApplicationDetail.tsx`) has been updated to:
+            *   Conditionally render a "Record Decision" button if the current user is an admin or campaign creator and the application is in a "Decision" phase.
+            *   Display the `DecisionForm` within a `Dialog` when the button is clicked, pre-populating it if an existing decision is being edited.
+            *   Integrate the `DecisionList` to show all decisions for the application.
+
 **Next Steps:**
-With the completion of the Workflow Participation section, **Vertical 4: Application Management & Screening Phase** is now fully implemented. The next step is to begin **Vertical 5: Review & Decision Phases**, as outlined in the `Architecture.md` and `PRD.md` documents. This will involve:
-1.  **Database Schema:** Creating tables for reviews, reviewer assignments, and decision records.
-2.  **Service Layer:** Developing new services for review and decision operations.
-3.  **Backend (Server Actions):** Creating Server Actions to interact with these new services.
-4.  **Frontend (UI):** Building UI components for reviewer dashboards, rubrics, and decision recording.
+With the full implementation of **Vertical 5: Review & Decision Phases**, the next step is to begin **Vertical 3: Packages & Individual Assignments**, as outlined in the `Architecture.md` and `PRD.md` documents. This will involve defining how collections of pathways or campaigns can be managed and assigned.
