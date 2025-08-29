@@ -1,13 +1,14 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import { useSession } from "@/context/SessionContextProvider";
 import { useRouter } from "next/navigation";
 import { Sidebar } from "./Sidebar";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { useLayout } from "@/context/LayoutContext"; // Import useLayout
-import { useIsMobile } from "@/hooks/use-mobile"; // Import useIsMobile
+import { useLayout } from "@/context/LayoutContext";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { Skeleton } from "@/components/ui/skeleton"; // Import Skeleton
 
 interface AuthenticatedLayoutProps {
   children: React.ReactNode;
@@ -16,13 +17,33 @@ interface AuthenticatedLayoutProps {
 export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
   const { session, isLoading } = useSession();
   const router = useRouter();
-  const { isSidebarOpen, toggleSidebar, isSidebarCollapsed, toggleSidebarCollapsed } = useLayout(); // Use layout context
+  const { isSidebarOpen, toggleSidebar, isSidebarCollapsed, toggleSidebarCollapsed } = useLayout();
   const isMobile = useIsMobile();
 
   if (isLoading) {
+    // Full-height loading overlay for the content area, with a placeholder sidebar
     return (
-      <div className="flex items-center justify-center min-h-screen bg-background">
-        <p className="text-foreground text-headline-small">Loading application...</p>
+      <div className="flex flex-1 bg-background"> {/* This div takes up the remaining space next to the header */}
+        {/* Placeholder for a collapsed sidebar during loading */}
+        {!isMobile && (
+          <aside className="w-20 border-r border-border bg-sidebar-background p-4 space-y-6 rounded-xl shadow-lg flex-shrink-0">
+            <Skeleton className="h-8 w-3/4 mb-6" />
+            <div className="space-y-2">
+              {[...Array(5)].map((_, i) => (
+                <Skeleton key={i} className="h-10 w-full rounded-md" />
+              ))}
+            </div>
+          </aside>
+        )}
+        <main className={cn(
+          "flex-1 p-8 flex items-center justify-center bg-background text-foreground transition-all duration-300",
+          !isMobile && "ml-20" // Match collapsed sidebar width
+        )}>
+          <div className="flex flex-col items-center space-y-4">
+            <Skeleton className="h-12 w-64 rounded-md" />
+            <Skeleton className="h-6 w-48 rounded-md" />
+          </div>
+        </main>
       </div>
     );
   }
@@ -33,7 +54,6 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
     return null;
   }
 
-  const sidebarWidth = isSidebarCollapsed ? "w-20" : "w-64";
   const mainContentMargin = isSidebarCollapsed ? "ml-20" : "ml-64";
 
   return (
@@ -44,16 +64,16 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
           isCollapsed={isSidebarCollapsed}
           toggleCollapsed={toggleSidebarCollapsed}
           isMobile={false}
-          isOpen={true} // Always open on desktop, just collapsed or expanded
-          closeSidebar={() => {}} // Not applicable for desktop
+          isOpen={true}
+          closeSidebar={() => {}}
         />
       )}
 
       {/* Mobile Sidebar (Modal) */}
       {isMobile && (
         <Sidebar
-          isCollapsed={false} // Mobile sidebar is never collapsed, only open/closed
-          toggleCollapsed={() => {}} // Not applicable for mobile collapse
+          isCollapsed={false}
+          toggleCollapsed={() => {}}
           isMobile={true}
           isOpen={isSidebarOpen}
           closeSidebar={toggleSidebar}
@@ -71,7 +91,7 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
       <main
         className={cn(
           "flex-1 p-8 overflow-auto bg-background text-foreground transition-all duration-300",
-          !isMobile && mainContentMargin // Apply margin only on desktop
+          !isMobile && mainContentMargin
         )}
       >
         {children}

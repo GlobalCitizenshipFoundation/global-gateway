@@ -9,6 +9,7 @@ import { useSession } from "@/context/SessionContextProvider";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Separator } from "@/components/ui/separator"; // Import Separator
 
 interface NavLinkProps {
   href: string;
@@ -26,7 +27,7 @@ const NavLink: React.FC<NavLinkProps> = ({ href, icon: Icon, label, isActive, is
         isActive
           ? "bg-primary text-primary-foreground shadow-sm"
           : "text-muted-foreground hover:bg-muted hover:text-foreground",
-        isCollapsed ? "justify-center" : "justify-start" // Left-align text when expanded, center icon when collapsed
+        isCollapsed ? "justify-center" : "justify-start"
       )}
     >
       <Icon className="h-5 w-5" />
@@ -56,6 +57,18 @@ const NavLink: React.FC<NavLinkProps> = ({ href, icon: Icon, label, isActive, is
   );
 };
 
+interface NavigationItem {
+  href: string;
+  icon: React.ElementType;
+  label: string;
+}
+
+interface NavigationSection {
+  title: string;
+  items: NavigationItem[];
+  roles: string[]; // Roles that can see this section
+}
+
 interface SidebarProps {
   isCollapsed: boolean;
   toggleCollapsed: () => void;
@@ -83,40 +96,46 @@ export function Sidebar({ isCollapsed, toggleCollapsed, isMobile, isOpen, closeS
 
   const userRole: string = user?.user_metadata?.role || '';
 
-  const adminNavItems = [
-    { href: "/admin/dashboard", icon: LayoutDashboard, label: "Dashboard" },
-    { href: "/admin/users", icon: Users, label: "User Management" },
-    { href: "/admin/settings", icon: Settings, label: "System Settings" },
+  const allNavigationSections: NavigationSection[] = [
+    {
+      title: "Admin Tools",
+      items: [
+        { href: "/admin/dashboard", icon: LayoutDashboard, label: "Dashboard" },
+        { href: "/admin/users", icon: Users, label: "User Management" },
+        { href: "/admin/settings", icon: Settings, label: "System Settings" },
+      ],
+      roles: ['admin'],
+    },
+    {
+      title: "Workbench Tools",
+      items: [
+        { href: "/workbench/dashboard", icon: LayoutDashboard, label: "Dashboard" },
+        { href: "/workbench/pathway-templates", icon: Workflow, label: "Pathway Templates" },
+        { href: "/workbench/campaigns", icon: Briefcase, label: "Campaigns" },
+        { href: "/workbench/applications", icon: FileText, label: "Applications" },
+        { href: "/workbench/evaluations", icon: Award, label: "Evaluations" },
+        { href: "/workbench/scheduling", icon: Calendar, label: "Scheduling" },
+        { href: "/workbench/communications", icon: Mail, label: "Communications" },
+        { href: "/workbench/reports", icon: BarChart3, label: "Reports" },
+      ],
+      roles: ['admin', 'coordinator', 'evaluator', 'screener'],
+    },
+    {
+      title: "Portal Tools",
+      items: [
+        { href: "/portal/dashboard", icon: LayoutDashboard, label: "Dashboard" },
+        { href: "/portal/my-applications", icon: FileText, label: "My Applications" },
+        { href: "/portal/profile", icon: UserCircle2, label: "Profile" },
+      ],
+      roles: ['admin', 'coordinator', 'evaluator', 'screener', 'applicant'],
+    },
   ];
 
-  const workbenchNavItems = [
-    { href: "/workbench/dashboard", icon: LayoutDashboard, label: "Dashboard" },
-    { href: "/workbench/pathway-templates", icon: Workflow, label: "Pathway Templates" },
-    { href: "/workbench/campaigns", icon: Briefcase, label: "Campaigns" },
-    { href: "/workbench/applications", icon: FileText, label: "Applications" },
-    { href: "/workbench/evaluations", icon: Award, label: "Evaluations" },
-    { href: "/workbench/scheduling", icon: Calendar, label: "Scheduling" },
-    { href: "/workbench/communications", icon: Mail, label: "Communications" },
-    { href: "/workbench/reports", icon: BarChart3, label: "Reports" },
-  ];
+  const visibleNavigationSections = allNavigationSections.filter(section =>
+    section.roles.includes(userRole)
+  );
 
-  const portalNavItems = [
-    { href: "/portal/dashboard", icon: LayoutDashboard, label: "Dashboard" },
-    { href: "/portal/my-applications", icon: FileText, label: "My Applications" },
-    { href: "/portal/profile", icon: UserCircle2, label: "Profile" },
-  ];
-
-  let navItems: { href: string; icon: React.ElementType; label: string }[] = [];
-
-  if (userRole === 'admin') {
-    navItems = adminNavItems;
-  } else if (['coordinator', 'evaluator', 'screener'].includes(userRole)) {
-    navItems = workbenchNavItems;
-  } else if (userRole === 'applicant') {
-    navItems = portalNavItems;
-  }
-
-  if (!user || navItems.length === 0) {
+  if (!user || visibleNavigationSections.length === 0) {
     return null;
   }
 
@@ -142,16 +161,28 @@ export function Sidebar({ isCollapsed, toggleCollapsed, isMobile, isOpen, closeS
           <Award className="h-6 w-6" />
           {!isCollapsed && <span>Navigation</span>}
         </div>
-        <nav className="grid items-start gap-2">
-          {navItems.map((item) => (
-            <NavLink
-              key={item.href}
-              href={item.href}
-              icon={item.icon}
-              label={item.label}
-              isActive={pathname.startsWith(item.href)}
-              isCollapsed={isCollapsed}
-            />
+        <nav className="grid items-start gap-2 flex-grow"> {/* flex-grow to push toggle button to bottom */}
+          {visibleNavigationSections.map((section, sectionIndex) => (
+            <React.Fragment key={section.title}>
+              {!isCollapsed && (
+                <h3 className="text-label-medium font-semibold text-muted-foreground uppercase mt-4 mb-2 px-3">
+                  {section.title}
+                </h3>
+              )}
+              {section.items.map((item) => (
+                <NavLink
+                  key={item.href}
+                  href={item.href}
+                  icon={item.icon}
+                  label={item.label}
+                  isActive={pathname.startsWith(item.href)}
+                  isCollapsed={isCollapsed}
+                />
+              ))}
+              {sectionIndex < visibleNavigationSections.length - 1 && (
+                <Separator className={cn("my-4 bg-border", isCollapsed && "w-1/2 mx-auto")} />
+              )}
+            </React.Fragment>
           ))}
         </nav>
         {!isMobile && ( // Only show toggle button on desktop
