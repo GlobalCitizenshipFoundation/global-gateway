@@ -234,7 +234,8 @@ export async function updateCampaignAction(id: string, formData: FormData): Prom
     if (error.message === "UnauthorizedToModifyCampaign") {
       redirect("/error-pages/403");
     } else if (error.message === "CampaignNotFound") {
-      redirect("/error.message === "FailedToRetrieveCampaign") {
+      redirect("/error-pages/404");
+    } else if (error.message === "FailedToRetrieveCampaign") { // Corrected this line
       redirect("/error-pages/500");
     }
     redirect("/login"); // Fallback for unauthenticated or other critical errors

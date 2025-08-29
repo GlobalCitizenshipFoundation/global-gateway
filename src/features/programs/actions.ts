@@ -1,9 +1,10 @@
 "use server";
 
-import { programService, Program } from "./services/program-service";
+import { programService } from "./services/program-service";
 import { createClient } from "@/integrations/supabase/server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { Program } from "@/features/campaigns/services/campaign-service"; // Corrected import path for Program
 
 // Helper function to check user authorization for a program
 async function authorizeProgramAction(programId: string, action: 'read' | 'write'): Promise<{ user: any; program: Program | null; isAdmin: boolean }> {
