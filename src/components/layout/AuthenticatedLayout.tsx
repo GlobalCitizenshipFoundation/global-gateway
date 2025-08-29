@@ -30,7 +30,7 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
   if (isLoading || !session) { // Keep loading state and also check for session here
     // Full-height loading overlay for the content area, with a placeholder sidebar
     return (
-      <div className="flex flex-1 bg-background"> {/* This div takes up the remaining space next to the header */}
+      <div className="flex flex-1 bg-background h-full"> {/* Added h-full here */}
         {/* Placeholder for a collapsed sidebar during loading */}
         {!isMobile && (
           <aside className="w-20 border-r border-border bg-sidebar-background p-4 space-y-6 rounded-xl shadow-lg flex-shrink-0">
@@ -55,7 +55,7 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
   }
 
   return (
-    <div className="flex flex-1">
+    <div className="flex flex-1 h-full"> {/* This is the target div, added h-full */}
       {/* Desktop Sidebar */}
       {!isMobile && (
         <Sidebar
