@@ -42,8 +42,10 @@ export default function RootLayout({
           <SessionContextProvider>
             <LayoutContextProvider>
               <Header /> {/* Universal Header */}
-              {/* This div now correctly takes flex-1 of the remaining height after the Header */}
-              <div className="flex flex-1 overflow-hidden min-h-0">
+              {/* This div now correctly takes flex-1 of the remaining height after the Header,
+                  and by removing overflow-hidden, it allows its children (Sidebar and main)
+                  to manage their own scrolling. */}
+              <div className="flex flex-1 min-h-0">
                 {children}
               </div>
             </LayoutContextProvider>
