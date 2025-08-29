@@ -1,3 +1,5 @@
+"use client";
+
 import * as React from "react";
 import { Slot } from "@radix-ui/react-slot";
 import { cva, type VariantProps } from "class-variance-authority";
@@ -9,28 +11,32 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        // High Emphasis
-        filled: "bg-primary text-primary-foreground shadow-md hover:bg-primary/90",
-        // Medium Emphasis
-        tonal: "bg-secondary-container text-on-secondary-container shadow-sm hover:bg-secondary-container/80",
-        elevated: "bg-card text-foreground shadow-md hover:bg-muted", // Uses card as surface, muted for hover
-        outlined: "border border-border bg-background text-foreground hover:bg-accent hover:text-accent-foreground",
-        // Low Emphasis
-        text: "text-primary hover:bg-primary-container hover:text-on-primary-container",
+        default: "bg-primary text-primary-foreground hover:bg-primary/90",
+        destructive:
+          "bg-destructive text-destructive-foreground hover:bg-destructive/90",
+        outline:
+          "border border-input bg-background hover:bg-accent hover:text-accent-foreground",
+        secondary:
+          "bg-secondary text-secondary-foreground hover:bg-secondary/80",
         ghost: "hover:bg-accent hover:text-accent-foreground",
-        // Special Cases
-        destructive: "bg-destructive text-destructive-foreground shadow-md hover:bg-destructive/90",
         link: "text-primary underline-offset-4 hover:underline",
+        // M3 specific variants
+        filled: "bg-primary text-on-primary shadow-md hover:bg-primary/90 active:shadow-sm", // M3 Filled button
+        tonal: "bg-secondary-container text-on-secondary-container shadow-sm hover:bg-secondary-container/90 active:shadow-none", // M3 Tonal button
+        outlined: "border border-outline text-primary hover:bg-primary/5 active:bg-primary/10", // M3 Outlined button
+        text: "text-primary hover:bg-primary/5 active:bg-primary/10 hover:underline-offset-4 hover:underline", // M3 Text button, added hover:underline
+        onPrimary: "bg-on-primary text-primary hover:bg-on-primary/90 active:shadow-sm", // For text on primary background
+        onSecondary: "bg-on-secondary text-secondary hover:bg-on-secondary/90 active:shadow-sm", // For text on secondary background
       },
       size: {
-        default: "h-10 px-4 py-2 rounded-md", // M3 default rounded-md (8px)
-        sm: "h-9 rounded-sm px-3", // M3 small rounded-sm (4px)
-        lg: "h-11 rounded-lg px-8", // M3 large rounded-lg (12px)
-        icon: "h-10 w-10 rounded-full", // M3 icon button is typically circular
+        default: "h-10 px-4 py-2 rounded-md", // M3 default button height is 40dp
+        sm: "h-9 rounded-md px-3",
+        lg: "h-11 rounded-md px-8",
+        icon: "h-10 w-10 rounded-full", // M3 icon buttons are often circular
       },
     },
     defaultVariants: {
-      variant: "filled",
+      variant: "default",
       size: "default",
     },
   }
