@@ -31,7 +31,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning className="h-full">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased h-full flex flex-col body-with-fixed-header`} // Added flex flex-col here
+        className={`${geistSans.variable} ${geistMono.variable} antialiased h-full body-with-fixed-header`} // Keep padding-top, remove flex-col
       >
         <ThemeProvider
           attribute="class"
@@ -42,8 +42,8 @@ export default function RootLayout({
           <SessionContextProvider>
             <LayoutContextProvider>
               <Header /> {/* Fixed header */}
-              {/* This div now correctly takes remaining height as flex-1 */}
-              <div className="flex flex-row flex-1 w-full overflow-hidden"> {/* Removed h-full, relying on flex-1 */}
+              {/* This div now explicitly takes the remaining height */}
+              <div className="relative w-full h-[calc(100vh - var(--header-height))] overflow-hidden">
                 {children}
               </div>
             </LayoutContextProvider>
