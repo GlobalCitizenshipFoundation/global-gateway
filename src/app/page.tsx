@@ -32,10 +32,10 @@ export default function HomePage() {
               Your gateway to global programs, fellowships, hiring, and awards management.
             </p>
             <div className="flex justify-center space-x-4">
-              <Button asChild variant="secondary" className="px-6 py-3 text-label-large rounded-full">
+              <Button asChild variant="onPrimary" className="px-6 py-3 text-label-large rounded-full">
                 <Link href="/login">Explore Programs</Link>
               </Button>
-              <Button asChild variant="secondary" className="px-6 py-3 text-label-large rounded-full">
+              <Button asChild variant="onPrimary" className="px-6 py-3 text-label-large rounded-full">
                 <Link href="/about">Learn More</Link>
               </Button>
             </div>
