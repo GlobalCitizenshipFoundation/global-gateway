@@ -55,7 +55,7 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
   }
 
   return (
-    <div className="flex flex-row h-full w-full overflow-hidden"> {/* This div now correctly fills the height from layout.tsx */}
+    <div className="flex flex-row h-full w-full"> {/* Removed overflow-hidden here */}
       {/* Desktop Sidebar */}
       {!isMobile && (
         <Sidebar
