@@ -112,7 +112,7 @@ export function Sidebar({ isCollapsed, toggleCollapsed, isMobile, isOpen, closeS
         { href: "/workbench/dashboard", icon: LayoutDashboard, label: "Dashboard" },
         { href: "/workbench/pathway-templates", icon: Workflow, label: "Pathway Templates" },
         { href: "/workbench/campaigns", icon: Briefcase, label: "Campaigns" },
-        { href: "/workbench/applications", icon: FileText, label: "Applications" },
+        { href: "/workbench/applications/screening", icon: FileText, label: "Applications Screening" }, // Updated link
         { href: "/workbench/evaluations", icon: Award, label: "Evaluations" },
         { href: "/workbench/scheduling", icon: Calendar, label: "Scheduling" },
         { href: "/workbench/communications", icon: Mail, label: "Communications" },
@@ -125,7 +125,7 @@ export function Sidebar({ isCollapsed, toggleCollapsed, isMobile, isOpen, closeS
       items: [
         { href: "/portal/dashboard", icon: LayoutDashboard, label: "Dashboard" },
         { href: "/portal/my-applications", icon: FileText, label: "My Applications" },
-        { href: "/portal/profile", icon: UserCircle2, label: "Profile" },
+        { href: "/portal/profile", icon: UserCircle2, label: "Profile" }, // Added Profile link
       ],
       roles: ['admin', 'coordinator', 'evaluator', 'screener', 'applicant'],
     },
