@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server';
 
-export async function middleware(request: NextRequest) {
+export function middleware(request: NextRequest) {
   console.log(`[Dyad Middleware] Request for: ${request.nextUrl.pathname}`);
   return NextResponse.next();
 }
