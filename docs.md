@@ -14,6 +14,7 @@ This document provides an overview of the project's architecture, key features, 
 *   [Communication & Notifications](#communication--notifications)
 *   [Reporting & Insights](#reporting--insights)
 *   [User Profile Enhancements](#user-profile-enhancements)
+*   [Homepage Footer & Dashboard Access Refinements](#homepage-footer--dashboard-access-refinements)
 
 ---
 
@@ -442,3 +443,19 @@ The project follows a modular and domain-driven directory structure, aligning wi
 *   **`src/features/user-profile/services/profile-service.ts`**: The `getProfileById` and `updateProfile` functions have been modified to perform a join with the `auth.users` table. This allows the user's email to be fetched alongside their profile data, ensuring that the `Profile` object is complete with both custom profile fields and core authentication details.
 *   **`src/features/user-profile/components/ProfileHeader.tsx`**: The component now correctly displays the user's email address (fetched from `auth.users`) in the contact information section, replacing the previous display of the user's UUID. This provides a more intuitive and complete user experience.
 *   **Existing Profile Fields**: The `ProfileForm.tsx`, `ProfileBio.tsx`, and `ProfileHeader.tsx` components already support the display and editing of additional profile fields such as `job_title`, `organization`, `location`, `phone_number`, `linkedin_url`, `orcid_url`, `website_url`, and `bio`, adhering to Material Design 3 principles for input fields and layout.
+
+---
+
+## Homepage Footer & Dashboard Access Refinements
+
+**Objective:** To refine the public homepage footer for better branding and to enhance dashboard access control and error handling for authenticated users, particularly administrators.
+
+**Implementation Details:**
+
+*   **Homepage Footer (`src/app/page.tsx`):**
+    *   The footer has been restructured into a three-column layout using Tailwind CSS grid.
+    *   The first column now prominently features the "Global Gateway" branding with an `Award` icon, a descriptive tagline, and an updated copyright notice (`© 2025-30 Global Citizenship Foundation. All rights reserved.`).
+    *   The remaining two columns are left empty for future content.
+*   **Dashboard Access Control (`src/app/(admin)/dashboard/page.tsx`, `src/app/(portal)/dashboard/page.tsx`, `src/app/(workbench)/dashboard/page.tsx`):**
+    *   The internal role-based authorization checks within each dashboard page have been updated.
+    *   If an authenticated user attempts to access a dashboard for which they do not have the required role, they are now explicitly redirected to the `/error-pages/403` (Forbidden) page. This ensures consistent and informative error feedback, preventing potential fallback to `/login` or unexpected 404 errors for authenticated but unauthorized users.

@@ -7,13 +7,14 @@ export default async function WorkbenchDashboardPage() {
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect("/login");
+    redirect("/login"); // Redirect to login if no user session
   }
 
   const userRole: string = user.user_metadata?.role; // Explicitly type userRole as string
 
+  // Allow 'coordinator', 'evaluator', 'screener', 'admin' roles for workbench
   if (!['coordinator', 'evaluator', 'screener', 'admin'].includes(userRole)) {
-    redirect("/login"); // Or a 403 forbidden page
+    redirect("/error-pages/403"); // Redirect to 403 if authenticated but not authorized for workbench
   }
 
   return (

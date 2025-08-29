@@ -7,14 +7,15 @@ export default async function PortalDashboardPage() {
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect("/login");
+    redirect("/login"); // Redirect to login if no user session
   }
 
   // In a real app, you'd fetch user-specific data here
   const userRole: string = user.user_metadata?.role || 'applicant'; // Explicitly type userRole as string
 
+  // Allow 'applicant' role, and also higher roles that can access portal
   if (!['applicant', 'coordinator', 'evaluator', 'screener', 'admin'].includes(userRole)) {
-    redirect("/login"); // Or a 403 forbidden page
+    redirect("/error-pages/403"); // Redirect to 403 if authenticated but not authorized for portal
   }
 
   return (

@@ -11,13 +11,13 @@ export default async function AdminDashboardPage() {
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect("/login");
+    redirect("/login"); // Redirect to login if no user session
   }
 
   const userRole: string = user.user_metadata?.role;
 
   if (userRole !== 'admin') {
-    redirect("/login"); // Or a 403 forbidden page
+    redirect("/error-pages/403"); // Redirect to 403 if authenticated but not an admin
   }
 
   // Placeholder data for demonstration - in a real app, this would come from a service layer

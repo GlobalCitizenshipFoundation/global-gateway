@@ -90,13 +90,28 @@ export default function HomePage() {
 
       {/* Footer */}
       <footer className="bg-card text-card-foreground py-8 border-t border-border">
-        <div className="container mx-auto px-4 text-center">
-          <p className="text-title-large mb-2">Global Gateway</p>
-          <p className="text-body-medium text-card-foreground max-w-2xl mx-auto">
-            Your internal platform to engage in Global Certification and Accreditation at the Global Citizenship Foundation.
-            The Portal is globalcertification.org, the Global Gateway is hosted on my.globalcertification.org.
-          </p>
-          <p className="text-body-small text-muted-foreground mt-4">&copy; {new Date().getFullYear()} Global Citizenship Foundation. All rights reserved.</p>
+        <div className="container mx-auto px-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center md:text-left">
+            {/* Column 1: Branding and Copyright */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-center md:justify-start space-x-2 text-title-large font-bold text-foreground">
+                <Award className="h-6 w-6 text-primary" />
+                <span>Global Gateway</span>
+              </div>
+              <p className="text-body-medium text-card-foreground max-w-xs mx-auto md:mx-0">
+                Global Gateway is a dedicated platform at the Global Citizenship Foundation to manage and support global certification and accreditation programs.
+              </p>
+              <p className="text-body-small text-muted-foreground">
+                &copy; 2025-30 Global Citizenship Foundation. All rights reserved.
+              </p>
+            </div>
+
+            {/* Column 2: Empty for now */}
+            <div></div>
+
+            {/* Column 3: Empty for now */}
+            <div></div>
+          </div>
         </div>
       </footer>
     </div>
