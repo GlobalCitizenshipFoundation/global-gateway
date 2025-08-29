@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react"; // Import useEffect
 import { useSession } from "@/context/SessionContextProvider";
 import { useRouter } from "next/navigation";
 import { Sidebar } from "./Sidebar";
@@ -20,7 +20,14 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
   const { isSidebarOpen, toggleSidebar, isSidebarCollapsed, toggleSidebarCollapsed } = useLayout();
   const isMobile = useIsMobile();
 
-  if (isLoading) {
+  useEffect(() => {
+    if (!isLoading && !session) {
+      toast.error("You are not authenticated. Please log in.");
+      router.push("/login");
+    }
+  }, [isLoading, session, router]); // Depend on isLoading, session, and router
+
+  if (isLoading || !session) { // Keep loading state and also check for session here
     // Full-height loading overlay for the content area, with a placeholder sidebar
     return (
       <div className="flex flex-1 bg-background"> {/* This div takes up the remaining space next to the header */}
@@ -46,12 +53,6 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
         </main>
       </div>
     );
-  }
-
-  if (!session) {
-    toast.error("You are not authenticated. Please log in.");
-    router.push("/login");
-    return null;
   }
 
   const mainContentMargin = isSidebarCollapsed ? "ml-20" : "ml-64";
