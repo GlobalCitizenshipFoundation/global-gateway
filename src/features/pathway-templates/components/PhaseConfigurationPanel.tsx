@@ -4,6 +4,10 @@ import React from "react";
 import { Phase } from "../services/pathway-template-service";
 import { FormPhaseConfig } from "./phase-configs/FormPhaseConfig";
 import { ReviewPhaseConfig } from "./phase-configs/ReviewPhaseConfig";
+import { EmailPhaseConfig } from "./phase-configs/EmailPhaseConfig"; // Import new config
+import { SchedulingPhaseConfig } from "./phase-configs/SchedulingPhaseConfig"; // Import new config
+import { DecisionPhaseConfig } from "./phase-configs/DecisionPhaseConfig"; // Import new config
+import { RecommendationPhaseConfig } from "./phase-configs/RecommendationPhaseConfig"; // Import new config
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface PhaseConfigurationPanelProps {
@@ -39,7 +43,42 @@ export function PhaseConfigurationPanel({
             canModify={canModify}
           />
         );
-      // Add other phase types here as they are implemented
+      case "Email":
+        return (
+          <EmailPhaseConfig
+            phase={phase}
+            pathwayTemplateId={pathwayTemplateId}
+            onConfigSaved={onConfigSaved}
+            canModify={canModify}
+          />
+        );
+      case "Scheduling":
+        return (
+          <SchedulingPhaseConfig
+            phase={phase}
+            pathwayTemplateId={pathwayTemplateId}
+            onConfigSaved={onConfigSaved}
+            canModify={canModify}
+          />
+        );
+      case "Decision":
+        return (
+          <DecisionPhaseConfig
+            phase={phase}
+            pathwayTemplateId={pathwayTemplateId}
+            onConfigSaved={onConfigSaved}
+            canModify={canModify}
+          />
+        );
+      case "Recommendation":
+        return (
+          <RecommendationPhaseConfig
+            phase={phase}
+            pathwayTemplateId={pathwayTemplateId}
+            onConfigSaved={onConfigSaved}
+            canModify={canModify}
+          />
+        );
       default:
         return (
           <Card className="rounded-xl shadow-md p-6">
