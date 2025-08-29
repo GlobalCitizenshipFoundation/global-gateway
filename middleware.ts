@@ -5,7 +5,7 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // List of public routes that do not require authentication
-  const publicRoutes: string[] = ['/', '/login', '/auth/callback']; // Add any other public routes here
+  const publicRoutes: string[] = ['/', '/login', '/auth/callback', '/error-pages']; // Added /error-pages to public routes
 
   // Check if the current route is a public route
   const isPublicRoute = publicRoutes.some((route: string) => pathname.startsWith(route));
@@ -21,7 +21,7 @@ export async function middleware(request: NextRequest) {
     const userRole: string = session.user?.user_metadata?.role || ''; // Ensure userRole is a string
 
     // If an authenticated user tries to access a public route, redirect them to their dashboard
-    if (isPublicRoute && pathname !== '/auth/callback') {
+    if (isPublicRoute && pathname !== '/auth/callback' && !pathname.startsWith('/error-pages')) {
       if (userRole === 'admin') {
         return NextResponse.redirect(new URL('/admin/dashboard', request.url));
       } else if (['coordinator', 'evaluator', 'screener'].includes(userRole)) {
@@ -33,13 +33,13 @@ export async function middleware(request: NextRequest) {
 
     // Role-based access control for protected routes
     if (pathname.startsWith('/admin') && userRole !== 'admin') {
-      return NextResponse.redirect(new URL('/login', request.url)); // Or a 403 forbidden page
+      return NextResponse.redirect(new URL('/error-pages/403', request.url));
     }
     if (pathname.startsWith('/workbench') && !['coordinator', 'evaluator', 'screener', 'admin'].includes(userRole)) {
-      return NextResponse.redirect(new URL('/login', request.url)); // Or a 403 forbidden page
+      return NextResponse.redirect(new URL('/error-pages/403', request.url));
     }
     if (pathname.startsWith('/portal') && !['applicant', 'coordinator', 'evaluator', 'screener', 'admin'].includes(userRole)) {
-      return NextResponse.redirect(new URL('/login', request.url)); // Or a 403 forbidden page
+      return NextResponse.redirect(new URL('/error-pages/403', request.url));
     }
 
     // Continue if authenticated and authorized
