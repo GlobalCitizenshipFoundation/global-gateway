@@ -16,6 +16,7 @@ export interface Profile {
   orcid_url: string | null;
   website_url: string | null;
   bio: string | null;
+  email: string | null; // Added email field
 }
 
 // You can add more interfaces here as needed for other Supabase tables.

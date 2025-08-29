@@ -13,6 +13,7 @@ This document provides an overview of the project's architecture, key features, 
 *   [Vertical 5: Review & Decision Phases](#vertical-5-review--decision-phases)
 *   [Communication & Notifications](#communication--notifications)
 *   [Reporting & Insights](#reporting--insights)
+*   [User Profile Enhancements](#user-profile-enhancements)
 
 ---
 
@@ -258,7 +259,7 @@ The project follows a modular and domain-driven directory structure, aligning wi
 *   **Service Layer (`src/features/programs/services/program-service.ts`):**
     *   New service `programService` created with functions `getPrograms`, `getProgramById`, `createProgram`, `updateProgram`, `deleteProgram`.
     *   The `Program` interface is reused from `src/features/campaigns/services/campaign-service.ts` to maintain a single source of truth for the Program type.
-*   **Backend (Next.js Server Actions - `src/features/programs/actions.ts`):**
+*   **Backend (Next.js Server Actions - `src/features/programs/actions.ts`):
     *   Server Actions `getProgramsAction`, `getProgramByIdAction`, `createProgramAction`, `updateProgramAction`, `deleteProgramAction` are implemented.
     *   Authorization logic (`authorizeProgramAction`) is applied to all actions, checking `creator_id` and `user_metadata.role` (for 'admin' override).
     *   `createCampaignAction` and `updateCampaignAction` in `src/features/campaigns/actions.ts` are updated to include authorization checks for `program_id` when linking campaigns to programs.
@@ -428,3 +429,16 @@ The project follows a modular and domain-driven directory structure, aligning wi
         *   Ensures M3 design principles for typography, colors, and component styling.
 *   **Sidebar Update (`src/components/layout/Sidebar.tsx`):**
     *   A new navigation link for "Reports" has been added under "Workbench Tools."
+
+---
+
+## User Profile Enhancements
+
+**Objective:** To enrich user profiles with more detailed personal and professional information and ensure this data is securely managed and displayed.
+
+**Implementation Details:**
+
+*   **`src/types/supabase.ts`**: The `Profile` interface has been updated to include an `email: string | null` field, allowing the user's email to be consistently typed and used across the application.
+*   **`src/features/user-profile/services/profile-service.ts`**: The `getProfileById` and `updateProfile` functions have been modified to perform a join with the `auth.users` table. This allows the user's email to be fetched alongside their profile data, ensuring that the `Profile` object is complete with both custom profile fields and core authentication details.
+*   **`src/features/user-profile/components/ProfileHeader.tsx`**: The component now correctly displays the user's email address (fetched from `auth.users`) in the contact information section, replacing the previous display of the user's UUID. This provides a more intuitive and complete user experience.
+*   **Existing Profile Fields**: The `ProfileForm.tsx`, `ProfileBio.tsx`, and `ProfileHeader.tsx` components already support the display and editing of additional profile fields such as `job_title`, `organization`, `location`, `phone_number`, `linkedin_url`, `orcid_url`, `website_url`, and `bio`, adhering to Material Design 3 principles for input fields and layout.

@@ -76,11 +76,11 @@ export function ProfileHeader({ profile, canModify, onProfileUpdated }: ProfileH
       <CardContent className="p-0 text-body-medium text-foreground space-y-2">
         <h3 className="text-title-medium font-bold text-foreground mt-4">Contact Information</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-          {profile.id && ( // User ID is always available from auth.user.id
+          {profile.email && ( // Display actual email
             <div className="flex items-center gap-2">
               <Mail className="h-4 w-4 text-muted-foreground" />
-              <a href={`mailto:${profile.id}`} className="text-primary hover:underline">
-                {profile.id} {/* Displaying user ID as email for now, will be replaced by actual email from auth.user */}
+              <a href={`mailto:${profile.email}`} className="text-primary hover:underline">
+                {profile.email}
               </a>
             </div>
           )}
