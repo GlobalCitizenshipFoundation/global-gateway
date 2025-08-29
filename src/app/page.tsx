@@ -15,7 +15,7 @@ export default function HomePage() {
         </Link>
         <nav className="flex items-center space-x-4">
           <ThemeToggle />
-          <Button asChild variant="default" className="rounded-full">
+          <Button asChild variant="default" className="rounded-full text-label-large">
             <Link href="/login">Login / Sign Up</Link>
           </Button>
         </nav>
@@ -42,20 +42,20 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* Featured Campaigns Section */}
-        <section className="container mx-auto px-4 py-16 md:py-24">
+        {/* Featured Opportunities Section */}
+        <section className="container mx-auto px-4 py-16 md:py-24 bg-background">
           <h2 className="text-headline-large md:text-display-small text-center mb-12 text-foreground">Featured Opportunities</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             <Card className="flex flex-col h-full rounded-xl shadow-md hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-headline-small text-primary"><Globe className="h-6 w-6" /> Global Fellowship</CardTitle>
-                <CardDescription className="text-body-medium">A prestigious program for emerging leaders.</CardDescription>
+                <CardDescription className="text-body-medium text-muted-foreground">A prestigious program for emerging leaders.</CardDescription>
               </CardHeader>
-              <CardContent className="flex-grow text-body-medium text-muted-foreground">
+              <CardContent className="flex-grow text-body-medium text-card-foreground">
                 <p>Applications open soon for our annual Global Fellowship program. Join a network of changemakers.</p>
               </CardContent>
               <CardFooter>
-                <Button asChild variant="outline" className="w-full rounded-md">
+                <Button asChild variant="default" className="w-full rounded-md text-label-large">
                   <Link href="/login">View Details</Link>
                 </Button>
               </CardFooter>
@@ -64,13 +64,13 @@ export default function HomePage() {
             <Card className="flex flex-col h-full rounded-xl shadow-md hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-headline-small text-primary"><Briefcase className="h-6 w-6" /> Impact Hiring Initiative</CardTitle>
-                <CardDescription className="text-body-medium">Join our team and make a difference.</CardDescription>
+                <CardDescription className="text-body-medium text-muted-foreground">Join our team and make a difference.</CardDescription>
               </CardHeader>
-              <CardContent className="flex-grow text-body-medium text-muted-foreground">
+              <CardContent className="flex-grow text-body-medium text-card-foreground">
                 <p>We're looking for passionate individuals to contribute to our mission. Explore open roles.</p>
               </CardContent>
               <CardFooter>
-                <Button asChild variant="outline" className="w-full rounded-md">
+                <Button asChild variant="default" className="w-full rounded-md text-label-large">
                   <Link href="/login">View Details</Link>
                 </Button>
               </CardFooter>
@@ -79,13 +79,13 @@ export default function HomePage() {
             <Card className="flex flex-col h-full rounded-xl shadow-md hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-headline-small text-primary"><Award className="h-6 w-6" /> Annual Innovation Awards</CardTitle>
-                <CardDescription className="text-body-medium">Recognizing groundbreaking contributions.</CardDescription>
+                <CardDescription className="text-body-medium text-muted-foreground">Recognizing groundbreaking contributions.</CardDescription>
               </CardHeader>
-              <CardContent className="flex-grow text-body-medium text-muted-foreground">
+              <CardContent className="flex-grow text-body-medium text-card-foreground">
                 <p>Nominate individuals or projects pushing the boundaries of global citizenship.</p>
               </CardContent>
               <CardFooter>
-                <Button asChild variant="outline" className="w-full rounded-md">
+                <Button asChild variant="default" className="w-full rounded-md text-label-large">
                   <Link href="/login">View Details</Link>
                 </Button>
               </CardFooter>
@@ -98,7 +98,7 @@ export default function HomePage() {
       <footer className="bg-card text-card-foreground py-8 border-t border-border">
         <div className="container mx-auto px-4 text-center">
           <p className="text-title-large mb-2">Global Gateway</p>
-          <p className="text-body-medium text-muted-foreground max-w-2xl mx-auto">
+          <p className="text-body-medium text-card-foreground max-w-2xl mx-auto">
             Your internal platform to engage in Global Certification and Accreditation at the Global Citizenship Foundation.
             The Portal is globalcertification.org, the Global Gateway is hosted on my.globalcertification.org.
           </p>
