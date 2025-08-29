@@ -177,7 +177,7 @@ export function PathwayTemplateDetail({ templateId }: PathwayTemplateDetailProps
           </Link>
         </Button>
         <div className="flex space-x-2">
-          <Button variant="outline" className="rounded-full px-6 py-3 text-label-large" onClick={() => setIsCloneDialogOpen(true)}>
+          <Button variant="outlined" className="rounded-full px-6 py-3 text-label-large" onClick={() => setIsCloneDialogOpen(true)}>
             <Copy className="mr-2 h-5 w-5" /> Clone Template
           </Button>
           {canModifyTemplate && (

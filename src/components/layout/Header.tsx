@@ -94,7 +94,7 @@ export function Header() {
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
-            <Button asChild variant="default" className="rounded-full px-4 py-2 text-label-large">
+            <Button asChild variant="filled" className="rounded-full px-4 py-2">
               <Link href="/login">Login / Sign Up</Link>
             </Button>
           )}

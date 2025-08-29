@@ -1,17 +1,22 @@
+"use client";
+
 import * as React from "react";
 import { ChevronLeft, ChevronRight, MoreHorizontal } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { ButtonProps, buttonVariants } from "@/components/ui/button";
 
-const Pagination = ({ className, ...props }: React.ComponentProps<"nav">) => (
-  <nav
-    role="navigation"
-    aria-label="Pagination"
-    className={cn("mx-auto flex w-full justify-center", className)}
-    {...props}
-  />
-);
+function Pagination({ className, ...props }: React.ComponentProps<"nav">) {
+  return (
+    <nav
+      role="navigation"
+      aria-label="Pagination"
+      className={cn("mx-auto flex w-full justify-center", className)}
+      {...props}
+    />
+  );
+}
+Pagination.displayName = "Pagination";
 
 const PaginationContent = React.forwardRef<
   HTMLUListElement,
@@ -35,29 +40,30 @@ PaginationItem.displayName = "PaginationItem";
 
 type PaginationLinkProps = {
   isActive?: boolean;
-} & Pick<ButtonProps, "size"> &
-  React.ComponentProps<"a">;
+} & Pick<ButtonProps, "size" | "variant"> & // Added 'variant' to pick
+  React.ComponentProps<"a">; // Changed to extend 'a' element props
 
-function PaginationLink({
+const PaginationLink = ({
   className,
   isActive,
   size = "icon",
+  variant, // Destructure variant
   ...props
-}: PaginationLinkProps) {
-  return (
+}: PaginationLinkProps) => (
+  <PaginationItem>
     <a
       aria-current={isActive ? "page" : undefined}
       className={cn(
         buttonVariants({
-          variant: isActive ? "outline" : "ghost",
+          variant: variant || (isActive ? "outlined" : "ghost"), // Use provided variant or default
           size,
         }),
         className
       )}
       {...props}
     />
-  );
-}
+  </PaginationItem>
+);
 PaginationLink.displayName = "PaginationLink";
 
 const PaginationPrevious = ({

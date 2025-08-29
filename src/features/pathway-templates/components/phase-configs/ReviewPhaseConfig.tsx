@@ -274,7 +274,7 @@ export function ReviewPhaseConfig({ phase, pathwayTemplateId, onConfigSaved, can
             {canModify && (
               <Button
                 type="button"
-                variant="outline"
+                variant="outlined"
                 onClick={() => append({ id: crypto.randomUUID(), name: "", description: "", maxScore: 5 })}
                 className="w-full rounded-md text-label-large"
               >

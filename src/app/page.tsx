@@ -21,7 +21,7 @@ export default function HomePage() {
             <p className="text-headline-small text-muted-foreground">
               Celebrating individuals and organizations foster positive change with global certification and accreditation.
             </p>
-            <Button asChild className="h-11 rounded-lg px-8 py-6 bg-primary text-primary-foreground shadow-md hover:bg-primary/90">
+            <Button asChild variant="filled" size="lg" className="rounded-lg px-8 py-6 shadow-md hover:bg-primary/90">
               <Link href="/login">
                 Explore Pathways <ArrowRight className="ml-2 h-5 w-5" aria-hidden="true" />
               </Link>
@@ -49,7 +49,7 @@ export default function HomePage() {
                 <p>Applications open soon for our annual Global Fellowship program. Join a network of changemakers.</p>
               </CardContent>
               <CardFooter>
-                <Button asChild variant="default" className="w-full rounded-md text-label-large">
+                <Button asChild variant="tonal" className="w-full rounded-md">
                   <Link href="/login">View Details</Link>
                 </Button>
               </CardFooter>
@@ -64,7 +64,7 @@ export default function HomePage() {
                 <p>We're looking for passionate individuals to contribute to our mission. Explore open roles.</p>
               </CardContent>
               <CardFooter>
-                <Button asChild variant="default" className="w-full rounded-md text-label-large">
+                <Button asChild variant="tonal" className="w-full rounded-md">
                   <Link href="/login">View Details</Link>
                 </Button>
               </CardFooter>
@@ -79,7 +79,7 @@ export default function HomePage() {
                 <p>Nominate individuals or projects pushing the boundaries of global citizenship.</p>
               </CardContent>
               <CardFooter>
-                <Button asChild variant="default" className="w-full rounded-md text-label-large">
+                <Button asChild variant="tonal" className="w-full rounded-md">
                   <Link href="/login">View Details</Link>
                 </Button>
               </CardFooter>

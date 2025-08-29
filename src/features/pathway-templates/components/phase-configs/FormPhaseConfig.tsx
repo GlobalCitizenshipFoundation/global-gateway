@@ -257,7 +257,7 @@ export function FormPhaseConfig({ phase, pathwayTemplateId, onConfigSaved, canMo
             {canModify && (
               <Button
                 type="button"
-                variant="outline"
+                variant="outlined"
                 onClick={() => append({ id: crypto.randomUUID(), label: "", type: "Text", required: false })}
                 className="w-full rounded-md text-label-large"
               >
