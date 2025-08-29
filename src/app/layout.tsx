@@ -42,8 +42,8 @@ export default function RootLayout({
           <SessionContextProvider>
             <LayoutContextProvider>
               <Header /> {/* Fixed header */}
-              {/* This div now explicitly takes the remaining height */}
-              <div className="relative w-full h-[calc(100vh - var(--header-height))] overflow-hidden">
+              {/* This div now explicitly takes the remaining height and allows overflow */}
+              <div className="relative w-full h-[calc(100vh - var(--header-height))]"> {/* Removed overflow-hidden */}
                 {children}
               </div>
             </LayoutContextProvider>
