@@ -93,12 +93,12 @@ export function SignUpForm({ onSwitchToSignIn }: SignUpFormProps) {
             control={form.control}
             name="first_name"
             render={({ field }) => (
-              <FormItem>
+              <FormItem className="space-y-2"> {/* Added space-y-2 for better internal spacing */}
                 <FormLabel className="text-label-large">First Name</FormLabel>
                 <FormControl>
                   <Input placeholder="John" {...field} className="rounded-md" />
                 </FormControl>
-                <FormMessage />
+                <FormMessage className="text-body-small" />
               </FormItem>
             )}
           />
@@ -106,12 +106,12 @@ export function SignUpForm({ onSwitchToSignIn }: SignUpFormProps) {
             control={form.control}
             name="middle_name"
             render={({ field }) => (
-              <FormItem>
+              <FormItem className="space-y-2"> {/* Added space-y-2 for better internal spacing */}
                 <FormLabel className="text-label-large">Middle Name (Optional)</FormLabel>
                 <FormControl>
                   <Input placeholder="Doe" {...field} className="rounded-md" value={field.value ?? ""} />
                 </FormControl>
-                <FormMessage />
+                <FormMessage className="text-body-small" />
               </FormItem>
             )}
           />
@@ -120,12 +120,12 @@ export function SignUpForm({ onSwitchToSignIn }: SignUpFormProps) {
           control={form.control}
           name="last_name"
           render={({ field }) => (
-            <FormItem>
+            <FormItem className="space-y-2"> {/* Added space-y-2 for better internal spacing */}
               <FormLabel className="text-label-large">Last Name</FormLabel>
               <FormControl>
                 <Input placeholder="Smith" {...field} className="rounded-md" />
               </FormControl>
-              <FormMessage />
+              <FormMessage className="text-body-small" />
             </FormItem>
           )}
         />
@@ -133,12 +133,12 @@ export function SignUpForm({ onSwitchToSignIn }: SignUpFormProps) {
           control={form.control}
           name="email"
           render={({ field }) => (
-            <FormItem>
+            <FormItem className="space-y-2"> {/* Added space-y-2 for better internal spacing */}
               <FormLabel className="text-label-large">Email address</FormLabel>
               <FormControl>
                 <Input placeholder="you@example.com" {...field} className="rounded-md" />
               </FormControl>
-              <FormMessage />
+              <FormMessage className="text-body-small" />
             </FormItem>
           )}
         />
@@ -146,12 +146,12 @@ export function SignUpForm({ onSwitchToSignIn }: SignUpFormProps) {
           control={form.control}
           name="password"
           render={({ field }) => (
-            <FormItem>
+            <FormItem className="space-y-2"> {/* Added space-y-2 for better internal spacing */}
               <FormLabel className="text-label-large">Password</FormLabel>
               <FormControl>
                 <Input type="password" placeholder="••••••••" {...field} className="rounded-md" />
               </FormControl>
-              <FormMessage />
+              <FormMessage className="text-body-small" />
             </FormItem>
           )}
         />
@@ -159,12 +159,12 @@ export function SignUpForm({ onSwitchToSignIn }: SignUpFormProps) {
           control={form.control}
           name="confirm_password"
           render={({ field }) => (
-            <FormItem>
+            <FormItem className="space-y-2"> {/* Added space-y-2 for better internal spacing */}
               <FormLabel className="text-label-large">Confirm Password</FormLabel>
               <FormControl>
                 <Input type="password" placeholder="••••••••" {...field} className="rounded-md" />
               </FormControl>
-              <FormMessage />
+              <FormMessage className="text-body-small" />
             </FormItem>
           )}
         />

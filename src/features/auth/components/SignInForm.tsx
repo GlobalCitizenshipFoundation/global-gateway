@@ -73,12 +73,12 @@ export function SignInForm({ onSwitchToSignUp }: SignInFormProps) {
           control={form.control}
           name="email"
           render={({ field }) => (
-            <FormItem>
+            <FormItem className="space-y-2"> {/* Added space-y-2 for better internal spacing */}
               <FormLabel className="text-label-large">Email address</FormLabel>
               <FormControl>
                 <Input placeholder="you@example.com" {...field} className="rounded-md" />
               </FormControl>
-              <FormMessage />
+              <FormMessage className="text-body-small" /> {/* Ensured message uses body-small */}
             </FormItem>
           )}
         />
@@ -86,12 +86,12 @@ export function SignInForm({ onSwitchToSignUp }: SignInFormProps) {
           control={form.control}
           name="password"
           render={({ field }) => (
-            <FormItem>
+            <FormItem className="space-y-2"> {/* Added space-y-2 for better internal spacing */}
               <FormLabel className="text-label-large">Password</FormLabel>
               <FormControl>
                 <Input type="password" placeholder="••••••••" {...field} className="rounded-md" />
               </FormControl>
-              <FormMessage />
+              <FormMessage className="text-body-small" /> {/* Ensured message uses body-small */}
             </FormItem>
           )}
         />

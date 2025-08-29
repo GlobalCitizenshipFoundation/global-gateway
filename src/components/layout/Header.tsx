@@ -43,8 +43,8 @@ export function Header() {
     <header className="sticky top-0 z-40 w-full border-b border-border bg-background/80 backdrop-blur-sm shadow-sm">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
         {/* Logo and App Title */}
-        <Link href="/" className="flex items-center space-x-2 text-title-large font-bold text-primary">
-          <Award className="h-6 w-6" />
+        <Link href="/" className="flex items-center space-x-2 text-title-large font-bold text-foreground">
+          <Award className="h-6 w-6 text-primary" />
           <span>Global Gateway</span>
         </Link>
 
