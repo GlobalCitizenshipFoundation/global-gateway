@@ -62,7 +62,7 @@ The project follows a modular and domain-driven directory structure, aligning wi
 *   **Material Design 3 Styling:**
     *   The `src/app/globals.css` file has been updated to incorporate the Material Design 3 color palette, defining HSL values for both light and dark themes. This palette is derived from the primary brand seed color `#E91E63` and brand extension color `#880E4F`, ensuring M3 compliance and WCAG AA contrast ratios.
     *   `tailwind.config.ts` has been extended to map these new CSS variables to Tailwind utility classes, including primary, secondary, tertiary, destructive, card, popover, muted, accent, border, input, ring, and specific sidebar and chart colors. The `borderRadius` values have also been updated to align with M3 specifications (4px, 8px, 12px, 16px, 24px).
-    *   The `src/components/ui/button.tsx` component now includes `onPrimary` and `onSecondary` variants to support text on primary and secondary color backgrounds, respectively.
+    *   The `src/components/ui/button.tsx` component now includes `onPrimary` and `onSecondary` variants to support text on primary and secondary color backgrounds, respectively, and the `text` variant has been enhanced with a hover underline for M3 compliance.
 *   **Supabase Client Integration:**
     *   The existing `src/integrations/supabase/client.ts` is used for browser-side Supabase interactions.
     *   `@supabase/supabase-js`, `@supabase/auth-ui-react`, and `@supabase/auth-ui-shared` packages have been added to `package.json`.
@@ -74,10 +74,11 @@ The project follows a modular and domain-driven directory structure, aligning wi
 *   **Login Page (`src/app/(public)/login/page.tsx`):**
     *   The login page now utilizes the `@supabase/auth-ui-react` component, styled with `ThemeSupa` and custom M3-compliant color variables.
     *   It includes client-side redirection logic to guide authenticated users to their respective role-based dashboards.
+    *   The layout has been adjusted to ensure robust centering of the login card.
 *   **Role-Based Dashboard Placeholders:**
     *   **`src/app/(portal)/dashboard/page.tsx`**: A placeholder for applicants, displaying a welcome message and links to their applications. It enforces that only 'applicant' roles (or higher roles that can access portal) can view it.
     *   **`src/app/(workbench)/dashboard/page.tsx`**: A placeholder for managers, reviewers, and screeners, offering a welcome and role-specific links (e.g., "Manage Campaigns," "View Assignments"). It restricts access to these specific roles.
-    *   **`src/app/(admin)/dashboard/page.tsx`**: A placeholder for administrators, providing access to user management and system settings. Access is strictly limited to the 'admin' role.
+    *   **`src/app/(admin)/dashboard/page.tsx`**: **(Implemented)** This page now features an M3-compliant dashboard with overview cards for "Total Users," "Active Campaigns," "Pending Applications," and "System Status." It also includes a "Quick Actions" section with `tonal` buttons linking to user management, system settings, and pathway templates. Access is strictly limited to the 'admin' role.
     *   Each dashboard page uses `createClient` from `src/integrations/supabase/server` to perform server-side user authentication and role verification, redirecting unauthorized users.
 *   **Authentication Middleware (`middleware.ts`):**
     *   A Next.js middleware has been implemented to centralize authentication and authorization logic.
@@ -92,6 +93,10 @@ The project follows a modular and domain-driven directory structure, aligning wi
     *   Dynamic error pages (`src/app/(public)/error-pages/[code]/page.tsx`) have been created to handle specific HTTP status codes (401, 403, 404, 500) with tailored messages, icons, and actionable buttons, ensuring a consistent and helpful user experience during errors.
 *   **Authentication Service (`src/services/auth-service.ts`):**
     *   A utility service `authService` has been created to abstract common Supabase authentication operations like `signOut`, `getUser`, and `getSession`. This promotes reusability and keeps component logic clean.
+*   **Header (`src/components/layout/Header.tsx`):**
+    *   The universal header now displays the app title with `text-foreground` for better visual balance and includes user authentication status with a dropdown menu for logged-in users.
+*   **Sign-in/Sign-up Forms (`src/features/auth/components/SignInForm.tsx`, `src/features/auth/components/SignUpForm.tsx`):**
+    *   Forms have been refined with consistent M3 typography and spacing, ensuring `FormItem` elements have `space-y-2` and `FormMessage` uses `text-body-small`.
 
 **Next Steps:**
-With Vertical 0 now fully styled according to Material Design 3, the application has a robust authentication system, role-based routing, a consistent M3-compliant design foundation, a public homepage, and comprehensive error handling. The next step, following the `VIS.md` MVP build order, will be to implement **Vertical 1.1: Basic Pathway Template Management (CRUD & Listing)**, which involves defining the database schema for pathway templates and phases, and then building the UI and backend services required for their creation and management.
+The Admin Dashboard is now implemented, providing a solid M3-compliant overview for administrators. The next step will be to implement the **Workbench Dashboard** and **Portal Dashboard**, tailoring their content and quick actions to the specific needs of those user roles, while maintaining the established M3 design principles.
