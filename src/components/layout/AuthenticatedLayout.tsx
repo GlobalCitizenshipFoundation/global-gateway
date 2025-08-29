@@ -33,7 +33,7 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
       <div className="flex flex-1 bg-background h-full">
         {/* Placeholder for a collapsed sidebar during loading */}
         {!isMobile && (
-          <aside className="w-20 border-r border-border bg-sidebar-background p-4 space-y-6 rounded-xl shadow-lg flex-shrink-0">
+          <aside className="w-20 border-r border-border bg-sidebar-background p-4 space-y-6 rounded-xl shadow-lg flex-shrink-0 h-full overflow-y-auto">
             <Skeleton className="h-8 w-3/4 mb-6" />
             <div className="space-y-2">
               {[...Array(5)].map((_, i) => (
@@ -43,7 +43,7 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
           </aside>
         )}
         <main className={cn(
-          "flex-1 p-8 flex items-center justify-center bg-background text-foreground transition-all duration-300 min-h-0"
+          "flex-1 p-8 flex items-center justify-center bg-background text-foreground transition-all duration-300 min-h-0 h-full overflow-y-auto"
         )}>
           <div className="flex flex-col items-center space-y-4">
             <Skeleton className="h-12 w-64 rounded-md" />
@@ -88,7 +88,7 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
 
       <main
         className={cn(
-          "flex-1 p-8 overflow-y-auto bg-background text-foreground transition-all duration-300 min-h-0"
+          "flex-1 p-8 overflow-y-auto bg-background text-foreground transition-all duration-300 min-h-0 h-full"
         )}
       >
         {children}

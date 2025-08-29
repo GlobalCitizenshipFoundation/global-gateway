@@ -3,6 +3,11 @@
 @tailwind utilities;
 
 @layer base {
+  html, body {
+    height: 100%; /* Ensure html and body take full viewport height */
+    margin: 0; /* Remove default body margin */
+  }
+
   :root {
     /* Light Theme Colors */
     --background: 0 0% 98%; /* Neutral 98 */
