@@ -1,16 +1,17 @@
 import React from "react";
-import { PathwayTemplateForm } from "@/features/pathway-templates/components/PathwayTemplateForm";
+import { PathwayTemplateDetail } from "@/features/pathway-templates/components/PathwayTemplateDetail";
 import { getTemplateByIdAction } from "@/features/pathway-templates/actions";
 import { notFound } from "next/navigation";
 
-interface EditPathwayTemplatePageProps {
+interface PathwayTemplateDetailPageProps {
   params: {
     id: string;
   };
 }
 
-export default async function EditPathwayTemplatePage({ params }: EditPathwayTemplatePageProps) {
+export default async function PathwayTemplateDetailPage({ params }: PathwayTemplateDetailPageProps) {
   const { id } = params;
+  // Fetch template to ensure user has read access before rendering the client component
   const template = await getTemplateByIdAction(id);
 
   if (!template) {
@@ -19,7 +20,7 @@ export default async function EditPathwayTemplatePage({ params }: EditPathwayTem
 
   return (
     <div className="container mx-auto py-8 px-4">
-      <PathwayTemplateForm initialData={template} />
+      <PathwayTemplateDetail templateId={id} />
     </div>
   );
 }

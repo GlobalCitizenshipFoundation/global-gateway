@@ -1,11 +1,11 @@
 "use server";
 
-import { pathwayTemplateService, PathwayTemplate } from "./services/pathway-template-service";
+import { pathwayTemplateService, PathwayTemplate, Phase } from "./services/pathway-template-service";
 import { createClient } from "@/integrations/supabase/server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
-// Helper function to check user authorization
+// Helper function to check user authorization for a template
 async function authorizeTemplateAction(templateId: string, action: 'read' | 'write'): Promise<{ user: any; template: PathwayTemplate | null; isAdmin: boolean }> {
   const supabase = await createClient();
   const { data: { user }, error: userError } = await supabase.auth.getUser();
@@ -40,7 +40,7 @@ async function authorizeTemplateAction(templateId: string, action: 'read' | 'wri
     if (!isAdmin && template && template.is_private && template.creator_id !== user.id) {
       throw new Error("Unauthorized access to private template.");
     }
-  } else if (action === 'write') { // For 'write' actions (update, delete)
+  } else if (action === 'write') { // For 'write' actions (update, delete, create phase, reorder phases)
     if (!isAdmin && template && template.creator_id !== user.id) {
       throw new Error("Unauthorized to modify this template.");
     }
@@ -54,15 +54,12 @@ export async function getTemplatesAction(): Promise<PathwayTemplate[] | null> {
   const { data: { user }, error: userError } = await supabase.auth.getUser();
 
   if (userError || !user) {
-    // If no user, only public templates should be visible, but for workbench, we redirect.
-    // This action is primarily for authenticated workbench users.
     redirect("/login");
   }
 
   const userRole: string = user.user_metadata?.role || '';
   const isAdmin = userRole === 'admin';
 
-  // Admins can see all templates. Other authenticated users see their own or public templates.
   const { data, error } = await supabase
     .from("pathway_templates")
     .select("*")
@@ -73,26 +70,20 @@ export async function getTemplatesAction(): Promise<PathwayTemplate[] | null> {
     return null;
   }
 
-  // Filter on the server if not an admin, to ensure only authorized templates are returned
   const filteredData = data.filter(template => isAdmin || template.creator_id === user.id || !template.is_private);
   return filteredData;
 }
 
 export async function getTemplateByIdAction(id: string): Promise<PathwayTemplate | null> {
   try {
-    const { user, template, isAdmin } = await authorizeTemplateAction(id, 'read');
-    if (!template) {
-      return null; // Template not found or unauthorized
-    }
-    // The authorizeTemplateAction already handles the read access logic
+    const { template } = await authorizeTemplateAction(id, 'read');
     return template;
   } catch (error: any) {
     console.error("Error in getTemplateByIdAction:", error.message);
-    // Redirect to an error page or login if unauthorized
     if (error.message === "Unauthorized access to private template.") {
-      redirect("/error-pages/403"); // Forbidden
+      redirect("/error-pages/403");
     }
-    redirect("/login"); // Default redirect for other auth issues
+    redirect("/login");
   }
 }
 
@@ -106,7 +97,7 @@ export async function createPathwayTemplateAction(formData: FormData): Promise<P
 
   const name = formData.get("name") as string;
   const description = formData.get("description") as string | null;
-  const is_private = formData.get("is_private") === "on"; // Checkbox value
+  const is_private = formData.get("is_private") === "on";
 
   if (!name) {
     throw new Error("Template name is required.");
@@ -125,7 +116,7 @@ export async function createPathwayTemplateAction(formData: FormData): Promise<P
 
 export async function updatePathwayTemplateAction(id: string, formData: FormData): Promise<PathwayTemplate | null> {
   try {
-    const { user, template, isAdmin } = await authorizeTemplateAction(id, 'write');
+    await authorizeTemplateAction(id, 'write'); // Authorize before update
 
     const name = formData.get("name") as string;
     const description = formData.get("description") as string | null;
@@ -146,15 +137,15 @@ export async function updatePathwayTemplateAction(id: string, formData: FormData
   } catch (error: any) {
     console.error("Error in updatePathwayTemplateAction:", error.message);
     if (error.message === "Unauthorized to modify this template.") {
-      redirect("/error-pages/403"); // Forbidden
+      redirect("/error-pages/403");
     }
-    redirect("/login"); // Default redirect for other auth issues
+    redirect("/login");
   }
 }
 
 export async function deletePathwayTemplateAction(id: string): Promise<boolean> {
   try {
-    const { user, template, isAdmin } = await authorizeTemplateAction(id, 'write');
+    await authorizeTemplateAction(id, 'write'); // Authorize before delete
 
     const success = await pathwayTemplateService.deletePathwayTemplate(id);
 
@@ -163,8 +154,122 @@ export async function deletePathwayTemplateAction(id: string): Promise<boolean> 
   } catch (error: any) {
     console.error("Error in deletePathwayTemplateAction:", error.message);
     if (error.message === "Unauthorized to modify this template.") {
-      redirect("/error-pages/403"); // Forbidden
+      redirect("/error-pages/403");
     }
-    redirect("/login"); // Default redirect for other auth issues
+    redirect("/login");
+  }
+}
+
+// --- Phase Management Server Actions ---
+
+export async function getPhasesAction(pathwayTemplateId: string): Promise<Phase[] | null> {
+  try {
+    await authorizeTemplateAction(pathwayTemplateId, 'read'); // User must have read access to the parent template
+    const phases = await pathwayTemplateService.getPhasesByPathwayTemplateId(pathwayTemplateId);
+    return phases;
+  } catch (error: any) {
+    console.error("Error in getPhasesAction:", error.message);
+    if (error.message === "Unauthorized access to private template.") {
+      redirect("/error-pages/403");
+    }
+    redirect("/login");
+  }
+}
+
+export async function createPhaseAction(pathwayTemplateId: string, formData: FormData): Promise<Phase | null> {
+  try {
+    await authorizeTemplateAction(pathwayTemplateId, 'write'); // User must have write access to the parent template
+
+    const name = formData.get("name") as string;
+    const type = formData.get("type") as string;
+    const description = formData.get("description") as string | null;
+    const order_index = parseInt(formData.get("order_index") as string);
+
+    if (!name || !type || isNaN(order_index)) {
+      throw new Error("Phase name, type, and order index are required.");
+    }
+
+    const newPhase = await pathwayTemplateService.createPhase(
+      pathwayTemplateId,
+      name,
+      type,
+      order_index,
+      description
+    );
+
+    revalidatePath(`/workbench/pathway-templates/${pathwayTemplateId}`);
+    return newPhase;
+  } catch (error: any) {
+    console.error("Error in createPhaseAction:", error.message);
+    if (error.message === "Unauthorized to modify this template.") {
+      redirect("/error-pages/403");
+    }
+    throw error; // Re-throw to be caught by client-side toast
+  }
+}
+
+export async function updatePhaseAction(phaseId: string, pathwayTemplateId: string, formData: FormData): Promise<Phase | null> {
+  try {
+    await authorizeTemplateAction(pathwayTemplateId, 'write'); // User must have write access to the parent template
+
+    const name = formData.get("name") as string;
+    const type = formData.get("type") as string;
+    const description = formData.get("description") as string | null;
+    // order_index is not updated via form, but via reorder action
+
+    if (!name || !type) {
+      throw new Error("Phase name and type are required.");
+    }
+
+    const updatedPhase = await pathwayTemplateService.updatePhase(
+      phaseId,
+      { name, type, description }
+    );
+
+    revalidatePath(`/workbench/pathway-templates/${pathwayTemplateId}`);
+    return updatedPhase;
+  } catch (error: any) {
+    console.error("Error in updatePhaseAction:", error.message);
+    if (error.message === "Unauthorized to modify this template.") {
+      redirect("/error-pages/403");
+    }
+    throw error; // Re-throw to be caught by client-side toast
+  }
+}
+
+export async function deletePhaseAction(phaseId: string, pathwayTemplateId: string): Promise<boolean> {
+  try {
+    await authorizeTemplateAction(pathwayTemplateId, 'write'); // User must have write access to the parent template
+
+    const success = await pathwayTemplateService.deletePhase(phaseId);
+
+    revalidatePath(`/workbench/pathway-templates/${pathwayTemplateId}`);
+    return success;
+  } catch (error: any) {
+    console.error("Error in deletePhaseAction:", error.message);
+    if (error.message === "Unauthorized to modify this template.") {
+      redirect("/error-pages/403");
+    }
+    throw error; // Re-throw to be caught by client-side toast
+  }
+}
+
+export async function reorderPhasesAction(pathwayTemplateId: string, phases: { id: string; order_index: number }[]): Promise<boolean> {
+  try {
+    await authorizeTemplateAction(pathwayTemplateId, 'write'); // User must have write access to the parent template
+
+    // Perform updates in a transaction if possible, or sequentially
+    for (const phase of phases) {
+      await pathwayTemplateService.updatePhase(phase.id, { order_index: phase.order_index });
+    }
+
+    revalidatePath(`/workbench/pathway-templates/${pathwayTemplateId}`);
+    return true;
+  } catch (error: any) {
+    console.error("Error in reorderPhasesAction:", error.message);
+    if (error.message === "Unauthorized to modify this template.") {
+      redirect("/error-pages/403");
+    }
+    throw error; // Re-throw to be caught by client-side toast
   }
 }
