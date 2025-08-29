@@ -403,3 +403,96 @@ These **axes define how AI can make UI elements expressive**. Apply consistently
 5. Allow **experimentation**: shapes, color, typography, motion can vary while respecting system constraints.
 
 ---
+
+# Button 
+
+1. Choosing buttons
+
+Hierarchy
+Placement
+Types of buttons
+
+2. Types of Buttons in Material 3
+
+There are 10 main button types:
+
+Button (filled, tonal, outlined, elevated, text)
+
+Toggle button
+
+Icon button
+
+Toggle icon button
+
+Split button
+
+Standard button group
+
+Connected button group
+
+Floating Action Button (FAB)
+
+Extended FAB
+
+FAB menu
+
+3. Choosing Buttons
+
+Buttons are selected based on level of emphasis and action importance.
+
+Level of emphasis	Component	Rationale	Example Actions
+High	Extended FAB, FAB, FAB menu	Largest, most visually prominent. Best for primary action on a screen.	Create, Compose, New thread, New file
+	Button (filled)	Primary color palette makes it prominent after FAB. Used for final/unblocking actions.	Save, Confirm, Done
+	Split button	Primary color + menu icon for key actions with multiple options.	Send, Add, Create
+	Button group	Uses color, motion, and shape to show multiple key actions.	Back, Pause, Next
+Medium	Button (tonal)	Secondary color palette, less prominent than filled. Supporting or final actions.	Save, Confirm, Done
+	Button (elevated)	Secondary color palette + shadow. Use to separate from patterned backgrounds.	Reply, View all, Add to cart, Take out of trash
+	Button (outlined)	Use for actions needing attention but not primary. Allows user to escape or reconsider.	Reply, View all, Add to cart, Take out of trash
+Low	Connected button group	Shows multiple related options. Use for changing visible content.	Walk, Bike, Drive
+	Button (text)	No outline or fill. Optional/supplementary actions.	Learn more, View all, Change account, Turn on
+	Icon button	Most compact/subtle. Optional supplementary actions.	Add to Favorites, Print
+4. Hierarchy
+
+One high-emphasis button per screen: Commands the most attention.
+
+Other buttons: Multiple buttons can appear, but different color styles indicate importance.
+
+Hierarchy Levels
+
+High emphasis – Primary, most important action.
+
+Medium emphasis – Important, but secondary actions.
+
+Low emphasis – Optional or supplementary actions.
+
+A button’s emphasis determines its appearance, typography, and placement.
+
+5. Placement
+
+Combine button styles to focus attention on primary actions while offering alternatives.
+
+Examples:
+
+Newsfeed screen:
+
+Extended FAB for highest emphasis
+
+Filled button for high emphasis
+
+Text button for low emphasis
+
+Multiple actions on the same row:
+
+Text button left of filled button ✅ – Low next to high emphasis
+
+Outlined button left of filled button ✅ – Medium next to high emphasis
+
+Text button left of outlined button ✅ – Low next to medium emphasis
+
+Single action placement:
+
+Filled button alone at the bottom ✅ – Emphasizes importance
+
+Avoid stacking buttons unnecessarily:
+
+Filled button stacked above text button ❌ – Use side-by-side if space allows
