@@ -20,8 +20,8 @@ import {
 } from "@/components/ui/form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PlusCircle, Trash2, GripVertical } from "lucide-react";
-import { Phase } from "../../services/pathway-template-service";
-import { updatePhaseConfigAction } from "../../actions";
+import { BaseConfigurableItem, Phase } from "../../services/pathway-template-service"; // Import BaseConfigurableItem
+import { updatePhaseConfigAction as defaultUpdatePhaseConfigAction } from "../../actions"; // Renamed default action
 
 // Zod schema for a single recommender information field
 const recommenderFieldSchema = z.object({
@@ -39,13 +39,15 @@ const recommendationPhaseConfigSchema = z.object({
 });
 
 interface RecommendationPhaseConfigProps {
-  phase: Phase;
-  pathwayTemplateId: string;
+  phase: BaseConfigurableItem; // Changed from Phase to BaseConfigurableItem
+  parentId: string; // Renamed from pathwayTemplateId
   onConfigSaved: () => void;
   canModify: boolean;
+  // Optional prop to override the default update action, now returns BaseConfigurableItem | null
+  updatePhaseConfigAction?: (phaseId: string, parentId: string, configUpdates: Record<string, any>) => Promise<BaseConfigurableItem | null>;
 }
 
-export function RecommendationPhaseConfig({ phase, pathwayTemplateId, onConfigSaved, canModify }: RecommendationPhaseConfigProps) {
+export function RecommendationPhaseConfig({ phase, parentId, onConfigSaved, canModify, updatePhaseConfigAction }: RecommendationPhaseConfigProps) {
   const form = useForm<z.infer<typeof recommendationPhaseConfigSchema>>({
     resolver: zodResolver(recommendationPhaseConfigSchema),
     defaultValues: {
@@ -69,7 +71,8 @@ export function RecommendationPhaseConfig({ phase, pathwayTemplateId, onConfigSa
     }
     try {
       const updatedConfig = { ...phase.config, ...values };
-      const result = await updatePhaseConfigAction(phase.id, pathwayTemplateId, updatedConfig);
+      const action = updatePhaseConfigAction || defaultUpdatePhaseConfigAction;
+      const result = await action(phase.id, parentId, updatedConfig); // Use parentId here
       if (result) {
         toast.success("Recommendation phase configuration updated successfully!");
         onConfigSaved();

@@ -151,6 +151,7 @@ The project follows a modular and domain-driven directory structure, aligning wi
             *   `src/features/pathway-templates/components/phase-configs/DecisionPhaseConfig.tsx`
             *   `src/features/pathway-templates/components/phase-configs/RecommendationPhaseConfig.tsx`
         *   All configuration components use `react-hook-form` with `zod` for validation, `useFieldArray` for dynamic lists (fields, criteria, outcomes, recommenders), and M3-compliant UI components.
+        *   **Modification:** These components now accept an optional `updatePhaseConfigAction` prop to allow them to be reused for campaign phases, adhering to the Open/Closed Principle.
 *   **Vertical 1.4: Template Cloning**
     *   **Service Layer (`src/features/pathway-templates/services/pathway-template-service.ts`):**
         *   `clonePathwayTemplate` function is implemented to perform a deep copy of a template and its phases, assigning the new template to the cloning user.
@@ -183,6 +184,24 @@ The project follows a modular and domain-driven directory structure, aligning wi
         *   `src/features/campaigns/components/CampaignForm.tsx` (Client Component) is used for creating and editing campaigns. It utilizes `react-hook-form` with `zod` for validation, renders M3 `Input`, `Textarea`, `Select`, `Switch`, `Popover` (for date pickers) components. It allows linking to an existing `PathwayTemplate` (fetched via `getTemplatesAction`).
         *   `src/app/(workbench)/campaigns/new/page.tsx` renders `CampaignForm` for new campaigns.
         *   `src/app/(workbench)/campaigns/[id]/edit/page.tsx` fetches an existing campaign via `getCampaignByIdAction` and renders `CampaignForm` for editing.
+*   **Vertical 2.2: Campaign Phases Management (Deep Copy, CRUD, Reorder, Config)**
+    *   **Database Schema (`public.campaign_phases`):**
+        *   Table created with `id`, `campaign_id` (FK to `campaigns`), `original_phase_id` (FK to `phases`, nullable), `name`, `type`, `description`, `order_index`, `config` (JSONB), `created_at`, `updated_at` columns.
+        *   **Row Level Security (RLS)** enabled with policies for `SELECT`, `INSERT`, `UPDATE`, and `DELETE` based on the parent `campaign_id` and the user's ownership/public access to that campaign.
+    *   **Service Layer (`src/features/campaigns/services/campaign-service.ts`):**
+        *   New interface `CampaignPhase` defined.
+        *   Functions `getCampaignPhasesByCampaignId`, `createCampaignPhase`, `updateCampaignPhase`, `deleteCampaignPhase` are implemented.
+        *   `deepCopyPhasesFromTemplate(campaignId: string, templateId: string)` function is implemented to fetch phases from a `pathway_template` and insert them as `campaign_phases` for a given `campaignId`.
+    *   **Backend (Next.js Server Actions - `src/features/campaigns/actions.ts`):**
+        *   `createCampaignAction` is modified to call `campaignService.deepCopyPhasesFromTemplate` if a `pathway_template_id` is provided during campaign creation.
+        *   New Server Actions `getCampaignPhasesAction`, `createCampaignPhaseAction`, `updateCampaignPhaseAction`, `updateCampaignPhaseConfigAction`, `deleteCampaignPhaseAction`, `reorderCampaignPhasesAction` are implemented.
+        *   All campaign phase-related Server Actions include authorization checks against the parent `campaign`'s `creator_id` and the user's `role`.
+    *   **Frontend (UI):**
+        *   `src/app/(workbench)/campaigns/[id]/page.tsx` is created to render `CampaignDetail`.
+        *   `src/features/campaigns/components/CampaignDetail.tsx` (Client Component) displays campaign details and a section for managing `CampaignPhase`s. It integrates drag-and-drop for reordering phases and conditionally renders "Add Phase" and "Edit Campaign Details" buttons based on authorization.
+        *   `src/features/campaigns/components/CampaignPhaseCard.tsx` (Client Component) displays individual campaign phase details, includes a drag handle, and M3 `Button` components for "Edit Phase," "Delete Phase," and "Configure Phase."
+        *   `src/features/campaigns/components/CampaignPhaseFormDialog.tsx` (Client Component) is an M3 `Dialog` for creating/editing campaign phase name, type, and description, using `react-hook-form` and `zod`.
+        *   `src/features/campaigns/components/CampaignPhaseConfigurationPanel.tsx` (Client Component) acts as a polymorphic component, dynamically rendering the correct configuration sub-component based on `phase.type`. It reuses the existing configuration components from `src/features/pathway-templates/components/phase-configs/` by passing a campaign-specific `updatePhaseConfigAction` prop.
 
 **Next Steps:**
-With the basic Campaign Management (CRUD & Listing) now implemented, the next step for **Vertical 2** is to implement the creation of **Campaign Phases** based on the selected Pathway Template, and to develop the UI for managing these campaign-specific phases. This will involve deep-copying phases from the template and allowing campaign-specific modifications.
+With the core Campaign Phases management now implemented, the next steps for **Vertical 2** will focus on refining the UI/UX, adding more advanced features for campaign phases (e.g., status tracking, linking to actual forms/reviews), and potentially integrating with other modules like application management.

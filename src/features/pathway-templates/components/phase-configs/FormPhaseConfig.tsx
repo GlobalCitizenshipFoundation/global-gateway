@@ -21,8 +21,8 @@ import {
 } from "@/components/ui/form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PlusCircle, Trash2, GripVertical } from "lucide-react";
-import { Phase } from "../../services/pathway-template-service";
-import { updatePhaseConfigAction } from "../../actions";
+import { BaseConfigurableItem, Phase } from "../../services/pathway-template-service"; // Import BaseConfigurableItem
+import { updatePhaseConfigAction as defaultUpdatePhaseConfigAction } from "../../actions"; // Renamed default action
 import { cn } from "@/lib/utils";
 
 // Zod schema for a single form field
@@ -30,7 +30,7 @@ const formFieldSchema = z.object({
   id: z.string().uuid().optional(), // Optional for new fields
   label: z.string().min(1, "Field label is required."),
   type: z.enum(["Text", "Number", "Date", "Checkbox", "Radio Group", "File Upload", "Rich Text Area", "Email", "URL"]),
-  required: z.boolean(), // Removed .default(false)
+  required: z.boolean(),
   helperText: z.string().nullable().optional(),
   defaultValue: z.string().nullable().optional(),
   options: z.array(z.string().min(1, "Option cannot be empty.")).optional(), // For Select, Radio, Checkbox
@@ -42,13 +42,15 @@ const formPhaseConfigSchema = z.object({
 });
 
 interface FormPhaseConfigProps {
-  phase: Phase;
-  pathwayTemplateId: string;
+  phase: BaseConfigurableItem; // Changed from Phase to BaseConfigurableItem
+  parentId: string; // Renamed from pathwayTemplateId
   onConfigSaved: () => void;
   canModify: boolean;
+  // Optional prop to override the default update action, now returns BaseConfigurableItem | null
+  updatePhaseConfigAction?: (phaseId: string, parentId: string, configUpdates: Record<string, any>) => Promise<BaseConfigurableItem | null>;
 }
 
-export function FormPhaseConfig({ phase, pathwayTemplateId, onConfigSaved, canModify }: FormPhaseConfigProps) {
+export function FormPhaseConfig({ phase, parentId, onConfigSaved, canModify, updatePhaseConfigAction }: FormPhaseConfigProps) {
   const form = useForm<z.infer<typeof formPhaseConfigSchema>>({
     resolver: zodResolver(formPhaseConfigSchema),
     defaultValues: {
@@ -73,7 +75,8 @@ export function FormPhaseConfig({ phase, pathwayTemplateId, onConfigSaved, canMo
     }
     try {
       const updatedConfig = { ...phase.config, fields: values.fields };
-      const result = await updatePhaseConfigAction(phase.id, pathwayTemplateId, updatedConfig);
+      const action = updatePhaseConfigAction || defaultUpdatePhaseConfigAction;
+      const result = await action(phase.id, parentId, updatedConfig); // Use parentId here
       if (result) {
         toast.success("Form phase configuration updated successfully!");
         onConfigSaved();

@@ -3,6 +3,18 @@
 import { createClient } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
+// New base interface for configurable items (phases)
+export interface BaseConfigurableItem {
+  id: string;
+  name: string;
+  type: string; // e.g., 'Form', 'Review', 'Email', 'Scheduling', 'Decision', 'Recommendation'
+  description: string | null;
+  order_index: number;
+  config: Record<string, any>; // JSONB field for phase-specific configuration
+  created_at: string;
+  updated_at: string;
+}
+
 export interface PathwayTemplate {
   id: string;
   creator_id: string;
@@ -13,16 +25,9 @@ export interface PathwayTemplate {
   updated_at: string;
 }
 
-export interface Phase {
-  id: string;
+// Phase now extends BaseConfigurableItem
+export interface Phase extends BaseConfigurableItem {
   pathway_template_id: string;
-  name: string;
-  type: string; // e.g., 'Form', 'Review', 'Email', 'Scheduling', 'Decision', 'Recommendation'
-  description: string | null;
-  order_index: number;
-  config: Record<string, any>; // JSONB field for phase-specific configuration
-  created_at: string;
-  updated_at: string;
 }
 
 export const pathwayTemplateService = {

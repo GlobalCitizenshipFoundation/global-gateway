@@ -2,7 +2,7 @@
 
 import { createClient } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { PathwayTemplate } from "@/features/pathway-templates/services/pathway-template-service";
+import { PathwayTemplate, BaseConfigurableItem, Phase as TemplatePhase } from "@/features/pathway-templates/services/pathway-template-service";
 
 export interface Campaign {
   id: string;
@@ -18,6 +18,12 @@ export interface Campaign {
   created_at: string;
   updated_at: string;
   pathway_templates?: PathwayTemplate; // For joining with template data
+}
+
+// CampaignPhase now extends BaseConfigurableItem
+export interface CampaignPhase extends BaseConfigurableItem {
+  campaign_id: string;
+  original_phase_id: string | null; // Link to the original template phase if cloned
 }
 
 export const campaignService = {
@@ -111,5 +117,125 @@ export const campaignService = {
     }
     toast.success("Campaign deleted successfully!");
     return true;
+  },
+
+  // --- Campaign Phase Management ---
+
+  async getCampaignPhasesByCampaignId(campaignId: string): Promise<CampaignPhase[] | null> {
+    const { data, error } = await this.supabase
+      .from("campaign_phases")
+      .select("*")
+      .eq("campaign_id", campaignId)
+      .order("order_index", { ascending: true });
+
+    if (error) {
+      console.error(`Error fetching campaign phases for campaign ${campaignId}:`, error.message);
+      toast.error("Failed to load campaign phases.");
+      return null;
+    }
+    return data;
+  },
+
+  async createCampaignPhase(
+    campaignId: string,
+    name: string,
+    type: string,
+    order_index: number,
+    description: string | null = null,
+    config: Record<string, any> = {},
+    original_phase_id: string | null = null
+  ): Promise<CampaignPhase | null> {
+    const { data, error } = await this.supabase
+      .from("campaign_phases")
+      .insert([
+        { campaign_id: campaignId, original_phase_id, name, type, order_index, description, config },
+      ])
+      .select()
+      .single();
+
+    if (error) {
+      console.error("Error creating campaign phase:", error.message);
+      toast.error("Failed to create campaign phase.");
+      return null;
+    }
+    toast.success("Campaign phase created successfully!");
+    return data;
+  },
+
+  async updateCampaignPhase(
+    id: string,
+    updates: Partial<Omit<CampaignPhase, "id" | "campaign_id" | "created_at">>
+  ): Promise<CampaignPhase | null> {
+    const { data, error } = await this.supabase
+      .from("campaign_phases")
+      .update({ ...updates, updated_at: new Date().toISOString() })
+      .eq("id", id)
+      .select()
+      .single();
+
+    if (error) {
+      console.error(`Error updating campaign phase ${id}:`, error.message);
+      toast.error("Failed to update campaign phase.");
+      return null;
+    }
+    toast.success("Campaign phase updated successfully!");
+    return data;
+  },
+
+  async deleteCampaignPhase(id: string): Promise<boolean> {
+    const { error } = await this.supabase.from("campaign_phases").delete().eq("id", id);
+
+    if (error) {
+      console.error(`Error deleting campaign phase ${id}:`, error.message);
+      toast.error("Failed to delete campaign phase.");
+      return false;
+    }
+    toast.success("Campaign phase deleted successfully!");
+    return true;
+  },
+
+  async deepCopyPhasesFromTemplate(
+    campaignId: string,
+    templateId: string
+  ): Promise<CampaignPhase[] | null> {
+    // Fetch phases from the original pathway template
+    const { data: templatePhases, error: fetchError } = await this.supabase
+      .from("phases")
+      .select("*")
+      .eq("pathway_template_id", templateId)
+      .order("order_index", { ascending: true });
+
+    if (fetchError) {
+      console.error("Error fetching template phases for deep copy:", fetchError.message);
+      throw new Error("Failed to fetch template phases for deep copy.");
+    }
+
+    if (!templatePhases || templatePhases.length === 0) {
+      return []; // No phases to copy
+    }
+
+    // Prepare data for insertion into campaign_phases
+    const campaignPhasesToInsert = templatePhases.map((phase: TemplatePhase) => ({
+      campaign_id: campaignId,
+      original_phase_id: phase.id,
+      name: phase.name,
+      type: phase.type,
+      description: phase.description,
+      order_index: phase.order_index,
+      config: phase.config, // Deep copy the config
+    }));
+
+    // Insert all new campaign phases
+    const { data: newCampaignPhases, error: insertError } = await this.supabase
+      .from("campaign_phases")
+      .insert(campaignPhasesToInsert)
+      .select("*");
+
+    if (insertError) {
+      console.error("Error inserting deep-copied campaign phases:", insertError.message);
+      throw new Error("Failed to insert deep-copied campaign phases.");
+    }
+
+    return newCampaignPhases;
   },
 };

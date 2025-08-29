@@ -18,8 +18,8 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Phase } from "../../services/pathway-template-service";
-import { updatePhaseConfigAction } from "../../actions";
+import { BaseConfigurableItem, Phase } from "../../services/pathway-template-service"; // Import BaseConfigurableItem
+import { updatePhaseConfigAction as defaultUpdatePhaseConfigAction } from "../../actions"; // Renamed default action
 
 // Zod schema for the Scheduling Phase configuration
 const schedulingPhaseConfigSchema = z.object({
@@ -29,13 +29,15 @@ const schedulingPhaseConfigSchema = z.object({
 });
 
 interface SchedulingPhaseConfigProps {
-  phase: Phase;
-  pathwayTemplateId: string;
+  phase: BaseConfigurableItem; // Changed from Phase to BaseConfigurableItem
+  parentId: string; // Renamed from pathwayTemplateId
   onConfigSaved: () => void;
   canModify: boolean;
+  // Optional prop to override the default update action, now returns BaseConfigurableItem | null
+  updatePhaseConfigAction?: (phaseId: string, parentId: string, configUpdates: Record<string, any>) => Promise<BaseConfigurableItem | null>;
 }
 
-export function SchedulingPhaseConfig({ phase, pathwayTemplateId, onConfigSaved, canModify }: SchedulingPhaseConfigProps) {
+export function SchedulingPhaseConfig({ phase, parentId, onConfigSaved, canModify, updatePhaseConfigAction }: SchedulingPhaseConfigProps) {
   const form = useForm<z.infer<typeof schedulingPhaseConfigSchema>>({
     resolver: zodResolver(schedulingPhaseConfigSchema),
     defaultValues: {
@@ -53,7 +55,8 @@ export function SchedulingPhaseConfig({ phase, pathwayTemplateId, onConfigSaved,
     }
     try {
       const updatedConfig = { ...phase.config, ...values };
-      const result = await updatePhaseConfigAction(phase.id, pathwayTemplateId, updatedConfig);
+      const action = updatePhaseConfigAction || defaultUpdatePhaseConfigAction;
+      const result = await action(phase.id, parentId, updatedConfig); // Use parentId here
       if (result) {
         toast.success("Scheduling phase configuration updated successfully!");
         onConfigSaved();

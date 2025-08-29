@@ -23,8 +23,8 @@ import {
 } from "@/components/ui/form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PlusCircle, Trash2, GripVertical } from "lucide-react";
-import { Phase } from "../../services/pathway-template-service";
-import { updatePhaseConfigAction } from "../../actions";
+import { BaseConfigurableItem, Phase } from "../../services/pathway-template-service"; // Import BaseConfigurableItem
+import { updatePhaseConfigAction as defaultUpdatePhaseConfigAction } from "../../actions"; // Renamed default action
 import { cn } from "@/lib/utils";
 
 // Zod schema for a single rubric criterion
@@ -38,26 +38,28 @@ const rubricCriterionSchema = z.object({
 // Zod schema for the entire Review Phase configuration
 const reviewPhaseConfigSchema = z.object({
   rubricCriteria: z.array(rubricCriterionSchema),
-  scoringScale: z.enum(["1-5", "1-10", "Custom"]), // Removed .default("1-5")
-  anonymizationSettings: z.enum(["None", "Blind", "Double-Blind"]), // Removed .default("None")
-  allowComments: z.boolean(), // Removed .default(true)
+  scoringScale: z.enum(["1-5", "1-10", "Custom"]),
+  anonymizationSettings: z.enum(["None", "Blind", "Double-Blind"]),
+  allowComments: z.boolean(),
 });
 
 interface ReviewPhaseConfigProps {
-  phase: Phase;
-  pathwayTemplateId: string;
+  phase: BaseConfigurableItem; // Changed from Phase to BaseConfigurableItem
+  parentId: string; // Renamed from pathwayTemplateId
   onConfigSaved: () => void;
   canModify: boolean;
+  // Optional prop to override the default update action, now returns BaseConfigurableItem | null
+  updatePhaseConfigAction?: (phaseId: string, parentId: string, configUpdates: Record<string, any>) => Promise<BaseConfigurableItem | null>;
 }
 
-export function ReviewPhaseConfig({ phase, pathwayTemplateId, onConfigSaved, canModify }: ReviewPhaseConfigProps) {
+export function ReviewPhaseConfig({ phase, parentId, onConfigSaved, canModify, updatePhaseConfigAction }: ReviewPhaseConfigProps) {
   const form = useForm<z.infer<typeof reviewPhaseConfigSchema>>({
     resolver: zodResolver(reviewPhaseConfigSchema),
     defaultValues: {
       rubricCriteria: (phase.config?.rubricCriteria as z.infer<typeof rubricCriterionSchema>[]) || [],
-      scoringScale: phase.config?.scoringScale || "1-5", // Explicit default
-      anonymizationSettings: phase.config?.anonymizationSettings || "None", // Explicit default
-      allowComments: phase.config?.allowComments ?? true, // Explicit default
+      scoringScale: phase.config?.scoringScale || "1-5",
+      anonymizationSettings: phase.config?.anonymizationSettings || "None",
+      allowComments: phase.config?.allowComments ?? true,
     },
     mode: "onChange",
   });
@@ -75,7 +77,8 @@ export function ReviewPhaseConfig({ phase, pathwayTemplateId, onConfigSaved, can
     }
     try {
       const updatedConfig = { ...phase.config, ...values };
-      const result = await updatePhaseConfigAction(phase.id, pathwayTemplateId, updatedConfig);
+      const action = updatePhaseConfigAction || defaultUpdatePhaseConfigAction;
+      const result = await action(phase.id, parentId, updatedConfig); // Use parentId here
       if (result) {
         toast.success("Review phase configuration updated successfully!");
         onConfigSaved();

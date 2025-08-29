@@ -1,6 +1,6 @@
 "use server";
 
-import { campaignService, Campaign } from "@/features/campaigns/services/campaign-service";
+import { campaignService, Campaign, CampaignPhase } from "@/features/campaigns/services/campaign-service";
 import { createClient } from "@/integrations/supabase/server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -115,20 +115,37 @@ export async function createCampaignAction(formData: FormData): Promise<Campaign
     throw new Error("Campaign name and status are required.");
   }
 
-  const newCampaign = await campaignService.createCampaign(
-    name,
-    description,
-    pathway_template_id,
-    start_date,
-    end_date,
-    is_public,
-    status,
-    config,
-    user.id
-  );
+  let newCampaign: Campaign | null = null;
+  try {
+    newCampaign = await campaignService.createCampaign(
+      name,
+      description,
+      pathway_template_id,
+      start_date,
+      end_date,
+      is_public,
+      status,
+      config,
+      user.id
+    );
 
-  revalidatePath("/workbench/campaigns");
-  return newCampaign;
+    // If a pathway template was selected, deep copy its phases to campaign_phases
+    if (newCampaign && pathway_template_id) {
+      await campaignService.deepCopyPhasesFromTemplate(newCampaign.id, pathway_template_id);
+    }
+
+    revalidatePath("/workbench/campaigns");
+    return newCampaign;
+  } catch (error: any) {
+    console.error("Error in createCampaignAction:", error.message);
+    // If phase copying fails, consider rolling back campaign creation or logging for manual intervention
+    if (newCampaign) {
+      // Optionally delete the campaign if phase copying fails
+      // await campaignService.deleteCampaign(newCampaign.id);
+      console.warn(`Campaign ${newCampaign.id} created but phases failed to copy. Manual intervention may be needed.`);
+    }
+    throw error; // Re-throw to be caught by client-side toast
+  }
 }
 
 export async function updateCampaignAction(id: string, formData: FormData): Promise<Campaign | null> {
@@ -187,5 +204,167 @@ export async function deleteCampaignAction(id: string): Promise<boolean> {
       redirect("/error-pages/500");
     }
     redirect("/login"); // Fallback for unauthenticated or other critical errors
+  }
+}
+
+// --- Campaign Phase Management Server Actions ---
+
+export async function getCampaignPhasesAction(campaignId: string): Promise<CampaignPhase[] | null> {
+  try {
+    await authorizeCampaignAction(campaignId, 'read'); // User must have read access to the parent campaign
+    const phases = await campaignService.getCampaignPhasesByCampaignId(campaignId);
+    return phases;
+  } catch (error: any) {
+    console.error("Error in getCampaignPhasesAction:", error.message);
+    if (error.message === "UnauthorizedAccessToPrivateCampaign") {
+      redirect("/error-pages/403");
+    } else if (error.message === "CampaignNotFound") {
+      redirect("/error-pages/404");
+    } else if (error.message === "FailedToRetrieveCampaign") {
+      redirect("/error-pages/500");
+    }
+    redirect("/login"); // Fallback for unauthenticated or other critical errors
+  }
+}
+
+export async function createCampaignPhaseAction(campaignId: string, formData: FormData): Promise<CampaignPhase | null> {
+  try {
+    await authorizeCampaignAction(campaignId, 'write'); // User must have write access to the parent campaign
+
+    const name = formData.get("name") as string;
+    const type = formData.get("type") as string;
+    const description = formData.get("description") as string | null;
+    const order_index = parseInt(formData.get("order_index") as string);
+    const original_phase_id = formData.get("original_phase_id") as string | null;
+    const config = JSON.parse(formData.get("config") as string || '{}');
+
+    if (!name || !type || isNaN(order_index)) {
+      throw new Error("Campaign phase name, type, and order index are required.");
+    }
+
+    const newPhase = await campaignService.createCampaignPhase(
+      campaignId,
+      name,
+      type,
+      order_index,
+      description,
+      config,
+      original_phase_id
+    );
+
+    revalidatePath(`/workbench/campaigns/${campaignId}`);
+    return newPhase;
+  } catch (error: any) {
+    console.error("Error in createCampaignPhaseAction:", error.message);
+    if (error.message === "UnauthorizedToModifyCampaign") {
+      redirect("/error-pages/403");
+    } else if (error.message === "CampaignNotFound") {
+      redirect("/error-pages/404");
+    } else if (error.message === "FailedToRetrieveCampaign") {
+      redirect("/error-pages/500");
+    }
+    throw error; // Re-throw to be caught by client-side toast for form errors
+  }
+}
+
+export async function updateCampaignPhaseAction(phaseId: string, campaignId: string, formData: FormData): Promise<CampaignPhase | null> {
+  try {
+    await authorizeCampaignAction(campaignId, 'write'); // User must have write access to the parent campaign
+
+    const name = formData.get("name") as string;
+    const type = formData.get("type") as string;
+    const description = formData.get("description") as string | null;
+    const config = JSON.parse(formData.get("config") as string || '{}');
+
+    if (!name || !type) {
+      throw new Error("Campaign phase name and type are required.");
+    }
+
+    const updatedPhase = await campaignService.updateCampaignPhase(
+      phaseId,
+      { name, type, description, config }
+    );
+
+    revalidatePath(`/workbench/campaigns/${campaignId}`);
+    return updatedPhase;
+  } catch (error: any) {
+    console.error("Error in updateCampaignPhaseAction:", error.message);
+    if (error.message === "UnauthorizedToModifyCampaign") {
+      redirect("/error-pages/403");
+    } else if (error.message === "CampaignNotFound") {
+      redirect("/error-pages/404");
+    } else if (error.message === "FailedToRetrieveCampaign") {
+      redirect("/error-pages/500");
+    }
+    throw error; // Re-throw to be caught by client-side toast
+  }
+}
+
+export async function updateCampaignPhaseConfigAction(phaseId: string, campaignId: string, configUpdates: Record<string, any>): Promise<CampaignPhase | null> {
+  try {
+    await authorizeCampaignAction(campaignId, 'write'); // User must have write access to the parent campaign
+
+    const updatedPhase = await campaignService.updateCampaignPhase(
+      phaseId,
+      { config: configUpdates }
+    );
+
+    revalidatePath(`/workbench/campaigns/${campaignId}`);
+    return updatedPhase;
+  } catch (error: any) {
+    console.error("Error in updateCampaignPhaseConfigAction:", error.message);
+    if (error.message === "UnauthorizedToModifyCampaign") {
+      redirect("/error-pages/403");
+    } else if (error.message === "CampaignNotFound") {
+      redirect("/error-pages/404");
+    } else if (error.message === "FailedToRetrieveCampaign") {
+      redirect("/error-pages/500");
+    }
+    throw error; // Re-throw to be caught by client-side toast
+  }
+}
+
+export async function deleteCampaignPhaseAction(phaseId: string, campaignId: string): Promise<boolean> {
+  try {
+    await authorizeCampaignAction(campaignId, 'write'); // User must have write access to the parent campaign
+
+    const success = await campaignService.deleteCampaignPhase(phaseId);
+
+    revalidatePath(`/workbench/campaigns/${campaignId}`);
+    return success;
+  } catch (error: any) {
+    console.error("Error in deleteCampaignPhaseAction:", error.message);
+    if (error.message === "UnauthorizedToModifyCampaign") {
+      redirect("/error-pages/403");
+    } else if (error.message === "CampaignNotFound") {
+      redirect("/error-pages/404");
+    } else if (error.message === "FailedToRetrieveCampaign") {
+      redirect("/error-pages/500");
+    }
+    throw error; // Re-throw to be caught by client-side toast
+  }
+}
+
+export async function reorderCampaignPhasesAction(campaignId: string, phases: { id: string; order_index: number }[]): Promise<boolean> {
+  try {
+    await authorizeCampaignAction(campaignId, 'write'); // User must have write access to the parent campaign
+
+    // Perform updates in a transaction if possible, or sequentially
+    for (const phase of phases) {
+      await campaignService.updateCampaignPhase(phase.id, { order_index: phase.order_index });
+    }
+
+    revalidatePath(`/workbench/campaigns/${campaignId}`);
+    return true;
+  } catch (error: any) {
+    console.error("Error in reorderCampaignPhasesAction:", error.message);
+    if (error.message === "UnauthorizedToModifyCampaign") {
+      redirect("/error-pages/403");
+    } else if (error.message === "CampaignNotFound") {
+      redirect("/error-pages/404");
+    } else if (error.message === "FailedToRetrieveCampaign") {
+      redirect("/error-pages/500");
+    }
+    throw error; // Re-throw to be caught by client-side toast
   }
 }

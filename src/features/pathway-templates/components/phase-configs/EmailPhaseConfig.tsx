@@ -19,8 +19,8 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Phase } from "../../services/pathway-template-service";
-import { updatePhaseConfigAction } from "../../actions";
+import { BaseConfigurableItem, Phase } from "../../services/pathway-template-service"; // Import BaseConfigurableItem
+import { updatePhaseConfigAction as defaultUpdatePhaseConfigAction } from "../../actions"; // Renamed default action
 
 // Zod schema for the Email Phase configuration
 const emailPhaseConfigSchema = z.object({
@@ -31,13 +31,15 @@ const emailPhaseConfigSchema = z.object({
 });
 
 interface EmailPhaseConfigProps {
-  phase: Phase;
-  pathwayTemplateId: string;
+  phase: BaseConfigurableItem; // Changed from Phase to BaseConfigurableItem
+  parentId: string; // Renamed from pathwayTemplateId
   onConfigSaved: () => void;
   canModify: boolean;
+  // Optional prop to override the default update action, now returns BaseConfigurableItem | null
+  updatePhaseConfigAction?: (phaseId: string, parentId: string, configUpdates: Record<string, any>) => Promise<BaseConfigurableItem | null>;
 }
 
-export function EmailPhaseConfig({ phase, pathwayTemplateId, onConfigSaved, canModify }: EmailPhaseConfigProps) {
+export function EmailPhaseConfig({ phase, parentId, onConfigSaved, canModify, updatePhaseConfigAction }: EmailPhaseConfigProps) {
   const form = useForm<z.infer<typeof emailPhaseConfigSchema>>({
     resolver: zodResolver(emailPhaseConfigSchema),
     defaultValues: {
@@ -56,7 +58,8 @@ export function EmailPhaseConfig({ phase, pathwayTemplateId, onConfigSaved, canM
     }
     try {
       const updatedConfig = { ...phase.config, ...values };
-      const result = await updatePhaseConfigAction(phase.id, pathwayTemplateId, updatedConfig);
+      const action = updatePhaseConfigAction || defaultUpdatePhaseConfigAction;
+      const result = await action(phase.id, parentId, updatedConfig); // Use parentId here
       if (result) {
         toast.success("Email phase configuration updated successfully!");
         onConfigSaved();
