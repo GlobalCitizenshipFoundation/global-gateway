@@ -43,7 +43,7 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
           </aside>
         )}
         <main className={cn(
-          "flex-1 p-8 flex items-center justify-center bg-background text-foreground transition-all duration-300 min-h-full" // Added min-h-full
+          "flex-1 p-8 flex items-center justify-center bg-background text-foreground transition-all duration-300" // Removed min-h-full
         )}>
           <div className="flex flex-col items-center space-y-4">
             <Skeleton className="h-12 w-64 rounded-md" />
@@ -53,8 +53,6 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
       </div>
     );
   }
-
-  // Removed mainContentMargin as it's no longer needed with flex-1 on main
 
   return (
     <div className="flex flex-1">
@@ -90,7 +88,7 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
 
       <main
         className={cn(
-          "flex-1 p-8 overflow-auto bg-background text-foreground transition-all duration-300 min-h-full" // Added min-h-full
+          "flex-1 p-8 overflow-y-auto bg-background text-foreground transition-all duration-300" // Removed min-h-full, added overflow-y-auto
         )}
       >
         {children}
