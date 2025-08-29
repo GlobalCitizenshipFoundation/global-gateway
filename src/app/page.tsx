@@ -1,10 +1,13 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Globe, Award, Briefcase, ArrowRight } from "lucide-react"; // Added ArrowRight
-import React from "react"; // Import React
+import { Globe, Award, Briefcase, ArrowRight } from "lucide-react";
+import React from "react";
+import { KineticText } from "@/components/KineticText"; // Import the new KineticText component
 
 export default function HomePage() {
+  const animatedWords = ["Accreditation", "Support", "Opportunities", "Community", "Recognition", "Connections", "Distinction"];
+
   return (
     <div className="flex flex-col flex-1 bg-background text-foreground">
       <main className="flex-grow">
@@ -13,9 +16,7 @@ export default function HomePage() {
           <div className="flex-1 text-center md:text-left space-y-8 max-w-2xl">
             <h1 className="text-display-medium sm:text-display-large font-bold text-foreground leading-tight flex flex-col">
               <span>Your Gateway to Global</span>
-              <div className="relative inline-block overflow-hidden align-bottom text-primary">
-                <span className="inline-block" style={{ opacity: 0, transform: 'translateY(84.1823%)' }}>Accreditation</span>
-              </div>
+              <KineticText words={animatedWords} className="text-primary" />
             </h1>
             <p className="text-headline-small text-muted-foreground">
               Celebrating individuals and organizations foster positive change with global certification and accreditation.
