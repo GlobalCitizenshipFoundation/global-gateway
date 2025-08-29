@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { useForm, useFieldArray } from "react-hook-form";
+import { useForm, useFieldArray, Control } from "react-hook-form"; // Import Control
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { toast } from "sonner";
@@ -44,8 +44,13 @@ type ScreeningChecklistFormValues = z.infer<typeof screeningChecklistSchema>;
 
 interface ScreeningChecklistProps {
   applicationId: string;
-  // This prop now expects data that *already* conforms to the strict Zod schema
-  initialChecklistData: ChecklistItemFormType[];
+  // Allow initial data to be less strict, as it comes from JSONB which might have undefineds
+  initialChecklistData: Array<{
+    id?: string;
+    item: string;
+    checked?: boolean;
+    notes?: string | null;
+  }>;
   canModify: boolean;
   onChecklistUpdated: () => void; // Callback to refresh parent data if needed
 }
@@ -56,10 +61,18 @@ export function ScreeningChecklist({
   canModify,
   onChecklistUpdated,
 }: ScreeningChecklistProps) {
+  // Explicitly map initial data to match the form's expected strict type
+  const defaultChecklistItems: ChecklistItemFormType[] = (initialChecklistData || []).map(item => ({
+    id: item.id,
+    item: item.item,
+    checked: item.checked ?? false, // Ensure 'checked' is always boolean
+    notes: item.notes ?? null, // Ensure 'notes' is always string | null
+  }));
+
   const form = useForm<ScreeningChecklistFormValues>({
     resolver: zodResolver(screeningChecklistSchema),
     defaultValues: {
-      checklist: initialChecklistData, // Directly use initialChecklistData as it's now strictly typed
+      checklist: defaultChecklistItems,
     },
     mode: "onChange",
   });
@@ -70,7 +83,7 @@ export function ScreeningChecklist({
     keyName: "arrayId", // Unique key for each item in the array
   });
 
-  const onSubmit = async (values: ScreeningChecklistFormValues) => {
+  const onSubmit = async (values: ScreeningChecklistFormValues) => { // Explicitly type values here
     if (!canModify) {
       toast.error("You do not have permission to modify this checklist.");
       return;
@@ -126,7 +139,7 @@ export function ScreeningChecklist({
                 </div>
 
                 <FormField
-                  control={form.control}
+                  control={form.control as Control<ScreeningChecklistFormValues>} // Explicitly cast control
                   name={`checklist.${index}.item`}
                   render={({ field }) => (
                     <FormItem>
@@ -140,7 +153,7 @@ export function ScreeningChecklist({
                 />
 
                 <FormField
-                  control={form.control}
+                  control={form.control as Control<ScreeningChecklistFormValues>} // Explicitly cast control
                   name={`checklist.${index}.checked`}
                   render={({ field }) => (
                     <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-lg border p-3">
@@ -164,7 +177,7 @@ export function ScreeningChecklist({
                 />
 
                 <FormField
-                  control={form.control}
+                  control={form.control as Control<ScreeningChecklistFormValues>} // Explicitly cast control
                   name={`checklist.${index}.notes`}
                   render={({ field }) => (
                     <FormItem>

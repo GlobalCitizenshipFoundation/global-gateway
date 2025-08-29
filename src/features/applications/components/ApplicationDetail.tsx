@@ -15,6 +15,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { ChecklistItemFormType, ScreeningChecklist } from "./ScreeningChecklist"; // Import the new component and type
 import { CollaborativeNotes } from "./CollaborativeNotes"; // Import the new component
+import { WorkflowParticipation } from "./WorkflowParticipation"; // Import the new component
 
 interface ApplicationDetailProps {
   applicationId: string;
@@ -196,7 +197,7 @@ export function ApplicationDetail({ applicationId }: ApplicationDetailProps) {
         />
       </div>
 
-      {/* Workflow Participation Section (Placeholder) */}
+      {/* Workflow Participation Section */}
       <Card className="rounded-xl shadow-lg p-6">
         <CardHeader className="p-0 mb-4">
           <CardTitle className="text-headline-large font-bold text-foreground">Workflow Participation</CardTitle>
@@ -205,10 +206,13 @@ export function ApplicationDetail({ applicationId }: ApplicationDetailProps) {
           </CardDescription>
         </CardHeader>
         <CardContent className="p-0">
-          <p className="text-body-medium text-muted-foreground">
-            {/* Placeholder for Workflow Participation */}
-            Visual timeline or list of phases and applicant status in each.
-          </p>
+          {application.campaign_id && (
+            <WorkflowParticipation
+              campaignId={application.campaign_id}
+              currentCampaignPhaseId={application.current_campaign_phase_id}
+              applicationOverallStatus={application.status}
+            />
+          )}
         </CardContent>
       </Card>
     </div>

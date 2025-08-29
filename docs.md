@@ -246,7 +246,11 @@ The project follows a modular and domain-driven directory structure, aligning wi
             *   Submitted application data (dynamically rendered from the `data` JSONB field), with internal screening data (`screeningChecklist`) excluded from public display.
             *   **Internal Checklist (Implemented):** The `ScreeningChecklist` component is integrated, allowing authorized users (recruiters/admins) to manage a dynamic list of checklist items with status and notes.
             *   **Collaborative Notes (Implemented):** The `CollaborativeNotes` component is integrated, allowing authorized users (campaign creators/admins) to add, view, edit, and delete private notes with an audit trail (author, timestamp).
-            *   Placeholder for "Workflow Participation" section.
+            *   **Workflow Participation (Implemented):** The `WorkflowParticipation` component is integrated, providing a visual timeline of campaign phases and highlighting the applicant's current status within the workflow.
 
 **Next Steps:**
-The immediate next steps for **Vertical 4** will involve implementing the "Workflow Participation" section within the `ApplicationDetail` view, which will provide a visual timeline or list of phases and the applicant's status in each.
+With the completion of the Workflow Participation section, **Vertical 4: Application Management & Screening Phase** is now fully implemented. The next step is to begin **Vertical 5: Review & Decision Phases**, as outlined in the `Architecture.md` and `PRD.md` documents. This will involve:
+1.  **Database Schema:** Creating tables for reviews, reviewer assignments, and decision records.
+2.  **Service Layer:** Developing new services for review and decision operations.
+3.  **Backend (Server Actions):** Creating Server Actions to interact with these new services.
+4.  **Frontend (UI):** Building UI components for reviewer dashboards, rubrics, and decision recording.
