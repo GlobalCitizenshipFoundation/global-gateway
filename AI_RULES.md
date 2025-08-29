@@ -22,6 +22,45 @@ As you execute the plan strictly follow:
 
 6. You do not have permission to edit, modify, or delete any aspect of AI_RULES.md' or 'PRD.md' files.
 
+##  Development Principles: SOLID & OOP Adherence
+
+To ensure a robust, maintainable, and scalable application, all development must strictly adhere to SOLID principles and core Object-Oriented Programming (OOP) concepts. These principles guide the design of modules, services, and components, promoting clarity and efficiency.
+
+### SOLID Principles
+Single Responsibility Principle (SRP): Each module, component, or function must have only one reason to change.
+
+Application: A PathwayTemplateCard displays template data and handles its own actions; it does not fetch the entire list of templates. A Server Action performs a single, defined operation (e.g., createPathwayTemplateAction creates a template, it does not also fetch all templates). Services (e.g., pathwayTemplateService) manage a single domain's data operations.
+Open/Closed Principle (OCP): Software entities should be open for extension but closed for modification.
+
+Application: New phase types (e.g., "Scheduling") should extend the PhaseConfigurationPanel by adding new configuration components without altering the panel's core logic. Components should be configurable via props to extend behavior without internal code changes.
+Liskov Substitution Principle (LSP): Objects of a supertype should be replaceable with objects of its subtypes without altering the correctness of the program.
+
+Application: TypeScript interfaces (e.g., PathwayTemplate) define contracts. Any object conforming to this interface, or extending it, must behave as expected wherever the base interface is used.
+Interface Segregation Principle (ISP): Clients should not be forced to depend on interfaces they do not use.
+
+Application: Use focused TypeScript interfaces (e.g., UserProfile, UserAuthDetails) rather than monolithic ones. Functions and components should only accept the specific data structures they require.
+Dependency Inversion Principle (DIP): High-level modules should not depend on low-level modules; both should depend on abstractions.
+
+Application: UI components and Server Actions (high-level) depend on abstract service layers (e.g., pathwayTemplateService), not directly on concrete database implementations (low-level).
+
+### Core OOP Concepts
+Encapsulation: Bundle data and methods that operate on that data within a single unit, hiding internal implementation details.
+
+Application: Service modules (e.g., pathwayTemplateService) encapsulate all logic for interacting with a specific domain, exposing only public methods. React components encapsulate their internal state and logic.
+Polymorphism: The ability of an object to take on many forms, allowing a single interface to represent different underlying implementations.
+
+Application: The PhaseConfigurationPanel dynamically renders different configuration forms based on phase.type, each adhering to a common conceptual interaction pattern.
+Abstraction: Hide complex implementation details, showing only essential features.
+
+Application: Service layers abstract direct database interactions. Shadcn/UI components abstract underlying Radix UI primitives and Tailwind CSS. Server Actions abstract server-side logic from client-side components.
+
+### Integration & Practical Application
+src/features: Each feature module embodies SRP and OCP.
+src/services & src/features/[feature-name]/services: These layers are critical for SRP, Encapsulation, and DIP.
+src/integrations: Supports Abstraction and DIP by centralizing third-party service interactions.
+TypeScript: Essential for enforcing LSP and ISP through strong typing and clear interface definitions.
+Actionable: Prioritize a single purpose for each unit of code. Design for extension, not modification. Define clear data contracts with TypeScript. Abstract complex operations behind simple interfaces.
+
 ## Design
 
 Strictly enforce achieving full Material Design 3 specifications and compliance going beyond just using the base components. Therefore involve the below but not limited to:
