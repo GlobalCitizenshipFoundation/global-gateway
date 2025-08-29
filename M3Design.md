@@ -54,7 +54,7 @@ Global Gateway Design System
 
 ### Colors
 
-* Brand seed (`#E91E63`), Brand extension (`#880E4F`)
+* Brand seed (`#E91E63`)
 * Light & dark palettes (tokens: primary, secondary, tertiary, error, neutral)
 * Contrast validation rules (WCAG AA)
 * Usage rules (primary actions, background surfaces, accents, status colors)
