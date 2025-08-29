@@ -32,7 +32,7 @@ export function PathwayTemplateDetail({ templateId }: PathwayTemplateDetailProps
   const [isPhaseFormOpen, setIsPhaseFormOpen] = useState(false);
   const [editingPhase, setEditingPhase] = useState<Phase | undefined>(undefined);
   const [isConfigDialogOpen, setIsConfigDialogOpen] = useState(false);
-  const [configuringPhase, setConfiguringPhase] = useState<Phase | undefined>(undefined);
+  const [configuringPhase, setConfiguringPhase, ] = useState<Phase | undefined>(undefined);
   const [isCloneDialogOpen, setIsCloneDialogOpen] = useState(false);
 
   const fetchTemplateAndPhases = async () => {
@@ -115,7 +115,7 @@ export function PathwayTemplateDetail({ templateId }: PathwayTemplateDetailProps
       order_index: index,
     }));
 
-    setPhases(updatedPhivatedPhases);
+    setPhases(updatedPhases);
 
     try {
       const success = await reorderPhasesAction(
