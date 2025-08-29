@@ -1,17 +1,20 @@
+"use client";
+
 import * as React from "react";
-import { createContext, useContext, useId } from "react";
-import * as LabelPrimitive from "@radix-ui/react-label";
 import { Slot } from "@radix-ui/react-slot";
 import {
   Controller,
-  ControllerProps,
-  FieldPath,
-  FieldValues,
+  FormProvider,
   useFormContext,
+  type FieldPath,
+  type FieldValues,
+  type ControllerProps, // Import ControllerProps
 } from "react-hook-form";
 
 import { cn } from "@/lib/utils";
 import { Label } from "@/components/ui/label";
+
+const Form = FormProvider;
 
 type FormFieldContextValue<
   TFieldValues extends FieldValues = FieldValues,
@@ -20,57 +23,35 @@ type FormFieldContextValue<
   name: TName;
 };
 
-const FormFieldContext = createContext<FormFieldContextValue>(
+const FormFieldContext = React.createContext<FormFieldContextValue>(
   {} as FormFieldContextValue
 );
 
-function FormField<
+const FormField = <
   TFieldValues extends FieldValues = FieldValues,
   TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>
 >({
   ...props
-}: ControllerProps<TFieldValues, TName>) {
+}: ControllerProps<TFieldValues, TName>) => { // Use ControllerProps here
   return (
     <FormFieldContext.Provider value={{ name: props.name }}>
       <Controller {...props} />
     </FormFieldContext.Provider>
   );
-}
-
-type FormItemContextValue = {
-  id: string;
 };
 
-const FormItemContext = createContext<FormItemContextValue>(
-  {} as FormItemContextValue
-);
-
-const FormItem = React.forwardRef<
-  HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement>
->(({ className, ...props }, ref) => {
-  const id = useId();
-
-  return (
-    <FormItemContext.Provider value={{ id }}>
-      <div ref={ref} className={cn("space-y-2", className)} {...props} />
-    </FormItemContext.Provider>
-  );
-});
-FormItem.displayName = "FormItem";
-
-function useFormField() {
-  const fieldContext = useContext(FormFieldContext);
-  const itemContext = useContext(FormItemContext);
+const useFormField = () => {
+  const fieldContext = React.useContext(FormFieldContext);
+  const itemContext = React.useContext(FormItemContext);
   const { getFieldState, formState } = useFormContext();
 
   const fieldState = getFieldState(fieldContext.name, formState);
 
-  if (!fieldContext.name) {
+  if (!fieldContext) {
     throw new Error("useFormField should be used within <FormField>");
   }
 
-  const id = itemContext.id;
+  const { id } = itemContext;
 
   return {
     id,
@@ -80,11 +61,33 @@ function useFormField() {
     formMessageId: `${id}-form-item-message`,
     ...fieldState,
   };
-}
+};
+
+type FormItemContextValue = {
+  id: string;
+};
+
+const FormItemContext = React.createContext<FormItemContextValue>(
+  {} as FormItemContextValue
+);
+
+const FormItem = React.forwardRef<
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement>
+>(({ className, ...props }, ref) => {
+  const id = React.useId();
+
+  return (
+    <FormItemContext.Provider value={{ id }}>
+      <div ref={ref} className={cn("space-y-2", className)} {...props} />
+    </FormItemContext.Provider>
+  );
+});
+FormItem.displayName = "FormItem";
 
 const FormLabel = React.forwardRef<
-  React.ElementRef<typeof LabelPrimitive.Root>,
-  React.ComponentPropsWithoutRef<typeof LabelPrimitive.Root>
+  React.ElementRef<typeof Label>,
+  React.ComponentPropsWithoutRef<typeof Label>
 >(({ className, ...props }, ref) => {
   const { error, formItemId } = useFormField();
 
@@ -131,7 +134,7 @@ const FormDescription = React.forwardRef<
     <p
       ref={ref}
       id={formDescriptionId}
-      className={cn("text-[0.8rem] text-muted-foreground", className)}
+      className={cn("text-body-small text-muted-foreground", className)}
       {...props}
     />
   );
@@ -153,7 +156,7 @@ const FormMessage = React.forwardRef<
     <p
       ref={ref}
       id={formMessageId}
-      className={cn("text-[0.8rem] font-medium text-destructive", className)}
+      className={cn("text-body-small font-medium text-destructive", className)}
       {...props}
     >
       {body}
@@ -164,10 +167,11 @@ FormMessage.displayName = "FormMessage";
 
 export {
   useFormField,
-  FormField,
+  Form,
   FormItem,
   FormLabel,
   FormControl,
   FormDescription,
   FormMessage,
+  FormField,
 };

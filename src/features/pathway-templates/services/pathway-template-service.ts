@@ -6,6 +6,7 @@ export interface PathwayTemplate {
   creator_id: string;
   name: string;
   description: string | null;
+  is_private: boolean; // Added is_private field
   created_at: string;
   updated_at: string;
 }
@@ -57,11 +58,12 @@ export const pathwayTemplateService = {
   async createPathwayTemplate(
     name: string,
     description: string | null,
+    is_private: boolean, // Added is_private parameter
     creator_id: string
   ): Promise<PathwayTemplate | null> {
     const { data, error } = await this.supabase
       .from("pathway_templates")
-      .insert([{ name, description, creator_id }])
+      .insert([{ name, description, is_private, creator_id }]) // Included is_private
       .select()
       .single();
 
