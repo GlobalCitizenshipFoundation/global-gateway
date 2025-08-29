@@ -83,7 +83,7 @@ export function Sidebar({ isCollapsed, toggleCollapsed, isMobile, isOpen, closeS
 
   if (isLoading) {
     return (
-      <aside className="hidden md:flex flex-col w-64 border-r border-border bg-sidebar-background p-4 space-y-6 rounded-xl shadow-lg h-full overflow-y-auto"> {/* Added h-full overflow-y-auto here */}
+      <aside className="hidden md:flex flex-col w-64 border-r border-border bg-sidebar-background p-4 space-y-6 shadow-lg h-full overflow-y-auto flex-shrink-0"> {/* Added flex-shrink-0 */}
         <Skeleton className="h-8 w-3/4 mb-6" />
         <div className="space-y-2">
           {[...Array(5)].map((_, i) => (
@@ -144,9 +144,9 @@ export function Sidebar({ isCollapsed, toggleCollapsed, isMobile, isOpen, closeS
       <aside
         className={cn(
           "flex flex-col border-r border-border bg-sidebar-background p-4 space-y-6 shadow-lg transition-all duration-300",
-          "h-full overflow-y-auto", // Confirmed h-full and overflow-y-auto here
+          "h-full overflow-y-auto flex-shrink-0", // Added flex-shrink-0 here
           // Desktop styles
-          !isMobile && (isCollapsed ? "w-20 rounded-xl" : "w-64 rounded-xl"),
+          !isMobile && (isCollapsed ? "w-20" : "w-64"), // Removed rounded-xl for desktop sidebar
           // Mobile styles (modal)
           isMobile && "fixed inset-y-0 left-0 z-40 w-64 transform bg-sidebar-background rounded-r-xl",
           isMobile && (isOpen ? "translate-x-0" : "-translate-x-full")
