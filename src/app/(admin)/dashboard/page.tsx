@@ -17,7 +17,7 @@ export default async function AdminDashboardPage() {
   const userRole: string = user.user_metadata?.role;
 
   if (userRole !== 'admin') {
-    redirect("/error-pages/403"); // Redirect to 403 if authenticated but not an admin
+    redirect("/error/403"); // Redirect to 403 if authenticated but not an admin
   }
 
   // Placeholder data for demonstration - in a real app, this would come from a service layer

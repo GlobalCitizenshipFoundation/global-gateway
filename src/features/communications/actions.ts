@@ -84,11 +84,11 @@ export async function getCommunicationTemplateByIdAction(id: string): Promise<Co
   } catch (error: any) {
     console.error("Error in getCommunicationTemplateByIdAction:", error.message);
     if (error.message === "UnauthorizedAccessToPrivateCommunicationTemplate") {
-      redirect("/error-pages/403");
+      redirect("/error/403");
     } else if (error.message === "CommunicationTemplateNotFound") {
-      redirect("/error-pages/404");
+      redirect("/error/404");
     } else if (error.message === "FailedToRetrieveCommunicationTemplate") {
-      redirect("/error-pages/500");
+      redirect("/error/500");
     }
     redirect("/login"); // Fallback for unauthenticated or other critical errors
   }
@@ -155,11 +155,11 @@ export async function updateCommunicationTemplateAction(id: string, formData: Fo
   } catch (error: any) {
     console.error("Error in updateCommunicationTemplateAction:", error.message);
     if (error.message === "UnauthorizedToModifyCommunicationTemplate") {
-      redirect("/error-pages/403");
+      redirect("/error/403");
     } else if (error.message === "CommunicationTemplateNotFound") {
-      redirect("/error-pages/404");
+      redirect("/error/404");
     } else if (error.message === "FailedToRetrieveCommunicationTemplate") {
-      redirect("/error-pages/500");
+      redirect("/error/500");
     }
     redirect("/login"); // Fallback for unauthenticated or other critical errors
   }
@@ -176,11 +176,11 @@ export async function deleteCommunicationTemplateAction(id: string): Promise<boo
   } catch (error: any) {
     console.error("Error in deleteCommunicationTemplateAction:", error.message);
     if (error.message === "UnauthorizedToModifyCommunicationTemplate") {
-      redirect("/error-pages/403");
+      redirect("/error/403");
     } else if (error.message === "CommunicationTemplateNotFound") {
-      redirect("/error-pages/404");
+      redirect("/error/404");
     } else if (error.message === "FailedToRetrieveCommunicationTemplate") {
-      redirect("/error-pages/500");
+      redirect("/error/500");
     }
     redirect("/login"); // Fallback for unauthenticated or other critical errors
   }

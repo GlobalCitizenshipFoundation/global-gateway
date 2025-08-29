@@ -14,7 +14,7 @@ export default async function WorkbenchDashboardPage() {
 
   // Allow 'coordinator', 'evaluator', 'screener', 'admin' roles for workbench
   if (!['coordinator', 'evaluator', 'screener', 'admin'].includes(userRole)) {
-    redirect("/error-pages/403"); // Redirect to 403 if authenticated but not authorized for workbench
+    redirect("/error/403"); // Redirect to 403 if authenticated but not authorized for workbench
   }
 
   return (

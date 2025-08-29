@@ -98,11 +98,11 @@ export async function getApplicationByIdAction(id: string): Promise<Application 
   } catch (error: any) {
     console.error("Error in getApplicationByIdAction:", error.message);
     if (error.message === "UnauthorizedAccessToApplication") {
-      redirect("/error-pages/403");
+      redirect("/error/403");
     } else if (error.message === "ApplicationNotFound") {
-      redirect("/error-pages/404");
+      redirect("/error/404");
     } else if (error.message === "FailedToRetrieveApplication") {
-      redirect("/error-pages/500");
+      redirect("/error/500");
     }
     redirect("/login"); // Fallback for unauthenticated or other critical errors
   }
@@ -179,11 +179,11 @@ export async function updateApplicationAction(id: string, formData: FormData): P
   } catch (error: any) {
     console.error("Error in updateApplicationAction:", error.message);
     if (error.message === "UnauthorizedToModifyApplication") {
-      redirect("/error-pages/403");
+      redirect("/error/403");
     } else if (error.message === "ApplicationNotFound") {
-      redirect("/error-pages/404");
+      redirect("/error/404");
     } else if (error.message === "FailedToRetrieveApplication") {
-      redirect("/error-pages/500");
+      redirect("/error/500");
     }
     throw error; // Re-throw to be caught by client-side toast
   }
@@ -201,11 +201,11 @@ export async function deleteApplicationAction(id: string): Promise<boolean> {
   } catch (error: any) {
     console.error("Error in deleteApplicationAction:", error.message);
     if (error.message === "UnauthorizedToModifyApplication") {
-      redirect("/error-pages/403");
+      redirect("/error/403");
     } else if (error.message === "ApplicationNotFound") {
-      redirect("/error-pages/404");
+      redirect("/error/404");
     } else if (error.message === "FailedToRetrieveApplication") {
-      redirect("/error-pages/500");
+      redirect("/error/500");
     }
     redirect("/login"); // Fallback for unauthenticated or other critical errors
   }
@@ -273,11 +273,11 @@ export async function getApplicationNotesAction(applicationId: string): Promise<
   } catch (error: any) {
     console.error("Error in getApplicationNotesAction:", error.message);
     if (error.message === "UnauthorizedAccessToParentApplication") {
-      redirect("/error-pages/403");
+      redirect("/error/403");
     } else if (error.message === "ApplicationNotFound") {
-      redirect("/error-pages/404");
+      redirect("/error/404");
     } else if (error.message === "FailedToRetrieveApplication") {
-      redirect("/error-pages/500");
+      redirect("/error/500");
     }
     redirect("/login"); // Fallback
   }
@@ -330,11 +330,11 @@ export async function updateApplicationNoteAction(noteId: string, formData: Form
   } catch (error: any) {
     console.error("Error in updateApplicationNoteAction:", error.message);
     if (error.message === "UnauthorizedToModifyNote") {
-      redirect("/error-pages/403");
+      redirect("/error/403");
     } else if (error.message === "NoteNotFound") {
-      redirect("/error-pages/404");
+      redirect("/error/404");
     } else if (error.message === "FailedToRetrieveNote") {
-      redirect("/error-pages/500");
+      redirect("/error/500");
     }
     throw error; // Re-throw to be caught by client-side toast
   }
@@ -353,11 +353,11 @@ export async function deleteApplicationNoteAction(noteId: string): Promise<boole
   } catch (error: any) {
     console.error("Error in deleteApplicationNoteAction:", error.message);
     if (error.message === "UnauthorizedToModifyNote") {
-      redirect("/error-pages/403");
+      redirect("/error/403");
     } else if (error.message === "NoteNotFound") {
-      redirect("/error-pages/404");
+      redirect("/error/404");
     } else if (error.message === "FailedToRetrieveNote") {
-      redirect("/error-pages/500");
+      redirect("/error/500");
     }
     throw error; // Re-throw to be caught by client-side toast
   }

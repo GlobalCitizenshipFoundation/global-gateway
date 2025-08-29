@@ -15,7 +15,7 @@ export default async function PortalDashboardPage() {
 
   // Allow 'applicant' role, and also higher roles that can access portal
   if (!['applicant', 'coordinator', 'evaluator', 'screener', 'admin'].includes(userRole)) {
-    redirect("/error-pages/403"); // Redirect to 403 if authenticated but not authorized for portal
+    redirect("/error/403"); // Redirect to 403 if authenticated but not authorized for portal
   }
 
   return (

@@ -5,7 +5,7 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // List of public routes that do not require authentication
-  const publicRoutes: string[] = ['/', '/login', '/auth/callback', '/error-pages']; // Added /error-pages to public routes
+  const publicRoutes: string[] = ['/', '/login', '/auth/callback', '/error']; // Corrected to /error
 
   // Check if the current route is a public route
   const isPublicRoute = publicRoutes.some((route: string) => pathname.startsWith(route));
@@ -21,7 +21,7 @@ export async function middleware(request: NextRequest) {
     const userRole: string = session.user?.user_metadata?.role || ''; // Ensure userRole is a string
 
     // If an authenticated user tries to access a public route, redirect them to their dashboard
-    if (isPublicRoute && pathname !== '/auth/callback' && !pathname.startsWith('/error-pages')) {
+    if (isPublicRoute && pathname !== '/auth/callback' && !pathname.startsWith('/error')) { // Corrected to /error
       if (userRole === 'admin') {
         return NextResponse.redirect(new URL('/admin/dashboard', request.url));
       } else if (['coordinator', 'evaluator', 'screener'].includes(userRole)) {
@@ -33,13 +33,13 @@ export async function middleware(request: NextRequest) {
 
     // Role-based access control for protected routes
     if (pathname.startsWith('/admin') && userRole !== 'admin') {
-      return NextResponse.redirect(new URL('/error-pages/403', request.url));
+      return NextResponse.redirect(new URL('/error/403', request.url)); // Corrected to /error/403
     }
     if (pathname.startsWith('/workbench') && !['coordinator', 'evaluator', 'screener', 'admin'].includes(userRole)) {
-      return NextResponse.redirect(new URL('/error-pages/403', request.url));
+      return NextResponse.redirect(new URL('/error/403', request.url)); // Corrected to /error/403
     }
     if (pathname.startsWith('/portal') && !['applicant', 'coordinator', 'evaluator', 'screener', 'admin'].includes(userRole)) {
-      return NextResponse.redirect(new URL('/error-pages/403', request.url));
+      return NextResponse.redirect(new URL('/error/403', request.url)); // Corrected to /error/403
     }
 
     // Continue if authenticated and authorized

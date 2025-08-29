@@ -46,11 +46,11 @@ export async function getProfileByIdAction(userId: string): Promise<Profile | nu
   } catch (error: any) {
     console.error("Error in getProfileByIdAction:", error.message);
     if (error.message === "UnauthorizedAccessToProfile") {
-      redirect("/error-pages/403");
+      redirect("/error/403");
     } else if (error.message === "ProfileNotFound") {
-      redirect("/error-pages/404");
+      redirect("/error/404");
     } else if (error.message === "FailedToRetrieveProfile") {
-      redirect("/error-pages/500");
+      redirect("/error/500");
     }
     redirect("/login"); // Fallback for unauthenticated or other critical errors
   }
@@ -87,11 +87,11 @@ export async function updateProfileDetailsAction(formData: FormData): Promise<Pr
   } catch (error: any) {
     console.error("Error in updateProfileDetailsAction:", error.message);
     if (error.message === "UnauthorizedToModifyProfile") {
-      redirect("/error-pages/403");
+      redirect("/error/403");
     } else if (error.message === "ProfileNotFound") {
-      redirect("/error-pages/404");
+      redirect("/error/404");
     } else if (error.message === "FailedToRetrieveProfile") {
-      redirect("/error-pages/500");
+      redirect("/error/500");
     }
     throw error; // Re-throw to be caught by client-side toast
   }

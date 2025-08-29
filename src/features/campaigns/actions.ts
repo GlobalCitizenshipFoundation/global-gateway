@@ -95,11 +95,11 @@ export async function getCampaignByIdAction(id: string): Promise<Campaign | null
   } catch (error: any) {
     console.error("Error in getCampaignByIdAction:", error.message);
     if (error.message === "UnauthorizedAccessToPrivateCampaign") {
-      redirect("/error-pages/403");
+      redirect("/error/403");
     } else if (error.message === "CampaignNotFound") {
-      redirect("/error-pages/404");
+      redirect("/error/404");
     } else if (error.message === "FailedToRetrieveCampaign") {
-      redirect("/error-pages/500");
+      redirect("/error/500");
     }
     redirect("/login"); // Fallback for unauthenticated or other critical errors
   }
@@ -232,11 +232,11 @@ export async function updateCampaignAction(id: string, formData: FormData): Prom
   } catch (error: any) {
     console.error("Error in updateCampaignAction:", error.message);
     if (error.message === "UnauthorizedToModifyCampaign") {
-      redirect("/error-pages/403");
+      redirect("/error/403");
     } else if (error.message === "CampaignNotFound") {
-      redirect("/error-pages/404");
+      redirect("/error/404");
     } else if (error.message === "FailedToRetrieveCampaign") { // Corrected this line
-      redirect("/error-pages/500");
+      redirect("/error/500");
     }
     redirect("/login"); // Fallback for unauthenticated or other critical errors
   }
@@ -260,11 +260,11 @@ export async function deleteCampaignAction(id: string): Promise<boolean> {
   } catch (error: any) {
     console.error("Error in deleteCampaignAction:", error.message);
     if (error.message === "UnauthorizedToModifyCampaign") {
-      redirect("/error-pages/403");
+      redirect("/error/403");
     } else if (error.message === "CampaignNotFound") {
-      redirect("/error-pages/404");
+      redirect("/error/404");
     } else if (error.message === "FailedToRetrieveCampaign") {
-      redirect("/error-pages/500");
+      redirect("/error/500");
     }
     redirect("/login"); // Fallback for unauthenticated or other critical errors
   }
@@ -280,11 +280,11 @@ export async function getCampaignPhasesAction(campaignId: string): Promise<Campa
   } catch (error: any) {
     console.error("Error in getCampaignPhasesAction:", error.message);
     if (error.message === "UnauthorizedAccessToPrivateCampaign") {
-      redirect("/error-pages/403");
+      redirect("/error/403");
     } else if (error.message === "CampaignNotFound") {
-      redirect("/error-pages/404");
+      redirect("/error/404");
     } else if (error.message === "FailedToRetrieveCampaign") {
-      redirect("/error-pages/500");
+      redirect("/error/500");
     }
     redirect("/login"); // Fallback for unauthenticated or other critical errors
   }
@@ -320,11 +320,11 @@ export async function createCampaignPhaseAction(campaignId: string, formData: Fo
   } catch (error: any) {
     console.error("Error in createCampaignPhaseAction:", error.message);
     if (error.message === "UnauthorizedToModifyCampaign") {
-      redirect("/error-pages/403");
+      redirect("/error/403");
     } else if (error.message === "CampaignNotFound") {
-      redirect("/error-pages/404");
+      redirect("/error/404");
     } else if (error.message === "FailedToRetrieveCampaign") {
-      redirect("/error-pages/500");
+      redirect("/error/500");
     }
     throw error; // Re-throw to be caught by client-side toast for form errors
   }
@@ -353,11 +353,11 @@ export async function updateCampaignPhaseAction(phaseId: string, campaignId: str
   } catch (error: any) {
     console.error("Error in updateCampaignPhaseAction:", error.message);
     if (error.message === "UnauthorizedToModifyCampaign") {
-      redirect("/error-pages/403");
+      redirect("/error/403");
     } else if (error.message === "CampaignNotFound") {
-      redirect("/error-pages/404");
+      redirect("/error/404");
     } else if (error.message === "FailedToRetrieveCampaign") {
-      redirect("/error-pages/500");
+      redirect("/error/500");
     }
     throw error; // Re-throw to be caught by client-side toast
   }
@@ -377,11 +377,11 @@ export async function updateCampaignPhaseConfigAction(phaseId: string, campaignI
   } catch (error: any) {
     console.error("Error in updateCampaignPhaseConfigAction:", error.message);
     if (error.message === "UnauthorizedToModifyCampaign") {
-      redirect("/error-pages/403");
+      redirect("/error/403");
     } else if (error.message === "CampaignNotFound") {
-      redirect("/error-pages/404");
+      redirect("/error/404");
     } else if (error.message === "FailedToRetrieveCampaign") {
-      redirect("/error-pages/500");
+      redirect("/error/500");
     }
     throw error; // Re-throw to be caught by client-side toast
   }
@@ -398,11 +398,11 @@ export async function deleteCampaignPhaseAction(phaseId: string, campaignId: str
   } catch (error: any) {
     console.error("Error in deleteCampaignPhaseAction:", error.message);
     if (error.message === "UnauthorizedToModifyCampaign") {
-      redirect("/error-pages/403");
+      redirect("/error/403");
     } else if (error.message === "CampaignNotFound") {
-      redirect("/error-pages/404");
+      redirect("/error/404");
     } else if (error.message === "FailedToRetrieveCampaign") {
-      redirect("/error-pages/500");
+      redirect("/error/500");
     }
     throw error; // Re-throw to be caught by client-side toast
   }
@@ -422,11 +422,11 @@ export async function reorderCampaignPhasesAction(campaignId: string, phases: { 
   } catch (error: any) {
     console.error("Error in reorderCampaignPhasesAction:", error.message);
     if (error.message === "UnauthorizedToModifyCampaign") {
-      redirect("/error-pages/403");
+      redirect("/error/403");
     } else if (error.message === "CampaignNotFound") {
-      redirect("/error-pages/404");
+      redirect("/error/404");
     } else if (error.message === "FailedToRetrieveCampaign") {
-      redirect("/error-pages/500");
+      redirect("/error/500");
     }
     throw error; // Re-throw to be caught by client-side toast
   }

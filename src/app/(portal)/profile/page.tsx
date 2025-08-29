@@ -17,7 +17,7 @@ export default async function ProfilePage() {
   if (!profile) {
     // This case should ideally be handled by getProfileByIdAction's redirect,
     // but as a fallback, ensure we don't render without a profile.
-    redirect("/error-pages/404");
+    redirect("/error/404");
   }
 
   return (

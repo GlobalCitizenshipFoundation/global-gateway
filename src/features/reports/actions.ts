@@ -18,7 +18,7 @@ async function authorizeReportAccess(): Promise<{ user: any; isAdmin: boolean }>
 
   // For now, only admins and coordinators can view reports
   if (!isAdmin && userRole !== 'coordinator') {
-    redirect("/error-pages/403");
+    redirect("/error/403");
   }
 
   return { user, isAdmin };
@@ -33,7 +33,7 @@ export async function getApplicationOverviewReportAction(): Promise<ApplicationO
   } catch (error: any) {
     console.error("Error in getApplicationOverviewReportAction:", error.message);
     if (error.message === "UnauthorizedAccess") {
-      redirect("/error-pages/403");
+      redirect("/error/403");
     }
     redirect("/login"); // Fallback for unauthenticated or other critical errors
   }

@@ -88,11 +88,11 @@ export async function getProgramByIdAction(id: string): Promise<Program | null> 
   } catch (error: any) {
     console.error("Error in getProgramByIdAction:", error.message);
     if (error.message === "UnauthorizedAccessToProgram") {
-      redirect("/error-pages/403");
+      redirect("/error/403");
     } else if (error.message === "ProgramNotFound") {
-      redirect("/error-pages/404");
+      redirect("/error/404");
     } else if (error.message === "FailedToRetrieveProgram") {
-      redirect("/error-pages/500");
+      redirect("/error/500");
     }
     redirect("/login"); // Fallback for unauthenticated or other critical errors
   }
@@ -159,11 +159,11 @@ export async function updateProgramAction(id: string, formData: FormData): Promi
   } catch (error: any) {
     console.error("Error in updateProgramAction:", error.message);
     if (error.message === "UnauthorizedToModifyProgram") {
-      redirect("/error-pages/403");
+      redirect("/error/403");
     } else if (error.message === "ProgramNotFound") {
-      redirect("/error-pages/404");
+      redirect("/error/404");
     } else if (error.message === "FailedToRetrieveProgram") {
-      redirect("/error-pages/500");
+      redirect("/error/500");
     }
     redirect("/login"); // Fallback for unauthenticated or other critical errors
   }
@@ -180,11 +180,11 @@ export async function deleteProgramAction(id: string): Promise<boolean> {
   } catch (error: any) {
     console.error("Error in deleteProgramAction:", error.message);
     if (error.message === "UnauthorizedToModifyProgram") {
-      redirect("/error-pages/403");
+      redirect("/error/403");
     } else if (error.message === "ProgramNotFound") {
-      redirect("/error-pages/404");
+      redirect("/error/404");
     } else if (error.message === "FailedToRetrieveProgram") {
-      redirect("/error-pages/500");
+      redirect("/error/500");
     }
     redirect("/login"); // Fallback for unauthenticated or other critical errors
   }

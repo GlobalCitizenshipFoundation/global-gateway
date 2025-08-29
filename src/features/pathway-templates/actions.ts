@@ -84,11 +84,11 @@ export async function getTemplateByIdAction(id: string): Promise<PathwayTemplate
   } catch (error: any) {
     console.error("Error in getTemplateByIdAction:", error.message);
     if (error.message === "UnauthorizedAccessToPrivateTemplate") {
-      redirect("/error-pages/403");
+      redirect("/error/403");
     } else if (error.message === "TemplateNotFound") {
-      redirect("/error-pages/404");
+      redirect("/error/404");
     } else if (error.message === "FailedToRetrieveTemplate") {
-      redirect("/error-pages/500");
+      redirect("/error/500");
     }
     redirect("/login"); // Fallback for unauthenticated or other critical errors
   }
@@ -144,11 +144,11 @@ export async function updatePathwayTemplateAction(id: string, formData: FormData
   } catch (error: any) {
     console.error("Error in updatePathwayTemplateAction:", error.message);
     if (error.message === "UnauthorizedToModifyTemplate") {
-      redirect("/error-pages/403");
+      redirect("/error/403");
     } else if (error.message === "TemplateNotFound") {
-      redirect("/error-pages/404");
+      redirect("/error/404");
     } else if (error.message === "FailedToRetrieveTemplate") {
-      redirect("/error-pages/500");
+      redirect("/error/500");
     }
     redirect("/login"); // Fallback for unauthenticated or other critical errors
   }
@@ -165,11 +165,11 @@ export async function deletePathwayTemplateAction(id: string): Promise<boolean> 
   } catch (error: any) {
     console.error("Error in deletePathwayTemplateAction:", error.message);
     if (error.message === "UnauthorizedToModifyTemplate") {
-      redirect("/error-pages/403");
+      redirect("/error/403");
     } else if (error.message === "TemplateNotFound") {
-      redirect("/error-pages/404");
+      redirect("/error/404");
     } else if (error.message === "FailedToRetrieveTemplate") {
-      redirect("/error-pages/500");
+      redirect("/error/500");
     }
     redirect("/login"); // Fallback for unauthenticated or other critical errors
   }
@@ -185,11 +185,11 @@ export async function getPhasesAction(pathwayTemplateId: string): Promise<Phase[
   } catch (error: any) {
     console.error("Error in getPhasesAction:", error.message);
     if (error.message === "UnauthorizedAccessToPrivateTemplate") {
-      redirect("/error-pages/403");
+      redirect("/error/403");
     } else if (error.message === "TemplateNotFound") {
-      redirect("/error-pages/404");
+      redirect("/error/404");
     } else if (error.message === "FailedToRetrieveTemplate") {
-      redirect("/error-pages/500");
+      redirect("/error/500");
     }
     redirect("/login"); // Fallback for unauthenticated or other critical errors
   }
@@ -221,11 +221,11 @@ export async function createPhaseAction(pathwayTemplateId: string, formData: For
   } catch (error: any) {
     console.error("Error in createPhaseAction:", error.message);
     if (error.message === "UnauthorizedToModifyTemplate") {
-      redirect("/error-pages/403");
+      redirect("/error/403");
     } else if (error.message === "TemplateNotFound") {
-      redirect("/error-pages/404");
+      redirect("/error/404");
     } else if (error.message === "FailedToRetrieveTemplate") {
-      redirect("/error-pages/500");
+      redirect("/error/500");
     }
     throw error; // Re-throw to be caught by client-side toast for form errors
   }
@@ -254,11 +254,11 @@ export async function updatePhaseAction(phaseId: string, pathwayTemplateId: stri
   } catch (error: any) {
     console.error("Error in updatePhaseAction:", error.message);
     if (error.message === "UnauthorizedToModifyTemplate") {
-      redirect("/error-pages/403");
+      redirect("/error/403");
     } else if (error.message === "TemplateNotFound") {
-      redirect("/error-pages/404");
+      redirect("/error/404");
     } else if (error.message === "FailedToRetrieveTemplate") {
-      redirect("/error-pages/500");
+      redirect("/error/500");
     }
     throw error; // Re-throw to be caught by client-side toast
   }
@@ -278,11 +278,11 @@ export async function updatePhaseConfigAction(phaseId: string, pathwayTemplateId
   } catch (error: any) {
     console.error("Error in updatePhaseConfigAction:", error.message);
     if (error.message === "UnauthorizedToModifyTemplate") {
-      redirect("/error-pages/403");
+      redirect("/error/403");
     } else if (error.message === "TemplateNotFound") {
-      redirect("/error-pages/404");
+      redirect("/error/404");
     } else if (error.message === "FailedToRetrieveTemplate") {
-      redirect("/error-pages/500");
+      redirect("/error/500");
     }
     throw error; // Re-throw to be caught by client-side toast
   }
@@ -299,11 +299,11 @@ export async function deletePhaseAction(phaseId: string, pathwayTemplateId: stri
   } catch (error: any) {
     console.error("Error in deletePhaseAction:", error.message);
     if (error.message === "UnauthorizedToModifyTemplate") {
-      redirect("/error-pages/403");
+      redirect("/error/403");
     } else if (error.message === "TemplateNotFound") {
-      redirect("/error-pages/404");
+      redirect("/error/404");
     } else if (error.message === "FailedToRetrieveTemplate") {
-      redirect("/error-pages/500");
+      redirect("/error/500");
     }
     throw error; // Re-throw to be caught by client-side toast
   }
@@ -323,11 +323,11 @@ export async function reorderPhasesAction(pathwayTemplateId: string, phases: { i
   } catch (error: any) {
     console.error("Error in reorderPhasesAction:", error.message);
     if (error.message === "UnauthorizedToModifyTemplate") {
-      redirect("/error-pages/403");
+      redirect("/error/403");
     } else if (error.message === "TemplateNotFound") {
-      redirect("/error-pages/404");
+      redirect("/error/404");
     } else if (error.message === "FailedToRetrieveTemplate") {
-      redirect("/error-pages/500");
+      redirect("/error/500");
     }
     throw error; // Re-throw to be caught by client-side toast
   }
@@ -350,11 +350,11 @@ export async function clonePathwayTemplateAction(templateId: string, newName: st
   } catch (error: any) {
     console.error("Error in clonePathwayTemplateAction authorization:", error.message);
     if (error.message === "UnauthorizedAccessToPrivateTemplate") {
-      redirect("/error-pages/403");
+      redirect("/error/403");
     } else if (error.message === "TemplateNotFound") {
-      redirect("/error-pages/404");
+      redirect("/error/404");
     } else if (error.message === "FailedToRetrieveTemplate") {
-      redirect("/error-pages/500");
+      redirect("/error/500");
     }
     redirect("/login"); // Fallback for unauthenticated or other critical errors
   }

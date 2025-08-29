@@ -97,9 +97,9 @@ The project follows a modular and domain-driven directory structure, aligning wi
     *   It also handles redirection for logged-in users attempting to access public pages, sending them to their appropriate dashboard.
 *   **Public Homepage (`src/app/page.tsx`):**
     *   The public homepage has been enhanced with a welcoming message, a description of Global Gateway's offerings (Programs, Hiring, Awards), and clear calls to action for new and returning users. It uses `Card` components and Lucide icons for a visually appealing layout, adhering to M3 design principles, and now utilizes the new `onPrimary` button variant in the hero section.
-*   **Error Handling (`src/app/error.tsx` and `src/app/(public)/error-pages/[code]/page.tsx`):**
+*   **Error Handling (`src/app/error.tsx` and `src/app/(public)/error/[code]/page.tsx`):**
     *   A global client-side error boundary (`src/app/error.tsx`) has been implemented to catch unexpected React errors and provide a user-friendly fallback.
-    *   Dynamic error pages (`src/app/(public)/error-pages/[code]/page.tsx`) have been created to handle specific HTTP status codes (401, 403, 404, 500) with tailored messages, icons, and actionable buttons, ensuring a consistent and helpful user experience during errors.
+    *   Dynamic error pages (`src/app/(public)/error/[code]/page.tsx`) have been created to handle specific HTTP status codes (401, 403, 404, 500) with tailored messages, icons, and actionable buttons, ensuring a consistent and helpful user experience during errors.
 *   **Authentication Service (`src/services/auth-service.ts`):**
     *   A utility service `authService` has been created to abstract common Supabase authentication operations like `signOut`, `getUser`, and `getSession`. This promotes reusability and keeps component logic clean.
 *   **Header (`src/components/layout/Header.tsx`):**
@@ -458,4 +458,4 @@ The project follows a modular and domain-driven directory structure, aligning wi
     *   The remaining two columns are left empty for future content.
 *   **Dashboard Access Control (`src/app/(admin)/dashboard/page.tsx`, `src/app/(portal)/dashboard/page.tsx`, `src/app/(workbench)/dashboard/page.tsx`):**
     *   The internal role-based authorization checks within each dashboard page have been updated.
-    *   If an authenticated user attempts to access a dashboard for which they do not have the required role, they are now explicitly redirected to the `/error-pages/403` (Forbidden) page. This ensures consistent and informative error feedback, preventing potential fallback to `/login` or unexpected 404 errors for authenticated but unauthorized users.
+    *   If an authenticated user attempts to access a dashboard for which they do not have the required role, they are now explicitly redirected to the `/error/403` (Forbidden) page. This ensures consistent and informative error feedback, preventing potential fallback to `/login` or unexpected 404 errors for authenticated but unauthorized users.
