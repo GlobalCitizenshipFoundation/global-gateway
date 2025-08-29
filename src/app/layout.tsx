@@ -31,7 +31,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning className="h-full">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased flex flex-col h-full`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased h-full body-with-fixed-header`} // Apply padding-top here
       >
         <ThemeProvider
           attribute="class"
@@ -41,9 +41,9 @@ export default function RootLayout({
         >
           <SessionContextProvider>
             <LayoutContextProvider>
-              <Header /> {/* Universal Header is now fixed */}
-              {/* This div will take the remaining height below the fixed header */}
-              <div className="flex flex-row w-full overflow-hidden" style={{ height: 'calc(100vh - var(--header-height))' }}>
+              <Header /> {/* Fixed header */}
+              {/* This div now takes full height of the remaining space after body padding */}
+              <div className="flex flex-row flex-1 h-full overflow-hidden">
                 {children}
               </div>
             </LayoutContextProvider>

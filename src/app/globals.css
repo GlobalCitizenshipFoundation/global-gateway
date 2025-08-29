@@ -6,9 +6,12 @@
   html, body {
     height: 100%; /* Ensure html and body take full viewport height */
     margin: 0; /* Remove default body margin */
+    /* Ensure no default padding/margin on html/body */
   }
 
   :root {
+    --header-height: 64px; /* Define header height here */
+
     /* Light Theme Colors */
     --background: 0 0% 98%; /* Neutral 98 */
     --foreground: 0 0% 10%; /* Neutral 10 */
@@ -136,5 +139,9 @@
     --sidebar-accent-foreground: 0 0% 90%;
     --sidebar-border: 0 0% 30%;
     --sidebar-ring: 339 100% 70%;
+  }
+
+  .body-with-fixed-header {
+    padding-top: var(--header-height);
   }
 }
