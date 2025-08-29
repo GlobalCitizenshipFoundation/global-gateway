@@ -36,8 +36,7 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
           </aside>
         )}
         <main className={cn(
-          "flex-1 p-8 flex items-center justify-center bg-background text-foreground transition-all duration-300 h-full overflow-y-auto", // Added h-full and overflow-y-auto
-          !isMobile && "ml-20" // Match collapsed sidebar width
+          "flex-1 p-8 flex items-center justify-center bg-background text-foreground transition-all duration-300 h-full overflow-y-auto"
         )}>
           <div className="flex flex-col items-center space-y-4">
             <Skeleton className="h-12 w-64 rounded-md" />
@@ -54,7 +53,8 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
     return null;
   }
 
-  const mainContentMargin = isSidebarCollapsed ? "ml-20" : "ml-64";
+  // Removed mainContentMargin as flex-1 on main will handle space distribution
+  // The sidebar's width will naturally push the main content.
 
   return (
     <div className="flex flex-1 h-full">
@@ -90,8 +90,7 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
 
       <main
         className={cn(
-          "flex-1 p-8 bg-background text-foreground transition-all duration-300 h-full overflow-y-auto", // Added h-full and overflow-y-auto
-          !isMobile && mainContentMargin
+          "flex-1 p-8 bg-background text-foreground transition-all duration-300 h-full overflow-y-auto"
         )}
       >
         {children}
