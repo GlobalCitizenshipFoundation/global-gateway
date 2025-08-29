@@ -110,14 +110,14 @@ export function Sidebar({ isCollapsed, toggleCollapsed, isMobile, isOpen, closeS
       title: "Workbench Tools",
       items: [
         { href: "/workbench/dashboard", icon: LayoutDashboard, label: "Dashboard" },
-        { href: "/workbench/programs", icon: Briefcase, label: "Programs" }, // Added Programs link
+        { href: "/workbench/programs", icon: Briefcase, label: "Programs" },
         { href: "/workbench/pathway-templates", icon: Workflow, label: "Pathway Templates" },
         { href: "/workbench/campaigns", icon: Briefcase, label: "Campaigns" },
         { href: "/workbench/applications/screening", icon: FileText, label: "Applications Screening" },
         { href: "/workbench/evaluations/my-reviews", icon: Award, label: "My Reviews" },
         { href: "/workbench/evaluations", icon: Award, label: "Evaluations" },
         { href: "/workbench/scheduling", icon: Calendar, label: "Scheduling" },
-        { href: "/workbench/communications", icon: Mail, label: "Communications" },
+        { href: "/workbench/communications/templates", icon: Mail, label: "Communication Templates" }, // Added this line
         { href: "/workbench/reports", icon: BarChart3, label: "Reports" },
       ],
       roles: ['admin', 'coordinator', 'evaluator', 'screener', 'reviewer'],

@@ -11,6 +11,7 @@ This document provides an overview of the project's architecture, key features, 
 *   [Vertical 3: Programs & Individual Assignments](#vertical-3-programs--individual-assignments)
 *   [Vertical 4: Application Management & Screening Phase](#vertical-4-application-management--screening-phase)
 *   [Vertical 5: Review & Decision Phases](#vertical-5-review--decision-phases)
+*   [Communication & Notifications](#communication--notifications)
 
 ---
 
@@ -372,3 +373,29 @@ The project follows a modular and domain-driven directory structure, aligning wi
     *   A new navigation link for "My Reviews" has been added under "Workbench Tools."
 
 ---
+
+## Communication & Notifications
+
+**Objective:** To provide a centralized system for managing reusable communication templates (email, in-app, SMS) and integrating them into various workflow phases.
+
+**Implementation Details:**
+
+*   **Database Schema (`public.communication_templates`):**
+    *   Table created with `id`, `creator_id`, `name`, `subject`, `body`, `type` (`email`, `in-app`, `sms`), `is_public`, `created_at`, `updated_at` columns.
+    *   **Row Level Security (RLS)** enabled with policies for `SELECT` (own or public templates), `INSERT` (own templates), `UPDATE` (own templates), and `DELETE` (own templates). Admin override is handled at the Server Action layer.
+*   **Service Layer (`src/features/communications/services/communication-service.ts`):**
+    *   New service `communicationService` created with functions `getCommunicationTemplates`, `getCommunicationTemplateById`, `createCommunicationTemplate`, `updateCommunicationTemplate`, `deleteCommunicationTemplate` for CRUD operations.
+*   **Backend (Next.js Server Actions - `src/features/communications/actions.ts`):**
+    *   Server Actions `getCommunicationTemplatesAction`, `getCommunicationTemplateByIdAction`, `createCommunicationTemplateAction`, `updateCommunicationTemplateAction`, `deleteCommunicationTemplateAction` are implemented.
+    *   Authorization logic (`authorizeCommunicationTemplateAction`) is applied to all actions, checking `creator_id` and `user_metadata.role` (for 'admin' override).
+*   **Frontend (UI - `src/app/(workbench)/communications/templates/page.tsx`, `src/app/(workbench)/communications/templates/new/page.tsx`, `src/app/(workbench)/communications/templates/[id]/edit/page.tsx`, `src/features/communications/components/CommunicationTemplateList.tsx`, `src/features/communications/components/CommunicationTemplateForm.tsx`):**
+    *   **`src/app/(workbench)/communications/templates/page.tsx` (Server Component):** Renders `CommunicationTemplateList`.
+    *   **`src/app/(workbench)/communications/templates/new/page.tsx` (Server Component):** Renders `CommunicationTemplateForm` for creation.
+    *   **`src/app/(workbench)/communications/templates/[id]/edit/page.tsx` (Server Component):** Renders `CommunicationTemplateForm` for editing.
+    *   **`src/features/communications/components/CommunicationTemplateList.tsx` (Client Component):** Displays a list of communication templates with CRUD actions, search, and filters by type and ownership.
+    *   **`src/features/communications/components/CommunicationTemplateForm.tsx` (Client Component):** Form for creating/editing communication template details, including name, subject, body, type, and public/private status.
+*   **Integration with Email Phase Configuration (`src/features/pathway-templates/components/phase-configs/EmailPhaseConfig.tsx`):**
+    *   The `EmailPhaseConfig` component has been updated to fetch and display available `CommunicationTemplates` of type 'email'.
+    *   Users can now select an existing template to pre-fill the subject and body fields of the email phase configuration.
+*   **Sidebar Update (`src/components/layout/Sidebar.tsx`):**
+    *   A new navigation link for "Communication Templates" has been added under "Workbench Tools."

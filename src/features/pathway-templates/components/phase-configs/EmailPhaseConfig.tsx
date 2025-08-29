@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -19,8 +19,10 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { BaseConfigurableItem } from "../../services/pathway-template-service"; // Import BaseConfigurableItem
-import { updatePhaseConfigAction as defaultUpdatePhaseConfigAction } from "../../actions"; // Renamed default action
+import { BaseConfigurableItem } from "../../services/pathway-template-service";
+import { updatePhaseConfigAction as defaultUpdatePhaseConfigAction } from "../../actions";
+import { getCommunicationTemplatesAction, CommunicationTemplate } from "@/features/communications"; // Updated import to barrel file
+import { Skeleton } from "@/components/ui/skeleton";
 
 // Zod schema for the Email Phase configuration
 const emailPhaseConfigSchema = z.object({
@@ -28,18 +30,21 @@ const emailPhaseConfigSchema = z.object({
   body: z.string().min(1, "Email body is required."),
   recipientRoles: z.array(z.string()).min(1, "At least one recipient role is required."),
   triggerEvent: z.string().min(1, "A trigger event is required."),
+  selectedTemplateId: z.string().uuid("Invalid template ID.").nullable().optional(),
 });
 
 interface EmailPhaseConfigProps {
-  phase: BaseConfigurableItem; // Changed from Phase to BaseConfigurableItem
-  parentId: string; // Renamed from pathwayTemplateId
+  phase: BaseConfigurableItem;
+  parentId: string;
   onConfigSaved: () => void;
   canModify: boolean;
-  // Optional prop to override the default update action, now returns BaseConfigurableItem | null
   updatePhaseConfigAction?: (phaseId: string, parentId: string, configUpdates: Record<string, any>) => Promise<BaseConfigurableItem | null>;
 }
 
 export function EmailPhaseConfig({ phase, parentId, onConfigSaved, canModify, updatePhaseConfigAction }: EmailPhaseConfigProps) {
+  const [communicationTemplates, setCommunicationTemplates] = useState<CommunicationTemplate[]>([]);
+  const [isLoadingTemplates, setIsLoadingTemplates] = useState(true);
+
   const form = useForm<z.infer<typeof emailPhaseConfigSchema>>({
     resolver: zodResolver(emailPhaseConfigSchema),
     defaultValues: {
@@ -47,9 +52,40 @@ export function EmailPhaseConfig({ phase, parentId, onConfigSaved, canModify, up
       body: phase.config?.body || "",
       recipientRoles: phase.config?.recipientRoles || [],
       triggerEvent: phase.config?.triggerEvent || "",
+      selectedTemplateId: phase.config?.selectedTemplateId || null,
     },
     mode: "onChange",
   });
+
+  useEffect(() => {
+    const fetchTemplates = async () => {
+      setIsLoadingTemplates(true);
+      try {
+        const templates = await getCommunicationTemplatesAction();
+        if (templates) {
+          setCommunicationTemplates(templates);
+        }
+      } catch (error) {
+        console.error("Failed to fetch communication templates:", error);
+        toast.error("Failed to load communication templates for selection.");
+      } finally {
+        setIsLoadingTemplates(false);
+      }
+    };
+    fetchTemplates();
+  }, []);
+
+  // Effect to update subject/body when a template is selected
+  useEffect(() => {
+    const selectedTemplateId = form.watch("selectedTemplateId");
+    if (selectedTemplateId) {
+      const selectedTemplate = communicationTemplates.find(t => t.id === selectedTemplateId);
+      if (selectedTemplate) {
+        form.setValue("subject", selectedTemplate.subject);
+        form.setValue("body", selectedTemplate.body);
+      }
+    }
+  }, [form.watch("selectedTemplateId"), communicationTemplates]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const onSubmit = async (values: z.infer<typeof emailPhaseConfigSchema>) => {
     if (!canModify) {
@@ -59,7 +95,7 @@ export function EmailPhaseConfig({ phase, parentId, onConfigSaved, canModify, up
     try {
       const updatedConfig = { ...phase.config, ...values };
       const action = updatePhaseConfigAction || defaultUpdatePhaseConfigAction;
-      const result = await action(phase.id, parentId, updatedConfig); // Use parentId here
+      const result = await action(phase.id, parentId, updatedConfig);
       if (result) {
         toast.success("Email phase configuration updated successfully!");
         onConfigSaved();
@@ -94,6 +130,43 @@ export function EmailPhaseConfig({ phase, parentId, onConfigSaved, canModify, up
       <CardContent className="p-0">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+            <FormField
+              control={form.control}
+              name="selectedTemplateId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-label-large">Use Template</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value || ""} disabled={!canModify || isLoadingTemplates}>
+                    <FormControl>
+                      <SelectTrigger className="rounded-md">
+                        <SelectValue placeholder={isLoadingTemplates ? "Loading templates..." : "Select an existing template (optional)"} />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent className="rounded-md shadow-lg bg-card text-card-foreground border-border">
+                      <SelectItem value="" className="text-body-medium hover:bg-muted hover:text-muted-foreground cursor-pointer">
+                        None (Write custom email)
+                      </SelectItem>
+                      {communicationTemplates.length === 0 && !isLoadingTemplates ? (
+                        <SelectItem value="no-templates" disabled className="text-body-medium text-muted-foreground">
+                          No templates available. Create one first.
+                        </SelectItem>
+                      ) : (
+                        communicationTemplates.map((template) => (
+                          <SelectItem key={template.id} value={template.id} className="text-body-medium hover:bg-muted hover:text-muted-foreground cursor-pointer">
+                            {template.name} ({template.type}) {template.is_public ? "" : "(Private)"}
+                          </SelectItem>
+                        ))
+                      )}
+                    </SelectContent>
+                  </Select>
+                  <FormDescription className="text-body-small">
+                    Select a pre-defined communication template to pre-fill the subject and body.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
             <FormField
               control={form.control}
               name="subject"
