@@ -14,13 +14,13 @@
 
     /* Primary - derived from #E91E63 (HSL: 339, 80%, 52%) */
     --primary: 339 80% 49%; /* Primary 40 */
-    --on-primary: 0 0% 10%; /* On Primary - Changed to dark neutral for WCAG AA contrast */
+    --on-primary: 0 0% 100%; /* On Primary - Changed to white for WCAG AA contrast */
     --primary-container: 339 100% 90%; /* Primary 90 */
     --on-primary-container: 339 100% 10%; /* On Primary Container */
 
     /* Secondary - derived from #880E4F (HSL: 320, 75%, 30%) */
     --secondary: 320 75% 30%; /* Secondary 40 */
-    --on-secondary: 0 0% 10%; /* On Secondary - Changed to dark neutral for WCAG AA contrast */
+    --on-secondary: 0 0% 100%; /* On Secondary - Changed to white for WCAG AA contrast */
     --secondary-container: 320 100% 90%; /* Secondary 90 */
     --on-secondary-container: 320 100% 10%; /* On Secondary Container */
 
@@ -41,7 +41,7 @@
     --accent: 0 0% 90%; /* Neutral 90 */
     --accent-foreground: 0 0% 10%; /* Neutral 10 */
     --destructive: 0 80% 50%; /* Destructive 40 */
-    --destructive-foreground: 0 0% 10%; /* On Destructive - Changed to dark neutral for WCAG AA contrast */
+    --destructive-foreground: 0 0% 100%; /* On Destructive - Changed to white for WCAG AA contrast */
     --destructive-container: 0 100% 90%; /* Destructive 90 */
     --on-destructive-container: 0 100% 10%; /* On Destructive Container */
 
@@ -62,7 +62,7 @@
     --sidebar-background: 0 0% 95%;
     --sidebar-foreground: 0 0% 10%;
     --sidebar-primary: 339 80% 49%;
-    --sidebar-primary-foreground: 0 0% 10%; /* Changed to dark neutral for WCAG AA contrast */
+    --sidebar-primary-foreground: 0 0% 100%; /* Changed to white for WCAG AA contrast */
     --sidebar-accent: 0 0% 90%;
     --sidebar-accent-foreground: 0 0% 10%;
     --sidebar-border: 0 0% 80%;
