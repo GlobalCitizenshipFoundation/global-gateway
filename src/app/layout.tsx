@@ -42,7 +42,7 @@ export default function RootLayout({
           <SessionContextProvider>
             <LayoutContextProvider>
               <Header /> {/* Universal Header */}
-              <div className="flex flex-1 overflow-hidden"> {/* Added overflow-hidden here */}
+              <div className="flex flex-1 overflow-hidden min-h-0"> {/* Added min-h-0 here */}
                 {children}
               </div>
             </LayoutContextProvider>
