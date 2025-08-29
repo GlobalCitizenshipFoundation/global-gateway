@@ -125,7 +125,7 @@ export function Sidebar({ isCollapsed, toggleCollapsed, isMobile, isOpen, closeS
     {
       title: "Portal Tools",
       items: [
-        { href: "/portal/home", icon: LayoutDashboard, label: "Home" },
+        { href: "/portal/dashboard", icon: LayoutDashboard, label: "Home" }, // Updated href
         { href: "/portal/my-applications", icon: FileText, label: "My Applications" },
         { href: "/portal/profile", icon: UserCircle2, label: "Profile" },
       ],

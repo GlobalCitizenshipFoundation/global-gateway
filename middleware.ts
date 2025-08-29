@@ -8,6 +8,6 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    '/portal/home', // Only match this specific path
+    '/portal/:path*', // Match all routes under /portal
   ],
 };
