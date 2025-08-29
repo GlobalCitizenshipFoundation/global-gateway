@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 import { useSession } from "@/context/SessionContextProvider";
 import { useRouter } from "next/navigation";
 import { Sidebar } from "./Sidebar";
@@ -20,13 +20,20 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
   const { isSidebarOpen, toggleSidebar, isSidebarCollapsed, toggleSidebarCollapsed } = useLayout();
   const isMobile = useIsMobile();
 
-  if (isLoading) {
+  useEffect(() => {
+    if (!isLoading && !session) {
+      toast.error("You are not authenticated. Please log in.");
+      router.push("/login");
+    }
+  }, [isLoading, session, router]); // Depend on isLoading, session, and router
+
+  if (isLoading || !session) { // Keep loading state and also check for session here
     // Full-height loading overlay for the content area, with a placeholder sidebar
     return (
-      <div className="flex flex-1 h-full bg-background">
+      <div className="flex flex-1 bg-background"> {/* This div takes up the remaining space next to the header */}
         {/* Placeholder for a collapsed sidebar during loading */}
         {!isMobile && (
-          <aside className="w-20 border-r border-border bg-sidebar-background p-4 space-y-6 rounded-xl shadow-lg flex-shrink-0 h-full overflow-y-auto">
+          <aside className="w-20 border-r border-border bg-sidebar-background p-4 space-y-6 rounded-xl shadow-lg flex-shrink-0">
             <Skeleton className="h-8 w-3/4 mb-6" />
             <div className="space-y-2">
               {[...Array(5)].map((_, i) => (
@@ -36,7 +43,7 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
           </aside>
         )}
         <main className={cn(
-          "flex-1 p-8 flex items-center justify-center bg-background text-foreground transition-all duration-300 h-full overflow-y-auto"
+          "flex-1 p-8 flex items-center justify-center bg-background text-foreground transition-all duration-300 min-h-full" // Added min-h-full
         )}>
           <div className="flex flex-col items-center space-y-4">
             <Skeleton className="h-12 w-64 rounded-md" />
@@ -47,17 +54,10 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
     );
   }
 
-  if (!session) {
-    toast.error("You are not authenticated. Please log in.");
-    router.push("/login");
-    return null;
-  }
-
-  // Removed mainContentMargin as flex-1 on main will handle space distribution
-  // The sidebar's width will naturally push the main content.
+  // Removed mainContentMargin as it's no longer needed with flex-1 on main
 
   return (
-    <div className="flex flex-1 h-full">
+    <div className="flex flex-1">
       {/* Desktop Sidebar */}
       {!isMobile && (
         <Sidebar
@@ -90,7 +90,7 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
 
       <main
         className={cn(
-          "flex-1 p-8 bg-background text-foreground transition-all duration-300 h-full overflow-y-auto"
+          "flex-1 p-8 overflow-auto bg-background text-foreground transition-all duration-300 min-h-full" // Added min-h-full
         )}
       >
         {children}
