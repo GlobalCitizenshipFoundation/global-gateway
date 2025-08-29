@@ -23,7 +23,7 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
   if (isLoading) {
     // Full-height loading overlay for the content area, with a placeholder sidebar
     return (
-      <div className="flex flex-1 h-full bg-background"> {/* Added h-full here */}
+      <div className="flex flex-1 h-full bg-background">
         {/* Placeholder for a collapsed sidebar during loading */}
         {!isMobile && (
           <aside className="w-20 border-r border-border bg-sidebar-background p-4 space-y-6 rounded-xl shadow-lg flex-shrink-0 h-full overflow-y-auto">
@@ -36,7 +36,7 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
           </aside>
         )}
         <main className={cn(
-          "flex-1 p-8 flex items-center justify-center bg-background text-foreground transition-all duration-300",
+          "flex-1 p-8 flex items-center justify-center bg-background text-foreground transition-all duration-300 h-full overflow-y-auto", // Added h-full and overflow-y-auto
           !isMobile && "ml-20" // Match collapsed sidebar width
         )}>
           <div className="flex flex-col items-center space-y-4">
@@ -57,7 +57,7 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
   const mainContentMargin = isSidebarCollapsed ? "ml-20" : "ml-64";
 
   return (
-    <div className="flex flex-1 h-full"> {/* Added h-full here */}
+    <div className="flex flex-1 h-full">
       {/* Desktop Sidebar */}
       {!isMobile && (
         <Sidebar
@@ -90,7 +90,7 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
 
       <main
         className={cn(
-          "flex-1 p-8 overflow-auto bg-background text-foreground transition-all duration-300",
+          "flex-1 p-8 bg-background text-foreground transition-all duration-300 h-full overflow-y-auto", // Added h-full and overflow-y-auto
           !isMobile && mainContentMargin
         )}
       >
