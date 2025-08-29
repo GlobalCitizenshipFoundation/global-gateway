@@ -38,20 +38,48 @@ export const reportService = {
         .order("screening_status"); // Group by screening_status and count
       if (screeningStatusError) throw screeningStatusError;
 
-      // Fetch applications by campaign
-      const { data: campaignCounts, error: campaignError } = await this.supabase
+      // Fetch applications by campaign_id and count them using Supabase aggregation syntax
+      const { data: campaignIdCounts, error: campaignIdError } = await this.supabase
         .from("applications")
-        .select("campaigns(name), count")
-        .order("campaigns.name"); // Group by campaign name and count
-      if (campaignError) throw campaignError;
+        .select("campaign_id, count()") // Correct aggregation syntax
+        .returns<{ campaign_id: string | null; count: number }[]>(); // Explicitly type the return
+      if (campaignIdError) throw campaignIdError;
+
+      const campaignCountsMap = new Map<string | null, number>();
+      campaignIdCounts?.forEach((row: { campaign_id: string | null; count: number }) => {
+        campaignCountsMap.set(row.campaign_id, row.count);
+      });
+
+      // Get all unique campaign IDs from the results, excluding nulls
+      const uniqueCampaignIds = Array.from(campaignCountsMap.keys()).filter(id => id !== null) as string[];
+
+      let applicationsByCampaign: { campaignName: string; count: number }[] = [];
+
+      if (uniqueCampaignIds.length > 0) {
+        // Fetch campaign names for these IDs
+        const { data: campaignNames, error: campaignNamesError } = await this.supabase
+          .from("campaigns")
+          .select("id, name")
+          .in("id", uniqueCampaignIds);
+        if (campaignNamesError) throw campaignNamesError;
+
+        const campaignNameLookup = new Map(campaignNames?.map(c => [c.id, c.name]));
+
+        applicationsByCampaign = uniqueCampaignIds.map(id => ({
+          campaignName: campaignNameLookup.get(id) || 'Unknown Campaign',
+          count: campaignCountsMap.get(id) || 0,
+        }));
+      }
+
+      // Handle applications with null campaign_id (if any)
+      const nullCampaignCount = campaignCountsMap.get(null);
+      if (nullCampaignCount !== undefined && nullCampaignCount > 0) {
+        applicationsByCampaign.push({ campaignName: 'No Campaign', count: nullCampaignCount });
+      }
 
       const applicationsByStatus = statusCounts?.map(row => ({ status: row.status, count: row.count })) || [];
       const applicationsByScreeningStatus = screeningStatusCounts?.map(row => ({ status: row.screening_status, count: row.count })) || [];
-      const applicationsByCampaign = campaignCounts?.map((row: { campaigns: { name: string | null } | null; count: number }) => ({
-        campaignName: row.campaigns?.name || 'Unknown',
-        count: row.count,
-      })) || [];
-
+      
       const submittedApplications = applicationsByStatus.find(s => s.status === 'submitted')?.count || 0;
       const inReviewApplications = applicationsByStatus.find(s => s.status === 'in_review')?.count || 0;
       const acceptedApplications = applicationsByStatus.find(s => s.status === 'accepted')?.count || 0;
