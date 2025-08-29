@@ -1,10 +1,10 @@
 import React from "react";
-import { PublicPageLayout } from "@/components/layout/PublicPageLayout";
+import { AuthenticatedLayout } from "@/components/layout/AuthenticatedLayout";
 
 export default function PublicLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  return <PublicPageLayout>{children}</PublicPageLayout>;
+  return <AuthenticatedLayout>{children}</AuthenticatedLayout>;
 }
