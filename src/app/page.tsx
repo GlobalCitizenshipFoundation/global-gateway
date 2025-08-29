@@ -2,25 +2,11 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Globe, Award, Briefcase } from "lucide-react";
-import { ThemeToggle } from "@/components/ThemeToggle";
 import React from "react"; // Import React
 
 export default function HomePage() {
   return (
-    <div className="flex flex-col min-h-screen bg-background text-foreground">
-      {/* Header */}
-      <header className="container mx-auto p-4 flex justify-between items-center shadow-sm">
-        <Link href="/" className="text-title-large text-primary">
-          Global Gateway
-        </Link>
-        <nav className="flex items-center space-x-4">
-          <ThemeToggle />
-          <Button asChild variant="default" className="rounded-full text-label-large">
-            <Link href="/login">Login / Sign Up</Link>
-          </Button>
-        </nav>
-      </header>
-
+    <div className="flex flex-col flex-1 bg-background text-foreground">
       <main className="flex-grow">
         {/* Hero Section */}
         <section className="relative w-full py-20 md:py-32 text-center bg-gradient-to-br from-primary to-primary-container text-primary-foreground flex items-center justify-center">

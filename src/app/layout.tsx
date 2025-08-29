@@ -5,6 +5,7 @@ import { SessionContextProvider } from "@/context/SessionContextProvider";
 import { Toaster } from "@/components/ui/sonner";
 import React from "react";
 import { ThemeProvider } from "next-themes";
+import { Header } from "@/components/layout/Header"; // Import the new Header
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -29,7 +30,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased flex flex-col min-h-screen`}
       >
         <ThemeProvider
           attribute="class"
@@ -38,10 +39,11 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <SessionContextProvider>
-            <React.Fragment>
+            <Header /> {/* Universal Header */}
+            <div className="flex flex-1"> {/* This div will contain the main content and authenticated layouts */}
               {children}
-              <Toaster />
-            </React.Fragment>
+            </div>
+            <Toaster />
           </SessionContextProvider>
         </ThemeProvider>
       </body>
