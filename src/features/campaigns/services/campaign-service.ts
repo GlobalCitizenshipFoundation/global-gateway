@@ -4,6 +4,19 @@ import { createClient } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { PathwayTemplate, BaseConfigurableItem, Phase as TemplatePhase } from "@/features/pathway-templates/services/pathway-template-service";
 
+// New interface for Program
+export interface Program {
+  id: string;
+  creator_id: string;
+  name: string;
+  description: string | null;
+  start_date: string | null;
+  end_date: string | null;
+  status: 'draft' | 'active' | 'archived' | 'completed';
+  created_at: string;
+  updated_at: string;
+}
+
 export interface Campaign {
   id: string;
   pathway_template_id: string | null;
@@ -17,7 +30,9 @@ export interface Campaign {
   config: Record<string, any>;
   created_at: string;
   updated_at: string;
+  program_id: string | null; // Added program_id
   pathway_templates?: PathwayTemplate; // For joining with template data
+  programs?: Program; // For joining with program data
 }
 
 // CampaignPhase now extends BaseConfigurableItem
@@ -32,7 +47,7 @@ export const campaignService = {
   async getCampaigns(): Promise<Campaign[] | null> {
     const { data, error } = await this.supabase
       .from("campaigns")
-      .select("*, pathway_templates(id, name, description, is_private)") // Select related template data
+      .select("*, pathway_templates(id, name, description, is_private), programs(id, name, creator_id)") // Select related template and program data
       .order("created_at", { ascending: false });
 
     if (error) {
@@ -46,7 +61,7 @@ export const campaignService = {
   async getCampaignById(id: string): Promise<Campaign | null> {
     const { data, error } = await this.supabase
       .from("campaigns")
-      .select("*, pathway_templates(id, name, description, is_private)")
+      .select("*, pathway_templates(id, name, description, is_private), programs(id, name, creator_id)")
       .eq("id", id)
       .single();
 
@@ -67,12 +82,13 @@ export const campaignService = {
     is_public: boolean,
     status: 'draft' | 'active' | 'archived' | 'completed',
     config: Record<string, any>,
-    creator_id: string
+    creator_id: string,
+    program_id: string | null = null // Added program_id parameter
   ): Promise<Campaign | null> {
     const { data, error } = await this.supabase
       .from("campaigns")
-      .insert([{ name, description, pathway_template_id, start_date, end_date, is_public, status, config, creator_id }])
-      .select("*, pathway_templates(id, name, description, is_private)")
+      .insert([{ name, description, pathway_template_id, start_date, end_date, is_public, status, config, creator_id, program_id }]) // Included program_id
+      .select("*, pathway_templates(id, name, description, is_private), programs(id, name, creator_id)")
       .single();
 
     if (error) {
@@ -92,7 +108,7 @@ export const campaignService = {
       .from("campaigns")
       .update({ ...updates, updated_at: new Date().toISOString() })
       .eq("id", id)
-      .select("*, pathway_templates(id, name, description, is_private)")
+      .select("*, pathway_templates(id, name, description, is_private), programs(id, name, creator_id)")
       .single();
 
     if (error) {
@@ -183,7 +199,10 @@ export const campaignService = {
   },
 
   async deleteCampaignPhase(id: string): Promise<boolean> {
-    const { error } = await this.supabase.from("campaign_phases").delete().eq("id", id);
+    const { error } = await this.supabase
+      .from("campaign_phases")
+      .delete()
+      .eq("id", id);
 
     if (error) {
       console.error(`Error deleting campaign phase ${id}:`, error.message);

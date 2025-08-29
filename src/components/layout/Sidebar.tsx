@@ -9,7 +9,7 @@ import { useSession } from "@/context/SessionContextProvider";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Separator } from "@/components/ui/separator"; // Import Separator
+import { Separator } from "@/components/ui/separator";
 
 interface NavLinkProps {
   href: string;
@@ -83,7 +83,7 @@ export function Sidebar({ isCollapsed, toggleCollapsed, isMobile, isOpen, closeS
 
   if (isLoading) {
     return (
-      <aside className="hidden md:flex flex-col w-64 border-r border-border bg-sidebar-background p-4 space-y-6 shadow-lg flex-shrink-0 h-full overflow-y-auto"> {/* Added flex-shrink-0 */}
+      <aside className="hidden md:flex flex-col w-64 border-r border-border bg-sidebar-background p-4 space-y-6 shadow-lg flex-shrink-0 h-full overflow-y-auto">
         <Skeleton className="h-8 w-3/4 mb-6" />
         <div className="space-y-2">
           {[...Array(5)].map((_, i) => (
@@ -110,16 +110,17 @@ export function Sidebar({ isCollapsed, toggleCollapsed, isMobile, isOpen, closeS
       title: "Workbench Tools",
       items: [
         { href: "/workbench/dashboard", icon: LayoutDashboard, label: "Dashboard" },
+        { href: "/workbench/programs", icon: Briefcase, label: "Programs" }, // Added Programs link
         { href: "/workbench/pathway-templates", icon: Workflow, label: "Pathway Templates" },
         { href: "/workbench/campaigns", icon: Briefcase, label: "Campaigns" },
         { href: "/workbench/applications/screening", icon: FileText, label: "Applications Screening" },
-        { href: "/workbench/evaluations/my-reviews", icon: Award, label: "My Reviews" }, // Added My Reviews link
-        { href: "/workbench/evaluations", icon: Award, label: "Evaluations" }, // General Evaluations link
+        { href: "/workbench/evaluations/my-reviews", icon: Award, label: "My Reviews" },
+        { href: "/workbench/evaluations", icon: Award, label: "Evaluations" },
         { href: "/workbench/scheduling", icon: Calendar, label: "Scheduling" },
         { href: "/workbench/communications", icon: Mail, label: "Communications" },
         { href: "/workbench/reports", icon: BarChart3, label: "Reports" },
       ],
-      roles: ['admin', 'coordinator', 'evaluator', 'screener', 'reviewer'], // Added 'reviewer' role
+      roles: ['admin', 'coordinator', 'evaluator', 'screener', 'reviewer'],
     },
     {
       title: "Portal Tools",
@@ -128,7 +129,7 @@ export function Sidebar({ isCollapsed, toggleCollapsed, isMobile, isOpen, closeS
         { href: "/portal/my-applications", icon: FileText, label: "My Applications" },
         { href: "/portal/profile", icon: UserCircle2, label: "Profile" },
       ],
-      roles: ['admin', 'coordinator', 'evaluator', 'screener', 'applicant', 'reviewer'], // Added 'reviewer' role
+      roles: ['admin', 'coordinator', 'evaluator', 'screener', 'applicant', 'reviewer'],
     },
   ];
 
@@ -145,9 +146,9 @@ export function Sidebar({ isCollapsed, toggleCollapsed, isMobile, isOpen, closeS
       <aside
         className={cn(
           "flex flex-col border-r border-border bg-sidebar-background p-4 space-y-6 shadow-lg transition-all duration-300",
-          "h-full overflow-y-auto flex-shrink-0", // Added flex-shrink-0 here
+          "h-full overflow-y-auto flex-shrink-0",
           // Desktop styles
-          !isMobile && (isCollapsed ? "w-20" : "w-64"), // Removed rounded-xl for desktop sidebar
+          !isMobile && (isCollapsed ? "w-20" : "w-64"),
           // Mobile styles (modal)
           isMobile && "fixed inset-y-0 left-0 z-40 w-64 transform bg-sidebar-background rounded-r-xl",
           isMobile && (isOpen ? "translate-x-0" : "-translate-x-full")
@@ -163,7 +164,7 @@ export function Sidebar({ isCollapsed, toggleCollapsed, isMobile, isOpen, closeS
           <Award className="h-6 w-6" />
           {!isCollapsed && <span>Navigation</span>}
         </div>
-        <nav className="grid items-start gap-2 flex-grow"> {/* flex-grow to push toggle button to bottom */}
+        <nav className="grid items-start gap-2 flex-grow">
           {visibleNavigationSections.map((section, sectionIndex) => (
             <React.Fragment key={section.title}>
               {!isCollapsed && (
@@ -187,7 +188,7 @@ export function Sidebar({ isCollapsed, toggleCollapsed, isMobile, isOpen, closeS
             </React.Fragment>
           ))}
         </nav>
-        {!isMobile && ( // Only show toggle button on desktop
+        {!isMobile && (
           <div className={cn("mt-auto pt-4", isCollapsed ? "flex justify-center" : "flex justify-end")}>
             <Button
               variant="ghost"

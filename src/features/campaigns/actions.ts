@@ -4,6 +4,7 @@ import { campaignService, Campaign, CampaignPhase } from "@/features/campaigns/s
 import { createClient } from "@/integrations/supabase/server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { programService } from "@/features/programs/services/program-service"; // Import programService
 
 // Helper function to check user authorization for a campaign
 async function authorizeCampaignAction(campaignId: string, action: 'read' | 'write'): Promise<{ user: any; campaign: Campaign | null; isAdmin: boolean }> {
@@ -21,7 +22,7 @@ async function authorizeCampaignAction(campaignId: string, action: 'read' | 'wri
   if (campaignId) {
     const { data, error } = await supabase
       .from("campaigns")
-      .select("*")
+      .select("*, programs(creator_id)") // Fetch program creator_id for authorization
       .eq("id", campaignId)
       .single();
 
@@ -39,12 +40,17 @@ async function authorizeCampaignAction(campaignId: string, action: 'read' | 'wri
     throw new Error("CampaignNotFound");
   }
 
+  // Authorization logic
+  const isCampaignCreator = user.id === campaign?.creator_id;
+  const isProgramCreator = campaign?.program_id && user.id === campaign?.programs?.creator_id;
+  const isPublicCampaign = campaign?.is_public;
+
   if (action === 'read') {
-    if (!isAdmin && campaign && campaign.is_public === false && campaign.creator_id !== user.id) {
+    if (!isAdmin && !isCampaignCreator && !isProgramCreator && !isPublicCampaign) {
       throw new Error("UnauthorizedAccessToPrivateCampaign");
     }
   } else if (action === 'write') { // For 'write' actions (update, delete)
-    if (!isAdmin && campaign && campaign.creator_id !== user.id) {
+    if (!isAdmin && !isCampaignCreator && !isProgramCreator) {
       throw new Error("UnauthorizedToModifyCampaign");
     }
   }
@@ -65,7 +71,7 @@ export async function getCampaignsAction(): Promise<Campaign[] | null> {
 
   const { data, error } = await supabase
     .from("campaigns")
-    .select("*, pathway_templates(id, name, description, is_private)")
+    .select("*, pathway_templates(id, name, description, is_private), programs(id, name, creator_id)") // Select program data
     .order("created_at", { ascending: false });
 
   if (error) {
@@ -73,7 +79,12 @@ export async function getCampaignsAction(): Promise<Campaign[] | null> {
     return null;
   }
 
-  const filteredData = data.filter(campaign => isAdmin || campaign.creator_id === user.id || campaign.is_public);
+  const filteredData = data.filter(campaign =>
+    isAdmin ||
+    campaign.creator_id === user.id ||
+    campaign.is_public ||
+    (campaign.program_id && campaign.programs?.creator_id === user.id) // Program creator can see campaigns in their programs
+  );
   return filteredData as Campaign[];
 }
 
@@ -109,10 +120,25 @@ export async function createCampaignAction(formData: FormData): Promise<Campaign
   const end_date = formData.get("end_date") as string | null;
   const is_public = formData.get("is_public") === "on";
   const status = formData.get("status") as Campaign['status'];
-  const config = JSON.parse(formData.get("config") as string || '{}'); // Ensure config is parsed
+  const config = JSON.parse(formData.get("config") as string || '{}');
+  const program_id = formData.get("program_id") as string | null; // Get program_id from form data
 
   if (!name || !status) {
     throw new Error("Campaign name and status are required.");
+  }
+
+  // Additional authorization check for program_id (since RLS is simplified)
+  if (program_id) {
+    const userRole: string = user.user_metadata?.role || '';
+    const isAdmin = userRole === 'admin';
+    const program = await programService.getProgramById(program_id);
+
+    if (!program) {
+      throw new Error("Linked program not found.");
+    }
+    if (!isAdmin && program.creator_id !== user.id) {
+      throw new Error("Unauthorized to link campaign to this program.");
+    }
   }
 
   let newCampaign: Campaign | null = null;
@@ -126,7 +152,8 @@ export async function createCampaignAction(formData: FormData): Promise<Campaign
       is_public,
       status,
       config,
-      user.id
+      user.id,
+      program_id // Pass program_id to service
     );
 
     // If a pathway template was selected, deep copy its phases to campaign_phases
@@ -135,6 +162,9 @@ export async function createCampaignAction(formData: FormData): Promise<Campaign
     }
 
     revalidatePath("/workbench/campaigns");
+    if (program_id) {
+      revalidatePath(`/workbench/programs/${program_id}`); // Revalidate parent program page
+    }
     return newCampaign;
   } catch (error: any) {
     console.error("Error in createCampaignAction:", error.message);
@@ -150,7 +180,11 @@ export async function createCampaignAction(formData: FormData): Promise<Campaign
 
 export async function updateCampaignAction(id: string, formData: FormData): Promise<Campaign | null> {
   try {
-    await authorizeCampaignAction(id, 'write'); // Authorize before update
+    const { user, campaign, isAdmin } = await authorizeCampaignAction(id, 'write'); // Authorize before update
+
+    if (!campaign) {
+      throw new Error("CampaignNotFound");
+    }
 
     const name = formData.get("name") as string;
     const description = formData.get("description") as string | null;
@@ -160,26 +194,47 @@ export async function updateCampaignAction(id: string, formData: FormData): Prom
     const is_public = formData.get("is_public") === "on";
     const status = formData.get("status") as Campaign['status'];
     const config = JSON.parse(formData.get("config") as string || '{}');
+    const program_id = formData.get("program_id") as string | null; // Get program_id from form data
 
     if (!name || !status) {
       throw new Error("Campaign name and status are required.");
     }
 
+    // Additional authorization check if program_id is being changed or set
+    if (program_id !== campaign.program_id) {
+      if (program_id) { // If linking to a new program
+        const program = await programService.getProgramById(program_id);
+        if (!program) {
+          throw new Error("Linked program not found.");
+        }
+        if (!isAdmin && program.creator_id !== user.id) {
+          throw new Error("Unauthorized to link campaign to this program.");
+        }
+      } else { // If unlinking from a program
+        // No specific check needed, as unlinking is generally allowed if user can modify campaign
+      }
+    }
+
     const updatedCampaign = await campaignService.updateCampaign(
       id,
-      { name, description, pathway_template_id, start_date, end_date, is_public, status, config }
+      { name, description, pathway_template_id, start_date, end_date, is_public, status, config, program_id } // Pass program_id to service
     );
 
     revalidatePath("/workbench/campaigns");
     revalidatePath(`/workbench/campaigns/${id}`);
+    if (campaign.program_id) {
+      revalidatePath(`/workbench/programs/${campaign.program_id}`); // Revalidate old parent program page
+    }
+    if (program_id) {
+      revalidatePath(`/workbench/programs/${program_id}`); // Revalidate new parent program page
+    }
     return updatedCampaign;
   } catch (error: any) {
     console.error("Error in updateCampaignAction:", error.message);
     if (error.message === "UnauthorizedToModifyCampaign") {
       redirect("/error-pages/403");
     } else if (error.message === "CampaignNotFound") {
-      redirect("/error-pages/404");
-    } else if (error.message === "FailedToRetrieveCampaign") {
+      redirect("/error.message === "FailedToRetrieveCampaign") {
       redirect("/error-pages/500");
     }
     redirect("/login"); // Fallback for unauthenticated or other critical errors
@@ -188,11 +243,18 @@ export async function updateCampaignAction(id: string, formData: FormData): Prom
 
 export async function deleteCampaignAction(id: string): Promise<boolean> {
   try {
-    await authorizeCampaignAction(id, 'write'); // Authorize before delete
+    const { campaign } = await authorizeCampaignAction(id, 'write'); // Authorize before delete
+
+    if (!campaign) {
+      throw new Error("CampaignNotFound");
+    }
 
     const success = await campaignService.deleteCampaign(id);
 
     revalidatePath("/workbench/campaigns");
+    if (campaign.program_id) {
+      revalidatePath(`/workbench/programs/${campaign.program_id}`); // Revalidate parent program page
+    }
     return success;
   } catch (error: any) {
     console.error("Error in deleteCampaignAction:", error.message);

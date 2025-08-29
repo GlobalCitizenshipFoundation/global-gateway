@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation"; // Import useSearchParams
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -26,16 +26,18 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { CalendarIcon } from "lucide-react";
 import { format } from "date-fns";
 import { Calendar } from "@/components/ui/calendar";
-import { Campaign } from "@/features/campaigns/services/campaign-service";
+import { Campaign, Program } from "@/features/campaigns/services/campaign-service"; // Import Program interface
 import { createCampaignAction, updateCampaignAction } from "@/features/campaigns/actions";
-import { getTemplatesAction } from "@/features/pathway-templates/actions"; // Corrected import path for getTemplatesAction
-import { PathwayTemplate } from "@/features/pathway-templates/services/pathway-template-service"; // PathwayTemplate type is from service
+import { getTemplatesAction } from "@/features/pathway-templates/actions";
+import { PathwayTemplate } from "@/features/pathway-templates/services/pathway-template-service";
+import { getProgramsAction } from "@/features/programs/actions"; // Import getProgramsAction
 import { cn } from "@/lib/utils";
 
 const formSchema = z.object({
   name: z.string().min(1, { message: "Campaign name is required." }).max(100, { message: "Name cannot exceed 100 characters." }),
   description: z.string().max(500, { message: "Description cannot exceed 500 characters." }).nullable(),
   pathway_template_id: z.string().uuid("Invalid template ID.").nullable(),
+  program_id: z.string().uuid("Invalid program ID.").nullable(), // Added program_id
   start_date: z.date().nullable(),
   end_date: z.date().nullable(),
   is_public: z.boolean(),
@@ -57,8 +59,11 @@ interface CampaignFormProps {
 
 export function CampaignForm({ initialData }: CampaignFormProps) {
   const router = useRouter();
+  const searchParams = useSearchParams(); // Use searchParams to get URL parameters
   const [pathwayTemplates, setPathwayTemplates] = useState<PathwayTemplate[]>([]);
+  const [programs, setPrograms] = useState<Program[]>([]); // State for programs
   const [isTemplatesLoading, setIsTemplatesLoading] = useState(true);
+  const [isProgramsLoading, setIsProgramsLoading] = useState(true); // State for programs loading
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -66,6 +71,7 @@ export function CampaignForm({ initialData }: CampaignFormProps) {
       name: initialData?.name || "",
       description: initialData?.description || "",
       pathway_template_id: initialData?.pathway_template_id || null,
+      program_id: initialData?.program_id || searchParams.get('programId') || null, // Pre-fill from URL or initialData
       start_date: initialData?.start_date ? new Date(initialData.start_date) : null,
       end_date: initialData?.end_date ? new Date(initialData.end_date) : null,
       is_public: initialData?.is_public ?? false,
@@ -90,6 +96,22 @@ export function CampaignForm({ initialData }: CampaignFormProps) {
       }
     };
     fetchTemplates();
+
+    const fetchPrograms = async () => {
+      setIsProgramsLoading(true);
+      try {
+        const fetchedPrograms = await getProgramsAction();
+        if (fetchedPrograms) {
+          setPrograms(fetchedPrograms);
+        }
+      } catch (error) {
+        console.error("Failed to fetch programs:", error);
+        toast.error("Failed to load programs for selection.");
+      } finally {
+        setIsProgramsLoading(false);
+      }
+    };
+    fetchPrograms();
   }, []);
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
@@ -98,6 +120,7 @@ export function CampaignForm({ initialData }: CampaignFormProps) {
       formData.append("name", values.name);
       formData.append("description", values.description || "");
       formData.append("pathway_template_id", values.pathway_template_id || "");
+      formData.append("program_id", values.program_id || ""); // Append program_id
       formData.append("start_date", values.start_date ? values.start_date.toISOString() : "");
       formData.append("end_date", values.end_date ? values.end_date.toISOString() : "");
       formData.append("is_public", values.is_public ? "on" : "off");
@@ -171,6 +194,42 @@ export function CampaignForm({ initialData }: CampaignFormProps) {
                   </FormControl>
                   <FormDescription className="text-body-small">
                     Optional: A detailed description of the campaign.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="program_id"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-label-large">Associated Program</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value || ""} disabled={isProgramsLoading}>
+                    <FormControl>
+                      <SelectTrigger className="rounded-md">
+                        <SelectValue placeholder={isProgramsLoading ? "Loading programs..." : "Select an associated program (optional)"} />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent className="rounded-md shadow-lg bg-card text-card-foreground border-border">
+                      <SelectItem value="" className="text-body-medium hover:bg-muted hover:text-muted-foreground cursor-pointer">
+                        No Program (Standalone Campaign)
+                      </SelectItem>
+                      {programs.length === 0 && !isProgramsLoading ? (
+                        <SelectItem value="no-programs" disabled className="text-body-medium text-muted-foreground">
+                          No programs available. Create one first.
+                        </SelectItem>
+                      ) : (
+                        programs.map((program) => (
+                          <SelectItem key={program.id} value={program.id} className="text-body-medium hover:bg-muted hover:text-muted-foreground cursor-pointer">
+                            {program.name}
+                          </SelectItem>
+                        ))
+                      )}
+                    </SelectContent>
+                  </Select>
+                  <FormDescription className="text-body-small">
+                    Group this campaign under an existing program.
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
