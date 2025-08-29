@@ -1,12 +1,13 @@
 import { NextResponse, type NextRequest } from 'next/server';
 
 export async function middleware(request: NextRequest) {
-  console.log(`[Dyad Middleware Test] Request for: ${request.nextUrl.pathname}`);
+  console.log(`[Dyad Middleware Test - ALL ROUTES] Request for: ${request.nextUrl.pathname}`);
   return NextResponse.next();
 }
 
-export const config = {
-  matcher: [
-    '/portal/home', // Only match this specific path for now
-  ],
-};
+// Removed matcher config to test if middleware runs for all routes
+// export const config = {
+//   matcher: [
+//     '/portal/home',
+//   ],
+// };
