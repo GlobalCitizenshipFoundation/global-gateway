@@ -296,3 +296,110 @@ Global Gateway Design System
 * Contribution model (how to propose changes)
 * Documentation updates required with each release
 * Tooling: Figma library, Storybook components, token sync pipeline
+
+
+# Perfect — let’s formalize the **Expressive Design Tactics** as an **addendum for the AI instruction SSOT**, written in a **DRY (Don’t Repeat Yourself) style**, so that repeated principles are abstracted and referenced across components. This will make it **directly actionable for AI-driven interface generation**.
+
+---
+
+# 🌟 Addendum: Expressive Design Tactics for AI Instruction SSOT
+
+**Purpose:**
+Guide the AI-builder in creating interfaces that emphasize hierarchy, clarity, and delight, using expressive techniques aligned with Material 3 principles. Each tactic is a reusable axis that can be applied across components, layouts, and workflows.
+
+---
+
+## 1. Expressive Axes
+
+These **axes define how AI can make UI elements expressive**. Apply consistently across all screens/components while avoiding redundancy.
+
+| Axis                      | Description                                               | Key Rules                                                                                                                                 | Examples / Notes                                                  |
+| ------------------------- | --------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| **Shape**                 | Use component/container shapes to communicate importance. | - Mix rounded & square corners for contrast. <br> - Larger shapes = higher emphasis. <br> - Break surrounding style to attract attention. | Cards in workflows, hero FABs, avatar containers.                 |
+| **Color**                 | Emphasize actions/content with contrast & tone.           | - Primary/high-contrast tones for main actions. <br> - Secondary/tertiary for supporting info. <br> - Avoid blending elements.            | Buttons, alerts, highlighted dashboard metrics.                   |
+| **Typography**            | Guide attention with type size, weight, spacing.          | - Larger/heavier = higher emphasis. <br> - Combine with color and shape. <br> - Maintain hierarchy per type scale.                        | Headlines, key buttons, metric labels.                            |
+| **Content Containment**   | Group related content for clarity.                        | - Use visual grouping (cards, containers). <br> - Ample spacing for critical content. <br> - Logical container hierarchy.                 | Candidate profile cards, fellowship application sections.         |
+| **Motion**                | Use fluid, natural motion to signal hierarchy/state.      | - Micro-animations for feedback (tap, drag/drop). <br> - Motion should clarify, not distract. <br> - Respect reduced-motion preference.   | Dragging Kanban cards, expanding FAB menus, form transitions.     |
+| **Component Flexibility** | Adapt components to context (device, environment).        | - Responsive layout adaptation. <br> - Components may shift based on viewport. <br> - Apply canonical layouts where needed.               | FAB placement on mobile vs desktop, toolbar actions on tablet.    |
+| **Hero Moments**          | Combine axes to create focal points.                      | - Use 1–2 hero moments per screen. <br> - Combine shape, color, typography, motion, containment. <br> - Emphasize critical interactions.  | Approve candidate action, key dashboard metric, award submission. |
+
+---
+
+## 2. DRY Implementation Principles
+
+1. **Abstract axes from components**
+
+   * Do not hard-code emphasis per component.
+   * Use **Shape / Color / Typography / Motion / Containment / Flexibility / Hero** as reusable variables.
+
+2. **Composable rules**
+
+   * Components inherit axes; e.g., a FAB automatically applies **Shape + Color + Motion**.
+   * Hero moment = composite application of 3+ axes.
+
+3. **Minimal repetition**
+
+   * Only define expressive specifics that differ from default tokens.
+   * Example: Extended FAB uses base FAB axes + extra Typography and Motion rules.
+
+4. **Context-sensitive adaptation**
+
+   * Device size → layout + component shifts.
+   * Critical actions → higher emphasis axes automatically applied.
+
+---
+
+## 3. Component Mapping to Expressive Axes
+
+| Component               | Shape                    | Color                    | Typography              | Motion                | Containment | Flexibility       | Hero Potential |
+| ----------------------- | ------------------------ | ------------------------ | ----------------------- | --------------------- | ----------- | ----------------- | -------------- |
+| App Bar                 | Elevation, rounded edges | Surface/primary tone     | Title emphasis          | Slide/scroll motion   | Optional    | Responsive        | Medium         |
+| Button Group (New)      | Rounded/rect combo       | Primary vs secondary     | Weight & size hierarchy | Ripple/press          | Grouped     | Layout adapt      | Medium         |
+| Common Buttons          | Standardized             | Primary/high-contrast    | Label emphasis          | Press scale           | N/A         | Flexible          | Medium         |
+| Extended FAB            | Rounded                  | Primary container        | Icon + label hierarchy  | Expand/collapse       | N/A         | Mobile vs Desktop | High           |
+| FAB Menu (New)          | Circular                 | Accent tone              | N/A                     | Expand animation      | Contained   | Context-aware     | High           |
+| Icon Buttons            | Shape consistency        | Accent on hover          | N/A                     | Press/ripple          | Optional    | Flexible          | Medium         |
+| Loading Indicator (New) | Circular/line shape      | Accent tone optional     | N/A                     | Spinner/shimmer       | N/A         | Contextual        | Low            |
+| Navigation Bar          | Rectangular tabs         | Active/Inactive color    | Label emphasis          | Highlight animation   | Container   | Responsive        | Medium         |
+| Navigation Rail         | Rectangular tabs         | Active/Inactive color    | Label emphasis          | Highlight animation   | Container   | Responsive        | Medium         |
+| Progress Indicators     | Circular/linear          | Accent colors for states | Optional text           | Fill animation        | N/A         | Context-aware     | Medium         |
+| Sliders                 | Rounded thumb            | Primary tone             | Label optional          | Drag motion           | Contained   | Responsive        | Medium         |
+| Split Button (New)      | Rectangular + dropdown   | Primary vs secondary     | Label hierarchy         | Press animation       | Grouped     | Context-aware     | High           |
+| Toolbars (New)          | Container shape          | Surface/primary          | Label emphasis          | Scroll/hide animation | N/A         | Adaptive          | Medium         |
+
+> Notes: All expressive axes apply **cumulatively** when multiple tactics are relevant (e.g., hero moment).
+
+---
+
+## 4. Hero Moment Guidelines
+
+* **Max 1–2 per screen**
+* **Combine axes:** Shape + Color + Typography ± Motion ± Containment
+* **Prioritize:** Emotionally impactful, primary tasks, or critical decision points.
+* **AI-builder rule:** Apply dynamic scaling and emphasis automatically when hero moment triggered.
+
+---
+
+## 5. Examples
+
+**Tablet:**
+
+* Kanban dashboard: Card elevation + subtle motion + color emphasis for hero candidate.
+* Metrics panel: Highlight top metric with primary color + larger typography + card container.
+
+**Phone:**
+
+* FAB menu: Circular shape + expand motion + accent color for critical action.
+* Bottom nav: Active tab highlighted with color + motion ripple + shape accent.
+
+---
+
+## ✅ Summary for AI Instructions
+
+1. Treat **Expressive Axes as reusable variables**; assign them dynamically.
+2. Apply **minimal repetition**: base component rules + context-specific overrides.
+3. Hero moments = **composite application of axes**.
+4. Respect **device, accessibility, and context constraints** (WCAG 2.1, motion reduction, RTL, density).
+5. Allow **experimentation**: shapes, color, typography, motion can vary while respecting system constraints.
+
+---
