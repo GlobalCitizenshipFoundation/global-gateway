@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PlusCircle, Trash2, GripVertical } from "lucide-react";
-import { BaseConfigurableItem, Phase } from "../../services/pathway-template-service"; // Import BaseConfigurableItem
+import { BaseConfigurableItem } from "../../services/pathway-template-service"; // Import BaseConfigurableItem
 import { updatePhaseConfigAction as defaultUpdatePhaseConfigAction } from "../../actions"; // Renamed default action
 import { cn } from "@/lib/utils";
 

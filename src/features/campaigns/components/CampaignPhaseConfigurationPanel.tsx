@@ -27,7 +27,9 @@ export function CampaignPhaseConfigurationPanel({
   canModify,
 }: CampaignPhaseConfigurationPanelProps) {
   // Wrapper function to adapt the existing config components to use campaign-specific action
-  const handleConfigUpdate = async (phaseId: string, configUpdates: Record<string, any>): Promise<BaseConfigurableItem | null> => {
+  const handleConfigUpdate = async (phaseId: string, parentId: string, configUpdates: Record<string, any>): Promise<BaseConfigurableItem | null> => {
+    // The parentId passed to this wrapper is actually the campaignId, which is already available.
+    // The config components expect a parentId, so we pass the campaignId.
     return await updateCampaignPhaseConfigAction(phaseId, campaignId, configUpdates);
   };
 
@@ -41,7 +43,7 @@ export function CampaignPhaseConfigurationPanel({
             onConfigSaved={onConfigSaved}
             canModify={canModify}
             // Override the default update action with the campaign-specific one
-            updatePhaseConfigAction={(phaseId, _, configUpdates) => handleConfigUpdate(phaseId, configUpdates)}
+            updatePhaseConfigAction={handleConfigUpdate}
           />
         );
       case "Review":
@@ -51,7 +53,7 @@ export function CampaignPhaseConfigurationPanel({
             parentId={campaignId}
             onConfigSaved={onConfigSaved}
             canModify={canModify}
-            updatePhaseConfigAction={(phaseId, _, configUpdates) => handleConfigUpdate(phaseId, configUpdates)}
+            updatePhaseConfigAction={handleConfigUpdate}
           />
         );
       case "Email":
@@ -61,7 +63,7 @@ export function CampaignPhaseConfigurationPanel({
             parentId={campaignId}
             onConfigSaved={onConfigSaved}
             canModify={canModify}
-            updatePhaseConfigAction={(phaseId, _, configUpdates) => handleConfigUpdate(phaseId, configUpdates)}
+            updatePhaseConfigAction={handleConfigUpdate}
           />
         );
       case "Scheduling":
@@ -71,7 +73,7 @@ export function CampaignPhaseConfigurationPanel({
             parentId={campaignId}
             onConfigSaved={onConfigSaved}
             canModify={canModify}
-            updatePhaseConfigAction={(phaseId, _, configUpdates) => handleConfigUpdate(phaseId, configUpdates)}
+            updatePhaseConfigAction={handleConfigUpdate}
           />
         );
       case "Decision":
@@ -81,7 +83,7 @@ export function CampaignPhaseConfigurationPanel({
             parentId={campaignId}
             onConfigSaved={onConfigSaved}
             canModify={canModify}
-            updatePhaseConfigAction={(phaseId, _, configUpdates) => handleConfigUpdate(phaseId, configUpdates)}
+            updatePhaseConfigAction={handleConfigUpdate}
           />
         );
       case "Recommendation":
@@ -91,7 +93,7 @@ export function CampaignPhaseConfigurationPanel({
             parentId={campaignId}
             onConfigSaved={onConfigSaved}
             canModify={canModify}
-            updatePhaseConfigAction={(phaseId, _, configUpdates) => handleConfigUpdate(phaseId, configUpdates)}
+            updatePhaseConfigAction={handleConfigUpdate}
           />
         );
       default:

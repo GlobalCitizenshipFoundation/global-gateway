@@ -290,7 +290,7 @@ export function PathwayTemplateDetail({ templateId }: PathwayTemplateDetailProps
           {configuringPhase && (
             <PhaseConfigurationPanel
               phase={configuringPhase}
-              pathwayTemplateId={templateId}
+              parentId={templateId} {/* Corrected prop name from pathwayTemplateId to parentId */}
               onConfigSaved={handleConfigSaved}
               canModify={canModifyTemplate}
             />

@@ -18,7 +18,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { BaseConfigurableItem, Phase } from "../../services/pathway-template-service"; // Import BaseConfigurableItem
+import { BaseConfigurableItem } from "../../services/pathway-template-service"; // Import BaseConfigurableItem
 import { updatePhaseConfigAction as defaultUpdatePhaseConfigAction } from "../../actions"; // Renamed default action
 
 // Zod schema for the Scheduling Phase configuration

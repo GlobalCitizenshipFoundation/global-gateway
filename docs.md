@@ -8,6 +8,7 @@ This document provides an overview of the project's architecture, key features, 
 *   [Vertical 0: Public Homepage & Role-Based Dashboards](#vertical-0-public-homepage--role-based-dashboards)
 *   [Vertical 1: Pathway Templates & Phase Configuration](#vertical-1-pathway-templates--phase-configuration)
 *   [Vertical 2: Campaign Management & Campaign Phases](#vertical-2-campaign-management--campaign-phases)
+*   [Vertical 4: Application Management & Screening Phase](#vertical-4-application-management--screening-phase)
 
 ---
 
@@ -189,7 +190,7 @@ The project follows a modular and domain-driven directory structure, aligning wi
         *   Table created with `id`, `campaign_id` (FK to `campaigns`), `original_phase_id` (FK to `phases`, nullable), `name`, `type`, `description`, `order_index`, `config` (JSONB), `created_at`, `updated_at` columns.
         *   **Row Level Security (RLS)** enabled with policies for `SELECT`, `INSERT`, `UPDATE`, and `DELETE` based on the parent `campaign_id` and the user's ownership/public access to that campaign.
     *   **Service Layer (`src/features/campaigns/services/campaign-service.ts`):**
-        *   New interface `CampaignPhase` defined.
+        *   New interface `CampaignPhase` defined, extending `BaseConfigurableItem`.
         *   Functions `getCampaignPhasesByCampaignId`, `createCampaignPhase`, `updateCampaignPhase`, `deleteCampaignPhase` are implemented.
         *   `deepCopyPhasesFromTemplate(campaignId: string, templateId: string)` function is implemented to fetch phases from a `pathway_template` and insert them as `campaign_phases` for a given `campaignId`.
     *   **Backend (Next.js Server Actions - `src/features/campaigns/actions.ts`):**
@@ -203,5 +204,21 @@ The project follows a modular and domain-driven directory structure, aligning wi
         *   `src/features/campaigns/components/CampaignPhaseFormDialog.tsx` (Client Component) is an M3 `Dialog` for creating/editing campaign phase name, type, and description, using `react-hook-form` and `zod`.
         *   `src/features/campaigns/components/CampaignPhaseConfigurationPanel.tsx` (Client Component) acts as a polymorphic component, dynamically rendering the correct configuration sub-component based on `phase.type`. It reuses the existing configuration components from `src/features/pathway-templates/components/phase-configs/` by passing a campaign-specific `updatePhaseConfigAction` prop.
 
+---
+
+## Vertical 4: Application Management & Screening Phase
+
+**Objective:** To enable applicants to submit applications and recruiters to perform initial screening, with role-based views and internal tools.
+
+**Implementation Details:**
+
+*   **Vertical 4.1: Applications Table & RLS**
+    *   **Database Schema (`public.applications`):**
+        *   Table created with `id`, `campaign_id` (FK to `campaigns`), `applicant_id` (FK to `auth.users`), `current_campaign_phase_id` (FK to `campaign_phases`), `status` (overall application status), `screening_status` (specific to screening phase), `data` (JSONB for form data), `created_at`, `updated_at`.
+        *   **Row Level Security (RLS)** enabled with policies:
+            *   Applicants can `SELECT`, `INSERT`, `UPDATE` their own applications.
+            *   Recruiters/Admins can `SELECT` applications within campaigns they have access to.
+            *   Recruiters/Admins can `UPDATE` `screening_status` and `current_campaign_phase_id` for applications within campaigns they manage.
+
 **Next Steps:**
-With the core Campaign Phases management now implemented, the next steps for **Vertical 2** will focus on refining the UI/UX, adding more advanced features for campaign phases (e.g., status tracking, linking to actual forms/reviews), and potentially integrating with other modules like application management.
+Now that the `applications` table is set up, the next step is to create the service layer and Server Actions for Application Management, and then begin building the UI for the Screening Phase, starting with a basic dashboard view for recruiters.
