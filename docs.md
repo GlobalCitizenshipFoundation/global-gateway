@@ -234,6 +234,14 @@ The project follows a modular and domain-driven directory structure, aligning wi
         *   Each application is rendered as an M3-compliant `Card` showing applicant name, campaign, current phase, and screening status with visual indicators.
         *   Action buttons allow recruiters to quickly update an application's screening status (Accept, On Hold, Deny) via `DropdownMenu` and `AlertDialog` for confirmation.
         *   `src/app/(workbench)/applications/screening/page.tsx` renders the `ScreeningDashboard` component. Access to this page is restricted to 'admin', 'coordinator', 'evaluator', and 'screener' roles.
+*   **Vertical 4.4: Applicant Detail View**
+    *   **Frontend (UI):**
+        *   `src/app/(workbench)/applications/[id]/page.tsx` is created to serve as the entry point for a single application's detail view. It fetches the application data using `getApplicationByIdAction` and passes it to the client component.
+        *   `src/features/applications/components/ApplicationDetail.tsx` (Client Component) is created. This component displays comprehensive details about the applicant and their application, including:
+            *   Applicant's name, avatar, and associated campaign.
+            *   Current phase and application status.
+            *   Submitted application data (dynamically rendered from the `data` JSONB field).
+            *   Placeholders for "Internal Checklist," "Collaborative Notes," and "Workflow Participation" sections, which will be implemented in subsequent steps.
 
 **Next Steps:**
-The next steps for **Vertical 4** will involve building out the `Applicant Detail View` for recruiters, which will include internal decision tools like a checklist repeater, collaborative notes, and a full audit trail, as well as the ability to view workflow participation.
+The immediate next steps for **Vertical 4** will involve implementing the internal decision tools within the `ApplicationDetail` view: the checklist repeater, collaborative notes with audit trails, and the visual representation of workflow participation.
