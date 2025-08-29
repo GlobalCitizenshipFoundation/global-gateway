@@ -1,2 +1,2 @@
-export * from "./components/SignInForm.tsx";
-export * from "./components/SignUpForm.tsx";
+export * from "./components/SignInForm";
+export * from "./components/SignUpForm";

@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import { useSession } from "@/context/SessionContextProvider";
 import { toast } from "sonner";
 import { Card, CardContent } from "@/components/ui/card";
-import { SignInForm, SignUpForm } from "@/features/auth"; // Updated import path
+import { SignInForm } from "@/features/auth/components/SignInForm";
+import { SignUpForm } from "@/features/auth/components/SignUpForm";
 
 export default function LoginPage() {
   const { session, isLoading } = useSession();
@@ -29,14 +30,14 @@ export default function LoginPage() {
 
   if (isLoading || session) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-background">
+      <div className="flex items-center justify-center h-full w-full bg-background">
         <p className="text-foreground text-headline-small">Loading...</p>
       </div>
     );
   }
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-background p-4">
+    <div className="flex items-center justify-center h-full w-full bg-background p-4">
       <Card className="w-full max-w-lg p-8 space-y-6 bg-card shadow-lg rounded-xl border border-border">
         <CardContent className="p-0">
           {isSigningUp ? (
