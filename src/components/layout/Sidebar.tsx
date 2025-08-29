@@ -117,8 +117,8 @@ export function Sidebar({ isCollapsed, toggleCollapsed, isMobile, isOpen, closeS
         { href: "/workbench/evaluations/my-reviews", icon: Award, label: "My Reviews" },
         { href: "/workbench/evaluations", icon: Award, label: "Evaluations" },
         { href: "/workbench/scheduling", icon: Calendar, label: "Scheduling" },
-        { href: "/workbench/communications/templates", icon: Mail, label: "Communication Templates" }, // Added this line
-        { href: "/workbench/reports", icon: BarChart3, label: "Reports" },
+        { href: "/workbench/communications/templates", icon: Mail, label: "Communication Templates" },
+        { href: "/workbench/reports", icon: BarChart3, label: "Reports" }, // Added this line
       ],
       roles: ['admin', 'coordinator', 'evaluator', 'screener', 'reviewer'],
     },

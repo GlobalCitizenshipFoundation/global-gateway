@@ -12,6 +12,7 @@ This document provides an overview of the project's architecture, key features, 
 *   [Vertical 4: Application Management & Screening Phase](#vertical-4-application-management--screening-phase)
 *   [Vertical 5: Review & Decision Phases](#vertical-5-review--decision-phases)
 *   [Communication & Notifications](#communication--notifications)
+*   [Reporting & Insights](#reporting--insights)
 
 ---
 
@@ -399,3 +400,31 @@ The project follows a modular and domain-driven directory structure, aligning wi
     *   Users can now select an existing template to pre-fill the subject and body fields of the email phase configuration.
 *   **Sidebar Update (`src/components/layout/Sidebar.tsx`):**
     *   A new navigation link for "Communication Templates" has been added under "Workbench Tools."
+
+---
+
+## Reporting & Insights
+
+**Objective:** To provide administrators and coordinators with dashboards and reports to monitor application and campaign performance.
+
+**Implementation Details:**
+
+*   **Data Layer:** Leverages existing `applications` and `campaigns` tables for data aggregation. No new database tables are created in this initial phase.
+*   **Service Layer (`src/features/reports/services/report-service.ts`):**
+    *   New service `reportService` created with `getApplicationOverviewReport()` function.
+    *   This function queries Supabase to get counts of total applications, applications by status, and applications by campaign.
+*   **Backend (Next.js Server Actions - `src/features/reports/actions.ts`):**
+    *   Server Action `getApplicationOverviewReportAction()` is implemented.
+    *   **Authorization Logic:** Access is restricted to users with 'admin' or 'coordinator' roles. Unauthorized users are redirected to a 403 error page.
+*   **Frontend (UI - `src/app/(workbench)/reports/page.tsx`, `src/features/reports/components/ReportDashboard.tsx`):**
+    *   **`src/app/(workbench)/reports/page.tsx` (Server Component):** Renders the `ReportDashboard` component.
+    *   **`src/features/reports/components/ReportDashboard.tsx` (Client Component):**
+        *   Fetches report data using `getApplicationOverviewReportAction()`.
+        *   Displays key metrics in M3-styled `Card` components (Total Applications, Pending/In Review, Accepted, Rejected).
+        *   Visualizes data using `recharts` components:
+            *   A `BarChart` for "Applications by Status".
+            *   A `PieChart` for "Applications by Campaign".
+        *   Includes loading states with `Skeleton` components.
+        *   Ensures M3 design principles for typography, colors, and component styling.
+*   **Sidebar Update (`src/components/layout/Sidebar.tsx`):**
+    *   A new navigation link for "Reports" has been added under "Workbench Tools."
