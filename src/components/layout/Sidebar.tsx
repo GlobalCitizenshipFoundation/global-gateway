@@ -144,10 +144,11 @@ export function Sidebar({ isCollapsed, toggleCollapsed, isMobile, isOpen, closeS
       <aside
         className={cn(
           "flex flex-col border-r border-border bg-sidebar-background p-4 space-y-6 shadow-lg transition-all duration-300",
+          "h-full overflow-y-auto", // Added h-full and overflow-y-auto for independent scrolling
           // Desktop styles
           !isMobile && (isCollapsed ? "w-20 rounded-xl" : "w-64 rounded-xl"),
           // Mobile styles (modal)
-          isMobile && "fixed inset-y-0 left-0 z-40 h-full w-64 transform bg-sidebar-background rounded-r-xl",
+          isMobile && "fixed inset-y-0 left-0 z-40 w-64 transform bg-sidebar-background rounded-r-xl",
           isMobile && (isOpen ? "translate-x-0" : "-translate-x-full")
         )}
       >
