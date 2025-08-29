@@ -175,7 +175,7 @@ Handle both client-side fetch errors and Next.js route-level errors gracefully.
 
 # Material Design
 
-1. Use this as the primary color #004D40 and enforce material design color system while ensuring accessibility guidelines across the theme toggles.
+1. Use this as the primary color #880E4F and enforce material design color system while ensuring accessibility guidelines across the theme toggles.
 
 2. Design and implement all interactive elements in the web application according to Google’s Material Design 3 specifications, ensuring consistent usage of motion, states, and feedback across components. Apply Material 3 principles to buttons, forms, navigation, dialogs, and transitions, maintaining accessibility and a cohesive user experience throughout the app.
 
