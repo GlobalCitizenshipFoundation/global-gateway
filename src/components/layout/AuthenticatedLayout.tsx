@@ -30,7 +30,7 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
   if (isLoading || !session) { // Keep loading state and also check for session here
     // Full-height loading overlay for the content area, with a placeholder sidebar
     return (
-      <div className="flex flex-1 bg-background h-full"> {/* Added h-full here */}
+      <div className="flex flex-1 bg-background h-full">
         {/* Placeholder for a collapsed sidebar during loading */}
         {!isMobile && (
           <aside className="w-20 border-r border-border bg-sidebar-background p-4 space-y-6 rounded-xl shadow-lg flex-shrink-0">
@@ -43,7 +43,7 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
           </aside>
         )}
         <main className={cn(
-          "flex-1 p-8 flex items-center justify-center bg-background text-foreground transition-all duration-300 min-h-0" // Added min-h-0
+          "flex-1 p-8 flex items-center justify-center bg-background text-foreground transition-all duration-300 min-h-0"
         )}>
           <div className="flex flex-col items-center space-y-4">
             <Skeleton className="h-12 w-64 rounded-md" />
@@ -55,7 +55,7 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
   }
 
   return (
-    <div className="flex flex-1 h-full"> {/* This is the target div, added h-full */}
+    <div className="flex flex-row flex-1 h-full"> {/* Explicitly flex-row and h-full */}
       {/* Desktop Sidebar */}
       {!isMobile && (
         <Sidebar
@@ -88,7 +88,7 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
 
       <main
         className={cn(
-          "flex-1 p-8 overflow-y-auto bg-background text-foreground transition-all duration-300 min-h-0" // Added min-h-0
+          "flex-1 p-8 overflow-y-auto bg-background text-foreground transition-all duration-300 min-h-0"
         )}
       >
         {children}
