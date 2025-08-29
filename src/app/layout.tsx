@@ -39,17 +39,15 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          {/* This new div ensures the main content area (header + children) correctly fills the remaining height */}
-          <div className="flex flex-col flex-1">
-            <SessionContextProvider>
-              <LayoutContextProvider>
-                <Header /> {/* Universal Header */}
-                <div className="flex flex-1 overflow-hidden min-h-0">
-                  {children}
-                </div>
-              </LayoutContextProvider>
-            </SessionContextProvider>
-          </div>
+          <SessionContextProvider>
+            <LayoutContextProvider>
+              <Header /> {/* Universal Header */}
+              {/* This div now correctly takes flex-1 of the remaining height after the Header */}
+              <div className="flex flex-1 overflow-hidden min-h-0">
+                {children}
+              </div>
+            </LayoutContextProvider>
+          </SessionContextProvider>
         </ThemeProvider>
         <Toaster />
       </body>
