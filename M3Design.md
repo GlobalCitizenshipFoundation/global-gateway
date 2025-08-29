@@ -1,310 +1,298 @@
 # Material Design 3 (M3) Design Specifications
 
+*(Material Design 3 + WCAG 2.1 Compliant)*
+
 This document outlines the strict Material Design 3 (M3) specifications to be followed for all UI/UX design and implementation within the Global Gateway application. It serves as a comprehensive guide to ensure consistency, accessibility, and a modern aesthetic across the platform.
 
-📖 Global Gateway Design System (SSOT)
+---
+
+# 📁  Design Sistem Table of Content
+
+```
+Global Gateway Design System
+│
+├── Foundations
+│   ├── Color
+│   ├── Typography
+│   ├── Shape & Elevation
+│   ├── Layout & Spacing
+│   ├── Iconography & Imagery
+│
+├── Components
+│   ├── Actions
+│   ├── Inputs & Forms
+│   ├── Navigation
+│   ├── Surfaces
+│   ├── Data Display
+│   ├── Feedback
+│
+├── Interaction
+│
+├── Motion
+│
+├── Accessibility
+│
+├── Patterns
+│   ├── Workflows & Pipelines
+│   ├── Dashboards
+│   ├── Profiles
+│   ├── Search & Filters
+│   ├── Multi-Step Flows
+│
+├── Content & Language
+│
+├── Theming & Customization
+│
+├── Testing & QA
+│
+└── Governance & Contribution
+```
+
+---
+
+## 🌱 Foundations
+
+### Colors
+
+* Brand seed (`#E91E63`), Brand extension (`#880E4F`)
+* Light & dark palettes (tokens: primary, secondary, tertiary, error, neutral)
+* Contrast validation rules (WCAG AA)
+* Usage rules (primary actions, background surfaces, accents, status colors)
+
+### Typography
 
-(Material Design 3 + WCAG 2.1 Compliant)
+* Font family (Inter / Roboto Flex)
+* Type scale table (Display → Headline → Title → Body → Label)
+* Usage guidelines (case, readability, accessibility)
 
-🌱 Foundations
-Colors
+### Shape & Elevation
 
-Brand seed (#E91E63), Brand extension (#880E4F)
+* Corner radius levels (4, 8, 16, 50%)
+* Elevation tokens (0–5)
+* Shadows & overlays in dark theme
 
-Light & dark palettes (tokens: primary, secondary, tertiary, error, neutral)
+### Layout & Spacing
 
-Contrast validation rules (WCAG AA)
+* 8px baseline grid
+* Breakpoints: xs (360), sm (600), md (960), lg (1280), xl (1600)
+* Responsive behavior (navigation, cards, forms, dashboards)
+* Density modes: comfortable vs compact (for data-heavy screens)
 
-Usage rules (primary actions, background surfaces, accents, status colors)
+### Iconography & Imagery
 
-Typography
+* Icon set: Material Symbols (outlined/filled usage)
+* Avatar rules (shapes, initials fallback, alt text)
+* Illustrations/imagery: style, do’s/don’ts
+* Fallbacks when icons/images disabled
 
-Font family (Inter / Roboto Flex)
+---
 
-Type scale table (Display → Headline → Title → Body → Label)
+## 🎛️ Components
 
-Usage guidelines (case, readability, accessibility)
+### Actions
 
-Shape & Elevation
+* Buttons (primary, secondary, tonal, FAB, icon buttons)
+* Chips (filter, input, choice, action)
+* Toggles (switches, checkboxes, radio buttons)
 
-Corner radius levels (4, 8, 16, 50%)
+### Inputs & Forms
 
-Elevation tokens (0–5)
+* Text fields (filled/outlined, states, validation)
+* Selects, dropdowns, comboboxes
+* Date pickers, file uploaders
+* Form grouping (progressive disclosure, multi-step)
+* Validation: live, on blur, on submit
 
-Shadows & overlays in dark theme
+### Navigation
 
-Layout & Spacing
+* Top app bar
+* Navigation drawer (permanent, modal)
+* Bottom navigation (mobile)
+* Breadcrumbs
+* Tabs & segmented controls
 
-8px baseline grid
+### Surfaces
 
-Breakpoints: xs (360), sm (600), md (960), lg (1280), xl (1600)
+* Cards (anatomy, content structure)
+* Sheets (modal, bottom, side)
+* Dialogs (modal, alert, confirmation)
+* Banners, snackbars, tooltips
 
-Responsive behavior (navigation, cards, forms, dashboards)
+### Data Display
 
-Density modes: comfortable vs compact (for data-heavy screens)
+* Tables (sortable, filterable, sticky headers)
+* Lists (single/multi-line, with avatars/icons)
+* Badges, progress indicators
+* Charts (bar, line, pie → with accessible text fallback)
 
-Iconography & Imagery
+### Feedback
 
-Icon set: Material Symbols (outlined/filled usage)
+* States: success, warning, error, info
+* Loaders (spinners, skeletons, shimmer)
+* Notification hierarchy (toast → snackbar → banner → modal)
 
-Avatar rules (shapes, initials fallback, alt text)
+---
 
-Illustrations/imagery: style, do’s/don’ts
+## ⚙️ Interaction Design
 
-Fallbacks when icons/images disabled
+### Universal Interaction Rules
 
-🎛️ Components
-Actions
+* Touch targets ≥ 44x44px
+* Focus states (2px ring, brand color)
+* Hover/pressed/disabled states
+* Keyboard navigation patterns (tab, enter, space, arrow)
 
-Buttons (primary, secondary, tonal, FAB, icon buttons)
+### Navigation Behavior
 
-Chips (filter, input, choice, action)
+* Responsive drawer → collapses on smaller screens
+* Skip links for accessibility
+* Search & filter flows
 
-Toggles (switches, checkboxes, radio buttons)
+### Forms Interaction
 
-Inputs & Forms
+* Error handling (inline, summary, aria-describedby)
+* Multi-step forms (with progress indicator)
+* Save/resume flows
 
-Text fields (filled/outlined, states, validation)
+### Bulk & Workflow Actions
 
-Selects, dropdowns, comboboxes
+* Multi-select + bulk actions (approve, reject, move)
+* Drag & drop with keyboard alternatives
+* Audit trails (logging and activity history)
 
-Date pickers, file uploaders
+---
 
-Form grouping (progressive disclosure, multi-step)
+## 🎞️ Motion
 
-Validation: live, on blur, on submit
+### Motion Tokens
 
-Navigation
+* Durations: short (80–120ms), medium (200–240ms), long (320–400ms)
+* Easing: decelerate in, accelerate out
 
-Top app bar
+### Motion Patterns
 
-Navigation drawer (permanent, modal)
+* Navigation transitions
+* State changes (ripple, color, scale)
+* Hierarchy (elevation + scaling)
+* Kanban card reordering
 
-Bottom navigation (mobile)
+### Accessibility
 
-Breadcrumbs
+* Respect `prefers-reduced-motion`
+* Replace translations with opacity fades
 
-Tabs & segmented controls
+---
 
-Surfaces
+## ♿ Accessibility (WCAG 2.1 AA)
 
-Cards (anatomy, content structure)
+### Contrast & Color
 
-Sheets (modal, bottom, side)
+* All text meets ≥ 4.5:1
+* Non-text UI elements ≥ 3:1
+* Color not sole means of communication
 
-Dialogs (modal, alert, confirmation)
+### Keyboard & Screen Reader
 
-Banners, snackbars, tooltips
+* Logical tab order
+* Focus visible at all times
+* ARIA roles for all interactive components
 
-Data Display
+### Dynamic Content
 
-Tables (sortable, filterable, sticky headers)
+* `aria-live` for updates
+* Alerts for critical feedback
+* Announce validation errors
 
-Lists (single/multi-line, with avatars/icons)
+### Multilingual & RTL Support
 
-Badges, progress indicators
+* RTL mirroring (Arabic, Hebrew)
+* Multi-script typography (CJK, Devanagari)
+* Date/time/currency localization
 
-Charts (bar, line, pie → with accessible text fallback)
+---
 
-Feedback
+## 📊 Patterns
 
-States: success, warning, error, info
+### Workflows & Pipelines (Recruiting / Fellowship)
 
-Loaders (spinners, skeletons, shimmer)
+* Kanban-style boards (list/listitem roles)
+* Drag & drop with keyboard equivalents
+* Announcements (“Moved to Interview, position 2”)
 
-Notification hierarchy (toast → snackbar → banner → modal)
+### Dashboards
 
-⚙️ Interaction Design
-Universal Interaction Rules
+* Grid layout with resizable widgets
+* Chart accessibility (summaries + export to table)
+* User customization (add/remove widgets)
 
-Touch targets ≥ 44x44px
+### Profiles
 
-Focus states (2px ring, brand color)
+* Profile card anatomy (avatar, name, pronouns, metadata)
+* Editable fields inline (Save/Cancel patterns)
+* Multi-language name handling
 
-Hover/pressed/disabled states
+### Search & Filters
 
-Keyboard navigation patterns (tab, enter, space, arrow)
+* Faceted search
+* Clear all filters pattern
+* Accessible advanced search
 
-Navigation Behavior
+### Multi-Step Flows
 
-Responsive drawer → collapses on smaller screens
+* Progress trackers
+* Save & resume drafts
+* Confirmation/review screens
 
-Skip links for accessibility
+---
 
-Search & filter flows
+## ✍️ Content & Language
 
-Forms Interaction
+* Voice & tone (professional, inclusive, plain language)
+* Labels & microcopy (short, action-oriented)
+* Error messaging (actionable, non-blaming)
+* Writing for accessibility (avoid jargon, expand acronyms)
+* Localization guardrails (avoid cultural references, idioms)
 
-Error handling (inline, summary, aria-describedby)
+---
 
-Multi-step forms (with progress indicator)
+## 🎨 Theming & Customization
 
-Save/resume flows
+* Multi-tenant theming (logo, accent colors)
+* Guardrails (cannot change contrast ratios, core type scale)
+* Token system (export as CSS vars, JSON, Figma tokens)
+* Branding tiers:
 
-Bulk & Workflow Actions
+  * Core theme (enforced accessibility)
+  * Tenant theme (logos, accents, illustrations)
 
-Multi-select + bulk actions (approve, reject, move)
+---
 
-Drag & drop with keyboard alternatives
+## 🧪 Testing & QA
 
-Audit trails (logging and activity history)
+### Automated Testing
 
-🎞️ Motion
-Motion Tokens
+* Lighthouse CI (≥ 90 accessibility score)
+* axe-core integration
+* Contrast checker across all tokens
 
-Durations: short (80–120ms), medium (200–240ms), long (320–400ms)
+### Manual Testing
 
-Easing: decelerate in, accelerate out
+* Keyboard-only navigation
+* Screen reader (NVDA, JAWS, VoiceOver)
+* RTL + localization testing
 
-Motion Patterns
+### Performance & Resilience
 
-Navigation transitions
+* Progressive enhancement (offline save drafts)
+* Lazy loading dashboards, prefetch forms
+* Low-bandwidth image handling
 
-State changes (ripple, color, scale)
+---
 
-Hierarchy (elevation + scaling)
+## 🏛 Governance & Contribution
 
-Kanban card reordering
-
-Accessibility
-
-Respect prefers-reduced-motion
-
-Replace translations with opacity fades
-
-♿ Accessibility (WCAG 2.1 AA)
-Contrast & Color
-
-All text meets ≥ 4.5:1
-
-Non-text UI elements ≥ 3:1
-
-Color not sole means of communication
-
-Keyboard & Screen Reader
-
-Logical tab order
-
-Focus visible at all times
-
-ARIA roles for all interactive components
-
-Dynamic Content
-
-aria-live for updates
-
-Alerts for critical feedback
-
-Announce validation errors
-
-Multilingual & RTL Support
-
-RTL mirroring (Arabic, Hebrew)
-
-Multi-script typography (CJK, Devanagari)
-
-Date/time/currency localization
-
-📊 Patterns
-Workflows & Pipelines (Recruiting / Fellowship)
-
-Kanban-style boards (list/listitem roles)
-
-Drag & drop with keyboard equivalents
-
-Announcements (“Moved to Interview, position 2”)
-
-Dashboards
-
-Grid layout with resizable widgets
-
-Chart accessibility (summaries + export to table)
-
-User customization (add/remove widgets)
-
-Profiles
-
-Profile card anatomy (avatar, name, pronouns, metadata)
-
-Editable fields inline (Save/Cancel patterns)
-
-Multi-language name handling
-
-Search & Filters
-
-Faceted search
-
-Clear all filters pattern
-
-Accessible advanced search
-
-Multi-Step Flows
-
-Progress trackers
-
-Save & resume drafts
-
-Confirmation/review screens
-
-✍️ Content & Language
-
-Voice & tone (professional, inclusive, plain language)
-
-Labels & microcopy (short, action-oriented)
-
-Error messaging (actionable, non-blaming)
-
-Writing for accessibility (avoid jargon, expand acronyms)
-
-Localization guardrails (avoid cultural references, idioms)
-
-🎨 Theming & Customization
-
-Multi-tenant theming (logo, accent colors)
-
-Guardrails (cannot change contrast ratios, core type scale)
-
-Token system (export as CSS vars, JSON, Figma tokens)
-
-Branding tiers:
-
-Core theme (enforced accessibility)
-
-Tenant theme (logos, accents, illustrations)
-
-🧪 Testing & QA
-Automated Testing
-
-Lighthouse CI (≥ 90 accessibility score)
-
-axe-core integration
-
-Contrast checker across all tokens
-
-Manual Testing
-
-Keyboard-only navigation
-
-Screen reader (NVDA, JAWS, VoiceOver)
-
-RTL + localization testing
-
-Performance & Resilience
-
-Progressive enhancement (offline save drafts)
-
-Lazy loading dashboards, prefetch forms
-
-Low-bandwidth image handling
-
-🏛 Governance & Contribution
-
-Versioning system (tokens/components)
-
-Change approval workflow (design council, dev review)
-
-Contribution model (how to propose changes)
-
-Documentation updates required with each release
-
-Tooling: Figma library, Storybook components, token sync pipeline
+* Versioning system (tokens/components)
+* Change approval workflow (design council, dev review)
+* Contribution model (how to propose changes)
+* Documentation updates required with each release
+* Tooling: Figma library, Storybook components, token sync pipeline
