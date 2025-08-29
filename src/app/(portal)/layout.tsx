@@ -1,10 +1,10 @@
 import React from "react";
-import { AuthenticatedLayout } from "@/components/layout/AuthenticatedLayout";
+// AuthenticatedLayout is removed as we are simplifying for debugging.
 
 export default function PortalLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  return <AuthenticatedLayout>{children}</AuthenticatedLayout>;
+  return <>{children}</>; // Render children directly
 }
