@@ -12,7 +12,8 @@ import { toast } from "sonner";
 import { useSession } from "@/context/SessionContextProvider";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge"; // Assuming Badge component exists
+import { Badge } from "@/components/ui/badge";
+import { ScreeningChecklist } from "./ScreeningChecklist"; // Import the new component
 
 interface ApplicationDetailProps {
   applicationId: string;
@@ -91,6 +92,10 @@ export function ApplicationDetail({ applicationId }: ApplicationDetailProps) {
 
   const applicantName = `${application.profiles?.first_name || ''} ${application.profiles?.last_name || ''}`.trim();
 
+  const userRole: string = user?.user_metadata?.role || '';
+  const isAdminOrRecruiter = ['admin', 'coordinator', 'evaluator', 'screener'].includes(userRole);
+  const canModifyApplication: boolean = isAdminOrRecruiter || application.applicant_id === user?.id; // Applicant can modify their own data, recruiters can modify screening tools
+
   return (
     <div className="space-y-8">
       <div className="flex items-center justify-between">
@@ -149,10 +154,13 @@ export function ApplicationDetail({ applicationId }: ApplicationDetailProps) {
         <CardContent className="p-0 space-y-4">
           {Object.keys(application.data).length > 0 ? (
             Object.entries(application.data).map(([key, value]) => (
-              <div key={key} className="border-b border-border pb-2 last:border-b-0">
-                <p className="text-label-large font-medium text-foreground capitalize">{key.replace(/_/g, ' ')}:</p>
-                <p className="text-body-medium text-muted-foreground">{String(value)}</p>
-              </div>
+              // Exclude internal screening data from public display
+              key !== 'screeningChecklist' && (
+                <div key={key} className="border-b border-border pb-2 last:border-b-0">
+                  <p className="text-label-large font-medium text-foreground capitalize">{key.replace(/_/g, ' ')}:</p>
+                  <p className="text-body-medium text-muted-foreground">{String(value)}</p>
+                </div>
+              )
             ))
           ) : (
             <p className="text-body-medium text-muted-foreground">No application data submitted yet.</p>
@@ -160,22 +168,15 @@ export function ApplicationDetail({ applicationId }: ApplicationDetailProps) {
         </CardContent>
       </Card>
 
-      {/* Internal Decision Tools Section (Placeholders) */}
+      {/* Internal Decision Tools Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card className="rounded-xl shadow-lg p-6">
-          <CardHeader className="p-0 mb-4">
-            <CardTitle className="text-headline-large font-bold text-foreground">Internal Checklist</CardTitle>
-            <CardDescription className="text-body-medium text-muted-foreground">
-              Track eligibility and screening criteria.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="p-0">
-            <p className="text-body-medium text-muted-foreground">
-              {/* Placeholder for Checklist Repeater */}
-              Checklist repeater component will go here.
-            </p>
-          </CardContent>
-        </Card>
+        {/* Internal Checklist */}
+        <ScreeningChecklist
+          applicationId={application.id}
+          initialChecklistData={application.data?.screeningChecklist || []}
+          canModify={isAdminOrRecruiter} // Only recruiters/admins can modify the checklist
+          onChecklistUpdated={fetchApplicationDetails} // Refresh data after update
+        />
 
         <Card className="rounded-xl shadow-lg p-6">
           <CardHeader className="p-0 mb-4">

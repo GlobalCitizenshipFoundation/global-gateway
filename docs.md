@@ -240,8 +240,9 @@ The project follows a modular and domain-driven directory structure, aligning wi
         *   `src/features/applications/components/ApplicationDetail.tsx` (Client Component) is created. This component displays comprehensive details about the applicant and their application, including:
             *   Applicant's name, avatar, and associated campaign.
             *   Current phase and application status.
-            *   Submitted application data (dynamically rendered from the `data` JSONB field).
-            *   Placeholders for "Internal Checklist," "Collaborative Notes," and "Workflow Participation" sections, which will be implemented in subsequent steps.
+            *   Submitted application data (dynamically rendered from the `data` JSONB field), with internal screening data (`screeningChecklist`) excluded from public display.
+            *   **Internal Checklist (Implemented):** The `ScreeningChecklist` component is integrated, allowing authorized users (recruiters/admins) to manage a dynamic list of checklist items with status and notes.
+            *   Placeholders for "Collaborative Notes" and "Workflow Participation" sections, which will be implemented in subsequent steps.
 
 **Next Steps:**
-The immediate next steps for **Vertical 4** will involve implementing the internal decision tools within the `ApplicationDetail` view: the checklist repeater, collaborative notes with audit trails, and the visual representation of workflow participation.
+The immediate next steps for **Vertical 4** will involve implementing the "Collaborative Notes" section within the `ApplicationDetail` view, which will include team discussions, private comments, and an audit trail.
