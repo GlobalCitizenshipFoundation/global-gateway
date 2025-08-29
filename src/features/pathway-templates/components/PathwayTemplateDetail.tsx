@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, PlusCircle, Workflow, Lock, Globe } from "lucide-react";
+import { ArrowLeft, PlusCircle, Workflow, Lock, Globe, Edit } from "lucide-react"; // Import Edit icon
 import { PathwayTemplate, Phase } from "../services/pathway-template-service";
 import { toast } from "sonner";
 import { useSession } from "@/context/SessionContextProvider";
@@ -14,6 +14,7 @@ import { getTemplateByIdAction, getPhasesAction, reorderPhasesAction, deletePhas
 import { PhaseFormDialog } from "./PhaseFormDialog";
 import { PhaseCard } from "./PhaseCard";
 import { DragDropContext, Droppable, DropResult } from "@hello-pangea/dnd"; // DND library
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"; // Import Tooltip components
 
 interface PathwayTemplateDetailProps {
   templateId: string;
@@ -143,9 +144,13 @@ export function PathwayTemplateDetail({ templateId }: PathwayTemplateDetailProps
     );
   }
 
-  const userRole: string = user?.user_metadata?.role || '';
+  // At this point, user and template are guaranteed to be non-null due to early returns
+  const currentUser = user!; // Assert user is not null
+  const currentTemplate = template!; // Assert template is not null
+
+  const userRole: string = currentUser.user_metadata?.role || '';
   const isAdmin = userRole === 'admin';
-  const canModifyTemplate = user && (template.creator_id === user.id || isAdmin);
+  const canModifyTemplate: boolean = currentTemplate.creator_id === currentUser.id || isAdmin;
 
   return (
     <div className="space-y-8">
@@ -157,7 +162,7 @@ export function PathwayTemplateDetail({ templateId }: PathwayTemplateDetailProps
         </Button>
         {canModifyTemplate && (
           <Button asChild className="rounded-full px-6 py-3 text-label-large">
-            <Link href={`/workbench/pathway-templates/${template.id}/edit`}>
+            <Link href={`/workbench/pathway-templates/${currentTemplate.id}/edit`}>
               <Edit className="mr-2 h-5 w-5" /> Edit Template Details
             </Link>
           </Button>
@@ -167,20 +172,36 @@ export function PathwayTemplateDetail({ templateId }: PathwayTemplateDetailProps
       <Card className="rounded-xl shadow-lg p-6">
         <CardHeader className="p-0 mb-4">
           <CardTitle className="text-display-small font-bold text-foreground flex items-center gap-2">
-            <Workflow className="h-7 w-7 text-primary" /> {template.name}
-            {template.is_private ? (
-              <Lock className="h-5 w-5 text-muted-foreground" title="Private Template" />
-            ) : (
-              <Globe className="h-5 w-5 text-muted-foreground" title="Public Template" />
-            )}
+            <Workflow className="h-7 w-7 text-primary" /> {currentTemplate.name}
+            <TooltipProvider>
+              {currentTemplate.is_private ? (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Lock className="h-5 w-5 text-muted-foreground" />
+                  </TooltipTrigger>
+                  <TooltipContent className="rounded-md shadow-lg bg-card text-card-foreground border-border text-body-small">
+                    Private Template
+                  </TooltipContent>
+                </Tooltip>
+              ) : (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Globe className="h-5 w-5 text-muted-foreground" />
+                  </TooltipTrigger>
+                  <TooltipContent className="rounded-md shadow-lg bg-card text-card-foreground border-border text-body-small">
+                    Public Template
+                  </TooltipContent>
+                </Tooltip>
+              )}
+            </TooltipProvider>
           </CardTitle>
           <CardDescription className="text-body-large text-muted-foreground">
-            {template.description || "No description provided for this pathway template."}
+            {currentTemplate.description || "No description provided for this pathway template."}
           </CardDescription>
         </CardHeader>
         <CardContent className="p-0 text-body-medium text-muted-foreground">
-          <p>Created: {new Date(template.created_at).toLocaleDateString()}</p>
-          <p>Last Updated: {new Date(template.updated_at).toLocaleDateString()}</p>
+          <p>Created: {new Date(currentTemplate.created_at).toLocaleDateString()}</p>
+          <p>Last Updated: {new Date(currentTemplate.updated_at).toLocaleDateString()}</p>
         </CardContent>
       </Card>
 
