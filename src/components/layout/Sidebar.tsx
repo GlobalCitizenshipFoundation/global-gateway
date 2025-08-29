@@ -83,7 +83,7 @@ export function Sidebar({ isCollapsed, toggleCollapsed, isMobile, isOpen, closeS
 
   if (isLoading) {
     return (
-      <aside className="hidden md:flex flex-col w-64 border-r border-border bg-sidebar-background p-4 space-y-6 shadow-lg h-full overflow-y-auto flex-shrink-0"> {/* Added flex-shrink-0 */}
+      <aside className="hidden md:flex flex-col w-64 border-r border-border bg-sidebar-background p-4 space-y-6 shadow-lg flex-shrink-0 h-full overflow-y-auto"> {/* Added flex-shrink-0 */}
         <Skeleton className="h-8 w-3/4 mb-6" />
         <div className="space-y-2">
           {[...Array(5)].map((_, i) => (

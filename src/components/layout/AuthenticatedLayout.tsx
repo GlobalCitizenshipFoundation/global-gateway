@@ -30,7 +30,7 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
   if (isLoading || !session) { // Keep loading state and also check for session here
     // Full-height loading overlay for the content area, with a placeholder sidebar
     return (
-      <div className="flex flex-1 bg-background h-full">
+      <div className="flex flex-row flex-1 bg-background h-full"> {/* Changed to flex-row and h-full */}
         {/* Placeholder for a collapsed sidebar during loading */}
         {!isMobile && (
           <aside className="w-20 border-r border-border bg-sidebar-background p-4 space-y-6 rounded-xl shadow-lg flex-shrink-0 h-full overflow-y-auto">
@@ -55,7 +55,7 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
   }
 
   return (
-    <div className="flex flex-row flex-1 h-full"> {/* Explicitly flex-row and h-full */}
+    <div className="flex flex-row h-full w-full overflow-hidden"> {/* This div now correctly fills the height from layout.tsx */}
       {/* Desktop Sidebar */}
       {!isMobile && (
         <Sidebar

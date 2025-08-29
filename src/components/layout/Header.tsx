@@ -44,8 +44,8 @@ export function Header() {
   };
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-border bg-background/80 backdrop-blur-sm shadow-sm">
-      <div className="container mx-auto flex h-16 items-center justify-between px-4">
+    <header className="fixed top-0 left-0 right-0 z-40 w-full border-b border-border bg-background/80 backdrop-blur-sm shadow-sm h-[var(--header-height)]">
+      <div className="container mx-auto flex h-full items-center justify-between px-4">
         {/* Mobile Menu Button */}
         {isMobile && session && ( // Only show on mobile if authenticated
           <Button variant="ghost" size="icon" className="rounded-full mr-2" onClick={toggleSidebar}>

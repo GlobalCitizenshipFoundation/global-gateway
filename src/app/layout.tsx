@@ -41,10 +41,9 @@ export default function RootLayout({
         >
           <SessionContextProvider>
             <LayoutContextProvider>
-              <Header /> {/* Universal Header */}
-              {/* This div now correctly takes flex-1 of the remaining height after the Header,
-                  and by adding overflow-hidden, it correctly delegates scrolling to its children. */}
-              <div className="flex flex-1 min-h-0 overflow-hidden">
+              <Header /> {/* Universal Header is now fixed */}
+              {/* This div will take the remaining height below the fixed header */}
+              <div className="flex flex-row w-full overflow-hidden" style={{ height: 'calc(100vh - var(--header-height))' }}>
                 {children}
               </div>
             </LayoutContextProvider>
