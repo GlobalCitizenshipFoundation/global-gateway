@@ -39,10 +39,15 @@ export function KineticText({
     return () => clearInterval(intervalId);
   }, [words, intervalMs, animationDurationMs]);
 
-  const transitionClasses = `transition-all ease-in-out duration-[${animationDurationMs}ms]`;
+  // Use a CSS variable for dynamic duration
+  const transitionStyle = {
+    "--kinetic-duration": `${animationDurationMs}ms`,
+  } as React.CSSProperties;
+
+  const transitionClasses = `transition-all ease-in-out duration-[var(--kinetic-duration)]`;
 
   return (
-    <div className={cn("relative inline-block overflow-hidden align-bottom h-[1.2em] min-w-[250px]", className)}>
+    <div className={cn("relative inline-block overflow-hidden align-bottom h-[1.2em] min-w-[250px]", className)} style={transitionStyle}>
       {/* Current word exiting */}
       <span
         key={currentWord} // Key change forces re-render and re-applies transition

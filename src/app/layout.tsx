@@ -5,7 +5,8 @@ import { SessionContextProvider } from "@/context/SessionContextProvider";
 import { Toaster } from "@/components/ui/sonner";
 import React from "react";
 import { ThemeProvider } from "next-themes";
-import { Header } from "@/components/layout/Header"; // Import the new Header
+import { Header } from "@/components/layout/Header";
+import { LayoutContextProvider } from "@/context/LayoutContext"; // Import LayoutContextProvider
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -39,10 +40,12 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <SessionContextProvider>
-            <Header /> {/* Universal Header */}
-            <div className="flex flex-1"> {/* This div will contain the main content and authenticated layouts */}
-              {children}
-            </div>
+            <LayoutContextProvider> {/* Wrap Header and children with LayoutContextProvider */}
+              <Header /> {/* Universal Header */}
+              <div className="flex flex-1"> {/* This div will contain the main content and authenticated layouts */}
+                {children}
+              </div>
+            </LayoutContextProvider>
             <Toaster />
           </SessionContextProvider>
         </ThemeProvider>

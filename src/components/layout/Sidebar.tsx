@@ -3,7 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Award, LayoutDashboard, Users, Workflow, Settings, Briefcase, FileText, Calendar, Mail, BarChart3, UserCircle2, ChevronLeft, ChevronRight } from "lucide-react";
+import { Award, LayoutDashboard, Users, Workflow, Settings, Briefcase, FileText, Calendar, Mail, BarChart3, UserCircle2, ChevronLeft, ChevronRight, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useSession } from "@/context/SessionContextProvider";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -26,11 +26,11 @@ const NavLink: React.FC<NavLinkProps> = ({ href, icon: Icon, label, isActive, is
         isActive
           ? "bg-primary text-primary-foreground shadow-sm"
           : "text-muted-foreground hover:bg-muted hover:text-foreground",
-        isCollapsed ? "justify-center" : "justify-end flex-row-reverse" // Right-align text when expanded, center icon when collapsed
+        isCollapsed ? "justify-center" : "justify-start" // Left-align text when expanded, center icon when collapsed
       )}
     >
       <Icon className="h-5 w-5" />
-      {!isCollapsed && <span className="text-right flex-grow">{label}</span>}
+      {!isCollapsed && <span className="flex-grow">{label}</span>}
     </div>
   );
 
@@ -42,7 +42,7 @@ const NavLink: React.FC<NavLinkProps> = ({ href, icon: Icon, label, isActive, is
             {linkContent}
           </Link>
         </TooltipTrigger>
-        <TooltipContent side="left" className="rounded-md shadow-lg bg-card text-card-foreground border-border text-body-small">
+        <TooltipContent side="right" className="rounded-md shadow-lg bg-card text-card-foreground border-border text-body-small">
           {label}
         </TooltipContent>
       </Tooltip>
@@ -59,15 +59,18 @@ const NavLink: React.FC<NavLinkProps> = ({ href, icon: Icon, label, isActive, is
 interface SidebarProps {
   isCollapsed: boolean;
   toggleCollapsed: () => void;
+  isMobile: boolean;
+  isOpen: boolean;
+  closeSidebar: () => void;
 }
 
-export function Sidebar({ isCollapsed, toggleCollapsed }: SidebarProps) {
+export function Sidebar({ isCollapsed, toggleCollapsed, isMobile, isOpen, closeSidebar }: SidebarProps) {
   const pathname = usePathname();
   const { user, isLoading } = useSession();
 
   if (isLoading) {
     return (
-      <aside className="hidden md:block w-64 border-l border-border bg-sidebar-background p-4 space-y-6 rounded-xl shadow-lg">
+      <aside className="hidden md:flex flex-col w-64 border-r border-border bg-sidebar-background p-4 space-y-6 rounded-xl shadow-lg">
         <Skeleton className="h-8 w-3/4 mb-6" />
         <div className="space-y-2">
           {[...Array(5)].map((_, i) => (
@@ -114,20 +117,30 @@ export function Sidebar({ isCollapsed, toggleCollapsed }: SidebarProps) {
   }
 
   if (!user || navItems.length === 0) {
-    return null; // Or a minimal sidebar for unauthenticated/unassigned roles
+    return null;
   }
 
   return (
     <TooltipProvider>
       <aside
         className={cn(
-          "hidden md:flex flex-col border-l border-border bg-sidebar-background p-4 space-y-6 rounded-xl shadow-lg transition-all duration-300",
-          isCollapsed ? "w-20" : "w-64"
+          "flex flex-col border-r border-border bg-sidebar-background p-4 space-y-6 shadow-lg transition-all duration-300",
+          // Desktop styles
+          !isMobile && (isCollapsed ? "w-20 rounded-xl" : "w-64 rounded-xl"),
+          // Mobile styles (modal)
+          isMobile && "fixed inset-y-0 left-0 z-40 h-full w-64 transform bg-sidebar-background rounded-r-xl",
+          isMobile && (isOpen ? "translate-x-0" : "-translate-x-full")
         )}
       >
-        <div className={cn("flex items-center gap-2 text-title-large font-bold text-sidebar-primary mb-6", isCollapsed ? "justify-center" : "justify-end flex-row-reverse")}>
-          {!isCollapsed && <span>Navigation</span>}
+        <div className={cn("flex items-center gap-2 text-title-large font-bold text-sidebar-primary mb-6", isCollapsed ? "justify-center" : "justify-start")}>
+          {isMobile && (
+            <Button variant="ghost" size="icon" className="rounded-full mr-2" onClick={closeSidebar}>
+              <X className="h-5 w-5" />
+              <span className="sr-only">Close Sidebar</span>
+            </Button>
+          )}
           <Award className="h-6 w-6" />
+          {!isCollapsed && <span>Navigation</span>}
         </div>
         <nav className="grid items-start gap-2">
           {navItems.map((item) => (
@@ -141,17 +154,19 @@ export function Sidebar({ isCollapsed, toggleCollapsed }: SidebarProps) {
             />
           ))}
         </nav>
-        <div className={cn("mt-auto pt-4", isCollapsed ? "flex justify-center" : "flex justify-end")}>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="rounded-full"
-            onClick={toggleCollapsed}
-          >
-            {isCollapsed ? <ChevronLeft className="h-5 w-5" /> : <ChevronRight className="h-5 w-5" />}
-            <span className="sr-only">{isCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}</span>
-          </Button>
-        </div>
+        {!isMobile && ( // Only show toggle button on desktop
+          <div className={cn("mt-auto pt-4", isCollapsed ? "flex justify-center" : "flex justify-end")}>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="rounded-full"
+              onClick={toggleCollapsed}
+            >
+              {isCollapsed ? <ChevronRight className="h-5 w-5" /> : <ChevronLeft className="h-5 w-5" />}
+              <span className="sr-only">{isCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}</span>
+            </Button>
+          </div>
+        )}
       </aside>
     </TooltipProvider>
   );

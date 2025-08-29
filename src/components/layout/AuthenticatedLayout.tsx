@@ -1,11 +1,13 @@
 "use client";
 
-import React, { useState } from "react"; // Import useState
+import React, { useState } from "react";
 import { useSession } from "@/context/SessionContextProvider";
 import { useRouter } from "next/navigation";
 import { Sidebar } from "./Sidebar";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils"; // Import cn for utility classes
+import { cn } from "@/lib/utils";
+import { useLayout } from "@/context/LayoutContext"; // Import useLayout
+import { useIsMobile } from "@/hooks/use-mobile"; // Import useIsMobile
 
 interface AuthenticatedLayoutProps {
   children: React.ReactNode;
@@ -14,11 +16,8 @@ interface AuthenticatedLayoutProps {
 export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
   const { session, isLoading } = useSession();
   const router = useRouter();
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false); // State for sidebar collapse
-
-  const toggleSidebar = () => {
-    setIsSidebarCollapsed(!isSidebarCollapsed);
-  };
+  const { isSidebarOpen, toggleSidebar, isSidebarCollapsed, toggleSidebarCollapsed } = useLayout(); // Use layout context
+  const isMobile = useIsMobile();
 
   if (isLoading) {
     return (
@@ -29,19 +28,50 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
   }
 
   if (!session) {
-    // This case should ideally be caught by middleware, but as a client-side fallback
     toast.error("You are not authenticated. Please log in.");
     router.push("/login");
     return null;
   }
 
+  const sidebarWidth = isSidebarCollapsed ? "w-20" : "w-64";
+  const mainContentMargin = isSidebarCollapsed ? "ml-20" : "ml-64";
+
   return (
-    <div className="flex flex-1 flex-row-reverse"> {/* flex-row-reverse to place sidebar on the right */}
-      <Sidebar isCollapsed={isSidebarCollapsed} toggleCollapsed={toggleSidebar} />
+    <div className="flex flex-1">
+      {/* Desktop Sidebar */}
+      {!isMobile && (
+        <Sidebar
+          isCollapsed={isSidebarCollapsed}
+          toggleCollapsed={toggleSidebarCollapsed}
+          isMobile={false}
+          isOpen={true} // Always open on desktop, just collapsed or expanded
+          closeSidebar={() => {}} // Not applicable for desktop
+        />
+      )}
+
+      {/* Mobile Sidebar (Modal) */}
+      {isMobile && (
+        <Sidebar
+          isCollapsed={false} // Mobile sidebar is never collapsed, only open/closed
+          toggleCollapsed={() => {}} // Not applicable for mobile collapse
+          isMobile={true}
+          isOpen={isSidebarOpen}
+          closeSidebar={toggleSidebar}
+        />
+      )}
+
+      {/* Mobile Overlay for Modal Sidebar */}
+      {isMobile && isSidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-30 transition-opacity duration-300"
+          onClick={toggleSidebar}
+        ></div>
+      )}
+
       <main
         className={cn(
           "flex-1 p-8 overflow-auto bg-background text-foreground transition-all duration-300",
-          isSidebarCollapsed ? "mr-20" : "mr-64" // Adjust margin based on sidebar width
+          !isMobile && mainContentMargin // Apply margin only on desktop
         )}
       >
         {children}

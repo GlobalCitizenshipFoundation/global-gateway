@@ -2,7 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
-import { Award, LogOut, Settings, UserCircle2 } from "lucide-react";
+import { Award, LogOut, Settings, UserCircle2, Menu } from "lucide-react"; // Import Menu icon
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useSession } from "@/context/SessionContextProvider";
@@ -18,9 +18,13 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { authService } from "@/services/auth-service";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { useLayout } from "@/context/LayoutContext"; // Import useLayout
+import { useIsMobile } from "@/hooks/use-mobile"; // Import useIsMobile
 
 export function Header() {
   const { session, user, isLoading } = useSession();
+  const { toggleSidebar } = useLayout(); // Get toggleSidebar from LayoutContext
+  const isMobile = useIsMobile(); // Determine if on mobile
   const router = useRouter();
 
   const handleSignOut = async () => {
@@ -42,6 +46,14 @@ export function Header() {
   return (
     <header className="sticky top-0 z-40 w-full border-b border-border bg-background/80 backdrop-blur-sm shadow-sm">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
+        {/* Mobile Menu Button */}
+        {isMobile && session && ( // Only show on mobile if authenticated
+          <Button variant="ghost" size="icon" className="rounded-full mr-2" onClick={toggleSidebar}>
+            <Menu className="h-6 w-6" />
+            <span className="sr-only">Toggle Sidebar</span>
+          </Button>
+        )}
+
         {/* Logo and App Title */}
         <Link href="/" className="flex items-center space-x-2 text-title-large font-bold text-foreground">
           <Award className="h-6 w-6 text-primary" />
