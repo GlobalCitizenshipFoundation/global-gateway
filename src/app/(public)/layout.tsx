@@ -1,10 +1,10 @@
 import React from "react";
-import { AuthenticatedLayout } from "@/components/layout/AuthenticatedLayout";
+// AuthenticatedLayout is removed as public routes should not enforce authentication.
 
 export default function PublicLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  return <AuthenticatedLayout>{children}</AuthenticatedLayout>;
+  return <>{children}</>; // Render children directly
 }
