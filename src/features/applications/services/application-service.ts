@@ -26,6 +26,16 @@ export interface Application {
   current_campaign_phases?: ApplicationPhase; // For joining with current phase data
 }
 
+export interface ApplicationNote {
+  id: string;
+  application_id: string;
+  author_id: string;
+  content: string;
+  created_at: string;
+  updated_at: string;
+  profiles?: { first_name: string; last_name: string; avatar_url: string | null }; // For joining with author profile
+}
+
 export const applicationService = {
   supabase: createClient(),
 
@@ -118,6 +128,78 @@ export const applicationService = {
       return false;
     }
     toast.success("Application deleted successfully!");
+    return true;
+  },
+
+  // --- Collaborative Notes Management ---
+
+  async getApplicationNotes(applicationId: string): Promise<ApplicationNote[] | null> {
+    const { data, error } = await this.supabase
+      .from("application_notes")
+      .select("*, profiles(first_name, last_name, avatar_url)")
+      .eq("application_id", applicationId)
+      .order("created_at", { ascending: true });
+
+    if (error) {
+      console.error(`Error fetching notes for application ${applicationId}:`, error.message);
+      toast.error("Failed to load collaborative notes.");
+      return null;
+    }
+    return data as ApplicationNote[];
+  },
+
+  async createApplicationNote(
+    applicationId: string,
+    authorId: string,
+    content: string
+  ): Promise<ApplicationNote | null> {
+    const { data, error } = await this.supabase
+      .from("application_notes")
+      .insert([{ application_id: applicationId, author_id: authorId, content }])
+      .select("*, profiles(first_name, last_name, avatar_url)")
+      .single();
+
+    if (error) {
+      console.error("Error creating application note:", error.message);
+      toast.error("Failed to add note.");
+      return null;
+    }
+    toast.success("Note added successfully!");
+    return data as ApplicationNote;
+  },
+
+  async updateApplicationNote(
+    noteId: string,
+    updates: Partial<Omit<ApplicationNote, "id" | "application_id" | "author_id" | "created_at">>
+  ): Promise<ApplicationNote | null> {
+    const { data, error } = await this.supabase
+      .from("application_notes")
+      .update({ ...updates, updated_at: new Date().toISOString() })
+      .eq("id", noteId)
+      .select("*, profiles(first_name, last_name, avatar_url)")
+      .single();
+
+    if (error) {
+      console.error(`Error updating note ${noteId}:`, error.message);
+      toast.error("Failed to update note.");
+      return null;
+    }
+    toast.success("Note updated successfully!");
+    return data as ApplicationNote;
+  },
+
+  async deleteApplicationNote(noteId: string): Promise<boolean> {
+    const { error } = await this.supabase
+      .from("application_notes")
+      .delete()
+      .eq("id", noteId);
+
+    if (error) {
+      console.error(`Error deleting note ${noteId}:`, error.message);
+      toast.error("Failed to delete note.");
+      return false;
+    }
+    toast.success("Note deleted successfully!");
     return true;
   },
 };

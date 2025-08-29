@@ -223,11 +223,14 @@ The project follows a modular and domain-driven directory structure, aligning wi
     *   **Feature Module (`src/features/applications/index.ts`):** Entry point created.
     *   **Service Layer (`src/features/applications/services/application-service.ts`):**
         *   New interface `Application` defined, including nested `Campaign`, `Profile`, and `ApplicationPhase` types for joined data.
+        *   New interface `ApplicationNote` defined, including nested `Profile` type for author data.
         *   Functions `getApplications`, `getApplicationById`, `createApplication`, `updateApplication`, `deleteApplication` are implemented for direct database interaction.
+        *   New functions `getApplicationNotes`, `createApplicationNote`, `updateApplicationNote`, `deleteApplicationNote` are implemented for collaborative notes management.
     *   **Backend (Next.js Server Actions - `src/features/applications/actions.ts`):**
         *   Server Actions `getApplicationsAction`, `getApplicationByIdAction`, `createApplicationAction`, `updateApplicationAction`, `deleteApplicationAction` are implemented.
         *   Server-side authorization logic (`authorizeApplicationAction`) is applied to all actions, checking `applicant_id`, `campaign.creator_id`, `campaign.is_public`, and `user_metadata.role` (for 'admin' override) to enforce granular access control. Unauthorized access attempts redirect to appropriate error pages.
         *   Specific logic for `updateApplicationAction` ensures only authorized roles can modify `screening_status` and `current_campaign_phase_id`.
+        *   New Server Actions `getApplicationNotesAction`, `createApplicationNoteAction`, `updateApplicationNoteAction`, `deleteApplicationNoteAction` are implemented, with robust authorization checks (`authorizeNoteAction`) ensuring only authorized users can interact with notes.
 *   **Vertical 4.3: Screening Phase UI (Dashboard View)**
     *   **Frontend (UI):**
         *   `src/features/applications/components/ScreeningDashboard.tsx` (Client Component) is created. This component provides a dashboard view for recruiters, displaying a list of applications with filtering (by status, campaign) and search capabilities.
@@ -242,7 +245,8 @@ The project follows a modular and domain-driven directory structure, aligning wi
             *   Current phase and application status.
             *   Submitted application data (dynamically rendered from the `data` JSONB field), with internal screening data (`screeningChecklist`) excluded from public display.
             *   **Internal Checklist (Implemented):** The `ScreeningChecklist` component is integrated, allowing authorized users (recruiters/admins) to manage a dynamic list of checklist items with status and notes.
-            *   Placeholders for "Collaborative Notes" and "Workflow Participation" sections, which will be implemented in subsequent steps.
+            *   **Collaborative Notes (Implemented):** The `CollaborativeNotes` component is integrated, allowing authorized users (campaign creators/admins) to add, view, edit, and delete private notes with an audit trail (author, timestamp).
+            *   Placeholder for "Workflow Participation" section.
 
 **Next Steps:**
-The immediate next steps for **Vertical 4** will involve implementing the "Collaborative Notes" section within the `ApplicationDetail` view, which will include team discussions, private comments, and an audit trail.
+The immediate next steps for **Vertical 4** will involve implementing the "Workflow Participation" section within the `ApplicationDetail` view, which will provide a visual timeline or list of phases and the applicant's status in each.

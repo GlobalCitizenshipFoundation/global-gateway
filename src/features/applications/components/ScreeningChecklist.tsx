@@ -28,8 +28,8 @@ import { cn } from "@/lib/utils";
 const checklistItemSchema = z.object({
   id: z.string().uuid().optional(), // Optional for new items
   item: z.string().min(1, "Checklist item is required."),
-  checked: z.boolean().default(false), // Ensure checked is always boolean
-  notes: z.string().nullable().optional(), // Ensure notes can be null or undefined
+  checked: z.boolean().default(false), // Inferred type: boolean
+  notes: z.string().nullable().optional(), // Inferred type: string | null | undefined
 });
 
 // Zod schema for the entire screening checklist
@@ -37,9 +37,15 @@ const screeningChecklistSchema = z.object({
   checklist: z.array(checklistItemSchema),
 });
 
+// Define the inferred type for a single checklist item from the schema
+export type ChecklistItemFormType = z.infer<typeof checklistItemSchema>;
+// Define the inferred type for the entire form values
+type ScreeningChecklistFormValues = z.infer<typeof screeningChecklistSchema>;
+
 interface ScreeningChecklistProps {
   applicationId: string;
-  initialChecklistData: z.infer<typeof screeningChecklistSchema>['checklist'];
+  // This prop now expects data that *already* conforms to the strict Zod schema
+  initialChecklistData: ChecklistItemFormType[];
   canModify: boolean;
   onChecklistUpdated: () => void; // Callback to refresh parent data if needed
 }
@@ -50,39 +56,29 @@ export function ScreeningChecklist({
   canModify,
   onChecklistUpdated,
 }: ScreeningChecklistProps) {
-  // Prepare default values to strictly match the Zod schema's inferred type
-  const defaultChecklistItems: z.infer<typeof checklistItemSchema>[] = (initialChecklistData || []).map(item => ({
-    id: item.id,
-    item: item.item,
-    checked: item.checked ?? false, // Ensure 'checked' is always boolean
-    notes: item.notes ?? null, // Ensure 'notes' is always string | null
-  }));
-
-  const form = useForm<z.infer<typeof screeningChecklistSchema>>({
+  const form = useForm<ScreeningChecklistFormValues>({
     resolver: zodResolver(screeningChecklistSchema),
     defaultValues: {
-      checklist: defaultChecklistItems,
+      checklist: initialChecklistData, // Directly use initialChecklistData as it's now strictly typed
     },
     mode: "onChange",
   });
 
-  const { fields, append, remove, move } = useFieldArray({
+  const { fields, append, remove } = useFieldArray({
     control: form.control,
     name: "checklist",
     keyName: "arrayId", // Unique key for each item in the array
   });
 
-  const onSubmit = async (values: z.infer<typeof screeningChecklistSchema>) => {
+  const onSubmit = async (values: ScreeningChecklistFormValues) => {
     if (!canModify) {
       toast.error("You do not have permission to modify this checklist.");
       return;
     }
     try {
       const formData = new FormData();
-      // Merge the new checklist data into the existing application data JSONB
-      // We need to fetch the current application data to merge correctly,
-      // but for simplicity, we'll assume `updateApplicationAction` handles merging `data` field.
-      // In a more complex scenario, we'd fetch the full application first.
+      // The updateApplicationAction expects a 'data' field as a stringified JSON.
+      // We're updating the 'screeningChecklist' part of the application's 'data' JSONB.
       formData.append("data", JSON.stringify({ screeningChecklist: values.checklist }));
 
       const result = await updateApplicationAction(applicationId, formData);

@@ -13,7 +13,8 @@ import { useSession } from "@/context/SessionContextProvider";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { ScreeningChecklist } from "./ScreeningChecklist"; // Import the new component
+import { ChecklistItemFormType, ScreeningChecklist } from "./ScreeningChecklist"; // Import the new component and type
+import { CollaborativeNotes } from "./CollaborativeNotes"; // Import the new component
 
 interface ApplicationDetailProps {
   applicationId: string;
@@ -95,6 +96,15 @@ export function ApplicationDetail({ applicationId }: ApplicationDetailProps) {
   const userRole: string = user?.user_metadata?.role || '';
   const isAdminOrRecruiter = ['admin', 'coordinator', 'evaluator', 'screener'].includes(userRole);
   const canModifyApplication: boolean = isAdminOrRecruiter || application.applicant_id === user?.id; // Applicant can modify their own data, recruiters can modify screening tools
+  const canAddNotes: boolean = isAdminOrRecruiter; // Only recruiters/admins can add notes
+
+  // Pre-process initialChecklistData to ensure it strictly conforms to ChecklistItemFormType
+  const processedChecklistData: ChecklistItemFormType[] = (application.data?.screeningChecklist || []).map((item: any) => ({
+    id: item.id,
+    item: item.item,
+    checked: item.checked ?? false, // Ensure boolean
+    notes: item.notes ?? null, // Ensure string | null
+  }));
 
   return (
     <div className="space-y-8">
@@ -173,25 +183,17 @@ export function ApplicationDetail({ applicationId }: ApplicationDetailProps) {
         {/* Internal Checklist */}
         <ScreeningChecklist
           applicationId={application.id}
-          initialChecklistData={application.data?.screeningChecklist || []}
+          initialChecklistData={processedChecklistData} // Pass the processed data
           canModify={isAdminOrRecruiter} // Only recruiters/admins can modify the checklist
           onChecklistUpdated={fetchApplicationDetails} // Refresh data after update
         />
 
-        <Card className="rounded-xl shadow-lg p-6">
-          <CardHeader className="p-0 mb-4">
-            <CardTitle className="text-headline-large font-bold text-foreground">Collaborative Notes</CardTitle>
-            <CardDescription className="text-body-medium text-muted-foreground">
-              Team discussions and private comments.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="p-0">
-            <p className="text-body-medium text-muted-foreground">
-              {/* Placeholder for Collaborative Notes */}
-              Notes and audit trail component will go here.
-            </p>
-          </CardContent>
-        </Card>
+        {/* Collaborative Notes */}
+        <CollaborativeNotes
+          applicationId={application.id}
+          canAddNotes={canAddNotes}
+          onNotesUpdated={fetchApplicationDetails} // Refresh data after update
+        />
       </div>
 
       {/* Workflow Participation Section (Placeholder) */}

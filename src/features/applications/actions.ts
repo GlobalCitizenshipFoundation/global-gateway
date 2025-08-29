@@ -1,6 +1,6 @@
 "use server";
 
-import { applicationService, Application } from "@/features/applications/services/application-service";
+import { applicationService, Application, ApplicationNote } from "@/features/applications/services/application-service";
 import { createClient } from "@/integrations/supabase/server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -208,5 +208,157 @@ export async function deleteApplicationAction(id: string): Promise<boolean> {
       redirect("/error-pages/500");
     }
     redirect("/login"); // Fallback for unauthenticated or other critical errors
+  }
+}
+
+// --- Collaborative Notes Server Actions ---
+
+async function authorizeNoteAction(noteId: string, action: 'read' | 'write'): Promise<{ user: any; note: ApplicationNote | null; isAdmin: boolean }> {
+  const supabase = await createClient();
+  const { data: { user }, error: userError } = await supabase.auth.getUser();
+
+  if (userError || !user) {
+    redirect("/login");
+  }
+
+  const userRole: string = user.user_metadata?.role || '';
+  const isAdmin = userRole === 'admin';
+
+  let note: ApplicationNote | null = null;
+  if (noteId) {
+    const { data, error } = await supabase
+      .from("application_notes")
+      .select("*, applications(campaign_id, applicant_id, campaigns(creator_id, is_public))")
+      .eq("id", noteId)
+      .single();
+
+    if (error) {
+      if (error.code === 'PGRST116') {
+        throw new Error("NoteNotFound");
+      }
+      console.error(`Error fetching note ${noteId} for authorization:`, error.message);
+      throw new Error("FailedToRetrieveNote");
+    }
+    note = data;
+  }
+
+  if (!note && noteId) {
+    throw new Error("NoteNotFound");
+  }
+
+  // Check if user has read/write access to the parent application
+  const hasApplicationReadAccess = await authorizeApplicationAction(note?.application_id!, 'read');
+  if (!hasApplicationReadAccess.application) {
+    throw new Error("UnauthorizedAccessToParentApplication");
+  }
+
+  if (action === 'read') {
+    // RLS handles read access based on parent application
+  } else if (action === 'write') {
+    // Only author or admin can modify/delete notes
+    if (!isAdmin && note?.author_id !== user.id) {
+      throw new Error("UnauthorizedToModifyNote");
+    }
+  }
+
+  return { user, note, isAdmin };
+}
+
+export async function getApplicationNotesAction(applicationId: string): Promise<ApplicationNote[] | null> {
+  try {
+    // Ensure user has read access to the parent application
+    await authorizeApplicationAction(applicationId, 'read');
+    const notes = await applicationService.getApplicationNotes(applicationId);
+    return notes;
+  } catch (error: any) {
+    console.error("Error in getApplicationNotesAction:", error.message);
+    if (error.message === "UnauthorizedAccessToParentApplication") {
+      redirect("/error-pages/403");
+    } else if (error.message === "ApplicationNotFound") {
+      redirect("/error-pages/404");
+    } else if (error.message === "FailedToRetrieveApplication") {
+      redirect("/error-pages/500");
+    }
+    redirect("/login"); // Fallback
+  }
+}
+
+export async function createApplicationNoteAction(applicationId: string, formData: FormData): Promise<ApplicationNote | null> {
+  const supabase = await createClient();
+  const { data: { user }, error: userError } = await supabase.auth.getUser();
+
+  if (userError || !user) {
+    redirect("/login");
+  }
+
+  // Ensure user has write access to the parent application (only campaign creator/admin can add notes)
+  const { application, isAdmin } = await authorizeApplicationAction(applicationId, 'write');
+  if (!application || (!isAdmin && application.campaigns?.creator_id !== user.id)) {
+    throw new Error("UnauthorizedToAddNote");
+  }
+
+  const content = formData.get("content") as string;
+  if (!content) {
+    throw new Error("Note content cannot be empty.");
+  }
+
+  try {
+    const newNote = await applicationService.createApplicationNote(applicationId, user.id, content);
+    revalidatePath(`/workbench/applications/${applicationId}`);
+    return newNote;
+  } catch (error: any) {
+    console.error("Error in createApplicationNoteAction:", error.message);
+    throw error; // Re-throw to be caught by client-side toast
+  }
+}
+
+export async function updateApplicationNoteAction(noteId: string, formData: FormData): Promise<ApplicationNote | null> {
+  try {
+    const { user, note, isAdmin } = await authorizeNoteAction(noteId, 'write');
+    if (!note) {
+      throw new Error("NoteNotFound");
+    }
+
+    const content = formData.get("content") as string;
+    if (!content) {
+      throw new Error("Note content cannot be empty.");
+    }
+
+    const updatedNote = await applicationService.updateApplicationNote(noteId, { content });
+    revalidatePath(`/workbench/applications/${note.application_id}`);
+    return updatedNote;
+  } catch (error: any) {
+    console.error("Error in updateApplicationNoteAction:", error.message);
+    if (error.message === "UnauthorizedToModifyNote") {
+      redirect("/error-pages/403");
+    } else if (error.message === "NoteNotFound") {
+      redirect("/error-pages/404");
+    } else if (error.message === "FailedToRetrieveNote") {
+      redirect("/error-pages/500");
+    }
+    throw error; // Re-throw to be caught by client-side toast
+  }
+}
+
+export async function deleteApplicationNoteAction(noteId: string): Promise<boolean> {
+  try {
+    const { note } = await authorizeNoteAction(noteId, 'write');
+    if (!note) {
+      throw new Error("NoteNotFound");
+    }
+
+    const success = await applicationService.deleteApplicationNote(noteId);
+    revalidatePath(`/workbench/applications/${note.application_id}`);
+    return success;
+  } catch (error: any) {
+    console.error("Error in deleteApplicationNoteAction:", error.message);
+    if (error.message === "UnauthorizedToModifyNote") {
+      redirect("/error-pages/403");
+    } else if (error.message === "NoteNotFound") {
+      redirect("/error-pages/404");
+    } else if (error.message === "FailedToRetrieveNote") {
+      redirect("/error-pages/500");
+    }
+    throw error; // Re-throw to be caught by client-side toast
   }
 }
