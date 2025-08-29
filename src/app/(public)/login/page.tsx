@@ -29,14 +29,14 @@ export default function LoginPage() {
   if (isLoading || session) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-background">
-        <p className="text-foreground">Loading...</p>
+        <p className="text-foreground text-headline-small">Loading...</p>
       </div>
     );
   }
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-background p-4">
-      <div className="w-full max-w-md p-8 space-y-6 bg-card shadow-lg rounded-lg border border-border">
+      <div className="w-full max-w-lg p-8 space-y-6 bg-card shadow-lg rounded-lg border border-border">
         <h2 className="text-headline-large text-center text-foreground">Welcome to Global Gateway</h2>
         <Auth
           supabaseClient={supabase}

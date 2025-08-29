@@ -1,10 +1,11 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react"; // Import useState
 import { useSession } from "@/context/SessionContextProvider";
 import { useRouter } from "next/navigation";
 import { Sidebar } from "./Sidebar";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils"; // Import cn for utility classes
 
 interface AuthenticatedLayoutProps {
   children: React.ReactNode;
@@ -13,6 +14,11 @@ interface AuthenticatedLayoutProps {
 export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
   const { session, isLoading } = useSession();
   const router = useRouter();
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false); // State for sidebar collapse
+
+  const toggleSidebar = () => {
+    setIsSidebarCollapsed(!isSidebarCollapsed);
+  };
 
   if (isLoading) {
     return (
@@ -30,9 +36,14 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
   }
 
   return (
-    <div className="flex flex-1"> {/* flex-1 to take remaining height after root header */}
-      <Sidebar />
-      <main className="flex-1 p-8 overflow-auto bg-background text-foreground">
+    <div className="flex flex-1 flex-row-reverse"> {/* flex-row-reverse to place sidebar on the right */}
+      <Sidebar isCollapsed={isSidebarCollapsed} toggleCollapsed={toggleSidebar} />
+      <main
+        className={cn(
+          "flex-1 p-8 overflow-auto bg-background text-foreground transition-all duration-300",
+          isSidebarCollapsed ? "mr-20" : "mr-64" // Adjust margin based on sidebar width
+        )}
+      >
         {children}
       </main>
     </div>

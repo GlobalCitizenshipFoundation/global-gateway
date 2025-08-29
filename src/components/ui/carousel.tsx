@@ -64,6 +64,7 @@ const Carousel = React.forwardRef<
     const [canScrollNext, setCanScrollNext] = React.useState(false);
 
     const onSelect = React.useCallback((apiInstance: UseEmblaCarouselType[1]) => {
+      if (!apiInstance) return; // Added null check here
       setCanScrollPrev(apiInstance.canScrollPrev());
       setCanScrollNext(apiInstance.canScrollNext());
     }, []);
