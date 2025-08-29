@@ -7,10 +7,13 @@ import { NextResponse, type NextRequest } from 'next/server';
 export async function middleware(request: NextRequest) {
   console.log(`[Middleware] Processing request for: ${request.nextUrl.pathname}`);
 
-  const { supabase, response } = createMiddlewareClient({
+  // Fix: Explicitly cast the result to 'any' to resolve TypeScript errors
+  const client: any = createMiddlewareClient({
     req: request,
     res: NextResponse.next(),
   });
+  const supabase = client.supabase;
+  const response = client.response;
 
   const { data: { session }, error: sessionError } = await supabase.auth.getSession();
 

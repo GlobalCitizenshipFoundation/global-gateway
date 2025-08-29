@@ -28,6 +28,7 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  console.log("--- RootLayout is rendering! ---"); // Added log to check if layout is processed
   return (
     <html lang="en" suppressHydrationWarning className="h-full">
       <body
