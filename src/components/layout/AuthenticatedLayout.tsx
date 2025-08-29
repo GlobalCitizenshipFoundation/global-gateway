@@ -4,7 +4,6 @@ import React, { useEffect } from "react";
 import { useSession } from "@/context/SessionContextProvider";
 import { useRouter } from "next/navigation";
 import { Sidebar } from "./Sidebar";
-import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useLayout } from "@/context/LayoutContext";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -22,7 +21,7 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
 
   useEffect(() => {
     if (!isLoading && !session) {
-      toast.error("You are not authenticated. Please log in.");
+      // Removed toast.error here as middleware handles redirection silently
       router.push("/login");
     }
   }, [isLoading, session, router]); // Depend on isLoading, session, and router
