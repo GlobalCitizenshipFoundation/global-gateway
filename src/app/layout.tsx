@@ -42,7 +42,7 @@ export default function RootLayout({
           <SessionContextProvider>
             <LayoutContextProvider> {/* Wrap Header and children with LayoutContextProvider */}
               <Header /> {/* Universal Header */}
-              <div className="flex flex-1"> {/* This div will contain the main content and authenticated layouts */}
+              <div className="flex flex-1 h-full"> {/* Added h-full here */}
                 {children}
               </div>
             </LayoutContextProvider>

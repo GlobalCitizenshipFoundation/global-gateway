@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect } from "react"; // Import useEffect
+import React from "react";
 import { useSession } from "@/context/SessionContextProvider";
 import { useRouter } from "next/navigation";
 import { Sidebar } from "./Sidebar";
@@ -20,20 +20,13 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
   const { isSidebarOpen, toggleSidebar, isSidebarCollapsed, toggleSidebarCollapsed } = useLayout();
   const isMobile = useIsMobile();
 
-  useEffect(() => {
-    if (!isLoading && !session) {
-      toast.error("You are not authenticated. Please log in.");
-      router.push("/login");
-    }
-  }, [isLoading, session, router]); // Depend on isLoading, session, and router
-
-  if (isLoading || !session) { // Keep loading state and also check for session here
+  if (isLoading) {
     // Full-height loading overlay for the content area, with a placeholder sidebar
     return (
-      <div className="flex flex-1 bg-background"> {/* This div takes up the remaining space next to the header */}
+      <div className="flex flex-1 h-full bg-background"> {/* Added h-full here */}
         {/* Placeholder for a collapsed sidebar during loading */}
         {!isMobile && (
-          <aside className="w-20 border-r border-border bg-sidebar-background p-4 space-y-6 rounded-xl shadow-lg flex-shrink-0">
+          <aside className="w-20 border-r border-border bg-sidebar-background p-4 space-y-6 rounded-xl shadow-lg flex-shrink-0 h-full overflow-y-auto">
             <Skeleton className="h-8 w-3/4 mb-6" />
             <div className="space-y-2">
               {[...Array(5)].map((_, i) => (
@@ -55,10 +48,16 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
     );
   }
 
+  if (!session) {
+    toast.error("You are not authenticated. Please log in.");
+    router.push("/login");
+    return null;
+  }
+
   const mainContentMargin = isSidebarCollapsed ? "ml-20" : "ml-64";
 
   return (
-    <div className="flex flex-1">
+    <div className="flex flex-1 h-full"> {/* Added h-full here */}
       {/* Desktop Sidebar */}
       {!isMobile && (
         <Sidebar
