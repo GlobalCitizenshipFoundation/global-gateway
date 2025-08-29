@@ -112,22 +112,23 @@ export function Sidebar({ isCollapsed, toggleCollapsed, isMobile, isOpen, closeS
         { href: "/workbench/dashboard", icon: LayoutDashboard, label: "Dashboard" },
         { href: "/workbench/pathway-templates", icon: Workflow, label: "Pathway Templates" },
         { href: "/workbench/campaigns", icon: Briefcase, label: "Campaigns" },
-        { href: "/workbench/applications/screening", icon: FileText, label: "Applications Screening" }, // Updated link
-        { href: "/workbench/evaluations", icon: Award, label: "Evaluations" },
+        { href: "/workbench/applications/screening", icon: FileText, label: "Applications Screening" },
+        { href: "/workbench/evaluations/my-reviews", icon: Award, label: "My Reviews" }, // Added My Reviews link
+        { href: "/workbench/evaluations", icon: Award, label: "Evaluations" }, // General Evaluations link
         { href: "/workbench/scheduling", icon: Calendar, label: "Scheduling" },
         { href: "/workbench/communications", icon: Mail, label: "Communications" },
         { href: "/workbench/reports", icon: BarChart3, label: "Reports" },
       ],
-      roles: ['admin', 'coordinator', 'evaluator', 'screener'],
+      roles: ['admin', 'coordinator', 'evaluator', 'screener', 'reviewer'], // Added 'reviewer' role
     },
     {
       title: "Portal Tools",
       items: [
         { href: "/portal/dashboard", icon: LayoutDashboard, label: "Dashboard" },
         { href: "/portal/my-applications", icon: FileText, label: "My Applications" },
-        { href: "/portal/profile", icon: UserCircle2, label: "Profile" }, // Added Profile link
+        { href: "/portal/profile", icon: UserCircle2, label: "Profile" },
       ],
-      roles: ['admin', 'coordinator', 'evaluator', 'screener', 'applicant'],
+      roles: ['admin', 'coordinator', 'evaluator', 'screener', 'applicant', 'reviewer'], // Added 'reviewer' role
     },
   ];
 
