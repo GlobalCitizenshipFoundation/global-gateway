@@ -6,7 +6,7 @@ import { Users, Briefcase, FileText, Settings, Activity, ArrowRight } from "luci
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
-export default async function AdminDashboardPage() {
+export default async function AdminConsolePage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
@@ -28,7 +28,7 @@ export default async function AdminDashboardPage() {
 
   return (
     <div className="container mx-auto py-8 px-4 space-y-8">
-      <h1 className="text-display-small font-bold text-foreground">Admin Dashboard</h1>
+      <h1 className="text-display-small font-bold text-foreground">Admin Console</h1>
       <p className="text-headline-small text-muted-foreground">Welcome, {user.user_metadata?.first_name || user.email}!</p>
 
       {/* Overview Cards */}

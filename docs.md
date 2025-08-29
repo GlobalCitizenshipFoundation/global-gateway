@@ -85,9 +85,9 @@ The project follows a modular and domain-driven directory structure, aligning wi
     *   It includes client-side redirection logic to guide authenticated users to their respective role-based dashboards.
     *   The layout has been adjusted to ensure robust centering of the login card.
 *   **Role-Based Dashboard Placeholders:**
-    *   **`src/app/(portal)/dashboard/page.tsx`**: A placeholder for applicants, displaying a welcome message and links to their applications. It enforces that only 'applicant' roles (or higher roles that can access portal) can view it.
-    *   **`src/app/(workbench)/dashboard/page.tsx`**: A placeholder for managers, reviewers, and screeners, offering a welcome and role-specific links (e.g., "Manage Campaigns," "View Assignments"). It restricts access to these specific roles.
-    *   **`src/app/(admin)/dashboard/page.tsx`**: **(Implemented)** This page now features an M3-compliant dashboard with overview cards for "Total Users," "Active Campaigns," "Pending Applications," and "System Status." It also includes a "Quick Actions" section with `tonal` buttons linking to user management, system settings, and pathway templates. Access is strictly limited to the 'admin' role.
+    *   **`src/app/(admin)/console/page.tsx`**: This page now features an M3-compliant dashboard with overview cards for "Total Users," "Active Campaigns," "Pending Applications," and "System Status." It also includes a "Quick Actions" section with `tonal` buttons linking to user management, system settings, and pathway templates. Access is strictly limited to the 'admin' role.
+    *   **`src/app/(workbench)/desk/page.tsx`**: A placeholder for managers, reviewers, and screeners, offering a welcome and role-specific links (e.g., "Manage Campaigns," "View Assignments"). It restricts access to these specific roles.
+    *   **`src/app/(portal)/home/page.tsx`**: A placeholder for applicants, displaying a welcome message and links to their applications. It enforces that only 'applicant' roles (or higher roles that can access portal) can view it.
     *   Each dashboard page uses `createClient` from `src/integrations/supabase/server` to perform server-side user authentication and role verification, redirecting unauthorized users.
 *   **Authentication Middleware (`middleware.ts`):**
     *   A Next.js middleware has been implemented to centralize authentication and authorization logic.
@@ -456,6 +456,6 @@ The project follows a modular and domain-driven directory structure, aligning wi
     *   The footer has been restructured into a three-column layout using Tailwind CSS grid.
     *   The first column now prominently features the "Global Gateway" branding with an `Award` icon, a descriptive tagline, and an updated copyright notice (`© 2025-30 Global Citizenship Foundation. All rights reserved.`).
     *   The remaining two columns are left empty for future content.
-*   **Dashboard Access Control (`src/app/(admin)/dashboard/page.tsx`, `src/app/(portal)/dashboard/page.tsx`, `src/app/(workbench)/dashboard/page.tsx`):**
+*   **Dashboard Access Control (`src/app/(admin)/console/page.tsx`, `src/app/(portal)/home/page.tsx`, `src/app/(workbench)/desk/page.tsx`):**
     *   The internal role-based authorization checks within each dashboard page have been updated.
     *   If an authenticated user attempts to access a dashboard for which they do not have the required role, they are now explicitly redirected to the `/error/403` (Forbidden) page. This ensures consistent and informative error feedback, preventing potential fallback to `/login` or unexpected 404 errors for authenticated but unauthorized users.

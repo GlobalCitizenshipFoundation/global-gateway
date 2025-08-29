@@ -160,7 +160,7 @@ export async function updateApplicationAction(id: string, formData: FormData): P
     if (formData.has("screening_status") && (isAdmin || isCampaignCreator)) {
       updates.screening_status = formData.get("screening_status") as Application['screening_status'];
     } else if (formData.has("screening_status") && isApplicant) {
-      // If applicant tries to update screening_status, ignore or throw error
+      // If applicant tries to update screening_status, action ignored
       console.warn("Applicant attempted to update screening_status, action ignored.");
     }
 

@@ -83,7 +83,7 @@ export function Sidebar({ isCollapsed, toggleCollapsed, isMobile, isOpen, closeS
 
   if (isLoading) {
     return (
-      <aside className="hidden md:flex flex-col w-64 border-r border-border bg-sidebar-background p-4 space-y-6 shadow-lg flex-shrink-0 h-full overflow-y-auto">
+      <aside className="hidden md:flex flex-col w-64 border-r border-border bg-sidebar-background p-4 space-y-6 rounded-xl shadow-lg flex-shrink-0 h-full overflow-y-auto">
         <Skeleton className="h-8 w-3/4 mb-6" />
         <div className="space-y-2">
           {[...Array(5)].map((_, i) => (
@@ -100,7 +100,7 @@ export function Sidebar({ isCollapsed, toggleCollapsed, isMobile, isOpen, closeS
     {
       title: "Admin Tools",
       items: [
-        { href: "/admin/dashboard", icon: LayoutDashboard, label: "Dashboard" },
+        { href: "/admin/console", icon: LayoutDashboard, label: "Console" },
         { href: "/admin/users", icon: Users, label: "User Management" },
         { href: "/admin/settings", icon: Settings, label: "System Settings" },
       ],
@@ -109,7 +109,7 @@ export function Sidebar({ isCollapsed, toggleCollapsed, isMobile, isOpen, closeS
     {
       title: "Workbench Tools",
       items: [
-        { href: "/workbench/dashboard", icon: LayoutDashboard, label: "Dashboard" },
+        { href: "/workbench/desk", icon: LayoutDashboard, label: "Desk" },
         { href: "/workbench/programs", icon: Briefcase, label: "Programs" },
         { href: "/workbench/pathway-templates", icon: Workflow, label: "Pathway Templates" },
         { href: "/workbench/campaigns", icon: Briefcase, label: "Campaigns" },
@@ -118,14 +118,14 @@ export function Sidebar({ isCollapsed, toggleCollapsed, isMobile, isOpen, closeS
         { href: "/workbench/evaluations", icon: Award, label: "Evaluations" },
         { href: "/workbench/scheduling", icon: Calendar, label: "Scheduling" },
         { href: "/workbench/communications/templates", icon: Mail, label: "Communication Templates" },
-        { href: "/workbench/reports", icon: BarChart3, label: "Reports" }, // Added this line
+        { href: "/workbench/reports", icon: BarChart3, label: "Reports" },
       ],
       roles: ['admin', 'coordinator', 'evaluator', 'screener', 'reviewer'],
     },
     {
       title: "Portal Tools",
       items: [
-        { href: "/portal/dashboard", icon: LayoutDashboard, label: "Dashboard" },
+        { href: "/portal/home", icon: LayoutDashboard, label: "Home" },
         { href: "/portal/my-applications", icon: FileText, label: "My Applications" },
         { href: "/portal/profile", icon: UserCircle2, label: "Profile" },
       ],
