@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, UserCircle2, Briefcase, Workflow, CalendarDays, CheckCircle, XCircle, Clock, FileText, Info } from "lucide-react";
+import { ArrowLeft, UserCircle2, Briefcase, Workflow, CalendarDays, CheckCircle, XCircle, Clock, FileText, Info, Award, Edit } from "lucide-react";
 import { Application } from "../services/application-service";
 import { getApplicationByIdAction, updateApplicationAction } from "../actions";
 import { toast } from "sonner";
@@ -13,9 +13,13 @@ import { useSession } from "@/context/SessionContextProvider";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { ChecklistItemFormType, ScreeningChecklist } from "./ScreeningChecklist"; // Import the new component and type
-import { CollaborativeNotes } from "./CollaborativeNotes"; // Import the new component
-import { WorkflowParticipation } from "./WorkflowParticipation"; // Import the new component
+import { ChecklistItemFormType, ScreeningChecklist } from "./ScreeningChecklist";
+import { CollaborativeNotes } from "./CollaborativeNotes";
+import { WorkflowParticipation } from "./WorkflowParticipation";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"; // Import Dialog components
+import { ReviewForm } from "@/features/evaluations/components/ReviewForm"; // Import ReviewForm
+import { getReviewsAction, getReviewerAssignmentsAction } from "@/features/evaluations/actions"; // Import evaluation actions
+import { Review, ReviewerAssignment } from "@/features/evaluations/services/evaluation-service"; // Import evaluation types
 
 interface ApplicationDetailProps {
   applicationId: string;
@@ -26,6 +30,9 @@ export function ApplicationDetail({ applicationId }: ApplicationDetailProps) {
   const { user, isLoading: isSessionLoading } = useSession();
   const [application, setApplication] = useState<Application | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isReviewFormOpen, setIsReviewFormOpen] = useState(false);
+  const [currentReview, setCurrentReview] = useState<Review | undefined>(undefined);
+  const [reviewerAssignment, setReviewerAssignment] = useState<ReviewerAssignment | null>(null);
 
   const fetchApplicationDetails = async () => {
     setIsLoading(true);
@@ -37,6 +44,18 @@ export function ApplicationDetail({ applicationId }: ApplicationDetailProps) {
         return;
       }
       setApplication(fetchedApplication);
+
+      // Fetch reviewer assignment and existing review if user is a reviewer and in a review phase
+      if (user && fetchedApplication.current_campaign_phase_id && fetchedApplication.campaigns?.id) {
+        const assignments = await getReviewerAssignmentsAction(fetchedApplication.current_campaign_phase_id, user.id);
+        const assignment = assignments?.find(a => a.application_id === fetchedApplication.id);
+        setReviewerAssignment(assignment || null);
+
+        if (assignment) {
+          const reviews = await getReviewsAction(fetchedApplication.id, user.id, fetchedApplication.current_campaign_phase_id);
+          setCurrentReview(reviews?.[0]); // Assuming one review per reviewer per phase
+        }
+      }
     } catch (error: any) {
       toast.error(error.message || "Failed to load application details.");
       router.push("/workbench/applications/screening");
@@ -53,6 +72,11 @@ export function ApplicationDetail({ applicationId }: ApplicationDetailProps) {
       router.push("/login");
     }
   }, [user, isSessionLoading, applicationId]);
+
+  const handleReviewSaved = () => {
+    setIsReviewFormOpen(false);
+    fetchApplicationDetails(); // Re-fetch to update review status
+  };
 
   const getStatusColor = (status: Application['screening_status']) => {
     switch (status) {
@@ -96,15 +120,19 @@ export function ApplicationDetail({ applicationId }: ApplicationDetailProps) {
 
   const userRole: string = user?.user_metadata?.role || '';
   const isAdminOrRecruiter = ['admin', 'coordinator', 'evaluator', 'screener'].includes(userRole);
-  const canModifyApplication: boolean = isAdminOrRecruiter || application.applicant_id === user?.id; // Applicant can modify their own data, recruiters can modify screening tools
-  const canAddNotes: boolean = isAdminOrRecruiter; // Only recruiters/admins can add notes
+  const isReviewer = ['reviewer', 'admin', 'coordinator', 'evaluator'].includes(userRole); // Roles that can review
+  const canModifyApplication: boolean = isAdminOrRecruiter || application.applicant_id === user?.id;
+  const canAddNotes: boolean = isAdminOrRecruiter;
+
+  const isCurrentPhaseReview = application.current_campaign_phases?.type === 'Review';
+  const canSubmitReview = isReviewer && isCurrentPhaseReview && reviewerAssignment?.status === 'accepted';
 
   // Pre-process initialChecklistData to ensure it strictly conforms to ChecklistItemFormType
   const processedChecklistData: ChecklistItemFormType[] = (application.data?.screeningChecklist || []).map((item: any) => ({
     id: item.id,
     item: item.item,
-    checked: item.checked ?? false, // Ensure boolean
-    notes: item.notes ?? null, // Ensure string | null
+    checked: item.checked ?? false,
+    notes: item.notes ?? null,
   }));
 
   return (
@@ -115,7 +143,11 @@ export function ApplicationDetail({ applicationId }: ApplicationDetailProps) {
             <ArrowLeft className="mr-2 h-5 w-5" /> Back to Screening
           </Link>
         </Button>
-        {/* Future: Add actions like "Move to Next Phase", "Send Email" */}
+        {canSubmitReview && (
+          <Button onClick={() => setIsReviewFormOpen(true)} className="rounded-full px-6 py-3 text-label-large">
+            {currentReview ? <><Edit className="mr-2 h-5 w-5" /> Edit Review</> : <><Award className="mr-2 h-5 w-5" /> Submit Review</>}
+          </Button>
+        )}
       </div>
 
       <Card className="rounded-xl shadow-lg p-6">
@@ -184,16 +216,16 @@ export function ApplicationDetail({ applicationId }: ApplicationDetailProps) {
         {/* Internal Checklist */}
         <ScreeningChecklist
           applicationId={application.id}
-          initialChecklistData={processedChecklistData} // Pass the processed data
-          canModify={isAdminOrRecruiter} // Only recruiters/admins can modify the checklist
-          onChecklistUpdated={fetchApplicationDetails} // Refresh data after update
+          initialChecklistData={processedChecklistData}
+          canModify={isAdminOrRecruiter}
+          onChecklistUpdated={fetchApplicationDetails}
         />
 
         {/* Collaborative Notes */}
         <CollaborativeNotes
           applicationId={application.id}
           canAddNotes={canAddNotes}
-          onNotesUpdated={fetchApplicationDetails} // Refresh data after update
+          onNotesUpdated={fetchApplicationDetails}
         />
       </div>
 
@@ -215,6 +247,26 @@ export function ApplicationDetail({ applicationId }: ApplicationDetailProps) {
           )}
         </CardContent>
       </Card>
+
+      {/* Review Form Dialog */}
+      {application.current_campaign_phase_id && (
+        <Dialog open={isReviewFormOpen} onOpenChange={setIsReviewFormOpen}>
+          <DialogContent className="sm:max-w-[800px] rounded-xl shadow-lg bg-card text-card-foreground border-border max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="text-headline-small">
+                {currentReview ? "Edit Your Review" : "Submit Your Review"}
+              </DialogTitle>
+            </DialogHeader>
+            <ReviewForm
+              applicationId={application.id}
+              campaignPhaseId={application.current_campaign_phase_id}
+              initialReview={currentReview}
+              onReviewSaved={handleReviewSaved}
+              onCancel={() => setIsReviewFormOpen(false)}
+            />
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }
