@@ -28,7 +28,7 @@ import { cn } from "@/lib/utils";
 const checklistItemSchema = z.object({
   id: z.string().uuid().optional(), // Optional for new items
   item: z.string().min(1, "Checklist item is required."),
-  checked: z.boolean().default(false), // Inferred type: boolean
+  checked: z.boolean().optional(), // Changed from .default(false) to .optional()
   notes: z.string().nullable().optional(), // Inferred type: string | null | undefined
 });
 
@@ -44,13 +44,8 @@ type ScreeningChecklistFormValues = z.infer<typeof screeningChecklistSchema>;
 
 interface ScreeningChecklistProps {
   applicationId: string;
-  // Allow initial data to be less strict, as it comes from JSONB which might have undefineds
-  initialChecklistData: Array<{
-    id?: string;
-    item: string;
-    checked?: boolean;
-    notes?: string | null;
-  }>;
+  // Changed type to strictly match ChecklistItemFormType
+  initialChecklistData: ChecklistItemFormType[];
   canModify: boolean;
   onChecklistUpdated: () => void; // Callback to refresh parent data if needed
 }
@@ -65,7 +60,7 @@ export function ScreeningChecklist({
   const defaultChecklistItems: ChecklistItemFormType[] = (initialChecklistData || []).map(item => ({
     id: item.id,
     item: item.item,
-    checked: item.checked ?? false, // Ensure 'checked' is always boolean
+    checked: item.checked ?? false, // This ensures 'checked' is always boolean
     notes: item.notes ?? null, // Ensure 'notes' is always string | null
   }));
 
@@ -139,7 +134,7 @@ export function ScreeningChecklist({
                 </div>
 
                 <FormField
-                  control={form.control as Control<ScreeningChecklistFormValues>} // Explicitly cast control
+                  control={form.control} // Removed explicit cast
                   name={`checklist.${index}.item`}
                   render={({ field }) => (
                     <FormItem>
@@ -153,7 +148,7 @@ export function ScreeningChecklist({
                 />
 
                 <FormField
-                  control={form.control as Control<ScreeningChecklistFormValues>} // Explicitly cast control
+                  control={form.control} // Removed explicit cast
                   name={`checklist.${index}.checked`}
                   render={({ field }) => (
                     <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-lg border p-3">
@@ -177,7 +172,7 @@ export function ScreeningChecklist({
                 />
 
                 <FormField
-                  control={form.control as Control<ScreeningChecklistFormValues>} // Explicitly cast control
+                  control={form.control} // Removed explicit cast
                   name={`checklist.${index}.notes`}
                   render={({ field }) => (
                     <FormItem>
