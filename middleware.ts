@@ -1,3 +1,6 @@
+// This log should appear in your server console if middleware.ts is being loaded by Next.js
+console.log("--- middleware.ts file is being loaded! ---");
+
 import { NextResponse, type NextRequest } from 'next/server';
 
 export async function middleware(request: NextRequest) {
