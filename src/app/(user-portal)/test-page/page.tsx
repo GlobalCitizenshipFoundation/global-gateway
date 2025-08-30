@@ -1,13 +1,10 @@
-"use client";
-
 import React from "react";
 
 export default function PortalTestPage() {
-  console.log("[Dyad Debug] PortalTestPage is rendering!");
   return (
     <div className="p-4 text-center text-foreground bg-background">
-      <h1>User Portal Test Page - Direct Access</h1>
-      <p>If you see this, the /user-portal route group is working!</p>
+      <h1 className="text-headline-large">User Portal Test Page</h1>
+      <p className="text-body-large text-muted-foreground mt-4">If you see this, the (user-portal) route group is now correctly configured and protected by the AuthenticatedLayout!</p>
     </div>
   );
 }
