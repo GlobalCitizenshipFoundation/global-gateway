@@ -7,6 +7,7 @@ interface EditCampaignPageProps {
   params: {
     id: string;
   };
+  searchParams?: Record<string, string | string[] | undefined>;
 }
 
 export default async function EditCampaignPage({ params }: EditCampaignPageProps) {

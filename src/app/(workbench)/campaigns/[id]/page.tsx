@@ -7,6 +7,7 @@ interface CampaignDetailPageProps {
   params: {
     id: string;
   };
+  searchParams?: Record<string, string | string[] | undefined>;
 }
 
 export default async function CampaignDetailPage({ params }: CampaignDetailPageProps) {

@@ -7,6 +7,7 @@ interface ApplicationDetailPageProps {
   params: {
     id: string;
   };
+  searchParams?: Record<string, string | string[] | undefined>;
 }
 
 export default async function ApplicationDetailPage({ params }: ApplicationDetailPageProps) {

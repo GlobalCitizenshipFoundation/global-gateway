@@ -7,6 +7,7 @@ interface EditPackagePageProps {
   params: {
     id: string;
   };
+  searchParams?: Record<string, string | string[] | undefined>;
 }
 
 export default async function EditPackagePage({ params }: EditPackagePageProps) {

@@ -7,6 +7,7 @@ interface PathwayTemplateDetailPageProps {
   params: {
     id: string;
   };
+  searchParams?: Record<string, string | string[] | undefined>;
 }
 
 export default async function PathwayTemplateDetailPage({ params }: PathwayTemplateDetailPageProps) {

@@ -4,8 +4,8 @@ import { ShieldOff, Ban, Frown, ServerCrash } from "lucide-react";
 import React from "react";
 
 interface ErrorPageProps {
-  params: Promise<{ code: string }>;
-  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+  params: { code: string };
+  searchParams?: Record<string, string | string[] | undefined>;
 }
 
 const errorConfig: Record<
@@ -49,8 +49,8 @@ const errorConfig: Record<
 };
 
 export default async function ErrorPage({ params, searchParams }: ErrorPageProps) {
-  const { code } = await params;
-  await searchParams; // keep this for type compatibility
+  const { code } = params;
+  // searchParams is a plain object here, no need to await.
 
   const config = errorConfig[code] ?? {
     title: "Something Went Wrong",
