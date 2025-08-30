@@ -81,7 +81,7 @@ This section details the management of phases within a specific pathway template
     *   **Feedback:** `sonner` toast for successful reordering.
 *   **Delete Phase:**
     *   **Interaction:** Clicking "Delete Phase" on a phase card will trigger an M3 `AlertDialog` for confirmation.
-    *   **Confirmation:** The dialog will confirm the deletion of the specific phase.
+    *   **Confirmation:** The dialog will clearly confirm the deletion of the specific phase.
     *   **Access Logic:** Only the `creator_id` of the parent template or a 'super admin' can delete phases.
     *   **Feedback:** `sonner` toast for success or error.
     *   **Post-deletion:** Remove the phase from the list and update the `order_index` of subsequent phases.
@@ -231,7 +231,7 @@ The implementation will proceed in distinct vertical slices, ensuring end-to-end
 
 **Objective:** Allow users to add, remove, and reorder phases within a selected pathway template, respecting access rules.
 
-*   **Data Layer (Supabase - `public.phases` table):**
+*   **Data Layer (Supabase - `public.phases`):**
     *   **Schema:**
         *   `id`: `UUID` (Primary Key, `gen_random_uuid()` default)
         *   `pathway_template_id`: `UUID` (NOT NULL, Foreign Key referencing `public.pathway_templates(id)` ON DELETE CASCADE)
@@ -269,101 +269,337 @@ The implementation will proceed in distinct vertical slices, ensuring end-to-end
             WITH CHECK (true);
             ```
 *   **Service Layer (`src/features/pathway-templates/services/pathway-template-service.ts`):**
-    *   **Functions:**
-        *   `getPhasesByPathwayTemplateId(pathwayTemplateId: string)`: Fetches phases for a given template.
-        *   `createPhase(pathwayTemplateId: string, name: string, type: string, order_index: number, description: string | null, config: Record<string, any>)`: Inserts a new phase.
-        *   `updatePhase(id: string, updates: Partial<Phase>)`: Updates phase details or `order_index`.
-        *   `deletePhase(id: string)`: Deletes a phase.
-*   **Backend (Next.js Server Actions - `src/features/pathway-templates/actions.ts`):**
-    *   **Authorization Logic:** All phase-related Server Actions (`createPhaseAction`, `updatePhaseAction`, `deletePhaseAction`, `reorderPhasesAction`) will first fetch the parent `pathway_template` using `getTemplateByIdAction` to check its `creator_id` and the current user's `user_metadata.role`. They will only proceed if `auth.uid() === template.creator_id` OR `user_metadata.role === 'admin'`. This is critical for enforcing the super admin override and creator-only modification.
-*   **Frontend (UI - `src/app/(workbench)/pathway-templates/[id]/page.tsx`, `src/features/pathway-templates/components/PathwayTemplateDetail.tsx`, `src/features/pathway-templates/components/PhaseCard.tsx`, `src/features/pathway-templates/components/PhaseFormDialog.tsx`):**
-    *   **`src/app/(workbench)/pathway-templates/[id]/page.tsx` (Server Component):** Fetches the specific `PathwayTemplate` and its associated `Phases` using `getTemplateByIdAction` and `getPhasesByPathwayTemplateId` (or Server Actions for data fetching). Renders `PathwayTemplateDetail`.
-    *   **`src/features/pathway-templates/components/PathwayTemplateDetail.tsx` (Client Component):**
-        *   Displays template details and a section for phases.
-        *   Manages the state of phases for drag-and-drop.
-        *   Renders `PhaseCard` components.
-        *   **Conditional Actions:** "Add Phase," "Edit Phase," "Delete Phase," and drag-and-drop functionality will be conditionally rendered/enabled based on the current user's ownership of the parent template or 'admin' role.
-        *   Handles "Add Phase" button click (opens `PhaseFormDialog`).
-        *   Implements drag-and-drop functionality (using a library like `react-beautiful-dnd` or a custom solution) to reorder `PhaseCard` components, calling `reorderPhasesAction` on drop.
-    *   **`src/features/pathway-templates/components/PhaseCard.tsx` (Client Component):**
-        *   Displays individual phase details.
-        *   Includes a drag handle.
-        *   Includes M3 `Button` components for "Edit Phase" (opens `PhaseFormDialog`) and "Delete Phase" (triggers `AlertDialog` and calls `deletePhaseAction`).
-    *   **`src/features/pathway-templates/components/PhaseFormDialog.tsx` (Client Component):**
-        *   An M3 `Dialog` for creating or editing phase `name`, `type`, and `description`.
-        *   Uses `react-hook-form` and `zod` for validation.
-        *   Submits data to `createPhaseAction` or `updatePhaseAction`.
+        *   Functions `getPhasesByPathwayTemplateId`, `createPhase`, `updatePhase`, `deletePhase` are implemented.
+    *   **Backend (Next.js Server Actions - `src/features/pathway-templates/actions.ts`):**
+        *   Server Actions `getPhasesAction`, `createPhaseAction`, `updatePhaseAction`, `deletePhaseAction`, `reorderPhasesAction` are implemented.
+        *   All phase-related Server Actions include robust authorization logic (`authorizeTemplateAction`) to ensure only the `creator_id` of the parent template or a 'super admin' can modify phases.
+    *   **Frontend (UI - `src/app/(workbench)/pathway-templates/[id]/page.tsx`, `src/features/pathway-templates/components/PathwayTemplateDetail.tsx`, `src/features/pathway-templates/components/PhaseCard.tsx`, `src/features/pathway-templates/components/PhaseFormDialog.tsx`):**
+        *   **`src/app/(workbench)/pathway-templates/[id]/page.tsx` (Server Component):** Fetches the specific `PathwayTemplate` and its associated `Phases` using Server Actions. Renders `PathwayTemplateDetail`.
+        *   **`src/features/pathway-templates/components/PathwayTemplateDetail.tsx` (Client Component):**
+            *   Displays template details and a section for phases.
+            *   Manages the state of phases for drag-and-drop using `@hello-pangea/dnd`.
+            *   Renders `PhaseCard` components.
+            *   **Conditional Actions:** "Add Phase," "Edit Phase," "Delete Phase," and drag-and-drop functionality are conditionally rendered/enabled based on user authorization.
+            *   Handles "Add Phase" button click (opens `PhaseFormDialog`).
+            *   Implements drag-and-drop to reorder `PhaseCard` components, calling `reorderPhasesAction` on drop.
+        *   **`src/features/pathway-templates/components/PhaseCard.tsx` (Client Component):**
+            *   Displays individual phase details, includes a drag handle, and M3 `Button` components for "Edit Phase" and "Delete Phase."
+        *   **`src/features/pathway-templates/components/PhaseFormDialog.tsx` (Client Component):**
+            *   An M3 `Dialog` for creating or editing phase `name`, `type`, and `description`.
+            *   Uses `react-hook-form` and `zod` for validation.
+            *   Submits data to `createPhaseAction` or `updatePhaseAction`.
 
-### Vertical 1.3: Phase-Specific Configuration (Initial Form & Review)
+*   **Vertical 1.3: Phase-Specific Configuration (Initial Form & Review)**
+    *   **Data Layer:** The `config` (JSONB) field in `public.phases` stores detailed settings for each phase type.
+    *   **Service Layer (`src/features/pathway-templates/services/pathway-template-service.ts`):**
+        *   The `updatePhase` function is extended to correctly store updates to the `config` JSONB field.
+    *   **Backend (Next.js Server Actions - `src/features/pathway-templates/actions.ts`):**
+        *   `updatePhaseConfigAction(phaseId: string, pathwayTemplateId: string, configUpdates: Record<string, any>)` is implemented with full authorization.
+    *   **Frontend (UI - `src/features/pathway-templates/components/PhaseConfigurationPanel.tsx`, and `src/features/pathway-templates/components/phase-configs/*.tsx`):**
+        *   **`src/features/pathway-templates/components/PhaseConfigurationPanel.tsx` (Client Component):** Dynamically renders specific configuration sub-components (`FormPhaseConfig`, `ReviewPhaseConfig`, `EmailPhaseConfig`, `SchedulingPhaseConfig`, `DecisionPhaseConfig`, `RecommendationPhaseConfig`) based on `phase.type`. It passes `phase.config` and handles updates via `updatePhaseConfigAction`.
+        *   **`src/features/pathway-templates/components/phase-configs/FormPhaseConfig.tsx` (Client Component):** UI for defining form fields with dynamic array management using `react-hook-form` and `zod`.
+        *   **`src/features/pathway-templates/components/phase-configs/ReviewPhaseConfig.tsx` (Client Component):** UI for defining rubric criteria, scoring scales, and anonymization settings.
+        *   **`src/features/pathway-templates/components/phase-configs/EmailPhaseConfig.tsx` (Client Component):** UI for defining email subject, body, recipient roles, and trigger events.
+        *   **`src/features/pathway-templates/components/phase-configs/SchedulingPhaseConfig.tsx` (Client Component):** UI for defining interview duration, buffer time, and host selection.
+        *   **`src/features/pathway-templates/components/phase-configs/DecisionPhaseConfig.tsx` (Client Component):** UI for defining decision outcomes, associated email templates, and automated next steps.
+        *   **`src/features/pathway-templates/components/phase-configs/RecommendationPhaseConfig.tsx` (Client Component):** UI for defining number of recommenders, recommender information fields, and reminder schedules.
 
-**Objective:** Enable basic configuration for "Form" and "Review" phase types using the `config` JSONB field, respecting access rules.
+*   **Vertical 1.4: Template Cloning**
+    *   **Service Layer (`src/features/pathway-templates/services/pathway-template-service.ts`):**
+        *   `clonePathwayTemplate(templateId: string, newName: string, creatorId: string)` is implemented to perform a deep copy of a template and its phases.
+    *   **Backend (Next.js Server Actions - `src/features/pathway-templates/actions.ts`):**
+        *   `clonePathwayTemplateAction(templateId: string, newName: string)` is implemented with authorization to ensure only authenticated users can clone viewable templates.
+    *   **Frontend (UI - `src/features/pathway-templates/components/CloneTemplateDialog.tsx`):**
+        *   An M3 `Dialog` (`CloneTemplateDialog`) is used for inputting the new template name.
+        *   A "Clone" M3 `Button` is added to `PathwayTemplateList` and `PathwayTemplateDetail` to trigger the dialog.
 
-*   **Data Layer:** The `config` column in `public.phases` will store JSON objects specific to each phase type.
-*   **Service Layer (`src/features/pathway-templates/services/pathway-template-service.ts`):**
-    *   The `updatePhase` function will be extended to accept and correctly store updates to the `config` JSONB field.
-*   **Backend (Next.js Server Actions - `src/features/pathway-templates/actions.ts`):**
-    *   `updatePhaseConfigAction(phaseId: string, configUpdates: Record<string, any>)`: Will include the same authorization logic as other phase-related actions (check parent template ownership or 'admin' role).
-*   **Frontend (UI - `src/features/pathway-templates/components/PhaseConfigurationPanel.tsx`, `src/features/pathway-templates/components/phase-configs/FormPhaseConfig.tsx`, `src/features/pathway-templates/components/phase-configs/ReviewPhaseConfig.tsx`):**
-    *   **`src/features/pathway-templates/components/PhaseConfigurationPanel.tsx` (Client Component):**
-        *   This component will be rendered within the `PathwayTemplateDetail` or a dedicated `Dialog`/`Sheet` when a user wants to configure a phase.
-        *   It will dynamically render a specific configuration sub-component based on the `phase.type`.
-        *   It will pass the current `phase.config` data to the sub-component and receive updated `config` data back for submission via `updatePhaseConfigAction`.
-        *   **Conditional UI:** Configuration panels and their interactive elements will be conditionally enabled/disabled based on the user's authorization.
-    *   **`src/features/pathway-templates/components/phase-configs/FormPhaseConfig.tsx` (Client Component):**
-        *   Renders UI for defining form fields. Uses `react-hook-form` for managing a dynamic array of field objects. M3 `Input`, `Select`, `Switch` components.
-    *   **`src/features/pathway-templates/components/phase-configs/ReviewPhaseConfig.tsx` (Client Component):**
-        *   Renders UI for defining rubric criteria. Uses `react-hook-form` for managing a dynamic array of criteria objects. M3 `Input`, `Textarea`, `Select`, `RadioGroup`, `Switch` components.
-    *   **`src/features/pathway-templates/components/phase-configs/EmailPhaseConfig.tsx` (Client Component):**
-        *   Renders UI for defining email subject, body, recipient roles, and trigger events.
-    *   **`src/features/pathway-templates/components/phase-configs/SchedulingPhaseConfig.tsx` (Client Component):**
-        *   Renders UI for defining interview duration, buffer time, and host selection.
-    *   **`src/features/pathway-templates/components/phase-configs/DecisionPhaseConfig.tsx` (Client Component):**
-        *   Renders UI for defining decision outcomes, associated email templates, and automated next steps.
-    *   **`src/features/pathway-templates/components/phase-configs/RecommendationPhaseConfig.tsx` (Client Component):**
-        *   Renders UI for defining number of recommenders, recommender information fields, and reminder schedules.
+---
 
-### Vertical 1.4: Template Cloning
+## Vertical 2: Campaign Management & Campaign Phases
 
-**Objective:** Allow users to duplicate an existing pathway template and its phases, respecting access rules.
+**Objective:** To enable users to create, manage, and monitor live instances of programs (campaigns) based on pathway templates, including the configuration and reordering of campaign-specific phases.
 
-*   **Service Layer (`src/features/pathway-templates/services/pathway-template-service.ts`):**
-    *   `clonePathwayTemplate(templateId: string, newName: string, creatorId: string)`: This function will fetch the original `PathwayTemplate` and all its `Phases`, then insert a new `PathwayTemplate` record with the `newName` and `creatorId`, and for each original phase, insert a new `Phase` record, linking it to the new `pathway_template_id`, copying `name`, `type`, `description`, `order_index`, and `config`. Returns the newly created `PathwayTemplate`.
-*   **Backend (Next.js Server Actions - `src/features/pathway-templates/actions.ts`):**
-    *   `clonePathwayTemplateAction(templateId: string, newName: string)`:
-        *   **Authorization Logic:** This action will first check if the user is authenticated. It will then call `pathwayTemplateService.clonePathwayTemplate` using the current `auth.uid()` as the `creatorId` for the new template. No specific ownership check on the *original* template is needed here, as cloning is allowed for any viewable template.
-*   **Frontend (UI - `src/features/pathway-templates/components/CloneTemplateDialog.tsx`):**
-    *   **Interaction:** A "Clone" M3 `Button` will be added to `PathwayTemplateList` and `PathwayTemplateDetail`. Clicking it opens `CloneTemplateDialog`.
-    *   **`src/features/pathway-templates/components/CloneTemplateDialog.tsx` (Client Component):**
-        *   An M3 `Dialog` with an `Input` field for the `New Template Name`.
-        *   Uses `react-hook-form` and `zod` for validation.
-        *   Submits the `templateId` and `newName` to `clonePathwayTemplateAction`.
-        *   On success, displays a `sonner` toast and redirects to the new template's detail page.
-    *   **Conditional UI:** The "Clone" button will be visible for any template that the current user has `SELECT` access to (i.e., their own, or public templates, or any template if they are an admin).
+**Implementation Details:**
 
-## 6. Error Handling and Security (Reinforced)
+*   **Vertical 2.1: Basic Campaign Management (CRUD & Listing)**
+    *   **Database Schema (`public.campaigns`):**
+        *   Table created with `id`, `pathway_template_id`, `creator_id`, `name`, `description`, `start_date`, `end_date`, `is_public`, `status`, `config`, `created_at`, `updated_at` columns.
+        *   **Row Level Security (RLS)** enabled with policies for `SELECT` (own, public, or campaigns within own programs), `INSERT` (own or within own programs), `UPDATE` (own or within own programs), and `DELETE` (own or within own programs). Admin override is handled at the Server Action layer.
+    *   **Service Layer (`src/features/campaigns/services/campaign-service.ts`):**
+        *   Functions `getCampaigns`, `getCampaignById`, `createCampaign`, `updateCampaign`, `deleteCampaign` are implemented.
+    *   **Backend (Next.js Server Actions - `src/features/campaigns/actions.ts`):**
+        *   Server Actions `getCampaignsAction`, `getCampaignByIdAction`, `createCampaignAction`, `updateCampaignAction`, `deleteCampaignAction` are implemented.
+        *   Authorization logic (`authorizeCampaignAction`) is applied to all actions, checking `creator_id`, `program_id` (for program ownership), and `user_metadata.role` (for 'admin' override).
+    *   **Frontend (UI - `src/app/(workbench)/campaigns/page.tsx`, `src/features/campaigns/components/CampaignList.tsx`, `src/features/campaigns/components/CampaignForm.tsx`):**
+        *   **`src/app/(workbench)/campaigns/page.tsx` (Server Component):** Fetches initial campaign data and renders `CampaignList`.
+        *   **`src/features/campaigns/components/CampaignList.tsx` (Client Component):**
+            *   Displays M3 `Card` components for campaigns with conditional UI for public/private status.
+            *   Includes search and filter options.
+            *   Handles "Create New Campaign," "Edit," and "Delete" actions.
+        *   **`src/features/campaigns/components/CampaignForm.tsx` (Client Component):**
+            *   Used for creating and editing campaigns.
+            *   Includes fields for `name`, `description`, `pathway_template_id` (using `Select` with data from `getTemplatesAction`), `start_date`, `end_date` (using `Calendar` in `Popover`), `is_public` (using `Switch`), and `status`.
+            *   Submits data via `createCampaignAction` or `updateCampaignAction`.
 
-*   **Error Handling:**
-    *   **Client-side:** `react-hook-form` for inline form validation errors. `sonner` for all success, warning, and error notifications from API/Server Action calls.
-    *   **Server-side:** All Server Actions will include `try-catch` blocks to gracefully handle errors from the `pathwayTemplateService`. Errors will be logged (e.g., to `errors.md` during development, or a dedicated logging service in production) and returned in a standardized format.
-    *   **Global:** The existing `src/app/error.tsx` and `src/app/(public)/error-pages/[code]/page.tsx` will catch unhandled client-side rendering errors and specific HTTP errors (e.g., 401, 403 if middleware redirects).
-*   **Security:**
-    *   **RLS:** Mandatory RLS on `pathway_templates` and `phases` tables, ensuring users only access data they are authorized to see or data associated with their owned templates.
-    *   **Server Actions (Crucial for RBAC):** Explicit server-side authorization checks within *every* Server Action that performs a mutation (INSERT, UPDATE, DELETE) or fetches sensitive data. This is where the application-level `user_metadata.role` will be checked to implement the 'super admin' override and ensure only creators can modify their own non-admin-overridden templates. This layered approach (RLS + Server Actions) is robust and adheres to the "Security by Design" principle from `Architecture.md`.
-    *   **Least Privilege:** Maintained by ensuring checks are granular.
+*   **Vertical 2.2: Campaign Phase Management (Deep Copy, Add, Delete, Reorder)**
+    *   **Database Schema (`public.campaign_phases`):**
+        *   Table created with `id`, `campaign_id`, `original_phase_id`, `name`, `type`, `description`, `order_index`, `config`, `created_at`, `updated_at` columns.
+        *   **Row Level Security (RLS)** enabled with policies for `SELECT`, `INSERT`, `UPDATE`, `DELETE` based on the parent campaign's authorization.
+    *   **Service Layer (`src/features/campaigns/services/campaign-service.ts`):**
+        *   Functions `getCampaignPhasesByCampaignId`, `createCampaignPhase`, `updateCampaignPhase`, `deleteCampaignPhase`, `deepCopyPhasesFromTemplate` are implemented.
+    *   **Backend (Next.js Server Actions - `src/features/campaigns/actions.ts`):**
+        *   Server Actions `getCampaignPhasesAction`, `createCampaignPhaseAction`, `updateCampaignPhaseAction`, `deleteCampaignPhaseAction`, `reorderCampaignPhasesAction` are implemented with full authorization checks against the parent campaign.
+    *   **Frontend (UI - `src/app/(workbench)/campaigns/[id]/page.tsx`, `src/features/campaigns/components/CampaignDetail.tsx`, `src/features/campaigns/components/CampaignPhaseCard.tsx`, `src/features/campaigns/components/CampaignPhaseFormDialog.tsx`):**
+        *   **`src/app/(workbench)/campaigns/[id]/page.tsx` (Server Component):** Fetches campaign and its phases. Renders `CampaignDetail`.
+        *   **`src/features/campaigns/components/CampaignDetail.tsx` (Client Component):**
+            *   Displays campaign details and a section for campaign phases.
+            *   Implements drag-and-drop for phases using `@hello-pangea/dnd`.
+            *   **Conditional Actions:** "Add New Phase," "Edit Phase," "Delete Phase," and drag-and-drop are conditional based on user authorization.
+        *   **`src/features/campaigns/components/CampaignPhaseCard.tsx` (Client Component):** Displays individual campaign phase details with actions.
+        *   **`src/features/campaigns/components/CampaignPhaseFormDialog.tsx` (Client Component):** M3 `Dialog` for creating/editing campaign phase details.
 
-## 7. Summary of Current Progress and Next Steps
+*   **Vertical 2.3: Campaign Phase-Specific Configuration**
+    *   **Backend (Next.js Server Actions - `src/features/campaigns/actions.ts`):**
+        *   `updateCampaignPhaseConfigAction(phaseId: string, campaignId: string, configUpdates: Record<string, any>)` is implemented with full authorization.
+    *   **Frontend (UI - `src/features/campaigns/components/CampaignPhaseConfigurationPanel.tsx`):**
+        *   **`src/features/campaigns/components/CampaignPhaseConfigurationPanel.tsx` (Client Component):** Reuses the `PhaseConfigurationPanel` and `phase-configs` components from `pathway-templates` by passing a campaign-specific `updatePhaseConfigAction` wrapper. This demonstrates the reusability of phase configuration logic.
+
+---
+
+## Vertical 3: Programs & Individual Assignments
+
+**Objective:** To introduce a higher-level "Program" entity to group related campaigns and to enable the assignment of internal staff (e.g., program managers, coordinators) to these programs.
+
+**Implementation Details:**
+
+*   **Database Schema (`public.programs`):**
+    *   Table created with `id`, `creator_id`, `name`, `description`, `start_date`, `end_date`, `status`, `created_at`, `updated_at` columns.
+    *   **Row Level Security (RLS)** enabled with policies for `SELECT` (own or admin), `INSERT` (own), `UPDATE` (own or admin), and `DELETE` (own or admin).
+*   **Database Schema (`public.campaigns` update):**
+    *   `program_id` column added as a foreign key to `public.programs`.
+    *   RLS policies for `campaigns` updated to allow program creators (and admins) to view, insert, update, and delete campaigns associated with their programs. The `INSERT` policy was simplified to work around Supabase RLS limitations with `NEW` in subqueries, with full authorization handled in Server Actions.
+*   **Service Layer (`src/features/programs/services/program-service.ts`):**
+    *   New service `programService` created with functions `getPrograms`, `getProgramById`, `createProgram`, `updateProgram`, `deleteProgram`.
+    *   The `Program` interface is reused from `src/features/campaigns/services/campaign-service.ts` to maintain a single source of truth for the Program type.
+*   **Backend (Next.js Server Actions - `src/features/programs/actions.ts`):
+    *   Server Actions `getProgramsAction`, `getProgramByIdAction`, `createProgramAction`, `updateProgramAction`, `deleteProgramAction` are implemented.
+    *   Authorization logic (`authorizeProgramAction`) is applied to all actions, checking `creator_id` and `user_metadata.role` (for 'admin' override).
+    *   `createCampaignAction` and `updateCampaignAction` in `src/features/campaigns/actions.ts` are updated to include authorization checks for `program_id` when linking campaigns to programs.
+*   **Frontend (UI - `src/app/(workbench)/programs/*`, `src/features/programs/components/ProgramList.tsx`, `src/features/programs/components/ProgramForm.tsx`, `src/features/programs/components/ProgramDetail.tsx`, `src/features/campaigns/components/CampaignListForProgram.tsx`):**
+    *   **`src/app/(workbench)/programs/page.tsx` (Server Component):** Renders `ProgramList`.
+    *   **`src/app/(workbench)/programs/new/page.tsx` (Server Component):** Renders `ProgramForm` for creation.
+    *   **`src/app/(workbench)/programs/[id]/page.tsx` (Server Component):** Renders `ProgramDetail`.
+    *   **`src/app/(workbench)/programs/[id]/edit/page.tsx` (Server Component):** Renders `ProgramForm` for editing.
+    *   **`src/features/programs/components/ProgramList.tsx` (Client Component):** Displays a list of programs with CRUD actions, search, and filter by ownership.
+    *   **`src/features/programs/components/ProgramForm.tsx` (Client Component):** Form for creating/editing program details, including name, description, dates, and status.
+    *   **`src/features/programs/components/ProgramDetail.tsx` (Client Component):** Displays program details and includes a new `CampaignListForProgram` component to show associated campaigns. It also provides a button to "Add New Campaign" pre-filling the `programId`.
+    *   **`src/features/campaigns/components/CampaignListForProgram.tsx` (Client Component):** A new component to display campaigns filtered by a specific `programId`. It reuses existing campaign card UI and actions, adapting them for display within a program's detail view.
+*   **Sidebar Update (`src/components/layout/Sidebar.tsx`):**
+    *   A new navigation link for "Programs" has been added under "Workbench Tools."
+
+---
+
+## Vertical 4: Application Management & Screening Phase
+
+**Objective:** To enable applicants to submit applications and internal staff (recruiters/screeners) to manage and screen these applications, including internal checklists and collaborative notes, while maintaining applicant privacy.
+
+**Implementation Details:**
+
+*   **Database Schema (`public.applications`):**
+    *   Table created with `id`, `campaign_id`, `applicant_id`, `current_campaign_phase_id`, `status`, `screening_status`, `data` (JSONB), `created_at`, `updated_at` columns.
+    *   **Row Level Security (RLS)** enabled with policies for `SELECT` (applicant's own, campaign creator's, or public campaigns), `INSERT` (applicant's own), `UPDATE` (applicant's own for general data, campaign creator/admin for screening status/phase), and `DELETE` (campaign creator/admin).
+*   **Database Schema (`public.application_notes`):**
+    *   Table created with `id`, `application_id`, `author_id`, `content`, `created_at`, `updated_at` columns.
+    *   **Row Level Security (RLS)** enabled with policies for `SELECT` (authorized users of parent application), `INSERT` (campaign creator/admin), `UPDATE` (author or admin), `DELETE` (author or admin).
+*   **Service Layer (`src/features/applications/services/application-service.ts`):**
+    *   New service `applicationService` created with functions for application CRUD (`getApplications`, `getApplicationById`, `createApplication`, `updateApplication`, `deleteApplication`) and collaborative notes management (`getApplicationNotes`, `createApplicationNote`, `updateApplicationNote`, `deleteApplicationNote`).
+*   **Backend (Next.js Server Actions - `src/features/applications/actions.ts`):**
+    *   Server Actions for application management (`getApplicationsAction`, `getApplicationByIdAction`, `createApplicationAction`, `updateApplicationAction`, `deleteApplicationAction`) and notes management (`getApplicationNotesAction`, `createApplicationNoteAction`, `updateApplicationNoteAction`, `deleteApplicationNoteAction`) are implemented.
+    *   Robust authorization logic (`authorizeApplicationAction`, `authorizeNoteAction`) is applied to all actions, ensuring strict role-based access control.
+*   **Frontend (UI - `src/app/(workbench)/applications/screening/page.tsx`, `src/app/(workbench)/applications/[id]/page.tsx`, `src/features/applications/components/ScreeningDashboard.tsx`, `src/features/applications/components/ApplicationDetail.tsx`, `src/features/applications/components/ScreeningChecklist.tsx`, `src/features/applications/components/CollaborativeNotes.tsx`, `src/features/applications/components/WorkflowParticipation.tsx`):**
+    *   **`src/app/(workbench)/applications/screening/page.tsx` (Server Component):** Renders `ScreeningDashboard`.
+    *   **`src/features/applications/components/ScreeningDashboard.tsx` (Client Component):**
+        *   Displays a list of applications in a card-based layout, showing applicant name, campaign, current phase, and screening status.
+        *   Includes search, filter by status, and filter by campaign.
+        *   Provides quick actions to update screening status (Accept, On Hold, Deny) and view application details.
+        *   Access is restricted to 'admin', 'coordinator', 'evaluator', 'screener' roles.
+    *   **`src/app/(workbench)/applications/[id]/page.tsx` (Server Component):** Renders `ApplicationDetail`.
+    *   **`src/features/applications/components/ApplicationDetail.tsx` (Client Component):**
+        *   Displays comprehensive details of a single application, including applicant info, campaign details, and overall status.
+        *   Integrates `ScreeningChecklist`, `CollaborativeNotes`, and `WorkflowParticipation` components.
+        *   Conditional UI and actions based on user role (applicant, campaign creator, admin).
+    *   **`src/features/applications/components/ScreeningChecklist.tsx` (Client Component):**
+        *   An internal tool for recruiters/screeners to manage a dynamic checklist for each application.
+        *   Uses `react-hook-form` with `useFieldArray` for repeatable checklist items.
+        *   Data is stored in the `data` (JSONB) field of the `applications` table.
+        *   Only visible and modifiable by authorized internal staff.
+    *   **`src/features/applications/components/CollaborativeNotes.tsx` (Client Component):**
+        *   Enables internal team members to add and manage private notes on an application.
+        *   Displays notes chronologically with author and timestamp.
+        *   Supports editing and deleting notes by the author or admin.
+        *   Only visible and modifiable by authorized internal staff.
+    *   **`src/features/applications/components/WorkflowParticipation.tsx` (Client Component):**
+        *   Provides a visual overview of the applicant's progress through the campaign's phases.
+        *   Displays each phase with an icon indicating its status (pending, in progress, completed, rejected).
+        *   Dynamically fetches campaign phases and highlights the `current_campaign_phase_id`.
+*   **Sidebar Update (`src/components/layout/Sidebar.tsx`):**
+    *   A new navigation link for "Applications Screening" has been added under "Workbench Tools."
+
+---
+
+## Vertical 5: Review & Decision Phases
+
+**Objective:** To provide tools for reviewers to submit evaluations and for authorized personnel to record final decisions for applications, integrating with the application workflow.
+
+**Implementation Details:**
+
+*   **Database Schema (`public.reviews`):**
+    *   Table created with `id`, `application_id`, `reviewer_id`, `campaign_phase_id`, `score` (JSONB), `comments`, `status`, `created_at`, `updated_at` columns.
+    *   **Row Level Security (RLS)** enabled with policies for `SELECT` (reviewer's own, campaign creator's, or admin), `INSERT` (authenticated users), `UPDATE` (reviewer's own or admin), `DELETE` (reviewer's own or admin).
+*   **Database Schema (`public.reviewer_assignments`):**
+    *   Table created with `id`, `application_id`, `reviewer_id`, `campaign_phase_id`, `status`, `assigned_at`, `completed_at`, `created_at`, `updated_at` columns.
+    *   **Row Level Security (RLS)** enabled with policies for `SELECT` (reviewer's own, campaign creator's, or admin), `INSERT` (campaign creator/admin), `UPDATE` (reviewer's own or admin/creator), `DELETE` (admin/creator).
+*   **Database Schema (`public.decisions`):**
+    *   Table created with `id`, `application_id`, `campaign_phase_id`, `decider_id`, `outcome`, `notes`, `is_final`, `created_at`, `updated_at` columns.
+    *   **Row Level Security (RLS)** enabled with policies for `SELECT` (applicant's final decisions, campaign creator's, or admin), `INSERT` (campaign creator/admin), `UPDATE` (campaign creator/admin), `DELETE` (campaign creator/admin).
+*   **Service Layer (`src/features/evaluations/services/evaluation-service.ts`):**
+    *   New service `evaluationService` created with functions for:
+        *   Reviewer Assignments: `getReviewerAssignments`, `createReviewerAssignment`, `updateReviewerAssignment`, `deleteReviewerAssignment`.
+        *   Reviews: `getReviews`, `createReview`, `updateReview`, `deleteReview`.
+        *   Decisions: `getDecisions`, `createDecision`, `updateDecision`, `deleteDecision`.
+*   **Backend (Next.js Server Actions - `src/features/evaluations/actions.ts`):**
+    *   Server Actions for all evaluation-related operations are implemented.
+    *   Authorization logic (`authorizeApplicationAccessForEvaluation`, `authorizeNoteAction` - for reviews/decisions on an application) is applied to ensure strict role-based access.
+*   **Frontend (UI - `src/app/(workbench)/evaluations/my-reviews/page.tsx`, `src/features/evaluations/components/ReviewerDashboard.tsx`, `src/features/evaluations/components/ReviewForm.tsx`, `src/features/evaluations/components/DecisionForm.tsx`, `src/features/evaluations/components/DecisionList.tsx`):**
+    *   **`src/app/(workbench)/evaluations/my-reviews/page.tsx` (Server Component):** Renders `ReviewerDashboard`.
+    *   **`src/features/evaluations/components/ReviewerDashboard.tsx` (Client Component):**
+        *   Provides a personalized dashboard for reviewers, displaying their assigned applications and submitted/pending reviews.
+        *   Includes filters and actions to update assignment status (Accept, Decline, Complete) and initiate/edit reviews.
+        *   Access is restricted to 'reviewer', 'admin', 'coordinator', 'evaluator', 'screener' roles.
+    *   **`src/features/evaluations/components/ReviewForm.tsx` (Client Component):**
+        *   An M3 `Dialog` for reviewers to submit or edit their evaluation.
+        *   Dynamically renders rubric criteria based on the `campaign_phase` configuration.
+        *   Uses `react-hook-form` for scoring and comments.
+        *   Submits data via `createReviewAction` or `updateReviewAction`.
+    *   **`src/features/evaluations/components/DecisionForm.tsx` (Client Component):**
+        *   An M3 `Dialog` for authorized users (admin/campaign creator) to record or edit a decision.
+        *   Dynamically renders decision outcomes based on the `campaign_phase` configuration.
+        *   Includes fields for `outcome`, `notes`, and `is_final` (using `Switch`).
+        *   Submits data via `createDecisionAction` or `updateDecisionAction`.
+    *   **`src/features/evaluations/components/DecisionList.tsx` (Client Component):**
+        *   Displays all recorded decisions for a given application.
+        *   Includes details like outcome, decider, notes, and final status.
+        *   Provides actions to edit or delete decisions for authorized users.
+    *   **`src/features/applications/components/ApplicationDetail.tsx` (Client Component):**
+        *   Integrated `ReviewForm` and `DecisionForm` dialogs, allowing direct interaction from the application detail view.
+        *   Displays existing decisions using `DecisionList`.
+*   **Sidebar Update (`src/components/layout/Sidebar.tsx`):**
+    *   A new navigation link for "My Reviews" has been added under "Workbench Tools."
+
+---
+
+## Communication & Notifications
+
+**Objective:** To provide a centralized system for managing reusable communication templates (email, in-app, SMS) and integrating them into various workflow phases.
+
+**Implementation Details:**
+
+*   **Database Schema (`public.communication_templates`):**
+    *   Table created with `id`, `creator_id`, `name`, `subject`, `body`, `type` (`email`, `in-app`, `sms`), `is_public`, `created_at`, `updated_at` columns.
+    *   **Row Level Security (RLS)** enabled with policies for `SELECT` (own or public templates), `INSERT` (own templates), `UPDATE` (own templates), and `DELETE` (own templates). Admin override is handled at the Server Action layer.
+*   **Service Layer (`src/features/communications/services/communication-service.ts`):**
+    *   New service `communicationService` created with functions `getCommunicationTemplates`, `getCommunicationTemplateById`, `createCommunicationTemplate`, `updateCommunicationTemplate`, `deleteCommunicationTemplate` for CRUD operations.
+*   **Backend (Next.js Server Actions - `src/features/communications/actions.ts`):**
+    *   Server Actions `getCommunicationTemplatesAction`, `getCommunicationTemplateByIdAction`, `createCommunicationTemplateAction`, `updateCommunicationTemplateAction`, `deleteCommunicationTemplateAction` are implemented.
+    *   Authorization logic (`authorizeCommunicationTemplateAction`) is applied to all actions, checking `creator_id` and `user_metadata.role` (for 'admin' override).
+*   **Frontend (UI - `src/app/(workbench)/communications/templates/page.tsx`, `src/app/(workbench)/communications/templates/new/page.tsx`, `src/app/(workbench)/communications/templates/[id]/edit/page.tsx`, `src/features/communications/components/CommunicationTemplateList.tsx`, `src/features/communications/components/CommunicationTemplateForm.tsx`):**
+    *   **`src/app/(workbench)/communications/templates/page.tsx` (Server Component):** Renders `CommunicationTemplateList`.
+    *   **`src/app/(workbench)/communications/templates/new/page.tsx` (Server Component):** Renders `CommunicationTemplateForm` for creation.
+    *   **`src/app/(workbench)/communications/templates/[id]/edit/page.tsx` (Server Component):** Renders `CommunicationTemplateForm` for editing.
+    *   **`src/features/communications/components/CommunicationTemplateList.tsx` (Client Component):** Displays a list of communication templates with CRUD actions, search, and filters by type and ownership.
+    *   **`src/features/communications/components/CommunicationTemplateForm.tsx` (Client Component):** Form for creating/editing communication template details, including name, subject, body, type, and public/private status.
+*   **Integration with Email Phase Configuration (`src/features/pathway-templates/components/phase-configs/EmailPhaseConfig.tsx`):**
+    *   The `EmailPhaseConfig` component has been updated to fetch and display available `CommunicationTemplates` of type 'email'.
+    *   Users can now select an existing template to pre-fill the subject and body fields of the email phase configuration.
+*   **Sidebar Update (`src/components/layout/Sidebar.tsx`):**
+    *   A new navigation link for "Communication Templates" has been added under "Workbench Tools."
+
+---
+
+## Reporting & Insights
+
+**Objective:** To provide administrators and coordinators with dashboards and reports to monitor application and campaign performance.
+
+**Implementation Details:**
+
+*   **Data Layer:** Leverages existing `applications` and `campaigns` tables for data aggregation. No new database tables are created in this initial phase.
+*   **Service Layer (`src/features/reports/services/report-service.ts`):**
+    *   New service `reportService` created with `getApplicationOverviewReport()` function.
+    *   This function queries Supabase to get counts of total applications, applications by status, and applications by campaign.
+*   **Backend (Next.js Server Actions - `src/features/reports/actions.ts`):**
+    *   Server Action `getApplicationOverviewReportAction()` is implemented.
+    *   **Authorization Logic:** Access is restricted to users with 'admin' or 'coordinator' roles. Unauthorized users are redirected to a 403 error page.
+*   **Frontend (UI - `src/app/(workbench)/reports/page.tsx`, `src/features/reports/components/ReportDashboard.tsx`):**
+    *   **`src/app/(workbench)/reports/page.tsx` (Server Component):** Renders the `ReportDashboard` component.
+    *   **`src/features/reports/components/ReportDashboard.tsx` (Client Component):**
+        *   Fetches report data using `getApplicationOverviewReportAction()`.
+        *   Displays key metrics in M3-styled `Card` components (Total Applications, Pending/In Review, Accepted, Rejected).
+        *   Visualizes data using `recharts` components:
+            *   A `BarChart` for "Applications by Status".
+            *   A `PieChart` for "Applications by Campaign".
+        *   Includes loading states with `Skeleton` components.
+        *   Ensures M3 design principles for typography, colors, and component styling.
+*   **Sidebar Update (`src/components/layout/Sidebar.tsx`):**
+    *   A new navigation link for "Reports" has been added under "Workbench Tools."
+
+---
+
+## User Profile Enhancements
+
+**Objective:** To enrich user profiles with more detailed personal and professional information and ensure this data is securely managed and displayed.
+
+**Implementation Details:**
+
+*   **`src/types/supabase.ts`**: The `Profile` interface has been updated to include an `email: string | null` field, allowing the user's email to be consistently typed and used across the application.
+*   **`src/features/user-profile/services/profile-service.ts`**: The `getProfileById` and `updateProfile` functions have been modified to perform a join with the `auth.users` table. This allows the user's email to be fetched alongside their profile data, ensuring that the `Profile` object is complete with both custom profile fields and core authentication details.
+*   **`src/features/user-profile/components/ProfileHeader.tsx`**: The component now correctly displays the user's email address (fetched from `auth.users`) in the contact information section, replacing the previous display of the user's UUID. This provides a more intuitive and complete user experience.
+*   **Existing Profile Fields**: The `ProfileForm.tsx`, `ProfileBio.tsx`, and `ProfileHeader.tsx` components already support the display and editing of additional profile fields such as `job_title`, `organization`, `location`, `phone_number`, `linkedin_url`, `orcid_url`, `website_url`, and `bio`, adhering to Material Design 3 principles for input fields and layout.
+
+---
+
+## Homepage Footer & Dashboard Access Refinements
+
+**Objective:** To refine the public homepage footer for better branding and to enhance dashboard access control and error handling for authenticated users, particularly administrators.
+
+**Implementation Details:**
+
+*   **Homepage Footer (`src/app/page.tsx`):**
+    *   The footer has been restructured into a three-column layout using Tailwind CSS grid.
+    *   The first column now prominently features the "Global Gateway" branding with an `Award` icon, a descriptive tagline, and an updated copyright notice (`© 2025-30 Global Citizenship Foundation. All rights reserved.`).
+    *   The remaining two columns are left empty for future content.
+*   **Dashboard Access Control (`src/app/(admin)/console/page.tsx`, `src/app/(portal)/dashboard/page.tsx`, `src/app/(workbench)/desk/page.tsx`):**
+    *   The internal role-based authorization checks within each dashboard page have been updated.
+    *   If an authenticated user attempts to access a dashboard for which they do not have the required role, they are now explicitly redirected to the `/error/403` (Forbidden) page. This ensures consistent and informative error feedback, preventing potential fallback to `/login` or unexpected 404 errors for authenticated but unauthorized users.
+
+---
+
+## Summary of Current Progress and Next Steps
 
 **What has been done:**
-*   **Vertical 0 (Public Homepage & Role-Based Dashboards)** is complete, providing a solid foundation with M3 styling, Supabase integration, session management, login, role-based dashboards, authentication middleware, and comprehensive error handling.
-*   **Vertical 1 (Pathway Templates & Phase Configuration)** is now fully implemented. This includes:
-    *   Basic Pathway Template Management (CRUD & Listing) with full authorization.
-    *   Basic Phase Management (Add, Delete, Reorder) within templates, also with full authorization.
-    *   Phase-Specific Configuration for all defined phase types (Form, Review, Email, Scheduling, Decision, Recommendation).
-    *   Template Cloning functionality, allowing users to duplicate templates and their phases.
+*   **Vertical 0 (Foundation):** Public Homepage, Authentication, Role-Based Dashboards, and core M3 styling are fully implemented. This includes robust Supabase integration, session management, login/signup, role-based redirects, authentication middleware, comprehensive error handling, and the correct setup of the `(portal)` route group with its root URL paths.
+*   **Vertical 1 (Pathway Templates & Phase Configuration):** Fully implemented, including CRUD for templates, phase management (add, delete, reorder), phase-specific configuration for all types (Form, Review, Email, Scheduling, Decision, Recommendation), and template cloning.
+*   **Vertical 2 (Campaign Management & Campaign Phases):** Fully implemented, including CRUD for campaigns, deep copying phases from templates, campaign phase management (add, delete, reorder), and campaign phase-specific configuration.
+*   **Vertical 3 (Programs):** The "Programs" entity for grouping campaigns is implemented, including CRUD operations and linking campaigns to programs. (Note: "Individual Assignments" part of this vertical is not yet explicitly implemented as a separate feature, but reviewer assignments are covered in Vertical 5).
+*   **Vertical 4 (Application Management & Screening Phase):** Fully implemented, including application CRUD, internal screening checklists, collaborative notes, and workflow participation visualization.
+*   **Vertical 5 (Review & Decision Phases):** Fully implemented, including reviewer assignments, review submission/editing, and decision recording/management.
+*   **Communication & Notifications (Templates):** Fully implemented, including CRUD for communication templates and integration with email phase configuration.
+*   **Reporting & Insights:** Fully implemented, providing an application overview dashboard with key metrics and charts.
+*   **User Profile Enhancements:** Fully implemented, allowing users to manage detailed personal and professional information, including email display from `auth.users`.
+*   **Homepage Footer & Dashboard Access Refinements:** Implemented for improved branding and consistent error handling.
 
 **What to do next:**
-The immediate next step is to begin **Vertical 2: Campaign Management & Campaign Phases**, as outlined in the `Architecture.md` and `PRD.md` documents. This will involve:
-1.  **Database Schema:** The `campaigns` table has been created with appropriate columns and RLS policies.
-2.  **Service Layer:** Developing a new service (`src/features/campaigns/services/campaign-service.ts`) for campaign CRUD operations.
-3.  **Backend (Server Actions):** Creating Server Actions (`src/features/campaigns/actions.ts`) to interact with the campaign service.
-4.  **Frontend (UI):** Building the UI for listing campaigns (`src/app/(workbench)/campaigns/page.tsx`) and creating new campaigns (`src/app/(workbench)/campaigns/new/page.tsx`), including a form to select a pathway template and define campaign-specific details.
+Based on the `Architecture.md` roadmap, the next logical step is to focus on the remaining aspects of **Vertical 3: Packages & Individual Assignments**. Specifically, we should implement the "Packages" concept, which could involve grouping multiple campaigns or pathways together, and further define "Individual Assignments" beyond just reviewer assignments, potentially for assigning specific tasks or roles to users within a program or campaign. This will involve:
+1.  **Database Schema:** Defining a new table (e.g., `packages`) and potentially a `package_assignments` table.
+2.  **Service Layer:** Developing new services for package and assignment management.
+3.  **Backend (Server Actions):** Creating Server Actions to interact with these new services.
+4.  **Frontend (UI):** Building the UI for creating, viewing, and managing packages and individual assignments.
