@@ -6,16 +6,14 @@ import { ShieldOff, Ban, Frown, ServerCrash } from "lucide-react";
 import React from "react";
 
 interface ErrorPageProps {
-  params: Promise<{
-    code: string; // Explicitly define params as a Promise to satisfy the build environment
-  }>;
+  params: Promise<any>; // Strictly matching Netlify's build environment's expectation
   searchParams?: { [key: string]: string | string[] | undefined }; // Standard prop for page components
 }
 
 // Make the component async to await the params, satisfying the type checker
 export default async function ErrorPage({ params, searchParams }: ErrorPageProps) {
-  // Await params to extract the code, even if it's synchronously available at runtime
-  const resolvedParams = await params;
+  // Await params to extract the code, then cast to its expected synchronous structure
+  const resolvedParams = await params as { code: string };
   const { code } = resolvedParams;
 
   let title = "Something Went Wrong";
