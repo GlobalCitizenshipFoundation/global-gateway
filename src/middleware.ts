@@ -27,31 +27,37 @@ export async function middleware(request: NextRequest) {
     // If an authenticated user tries to access a public path (like /login or /)
     if (isPublicPath && pathname !== '/error') { // Allow authenticated users to see error pages
       const userRole: string = user.user_metadata?.role || '';
-      // Redirect to appropriate dashboard based on role
+      // Redirect to appropriate dashboard based on role (using correct root paths)
       if (userRole === "admin") {
         return NextResponse.redirect(new URL("/admin/console", request.url));
       } else if (['coordinator', 'evaluator', 'screener', 'reviewer'].includes(userRole)) {
-        return NextResponse.redirect(new URL("/workbench/desk", request.url));
-      } else {
-        return NextResponse.redirect(new URL("/portal/dashboard", request.url));
+        return NextResponse.redirect(new URL("/desk", request.url)); // Workbench desk is at /desk
+      } else { // Default for applicant
+        return NextResponse.redirect(new URL("/dashboard", request.url)); // Portal dashboard is at /dashboard
       }
     }
 
-    // Role-based access control for authenticated users
+    // Role-based access control for authenticated users (using correct root paths)
     const userRole: string = user.user_metadata?.role || '';
 
-    // Admin routes
+    // Admin routes (e.g., /admin/console -> /console)
     if (pathname.startsWith('/admin') && userRole !== 'admin') {
       return NextResponse.redirect(new URL("/error/403", request.url));
     }
-
-    // Workbench routes
-    if (pathname.startsWith('/workbench') && !['admin', 'coordinator', 'evaluator', 'screener', 'reviewer'].includes(userRole)) {
+    // Special handling for /console if it's the admin dashboard
+    if (pathname === '/console' && userRole !== 'admin') {
       return NextResponse.redirect(new URL("/error/403", request.url));
     }
 
-    // User Portal routes
-    if (pathname.startsWith('/portal') && !['admin', 'coordinator', 'evaluator', 'screener', 'applicant', 'reviewer'].includes(userRole)) {
+    // Workbench routes (e.g., /workbench/desk -> /desk, /workbench/campaigns -> /campaigns)
+    const workbenchPaths = ['/desk', '/programs', '/pathway-templates', '/campaigns', '/applications/screening', '/evaluations/my-reviews', '/evaluations', '/scheduling', '/communications/templates', '/reports'];
+    if (workbenchPaths.some(path => pathname.startsWith(path)) && !['admin', 'coordinator', 'evaluator', 'screener', 'reviewer'].includes(userRole)) {
+      return NextResponse.redirect(new URL("/error/403", request.url));
+    }
+
+    // User Portal routes (e.g., /portal/dashboard -> /dashboard, /portal/profile -> /profile)
+    const portalPaths = ['/dashboard', '/my-applications', '/profile'];
+    if (portalPaths.some(path => pathname.startsWith(path)) && !['admin', 'coordinator', 'evaluator', 'screener', 'applicant', 'reviewer'].includes(userRole)) {
       return NextResponse.redirect(new URL("/error/403", request.url));
     }
 
