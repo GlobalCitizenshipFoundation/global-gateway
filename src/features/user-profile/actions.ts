@@ -20,7 +20,12 @@ async function authorizeProfileAccess(profileId: string, action: 'read' | 'write
 
   let profile: Profile | null = null;
   if (profileId) {
-    profile = await profileService.getProfileById(profileId);
+    try {
+      profile = await profileService.getProfileById(profileId);
+    } catch (serviceError: any) {
+      console.error(`Error fetching profile ${profileId} in authorizeProfileAccess:`, serviceError.message);
+      throw new Error("ProfileNotFound"); // Treat any service error during fetch as not found for security
+    }
     if (!profile) {
       throw new Error("ProfileNotFound");
     }
@@ -49,7 +54,7 @@ export async function getProfileByIdAction(userId: string): Promise<Profile | nu
       redirect("/error/403");
     } else if (error.message === "ProfileNotFound") {
       redirect("/error/404");
-    } else if (error.message === "FailedToRetrieveProfile") {
+    } else if (error.message === "FailedToRetrieveProfile") { // This error is now thrown by service
       redirect("/error/500");
     }
     redirect("/login"); // Fallback for unauthenticated or other critical errors
@@ -90,7 +95,7 @@ export async function updateProfileDetailsAction(formData: FormData): Promise<Pr
       redirect("/error/403");
     } else if (error.message === "ProfileNotFound") {
       redirect("/error/404");
-    } else if (error.message === "FailedToRetrieveProfile") {
+    } else if (error.message === "FailedToRetrieveProfile") { // This error is now thrown by service
       redirect("/error/500");
     }
     throw error; // Re-throw to be caught by client-side toast

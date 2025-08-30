@@ -29,16 +29,17 @@ export function UserProfilePage({ initialProfile }: UserProfilePageProps) {
         if (fetchedProfile) {
           setProfile(fetchedProfile);
         } else {
-          // This case should ideally be caught by the server action redirect,
-          // but as a fallback, ensure profile is not null.
+          // getProfileByIdAction now redirects for not found/unauthorized,
+          // so this else block might not be reached for those cases.
+          // If it is reached, it implies a different kind of failure.
           toast.error("Failed to load profile data.");
-          router.push("/login"); // Redirect if profile cannot be loaded
+          // No explicit router.push here, let the action's redirect handle it.
         }
       }
     } catch (error: any) {
       console.error("Error fetching profile:", error.message);
       toast.error(error.message || "Failed to load profile.");
-      router.push("/login"); // Redirect on error
+      // No explicit router.push here, let the action's redirect handle it.
     } finally {
       setIsLoading(false);
     }

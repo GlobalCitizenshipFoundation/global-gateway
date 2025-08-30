@@ -1,15 +1,13 @@
-"use client";
-
-import { createClient } from "@/integrations/supabase/client";
-import { toast } from "sonner";
+import { createClient } from "@/integrations/supabase/server"; // Changed to server client
 import { Profile } from "@/types/supabase";
 
 export const profileService = {
   supabase: createClient(),
 
   async getProfileById(userId: string): Promise<Profile | null> {
+    const supabase = await this.supabase; // Await the client creation
     // Fetch profile data and join with auth.users to get the email
-    const { data, error } = await this.supabase
+    const { data, error } = await supabase
       .from("profiles")
       .select("*, auth.users(email)") // Select all profile fields and the email from auth.users
       .eq("id", userId)
@@ -17,7 +15,8 @@ export const profileService = {
 
     if (error) {
       console.error(`Error fetching profile for user ${userId}:`, error.message);
-      return null;
+      // Do not toast here, throw error for action to handle
+      throw new Error(`Failed to load profile: ${error.message}`);
     }
 
     // Supabase returns joined data nested, so we need to flatten it
@@ -34,7 +33,8 @@ export const profileService = {
     userId: string,
     updates: Partial<Omit<Profile, "id" | "created_at" | "email">> // Exclude email from direct updates to profiles table
   ): Promise<Profile | null> {
-    const { data, error } = await this.supabase
+    const supabase = await this.supabase; // Await the client creation
+    const { data, error } = await supabase
       .from("profiles")
       .update({ ...updates, updated_at: new Date().toISOString() })
       .eq("id", userId)
@@ -43,7 +43,8 @@ export const profileService = {
 
     if (error) {
       console.error(`Error updating profile for user ${userId}:`, error.message);
-      return null;
+      // Do not toast here, throw error for action to handle
+      throw new Error(`Failed to update profile: ${error.message}`);
     }
 
     const profileData = data as unknown as Profile & { users: { email: string | null } };

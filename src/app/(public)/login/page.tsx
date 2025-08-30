@@ -27,13 +27,8 @@ export default function LoginPage() {
         redirectPath = "/desk";
       }
       
-      // Only redirect if not already on the target path to prevent unnecessary navigations
-      if (window.location.pathname !== redirectPath) {
-        router.replace(redirectPath);
-      } else {
-        // If already on the target path, or redirect is not needed, clear redirecting state
-        setIsRedirecting(false);
-      }
+      // Always attempt to redirect if authenticated, let Next.js handle if already on path
+      router.replace(redirectPath);
     } else if (!isLoading && !session && !user) {
       // If not loading and no session, ensure redirecting state is false
       setIsRedirecting(false);
