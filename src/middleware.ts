@@ -10,14 +10,16 @@ export async function middleware(request: NextRequest) {
   const publicPaths = [
     '/',
     '/login',
-    '/error', // All error pages
     '/simple-test-page', // For general testing
   ];
+  // Define public prefix paths (e.g., for dynamic error pages)
+  const publicPrefixPaths = [
+    '/error/', // All dynamic error pages like /error/403
+  ];
 
-  // Check if the current path is a public path
-  const isPublicPath = publicPaths.some(path =>
-    path === pathname || (path.endsWith('/') && pathname.startsWith(path)) || (path.includes('[code]') && pathname.startsWith('/error/'))
-  );
+  // Check if the current path is an exact public path or starts with a public prefix path
+  const isPublicPath = publicPaths.includes(pathname) ||
+                       publicPrefixPaths.some(prefix => pathname.startsWith(prefix));
 
   // Create a response object to modify headers and cookies
   const response = NextResponse.next();
@@ -34,7 +36,7 @@ export async function middleware(request: NextRequest) {
   // If there's a user session
   if (user) {
     // If an authenticated user tries to access a public path (like /login or /)
-    if (isPublicPath && pathname !== '/error') { // Allow authenticated users to see error pages
+    if (isPublicPath && !pathname.startsWith('/error')) { // Allow authenticated users to see error pages
       const userRole: string = user.user_metadata?.role || '';
       // Redirect to appropriate dashboard based on role (using correct root paths)
       if (userRole === "admin") {
@@ -68,7 +70,7 @@ export async function middleware(request: NextRequest) {
 
     // Workbench routes
     const workbenchRoles = ['admin', 'coordinator', 'evaluator', 'screener', 'reviewer'];
-    const workbenchPaths = ['/desk', '/programs', '/pathway-templates', '/campaigns', '/applications/screening', '/evaluations/my-reviews', '/evaluations', '/scheduling', '/communications/templates', '/reports'];
+    const workbenchPaths = ['/desk', '/programs', '/pathway-templates', '/campaigns', '/applications/screening', '/evaluations/my-reviews', '/evaluations', '/scheduling', '/communications/templates', '/reports', '/packages'];
     if (workbenchPaths.some(path => pathname.startsWith(path)) && !workbenchRoles.includes(userRole)) {
       console.log(`[Dyad Middleware] Unauthorized access for user (${userRole}) to ${pathname}. Redirecting to /error/403`);
       return NextResponse.redirect(new URL("/error/403", request.url));
