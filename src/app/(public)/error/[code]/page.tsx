@@ -12,7 +12,7 @@ interface ErrorPageProps {
   searchParams?: { [key: string]: string | string[] | undefined };
 }
 
-export default async function ErrorPage({ params, searchParams }: ErrorPageProps) {
+export default function ErrorPage({ params, searchParams }: ErrorPageProps) {
   const { code } = params;
 
   let title = "Something Went Wrong";
