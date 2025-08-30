@@ -100,34 +100,34 @@ export function Sidebar({ isCollapsed, toggleCollapsed, isMobile, isOpen, closeS
     {
       title: "Admin Tools",
       items: [
-        { href: "/admin/console", icon: LayoutDashboard, label: "Console" }, // This is a direct route, not part of a group
-        { href: "/admin/users", icon: Users, label: "User Management" },
-        { href: "/admin/settings", icon: Settings, label: "System Settings" },
+        { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" }, // Corrected to root path
+        { href: "/users", icon: Users, label: "User Management" }, // Corrected to root path
+        { href: "/settings", icon: Settings, label: "System Settings" }, // Corrected to root path
       ],
       roles: ['admin'],
     },
     {
       title: "Workbench Tools",
       items: [
-        { href: "/desk", icon: LayoutDashboard, label: "Desk" }, // Corrected to root path
-        { href: "/programs", icon: Briefcase, label: "Programs" }, // Corrected to root path
-        { href: "/pathway-templates", icon: Workflow, label: "Pathway Templates" }, // Corrected to root path
-        { href: "/campaigns", icon: Briefcase, label: "Campaigns" }, // Corrected to root path
-        { href: "/applications/screening", icon: FileText, label: "Applications Screening" }, // Corrected to root path
-        { href: "/evaluations/my-reviews", icon: Award, label: "My Reviews" }, // Corrected to root path
-        { href: "/evaluations", icon: Award, label: "Evaluations" }, // Corrected to root path
-        { href: "/scheduling", icon: Calendar, label: "Scheduling" }, // Corrected to root path
-        { href: "/communications/templates", icon: Mail, label: "Communication Templates" }, // Corrected to root path
-        { href: "/reports", icon: BarChart3, label: "Reports" }, // Corrected to root path
+        { href: "/desk", icon: LayoutDashboard, label: "Desk" },
+        { href: "/programs", icon: Briefcase, label: "Programs" },
+        { href: "/pathway-templates", icon: Workflow, label: "Pathway Templates" },
+        { href: "/campaigns", icon: Briefcase, label: "Campaigns" },
+        { href: "/applications/screening", icon: FileText, label: "Applications Screening" },
+        { href: "/evaluations/my-reviews", icon: Award, label: "My Reviews" },
+        { href: "/evaluations", icon: Award, label: "Evaluations" },
+        { href: "/scheduling", icon: Calendar, label: "Scheduling" },
+        { href: "/communications/templates", icon: Mail, label: "Communication Templates" },
+        { href: "/reports", icon: BarChart3, label: "Reports" },
       ],
       roles: ['admin', 'coordinator', 'evaluator', 'screener', 'reviewer'],
     },
     {
       title: "Portal Tools",
       items: [
-        { href: "/dashboard", icon: LayoutDashboard, label: "Home" }, // Corrected to root path
-        { href: "/my-applications", icon: FileText, label: "My Applications" }, // Corrected to root path
-        { href: "/profile", icon: UserCircle2, label: "Profile" }, // Corrected to root path
+        { href: "/home", icon: LayoutDashboard, label: "Home" }, // Corrected to root path
+        { href: "/my-applications", icon: FileText, label: "My Applications" },
+        { href: "/profile", icon: UserCircle2, label: "Profile" },
       ],
       roles: ['admin', 'coordinator', 'evaluator', 'screener', 'applicant', 'reviewer'],
     },

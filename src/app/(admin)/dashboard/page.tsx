@@ -6,7 +6,7 @@ import { Users, Briefcase, FileText, Settings, Activity, ArrowRight } from "luci
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
-export default async function AdminConsolePage() {
+export default async function AdminDashboardPage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
@@ -28,7 +28,7 @@ export default async function AdminConsolePage() {
 
   return (
     <div className="container mx-auto py-8 px-4 space-y-8">
-      <h1 className="text-display-small font-bold text-foreground">Admin Console</h1>
+      <h1 className="text-display-small font-bold text-foreground">Admin Dashboard</h1>
       <p className="text-headline-small text-muted-foreground">Welcome, {user.user_metadata?.first_name || user.email}!</p>
 
       {/* Overview Cards */}
@@ -83,19 +83,19 @@ export default async function AdminConsolePage() {
         <h2 className="text-headline-large font-bold text-foreground">Quick Actions</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           <Button asChild variant="tonal" className="rounded-lg px-6 py-4 h-auto text-label-large flex items-center justify-between">
-            <Link href="/admin/users">
+            <Link href="/users">
               <span>Manage Users</span>
               <ArrowRight className="ml-2 h-5 w-5" />
             </Link>
           </Button>
           <Button asChild variant="tonal" className="rounded-lg px-6 py-4 h-auto text-label-large flex items-center justify-between">
-            <Link href="/admin/settings">
+            <Link href="/settings">
               <span>System Settings</span>
               <ArrowRight className="ml-2 h-5 w-5" />
             </Link>
           </Button>
           <Button asChild variant="tonal" className="rounded-lg px-6 py-4 h-auto text-label-large flex items-center justify-between">
-            <Link href="/workbench/pathway-templates">
+            <Link href="/pathway-templates">
               <span>View Pathway Templates</span>
               <ArrowRight className="ml-2 h-5 w-5" />
             </Link>

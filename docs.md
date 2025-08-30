@@ -85,16 +85,16 @@ The project follows a modular and domain-driven directory structure, aligning wi
     *   It includes client-side redirection logic to guide authenticated users to their respective role-based dashboards.
     *   The layout has been adjusted to ensure robust centering of the login card.
 *   **Role-Based Dashboard Placeholders:**
-    *   **`src/app/(admin)/console/page.tsx`**: This page now features an M3-compliant dashboard with overview cards for "Total Users," "Active Campaigns," "Pending Applications," and "System Status." It also includes a "Quick Actions" section with `tonal` buttons linking to user management, system settings, and pathway templates. Access is strictly limited to the 'admin' role.
+    *   **`src/app/(admin)/dashboard/page.tsx`**: This page (formerly `console/page.tsx`) now features an M3-compliant dashboard with overview cards for "Total Users," "Active Campaigns," "Pending Applications," and "System Status." It also includes a "Quick Actions" section with `tonal` buttons linking to user management, system settings, and pathway templates. Access is strictly limited to the 'admin' role.
     *   **`src/app/(workbench)/desk/page.tsx`**: A placeholder for managers, reviewers, and screeners, offering a welcome and role-specific links (e.g., "Manage Campaigns," "View Assignments"). It restricts access to these specific roles.
-    *   **`src/app/(portal)/dashboard/page.tsx`**: This page serves as the primary dashboard for applicants, displaying a welcome message and links to their applications and profile management. It enforces that only 'applicant' roles (or higher roles that can access portal) can view it.
+    *   **`src/app/(portal)/home/page.tsx`**: This page (formerly `dashboard/page.tsx`) serves as the primary dashboard for applicants, displaying a welcome message and links to their applications and profile management. It enforces that only 'applicant' roles (or higher roles that can access portal) can view it.
     *   **`src/app/(portal)/test-page/page.tsx`**: A simple test page within the portal route group to verify routing and layout.
     *   Each dashboard page uses `createClient` from `src/integrations/supabase/server` to perform server-side user authentication and role verification, redirecting unauthorized users.
 *   **Authentication Middleware (`middleware.ts`):**
     *   A Next.js middleware has been implemented to centralize authentication and authorization logic.
     *   It protects all routes except static assets and explicitly public pages (`/`, `/login`).
     *   It redirects unauthenticated users to `/login`.
-    *   It enforces role-based access control, ensuring users can only access routes corresponding to their assigned roles (e.g., only 'admin' can access `/admin` routes).
+    *   It enforces role-based access control, ensuring users can only access routes corresponding to their assigned roles (e.g., only 'admin' can access `/dashboard` routes).
     *   It also handles redirection for logged-in users attempting to access public pages, sending them to their appropriate dashboard.
 *   **Public Homepage (`src/app/page.tsx`):**
     *   The public homepage has been enhanced with a welcoming message, a description of Global Gateway's offerings (Programs, Hiring, Awards), and clear calls to action for new and returning users. It uses `Card` components and Lucide icons for a visually appealing layout, adhering to M3 design principles, and now utilizes the new `onPrimary` button variant in the hero section.
@@ -457,6 +457,30 @@ The project follows a modular and domain-driven directory structure, aligning wi
     *   The footer has been restructured into a three-column layout using Tailwind CSS grid.
     *   The first column now prominently features the "Global Gateway" branding with an `Award` icon, a descriptive tagline, and an updated copyright notice (`© 2025-30 Global Citizenship Foundation. All rights reserved.`).
     *   The remaining two columns are left empty for future content.
-*   **Dashboard Access Control (`src/app/(admin)/console/page.tsx`, `src/app/(portal)/dashboard/page.tsx`, `src/app/(workbench)/desk/page.tsx`):**
+*   **Dashboard Access Control (`src/app/(admin)/dashboard/page.tsx`, `src/app/(portal)/home/page.tsx`, `src/app/(workbench)/desk/page.tsx`):**
     *   The internal role-based authorization checks within each dashboard page have been updated.
     *   If an authenticated user attempts to access a dashboard for which they do not have the required role, they are now explicitly redirected to the `/error/403` (Forbidden) page. This ensures consistent and informative error feedback, preventing potential fallback to `/login` or unexpected 404 errors for authenticated but unauthorized users.
+
+---
+
+## Summary of Current Progress and Next Steps
+
+**What has been done:**
+*   **Vertical 0 (Foundation):** Public Homepage, Authentication, Role-Based Dashboards, and core M3 styling are fully implemented. This includes robust Supabase integration, session management, login/signup, role-based redirects, authentication middleware, comprehensive error handling, and the correct setup of the `(portal)` route group with its root URL paths.
+*   **Vertical 1 (Pathway Templates & Phase Configuration):** Fully implemented, including CRUD for templates, phase management (add, delete, reorder), phase-specific configuration for all types (Form, Review, Email, Scheduling, Decision, Recommendation), and template cloning.
+*   **Vertical 2 (Campaign Management & Campaign Phases):** Fully implemented, including CRUD for campaigns, deep copying phases from templates, campaign phase management (add, delete, reorder), and campaign phase-specific configuration.
+*   **Vertical 3 (Programs):** The "Programs" entity for grouping campaigns is implemented, including CRUD operations and linking campaigns to programs. (Note: "Individual Assignments" part of this vertical is not yet explicitly implemented as a separate feature, but reviewer assignments are covered in Vertical 5).
+*   **Vertical 4 (Application Management & Screening Phase):** Fully implemented, including application CRUD, internal screening checklists, collaborative notes, and workflow participation visualization.
+*   **Vertical 5 (Review & Decision Phases):** Fully implemented, including reviewer assignments, review submission/editing, and decision recording/management.
+*   **Communication & Notifications (Templates):** Fully implemented, including CRUD for communication templates and integration with email phase configuration.
+*   **Reporting & Insights:** Fully implemented, providing an application overview dashboard with key metrics and charts.
+*   **User Profile Enhancements:** Fully implemented, allowing users to manage detailed personal and professional information, including email display from `auth.users`.
+*   **Homepage Footer & Dashboard Access Refinements:** Implemented for improved branding and consistent error handling.
+*   **Routing Fixes:** Corrected all navigation links in the sidebar, middleware redirection logic, and client-side login redirects to align with the new root paths for Admin (`/dashboard`), Workbench (`/desk`), and Portal (`/home`) route groups. The Admin Console page has been renamed to Admin Dashboard.
+
+**What to do next:**
+Based on the `Architecture.md` roadmap, the next logical step is to focus on the remaining aspects of **Vertical 3: Packages & Individual Assignments**. Specifically, we should implement the "Packages" concept, which could involve grouping multiple campaigns or pathways together, and further define "Individual Assignments" beyond just reviewer assignments, potentially for assigning specific tasks or roles to users within a program or campaign. This will involve:
+1.  **Database Schema:** Defining a new table (e.g., `packages`) and potentially a `package_assignments` table.
+2.  **Service Layer:** Developing new services for package and assignment management.
+3.  **Backend (Server Actions):** Creating Server Actions to interact with these new services.
+4.  **Frontend (UI):** Building the UI for creating, viewing, and managing packages and individual assignments.

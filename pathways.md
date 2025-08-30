@@ -577,7 +577,7 @@ The implementation will proceed in distinct vertical slices, ensuring end-to-end
     *   The footer has been restructured into a three-column layout using Tailwind CSS grid.
     *   The first column now prominently features the "Global Gateway" branding with an `Award` icon, a descriptive tagline, and an updated copyright notice (`© 2025-30 Global Citizenship Foundation. All rights reserved.`).
     *   The remaining two columns are left empty for future content.
-*   **Dashboard Access Control (`src/app/(admin)/console/page.tsx`, `src/app/(portal)/dashboard/page.tsx`, `src/app/(workbench)/desk/page.tsx`):**
+*   **Dashboard Access Control (`src/app/(admin)/dashboard/page.tsx`, `src/app/(portal)/home/page.tsx`, `src/app/(workbench)/desk/page.tsx`):**
     *   The internal role-based authorization checks within each dashboard page have been updated.
     *   If an authenticated user attempts to access a dashboard for which they do not have the required role, they are now explicitly redirected to the `/error/403` (Forbidden) page. This ensures consistent and informative error feedback, preventing potential fallback to `/login` or unexpected 404 errors for authenticated but unauthorized users.
 
@@ -596,6 +596,7 @@ The implementation will proceed in distinct vertical slices, ensuring end-to-end
 *   **Reporting & Insights:** Fully implemented, providing an application overview dashboard with key metrics and charts.
 *   **User Profile Enhancements:** Fully implemented, allowing users to manage detailed personal and professional information, including email display from `auth.users`.
 *   **Homepage Footer & Dashboard Access Refinements:** Implemented for improved branding and consistent error handling.
+*   **Routing Fixes:** Corrected all navigation links in the sidebar, middleware redirection logic, and client-side login redirects to align with the new root paths for Admin (`/dashboard`), Workbench (`/desk`), and Portal (`/home`) route groups. The Admin Console page has been renamed to Admin Dashboard.
 
 **What to do next:**
 Based on the `Architecture.md` roadmap, the next logical step is to focus on the remaining aspects of **Vertical 3: Packages & Individual Assignments**. Specifically, we should implement the "Packages" concept, which could involve grouping multiple campaigns or pathways together, and further define "Individual Assignments" beyond just reviewer assignments, potentially for assigning specific tasks or roles to users within a program or campaign. This will involve:
