@@ -3,7 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Award, LayoutDashboard, Users, Workflow, Settings, Briefcase, FileText, Calendar, Mail, BarChart3, UserCircle2, ChevronLeft, ChevronRight, X } from "lucide-react";
+import { Award, LayoutDashboard, Users, Workflow, Settings, Briefcase, FileText, Calendar, Mail, BarChart3, UserCircle2, ChevronLeft, ChevronRight, X, Package } from "lucide-react"; // Import Package icon
 import { cn } from "@/lib/utils";
 import { useSession } from "@/context/SessionContextProvider";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -100,9 +100,9 @@ export function Sidebar({ isCollapsed, toggleCollapsed, isMobile, isOpen, closeS
     {
       title: "Admin Tools",
       items: [
-        { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" }, // Corrected to root path
-        { href: "/users", icon: Users, label: "User Management" }, // Corrected to root path
-        { href: "/settings", icon: Settings, label: "System Settings" }, // Corrected to root path
+        { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
+        { href: "/users", icon: Users, label: "User Management" },
+        { href: "/settings", icon: Settings, label: "System Settings" },
       ],
       roles: ['admin'],
     },
@@ -111,6 +111,7 @@ export function Sidebar({ isCollapsed, toggleCollapsed, isMobile, isOpen, closeS
       items: [
         { href: "/desk", icon: LayoutDashboard, label: "Desk" },
         { href: "/programs", icon: Briefcase, label: "Programs" },
+        { href: "/packages", icon: Package, label: "Packages" }, // Added Packages link
         { href: "/pathway-templates", icon: Workflow, label: "Pathway Templates" },
         { href: "/campaigns", icon: Briefcase, label: "Campaigns" },
         { href: "/applications/screening", icon: FileText, label: "Applications Screening" },
@@ -125,7 +126,7 @@ export function Sidebar({ isCollapsed, toggleCollapsed, isMobile, isOpen, closeS
     {
       title: "Portal Tools",
       items: [
-        { href: "/home", icon: LayoutDashboard, label: "Home" }, // Corrected to root path
+        { href: "/home", icon: LayoutDashboard, label: "Home" },
         { href: "/my-applications", icon: FileText, label: "My Applications" },
         { href: "/profile", icon: UserCircle2, label: "Profile" },
       ],

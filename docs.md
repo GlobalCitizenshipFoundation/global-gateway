@@ -8,7 +8,7 @@ This document provides an overview of the project's architecture, key features, 
 *   [Vertical 0: Public Homepage & Role-Based Dashboards](#vertical-0-public-homepage--role-based-dashboards)
 *   [Vertical 1: Pathway Templates & Phase Configuration](#vertical-1-pathway-templates--phase-configuration)
 *   [Vertical 2: Campaign Management & Campaign Phases](#vertical-2-campaign-management--campaign-phases)
-*   [Vertical 3: Programs & Individual Assignments](#vertical-3-programs--individual-assignments)
+*   [Vertical 3: Programs & Packages](#vertical-3-programs--packages)
 *   [Vertical 4: Application Management & Screening Phase](#vertical-4-application-management--screening-phase)
 *   [Vertical 5: Review & Decision Phases](#vertical-5-review--decision-phases)
 *   [Communication & Notifications](#communication--notifications)
@@ -32,7 +32,7 @@ The project follows a modular and domain-driven directory structure, aligning wi
 │   │   ├── (admin)/          # Admin console routes
 │   │   └── api/              # Versioned REST/GraphQL routes
 │   ├── components/           # Shared UI components (including ui/ for Shadcn/UI)
-│   ├── features/             # Vertical feature modules (e.g., pathway-templates, campaign-management, programs)
+│   ├── features/             # Vertical feature modules (e.g., pathway-templates, campaign-management, programs, packages)
 │   ├── lib/                  # Utility functions, helpers (e.g., utils.ts, schemas)
 │   ├── services/             # Domain services (business logic)
 │   ├── integrations/         # 3rd-party connectors (Supabase, Mailgun, etc.)
@@ -246,36 +246,61 @@ The project follows a modular and domain-driven directory structure, aligning wi
 
 ---
 
-## Vertical 3: Programs & Individual Assignments
+## Vertical 3: Programs & Packages
 
-**Objective:** To introduce a higher-level "Program" entity to group related campaigns and to enable the assignment of internal staff (e.g., program managers, coordinators) to these programs.
+**Objective:** To introduce a higher-level "Program" entity to group related campaigns and to enable the assignment of internal staff (e.g., program managers, coordinators) to these programs. Additionally, to implement a "Packages" concept for grouping multiple campaigns or pathways together.
 
 **Implementation Details:**
 
-*   **Database Schema (`public.programs`):**
-    *   Table created with `id`, `creator_id`, `name`, `description`, `start_date`, `end_date`, `status`, `created_at`, `updated_at` columns.
-    *   **Row Level Security (RLS)** enabled with policies for `SELECT` (own or admin), `INSERT` (own), `UPDATE` (own or admin), and `DELETE` (own or admin).
-*   **Database Schema (`public.campaigns` update):**
-    *   `program_id` column added as a foreign key to `public.programs`.
-    *   RLS policies for `campaigns` updated to allow program creators (and admins) to view, insert, update, and delete campaigns associated with their programs. The `INSERT` policy was simplified to work around Supabase RLS limitations with `NEW` in subqueries, with full authorization handled in Server Actions.
-*   **Service Layer (`src/features/programs/services/program-service.ts`):**
-    *   New service `programService` created with functions `getPrograms`, `getProgramById`, `createProgram`, `updateProgram`, `deleteProgram`.
-    *   The `Program` interface is reused from `src/features/campaigns/services/campaign-service.ts` to maintain a single source of truth for the Program type.
-*   **Backend (Next.js Server Actions - `src/features/programs/actions.ts`):
-    *   Server Actions `getProgramsAction`, `getProgramByIdAction`, `createProgramAction`, `updateProgramAction`, `deleteProgramAction` are implemented.
-    *   Authorization logic (`authorizeProgramAction`) is applied to all actions, checking `creator_id` and `user_metadata.role` (for 'admin' override).
-    *   `createCampaignAction` and `updateCampaignAction` in `src/features/campaigns/actions.ts` are updated to include authorization checks for `program_id` when linking campaigns to programs.
-*   **Frontend (UI - `src/app/(workbench)/programs/*`, `src/features/programs/components/ProgramList.tsx`, `src/features/programs/components/ProgramForm.tsx`, `src/features/programs/components/ProgramDetail.tsx`, `src/features/campaigns/components/CampaignListForProgram.tsx`):**
-    *   **`src/app/(workbench)/programs/page.tsx` (Server Component):** Renders `ProgramList`.
-    *   **`src/app/(workbench)/programs/new/page.tsx` (Server Component):** Renders `ProgramForm` for creation.
-    *   **`src/app/(workbench)/programs/[id]/page.tsx` (Server Component):** Renders `ProgramDetail`.
-    *   **`src/app/(workbench)/programs/[id]/edit/page.tsx` (Server Component):** Renders `ProgramForm` for editing.
-    *   **`src/features/programs/components/ProgramList.tsx` (Client Component):** Displays a list of programs with CRUD actions, search, and filter by ownership.
-    *   **`src/features/programs/components/ProgramForm.tsx` (Client Component):** Form for creating/editing program details, including name, description, dates, and status.
-    *   **`src/features/programs/components/ProgramDetail.tsx` (Client Component):** Displays program details and includes a new `CampaignListForProgram` component to show associated campaigns. It also provides a button to "Add New Campaign" pre-filling the `programId`.
-    *   **`src/features/campaigns/components/CampaignListForProgram.tsx` (Client Component):** A new component to display campaigns filtered by a specific `programId`. It reuses existing campaign card UI and actions, adapting them for display within a program's detail view.
-*   **Sidebar Update (`src/components/layout/Sidebar.tsx`):**
-    *   A new navigation link for "Programs" has been added under "Workbench Tools."
+*   **Programs:**
+    *   **Database Schema (`public.programs`):**
+        *   Table created with `id`, `creator_id`, `name`, `description`, `start_date`, `end_date`, `status`, `created_at`, `updated_at` columns.
+        *   **Row Level Security (RLS)** enabled with policies for `SELECT` (own or admin), `INSERT` (own), `UPDATE` (own or admin), and `DELETE` (own or admin).
+    *   **Database Schema (`public.campaigns` update):**
+        *   `program_id` column added as a foreign key to `public.programs`.
+        *   RLS policies for `campaigns` updated to allow program creators (and admins) to view, insert, update, and delete campaigns associated with their programs. The `INSERT` policy was simplified to work around Supabase RLS limitations with `NEW` in subqueries, with full authorization handled in Server Actions.
+    *   **Service Layer (`src/features/programs/services/program-service.ts`):**
+        *   New service `programService` created with functions `getPrograms`, `getProgramById`, `createProgram`, `updateProgram`, `deleteProgram`.
+        *   The `Program` interface is reused from `src/features/campaigns/services/campaign-service.ts` to maintain a single source of truth for the Program type.
+    *   **Backend (Next.js Server Actions - `src/features/programs/actions.ts`):
+        *   Server Actions `getProgramsAction`, `getProgramByIdAction`, `createProgramAction`, `updateProgramAction`, `deleteProgramAction` are implemented.
+        *   Authorization logic (`authorizeProgramAction`) is applied to all actions, checking `creator_id` and `user_metadata.role` (for 'admin' override).
+        *   `createCampaignAction` and `updateCampaignAction` in `src/features/campaigns/actions.ts` are updated to include authorization checks for `program_id` when linking campaigns to programs.
+    *   **Frontend (UI - `src/app/(workbench)/programs/*`, `src/features/programs/components/ProgramList.tsx`, `src/features/programs/components/ProgramForm.tsx`, `src/features/programs/components/ProgramDetail.tsx`, `src/features/campaigns/components/CampaignListForProgram.tsx`):**
+        *   **`src/app/(workbench)/programs/page.tsx` (Server Component):** Renders `ProgramList`.
+        *   **`src/app/(workbench)/programs/new/page.tsx` (Server Component):** Renders `ProgramForm` for creation.
+        *   **`src/app/(workbench)/programs/[id]/page.tsx` (Server Component):** Renders `ProgramDetail`.
+        *   **`src/app/(workbench)/programs/[id]/edit/page.tsx` (Server Component):** Renders `ProgramForm` for editing.
+        *   **`src/features/programs/components/ProgramList.tsx` (Client Component):** Displays a list of programs with CRUD actions, search, and filter by ownership.
+        *   **`src/features/programs/components/ProgramForm.tsx` (Client Component):** Form for creating/editing program details, including name, description, dates, and status.
+        *   **`src/features/programs/components/ProgramDetail.tsx` (Client Component):** Displays program details and includes a new `CampaignListForProgram` component to show associated campaigns. It also provides a button to "Add New Campaign" pre-filling the `programId`.
+        *   **`src/features/campaigns/components/CampaignListForProgram.tsx` (Client Component):** A new component to display campaigns filtered by a specific `programId`. It reuses existing campaign card UI and actions, adapting them for display within a program's detail view.
+    *   **Sidebar Update (`src/components/layout/Sidebar.tsx`):**
+        *   A new navigation link for "Programs" has been added under "Workbench Tools."
+
+*   **Packages:**
+    *   **Database Schema (`public.packages`):**
+        *   Table created with `id`, `creator_id`, `name`, `description`, `is_public`, `created_at`, `updated_at` columns.
+        *   **Row Level Security (RLS)** enabled with policies for `SELECT` (own or public), `INSERT` (own), `UPDATE` (own), and `DELETE` (own). Admin override is handled at the Server Action layer.
+    *   **Database Schema (`public.package_items`):**
+        *   Table created with `id`, `package_id`, `item_type` (`campaign`, `pathway_template`), `item_id`, `order_index`, `created_at`, `updated_at` columns.
+        *   **Row Level Security (RLS)** enabled with policies for `SELECT` (items of viewable packages), `INSERT` (items into owned packages), `UPDATE` (items in owned packages), `DELETE` (items from owned packages).
+    *   **Service Layer (`src/features/packages/services/package-service.ts`):**
+        *   New service `packageService` created with functions for package CRUD (`getPackages`, `getPackageById`, `createPackage`, `updatePackage`, `deletePackage`) and package item management (`getPackageItemsByPackageId`, `addPackageItem`, `updatePackageItemOrder`, `removePackageItem`).
+    *   **Backend (Next.js Server Actions - `src/features/packages/actions.ts`):**
+        *   Server Actions `getPackagesAction`, `getPackageByIdAction`, `createPackageAction`, `updatePackageAction`, `deletePackageAction` are implemented for packages.
+        *   Server Actions `getPackageItemsAction`, `addPackageItemAction`, `updatePackageItemOrderAction`, `removePackageItemAction` are implemented for package items.
+        *   Authorization logic (`authorizePackageAction`) is applied to all actions, checking `creator_id` and `user_metadata.role` (for 'admin' override).
+    *   **Frontend (UI - `src/app/(workbench)/packages/*`, `src/features/packages/components/PackageList.tsx`, `src/features/packages/components/PackageForm.tsx`, `src/features/packages/components/PackageDetail.tsx`):**
+        *   **`src/app/(workbench)/packages/page.tsx` (Server Component):** Renders `PackageList`.
+        *   **`src/app/(workbench)/packages/new/page.tsx` (Server Component):** Renders `PackageForm` for creation.
+        *   **`src/app/(workbench)/packages/[id]/page.tsx` (Server Component):** Renders `PackageDetail`.
+        *   **`src/app/(workbench)/packages/[id]/edit/page.tsx` (Server Component):** Renders `PackageForm` for editing.
+        *   **`src/features/packages/components/PackageList.tsx` (Client Component):** Displays a list of packages with CRUD actions, search, and filter by ownership/visibility.
+        *   **`src/features/packages/components/PackageForm.tsx` (Client Component):** Form for creating/editing package details, including name, description, and public/private status.
+        *   **`src/features/packages/components/PackageDetail.tsx` (Client Component):** Displays package details and allows managing its associated campaigns and pathway templates via drag-and-drop. Includes a dialog for adding new items.
+    *   **Sidebar Update (`src/components/layout/Sidebar.tsx`):**
+        *   A new navigation link for "Packages" has been added under "Workbench Tools."
 
 ---
 
@@ -469,7 +494,7 @@ The project follows a modular and domain-driven directory structure, aligning wi
 *   **Vertical 0 (Foundation):** Public Homepage, Authentication, Role-Based Dashboards, and core M3 styling are fully implemented. This includes robust Supabase integration, session management, login/signup, role-based redirects, authentication middleware, comprehensive error handling, and the correct setup of the `(portal)` route group with its root URL paths.
 *   **Vertical 1 (Pathway Templates & Phase Configuration):** Fully implemented, including CRUD for templates, phase management (add, delete, reorder), phase-specific configuration for all types (Form, Review, Email, Scheduling, Decision, Recommendation), and template cloning.
 *   **Vertical 2 (Campaign Management & Campaign Phases):** Fully implemented, including CRUD for campaigns, deep copying phases from templates, campaign phase management (add, delete, reorder), and campaign phase-specific configuration.
-*   **Vertical 3 (Programs):** The "Programs" entity for grouping campaigns is implemented, including CRUD operations and linking campaigns to programs. (Note: "Individual Assignments" part of this vertical is not yet explicitly implemented as a separate feature, but reviewer assignments are covered in Vertical 5).
+*   **Vertical 3 (Programs & Packages):** The "Programs" entity for grouping campaigns is implemented, including CRUD operations and linking campaigns to programs. The "Packages" concept for grouping multiple campaigns or pathways is also fully implemented, including database schema, service layer, server actions, UI components (list, form, detail), and sidebar navigation.
 *   **Vertical 4 (Application Management & Screening Phase):** Fully implemented, including application CRUD, internal screening checklists, collaborative notes, and workflow participation visualization.
 *   **Vertical 5 (Review & Decision Phases):** Fully implemented, including reviewer assignments, review submission/editing, and decision recording/management.
 *   **Communication & Notifications (Templates):** Fully implemented, including CRUD for communication templates and integration with email phase configuration.
@@ -480,8 +505,8 @@ The project follows a modular and domain-driven directory structure, aligning wi
 *   **Conflicting Route Fix:** Removed the conflicting `src/app/(portal)/dashboard/page.tsx` file to resolve the build error.
 
 **What to do next:**
-Based on the `Architecture.md` roadmap, the next logical step is to focus on the remaining aspects of **Vertical 3: Packages & Individual Assignments**. Specifically, we should implement the "Packages" concept, which could involve grouping multiple campaigns or pathways together, and further define "Individual Assignments" beyond just reviewer assignments, potentially for assigning specific tasks or roles to users within a program or campaign. This will involve:
-1.  **Database Schema:** Defining a new table (e.g., `packages`) and potentially a `package_assignments` table.
-2.  **Service Layer:** Developing new services for package and assignment management.
-3.  **Backend (Server Actions):** Creating Server Actions to interact with these new services.
-4.  **Frontend (UI):** Building the UI for creating, viewing, and managing packages and individual assignments.
+Based on the `Architecture.md` roadmap, the next logical step is to focus on the remaining aspects of **Vertical 3: Individual Assignments**. This involves defining and implementing a system for assigning specific tasks or roles to users within a package, program, or campaign, beyond just the existing reviewer assignments. This would require:
+1.  **Database Schema:** Defining a new table (e.g., `individual_assignments`) to store these assignments.
+2.  **Service Layer:** Developing new services for managing these individual assignments.
+3.  **Backend (Server Actions):** Creating Server Actions for CRUD operations on individual assignments, including authorization.
+4.  **Frontend (UI):** Building components to display and manage these assignments, potentially integrated into existing detail pages (e.g., Campaign Detail, Program Detail) or a new dedicated dashboard.
