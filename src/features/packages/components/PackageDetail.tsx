@@ -105,11 +105,14 @@ export function PackageDetail({ packageId }: PackageDetailProps) {
 
   const handleAddItem = async (values: z.infer<typeof addItemFormSchema>) => {
     try {
+      const formData = new FormData();
+      formData.append("item_type", values.itemType);
+      formData.append("item_id", values.itemId);
+      formData.append("order_index", packageItems.length.toString());
+
       const newItem = await addPackageItemAction(
         packageId,
-        values.itemType,
-        values.itemId,
-        packageItems.length // Assign next order index
+        formData
       );
       if (newItem) {
         toast.success("Item added to package successfully!");
