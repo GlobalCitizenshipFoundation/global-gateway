@@ -7,12 +7,12 @@ import React from "react";
 
 interface ErrorPageProps {
   params: {
-    code: string;
+    code: string; // This is correct for a dynamic route segment in a client component
   };
-  searchParams?: { [key: string]: string | string[] | undefined };
+  searchParams?: { [key: string]: string | string[] | undefined }; // Standard prop for page components
 }
 
-export default function ErrorPage({ params, searchParams }: ErrorPageProps) {
+export default function ErrorPage({ params }: ErrorPageProps) {
   const { code } = params;
 
   let title = "Something Went Wrong";
