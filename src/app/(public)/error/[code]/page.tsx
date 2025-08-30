@@ -1,57 +1,66 @@
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { ShieldOff, Ban, Frown, ServerCrash } from "lucide-react";
-import React from "react"; // React is still needed for JSX
+import React from "react";
 
 interface ErrorPageProps {
   params: Promise<{ code: string }>;
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
 }
 
+const errorConfig: Record<
+  string,
+  {
+    title: string;
+    message: string;
+    Icon: React.ElementType;
+    buttonText: string;
+    buttonHref: string;
+  }
+> = {
+  "401": {
+    title: "Unauthorized",
+    message: "You are not authorized to view this page. Please log in again.",
+    Icon: ShieldOff,
+    buttonText: "Login",
+    buttonHref: "/login",
+  },
+  "403": {
+    title: "Forbidden",
+    message: "You don’t have permission to access this page.",
+    Icon: Ban,
+    buttonText: "Contact Support",
+    buttonHref: "mailto:support@globalcitizenshipfoundation.org",
+  },
+  "404": {
+    title: "Page Not Found",
+    message: "The page you are looking for does not exist.",
+    Icon: Frown,
+    buttonText: "Go to Dashboard",
+    buttonHref: "/",
+  },
+  "500": {
+    title: "Internal Server Error",
+    message: "Something went wrong on our end. We're working to fix it.",
+    Icon: ServerCrash,
+    buttonText: "Retry",
+    buttonHref: "/",
+  },
+};
+
 export default async function ErrorPage({ params, searchParams }: ErrorPageProps) {
   const { code } = await params;
-  // Await searchParams for typing correctness, even if not directly used in logic
-  await searchParams; 
+  await searchParams; // keep this for type compatibility
 
-  let title = "Something Went Wrong";
-  let message = "An unexpected error occurred. Please try again later.";
-  let Icon = Frown;
-  let buttonText = "Go Home";
-  let buttonHref = "/";
+  const config = errorConfig[code] ?? {
+    title: "Something Went Wrong",
+    message: "An unexpected error occurred. Please try again later.",
+    Icon: Frown,
+    buttonText: "Go Home",
+    buttonHref: "/",
+  };
 
-  switch (code) {
-    case "401":
-      title = "Unauthorized";
-      message = "You are not authorized to view this page. Please log in again.";
-      Icon = ShieldOff;
-      buttonText = "Login";
-      buttonHref = "/login";
-      break;
-    case "403":
-      title = "Forbidden";
-      message = "You don’t have permission to access this page.";
-      Icon = Ban;
-      buttonText = "Contact Support";
-      buttonHref = "mailto:support@globalcitizenshipfoundation.org";
-      break;
-    case "404":
-      title = "Page Not Found";
-      message = "The page you are looking for does not exist.";
-      Icon = Frown;
-      buttonText = "Go to Dashboard";
-      buttonHref = "/";
-      break;
-    case "500":
-      title = "Internal Server Error";
-      message = "Something went wrong on our end. We're working to fix it.";
-      Icon = ServerCrash;
-      buttonText = "Retry";
-      buttonHref = "/";
-      break;
-    default:
-      // Use default values
-      break;
-  }
+  const { title, message, Icon, buttonText, buttonHref } = config;
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-background text-foreground p-4 text-center">
@@ -59,13 +68,17 @@ export default async function ErrorPage({ params, searchParams }: ErrorPageProps
       <h1 className="text-display-large font-bold mb-4">{title}</h1>
       <p className="text-headline-small text-muted-foreground mb-8 max-w-md">{message}</p>
       <Button asChild size="lg">
-        <Link href={buttonHref}>
-          {buttonText}
-        </Link>
+        <Link href={buttonHref}>{buttonText}</Link>
       </Button>
       {code === "500" && (
         <p className="text-body-medium text-muted-foreground mt-4">
-          If the issue persists, please <Link href="mailto:support@globalcitizenshipfoundation.org" className="text-primary hover:underline">contact support</Link>.
+          If the issue persists, please{" "}
+          <Link
+            href="mailto:support@globalcitizenshipfoundation.org"
+            className="text-primary hover:underline"
+          >
+            contact support
+          </Link>.
         </p>
       )}
     </div>
