@@ -55,12 +55,10 @@ export function SignInForm({ onSwitchToSignUp }: SignInFormProps) {
 
       toast.success("Signed in successfully!");
 
-      // Explicitly refresh the router to re-run middleware and re-fetch server components.
-      // The middleware will then handle the redirection based on the user's role.
-      router.refresh();
-
-      // IMPORTANT: Removed client-side router.push() calls here.
-      // The middleware is now solely responsible for redirecting after login.
+      // Perform a full client-side redirect to the root path.
+      // The middleware will then intercept this request, detect the authenticated user,
+      // and redirect them to the correct role-based dashboard.
+      router.push("/");
 
     } catch (error: any) {
       toast.error(error.message || "An unexpected error occurred during sign-in.");
