@@ -42,7 +42,7 @@ export function SignInForm({ onSwitchToSignUp }: SignInFormProps) {
 
   const onSubmit = async (values: z.infer<typeof signInFormSchema>) => {
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email: values.email,
         password: values.password,
       });
@@ -55,10 +55,15 @@ export function SignInForm({ onSwitchToSignUp }: SignInFormProps) {
 
       toast.success("Signed in successfully!");
 
-      // Perform a full client-side redirect to the root path.
-      // The middleware will then intercept this request, detect the authenticated user,
-      // and redirect them to the correct role-based dashboard.
-      router.push("/");
+      // Determine user role and redirect directly
+      const userRole: string = data.user?.user_metadata?.role || '';
+      if (userRole === "admin") {
+        router.push("/dashboard");
+      } else if (['coordinator', 'evaluator', 'screener', 'reviewer'].includes(userRole)) {
+        router.push("/desk");
+      } else { // Default for applicant
+        router.push("/home");
+      }
 
     } catch (error: any) {
       toast.error(error.message || "An unexpected error occurred during sign-in.");
