@@ -15,16 +15,12 @@ interface AuthenticatedLayoutProps {
 
 export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
   const { session, isLoading } = useSession();
-  const router = useRouter();
+  const router = useRouter(); // Keep useRouter for potential future client-side navigation, but not for initial auth redirect
   const { isSidebarOpen, toggleSidebar, isSidebarCollapsed, toggleSidebarCollapsed } = useLayout();
   const isMobile = useIsMobile();
 
-  useEffect(() => {
-    if (!isLoading && !session) {
-      // Removed toast.error here as middleware handles redirection silently
-      router.push("/login");
-    }
-  }, [isLoading, session, router]); // Depend on isLoading, session, and router
+  // Removed useEffect block that caused client-side redirection loop.
+  // The middleware.ts is now the single source of truth for initial authentication redirects.
 
   if (isLoading || !session) { // Keep loading state and also check for session here
     // Full-height loading overlay for the content area, with a placeholder sidebar
