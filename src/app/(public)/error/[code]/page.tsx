@@ -1,18 +1,17 @@
-"use client"; // Explicitly mark as a Client Component
-
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { ShieldOff, Ban, Frown, ServerCrash } from "lucide-react";
-import React from "react";
+import React from "react"; // React is still needed for JSX
 
 interface ErrorPageProps {
-  params: { code: string };
-  // This is a workaround to satisfy a potentially incorrect PageProps constraint
-  searchParams?: { [key: string]: string | string[] | undefined } | Promise<any>;
+  params: Promise<{ code: string }>;
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
 }
 
-export default function ErrorPage({ params, searchParams }: ErrorPageProps) {
-  const { code } = params;
+export default async function ErrorPage({ params, searchParams }: ErrorPageProps) {
+  const { code } = await params;
+  // Await searchParams for typing correctness, even if not directly used in logic
+  await searchParams; 
 
   let title = "Something Went Wrong";
   let message = "An unexpected error occurred. Please try again later.";
