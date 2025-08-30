@@ -1,7 +1,6 @@
 "use client";
 
 import React from "react";
-import { AuthenticatedLayout } from "@/components/layout/AuthenticatedLayout"; // Temporarily removed
 
 export default function PortalLayout({
   children,
