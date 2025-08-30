@@ -55,15 +55,8 @@ export function SignInForm({ onSwitchToSignUp }: SignInFormProps) {
 
       toast.success("Signed in successfully!");
 
-      // Determine user role and redirect directly
-      const userRole: string = data.user?.user_metadata?.role || '';
-      if (userRole === "admin") {
-        router.push("/dashboard");
-      } else if (['coordinator', 'evaluator', 'screener', 'reviewer'].includes(userRole)) {
-        router.push("/desk");
-      } else { // Default for applicant
-        router.push("/home");
-      }
+      // Removed direct router.push calls here.
+      // The LoginPage's useEffect will now handle the redirect based on session state.
 
     } catch (error: any) {
       toast.error(error.message || "An unexpected error occurred during sign-in.");

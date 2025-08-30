@@ -10,12 +10,15 @@ import { useRouter } from "next/navigation";
 export default function LoginPage() {
   const { session, isLoading, user } = useSession();
   const [isSigningUp, setIsSigningUp] = useState(false);
+  const [isRedirecting, setIsRedirecting] = useState(false); // New state for redirection feedback
   const router = useRouter();
 
   useEffect(() => {
     console.log("[LoginPage useEffect] isLoading:", isLoading, "session:", session, "user:", user);
     if (!isLoading && session && user) {
-      console.log("[LoginPage useEffect] User authenticated, attempting redirect...");
+      console.log("[LoginPage useEffect] User authenticated, initiating redirect...");
+      setIsRedirecting(true); // Set redirecting state immediately
+
       const userRole: string = user.user_metadata?.role || '';
       let redirectPath = "/home"; // Default
       if (userRole === "admin") {
@@ -23,30 +26,32 @@ export default function LoginPage() {
       } else if (['coordinator', 'evaluator', 'screener', 'reviewer'].includes(userRole)) {
         redirectPath = "/desk";
       }
+      
       // Only redirect if not already on the target path to prevent unnecessary navigations
-      // In App Router, router.pathname is not directly available. Use window.location.pathname
       if (window.location.pathname !== redirectPath) {
         router.replace(redirectPath);
+      } else {
+        // If already on the target path, or redirect is not needed, clear redirecting state
+        setIsRedirecting(false);
       }
+    } else if (!isLoading && !session && !user) {
+      // If not loading and no session, ensure redirecting state is false
+      setIsRedirecting(false);
     }
   }, [isLoading, session, user, router]);
 
-  if (isLoading) { // Only show loading if the session is still being determined
-    console.log("[LoginPage Render] Showing initial loading state.");
+  if (isLoading || isRedirecting) { // Show loading or redirecting state
+    console.log("[LoginPage Render] Showing loading/redirecting state. isLoading:", isLoading, "isRedirecting:", isRedirecting);
     return (
       <div className="flex items-center justify-center h-full w-full bg-background">
-        <p className="text-foreground text-headline-small">Loading...</p>
+        <p className="text-foreground text-headline-small">
+          {isLoading ? "Loading..." : "Redirecting..."}
+        </p>
       </div>
     );
   }
 
-  // If not loading, and no session, render the forms.
-  // If not loading, and session exists, the useEffect should have already handled the redirect.
-  // If we reach here and session exists, it means the redirect is failing or delayed,
-  // but we should still render the forms as a fallback, or show a more explicit error.
-  // For now, the assumption is that if `isLoading` is false and `session` is present,
-  // the `useEffect` will handle the redirect. If it doesn't, the user will see the login form
-  // briefly before the redirect (if it eventually works) or if it's truly stuck.
+  // If not loading and not redirecting, render the forms.
   console.log("[LoginPage Render] Rendering forms.");
   return (
     <div className="flex items-center justify-center h-full w-full bg-background p-4">
