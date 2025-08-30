@@ -29,34 +29,33 @@ export async function middleware(request: NextRequest) {
       const userRole: string = user.user_metadata?.role || '';
       // Redirect to appropriate dashboard based on role (using correct root paths)
       if (userRole === "admin") {
-        return NextResponse.redirect(new URL("/admin/console", request.url));
+        return NextResponse.redirect(new URL("/dashboard", request.url)); // CORRECTED: Admin dashboard is now /dashboard
       } else if (['coordinator', 'evaluator', 'screener', 'reviewer'].includes(userRole)) {
-        return NextResponse.redirect(new URL("/desk", request.url)); // Workbench desk is at /desk
+        return NextResponse.redirect(new URL("/desk", request.url)); // CORRECTED: Creator workbench is now /desk
       } else { // Default for applicant
-        return NextResponse.redirect(new URL("/dashboard", request.url)); // Portal dashboard is at /dashboard
+        return NextResponse.redirect(new URL("/home", request.url)); // CORRECTED: Portal dashboard is now /home
       }
     }
 
     // Role-based access control for authenticated users (using correct root paths)
     const userRole: string = user.user_metadata?.role || '';
 
-    // Admin routes (e.g., /admin/console -> /console)
-    if (pathname.startsWith('/admin') && userRole !== 'admin') {
-      return NextResponse.redirect(new URL("/error/403", request.url));
-    }
-    // Special handling for /console if it's the admin dashboard
-    if (pathname === '/console' && userRole !== 'admin') {
+    // Admin routes (e.g., /dashboard)
+    // The (admin) route group's root is /dashboard
+    if (pathname.startsWith('/dashboard') && userRole !== 'admin') { // CORRECTED: Check for /dashboard path
       return NextResponse.redirect(new URL("/error/403", request.url));
     }
 
-    // Workbench routes (e.g., /workbench/desk -> /desk, /workbench/campaigns -> /campaigns)
-    const workbenchPaths = ['/desk', '/programs', '/pathway-templates', '/campaigns', '/applications/screening', '/evaluations/my-reviews', '/evaluations', '/scheduling', '/communications/templates', '/reports'];
-    if (workbenchPaths.some(path => pathname.startsWith(path)) && !['admin', 'coordinator', 'evaluator', 'screener', 'reviewer'].includes(userRole)) {
+    // Creator routes (e.g., /desk, /programs, /pathway-templates, etc.)
+    // The (creators) route group's root is /desk
+    const creatorPaths = ['/desk', '/programs', '/pathway-templates', '/campaigns', '/applications/screening', '/evaluations/my-reviews', '/evaluations', '/scheduling', '/communications/templates', '/reports'];
+    if (creatorPaths.some(path => pathname.startsWith(path)) && !['admin', 'coordinator', 'evaluator', 'screener', 'reviewer'].includes(userRole)) {
       return NextResponse.redirect(new URL("/error/403", request.url));
     }
 
-    // User Portal routes (e.g., /portal/dashboard -> /dashboard, /portal/profile -> /profile)
-    const portalPaths = ['/dashboard', '/my-applications', '/profile'];
+    // User Portal routes (e.g., /home, /my-applications, /profile)
+    // The (portal) route group's root is /home
+    const portalPaths = ['/home', '/my-applications', '/profile'];
     if (portalPaths.some(path => pathname.startsWith(path)) && !['admin', 'coordinator', 'evaluator', 'screener', 'applicant', 'reviewer'].includes(userRole)) {
       return NextResponse.redirect(new URL("/error/403", request.url));
     }

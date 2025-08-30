@@ -18,11 +18,11 @@ export default function LoginPage() {
       // Redirect authenticated users based on their role (this will be handled by middleware too, but good for client-side UX)
       const userRole = session.user?.user_metadata?.role;
       if (userRole === "admin") {
-        router.push("/admin/console"); // Corrected to /admin/console
+        router.push("/dashboard"); // CORRECTED: Admin dashboard is now /dashboard
       } else if (userRole === "coordinator" || userRole === "evaluator" || userRole === "screener" || userRole === "reviewer") {
-        router.push("/desk"); // Corrected to /desk
+        router.push("/desk"); // CORRECTED: Creator workbench is now /desk
       } else {
-        router.push("/dashboard"); // Corrected to /dashboard
+        router.push("/home"); // CORRECTED: Portal dashboard is now /home
       }
       toast.success("You are already logged in!");
     }
