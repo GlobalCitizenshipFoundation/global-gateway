@@ -39,3 +39,14 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Project Documentation and AI-related files
+VIS.md
+PRD.md
+M3Design.md
+docs.md
+errors.md
+Architecture.md
+AI_RULES.md
+APP_BRIEF.md
+README.md
