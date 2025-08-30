@@ -1,7 +1,8 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { cookies } from 'next/headers';
+import { NextResponse } from 'next/server'; // Import NextResponse
 
-export const createClient = async () => {
+export const createClient = async (response?: NextResponse) => { // Make response optional
   const cookieStore = await cookies();
 
   return createServerClient(
@@ -13,20 +14,30 @@ export const createClient = async () => {
           return cookieStore.get(name)?.value;
         },
         set(name: string, value: string, options: CookieOptions) {
-          try {
-            cookieStore.set(name, value, options);
-          } catch (error) {
-            // The `cookies().set()` method can only be called from a Server Component or Route Handler.
-            // This error is typically caught and handled by the middleware.
+          // If a response object is provided, set the cookie on it
+          if (response) {
+            response.cookies.set({ name, value, ...options });
+          } else {
+            // Otherwise, try to set it directly (works in Server Components/Route Handlers)
+            try {
+              cookieStore.set(name, value, options);
+            } catch (error) {
+              // This error is typically caught and handled by the middleware.
+              // console.warn("Could not set cookie directly:", error);
+            }
           }
         },
         remove(name: string, options: CookieOptions) {
-          try {
-            // Reverting to use set with empty value for removal, as delete API is different
-            cookieStore.set(name, '', options);
-          } catch (error) {
-            // The `cookies().set()` method can only be called from a Server Component or Route Handler.
-            // This error is typically caught and handled by the middleware.
+          // If a response object is provided, remove the cookie from it
+          if (response) {
+            response.cookies.set({ name, value: '', ...options }); // Set with empty value to remove
+          } else {
+            // Otherwise, try to remove it directly
+            try {
+              cookieStore.set(name, '', options); // Reverting to use set with empty value for removal
+            } catch (error) {
+              // console.warn("Could not remove cookie directly:", error);
+            }
           }
         },
       },

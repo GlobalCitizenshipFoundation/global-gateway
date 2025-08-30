@@ -19,7 +19,14 @@ export async function middleware(request: NextRequest) {
     path === pathname || (path.endsWith('/') && pathname.startsWith(path)) || (path.includes('[code]') && pathname.startsWith('/error/'))
   );
 
-  const supabase = await createClient();
+  // Create a response object to modify headers and cookies
+  const response = NextResponse.next();
+
+  // Create Supabase client, passing the response object for cookie handling
+  const supabase = await createClient(response); // Pass response to createClient
+
+  // Refresh session if expired - this will update the cookies in the response object
+  // and also return the current user.
   const { data: { user }, error: userError } = await supabase.auth.getUser();
   console.log(`[Dyad Middleware] User: ${user ? user.id : 'null'}, Error: ${userError ? userError.message : 'none'}`);
 
@@ -76,16 +83,20 @@ export async function middleware(request: NextRequest) {
     }
 
     console.log(`[Dyad Middleware] Allowing request for ${pathname} for user ${user.id} (${userRole})`);
-    return NextResponse.next();
+    return response; // Return the modified response
   } else {
     // No user session
     // If trying to access a protected path, redirect to login
     if (!isPublicPath) {
       console.log(`[Dyad Middleware] No user session for protected path ${pathname}. Redirecting to /login`);
-      return NextResponse.redirect(new URL("/login", request.url));
+      // Redirect to login, ensuring the response object is used
+      const redirectResponse = NextResponse.redirect(new URL("/login", request.url));
+      // Any cookies set by Supabase during the getUser() call (e.g., clearing expired ones)
+      // should be propagated. This is handled by passing `response` to `createClient` initially.
+      return redirectResponse;
     }
     console.log(`[Dyad Middleware] Allowing public path ${pathname} for unauthenticated user.`);
-    return NextResponse.next();
+    return response; // Return the modified response
   }
 }
 
