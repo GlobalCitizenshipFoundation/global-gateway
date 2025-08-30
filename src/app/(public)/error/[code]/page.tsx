@@ -5,13 +5,14 @@ import Link from "next/link";
 import { ShieldOff, Ban, Frown, ServerCrash } from "lucide-react";
 import React from "react";
 
-export default function ErrorPage({
-  params,
-  searchParams, // Include searchParams as it's part of PageProps, even if not used
-}: {
-  params: { code: string };
+interface ErrorPageProps {
+  params: {
+    code: string;
+  };
   searchParams?: { [key: string]: string | string[] | undefined };
-}) {
+}
+
+export default async function ErrorPage({ params, searchParams }: ErrorPageProps) {
   const { code } = params;
 
   let title = "Something Went Wrong";
