@@ -3,13 +3,13 @@ import Link from "next/link";
 import { ShieldOff, Ban, Frown, ServerCrash } from "lucide-react";
 import React from "react"; // Import React
 
-interface ErrorPageProps {
-  params: {
-    code: string;
-  };
-}
-
-export default function ErrorPage({ params }: ErrorPageProps) {
+export default function ErrorPage({
+  params,
+  searchParams, // Include searchParams as it's part of PageProps, even if not used
+}: {
+  params: { code: string };
+  searchParams?: { [key: string]: string | string[] | undefined };
+}) {
   const { code } = params;
 
   let title = "Something Went Wrong";
