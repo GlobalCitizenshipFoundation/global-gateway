@@ -1,7 +1,9 @@
+"use client"; // Explicitly mark as a Client Component
+
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { ShieldOff, Ban, Frown, ServerCrash } from "lucide-react";
-import React from "react"; // Import React
+import React from "react";
 
 export default function ErrorPage({
   params,
