@@ -6,13 +6,13 @@ import { ShieldOff, Ban, Frown, ServerCrash } from "lucide-react";
 import React from "react";
 
 interface ErrorPageProps {
-  params: { code: string }; // Corrected: params should be an object, not a Promise
-  searchParams?: { [key: string]: string | string[] | undefined }; // Standard prop for page components
+  params: { code: string };
+  // This is a workaround to satisfy a potentially incorrect PageProps constraint
+  searchParams?: { [key: string]: string | string[] | undefined } | Promise<any>;
 }
 
-// Removed 'async' keyword as client components typically don't need it for props
 export default function ErrorPage({ params, searchParams }: ErrorPageProps) {
-  const { code } = params; // Directly access code from params
+  const { code } = params;
 
   let title = "Something Went Wrong";
   let message = "An unexpected error occurred. Please try again later.";
