@@ -40,7 +40,7 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# Project Documentation and AI-related files
+# Project Documentation files
 VIS.md
 PRD.md
 M3Design.md
