@@ -55,25 +55,12 @@ export function SignInForm({ onSwitchToSignUp }: SignInFormProps) {
 
       toast.success("Signed in successfully!");
 
-      // Explicitly refresh the router to re-run middleware and re-fetch server components
+      // Explicitly refresh the router to re-run middleware and re-fetch server components.
+      // The middleware will then handle the redirection based on the user's role.
       router.refresh();
 
-      // Fetch the user session to determine the correct dashboard to redirect to
-      const { data: { user }, error: getUserError } = await supabase.auth.getUser();
-      if (getUserError || !user) {
-        console.error("Error getting user after sign-in:", getUserError?.message);
-        router.push("/login"); // Fallback to login if user data is somehow missing
-        return;
-      }
-
-      const userRole: string = user.user_metadata?.role || '';
-      if (userRole === "admin") {
-        router.push("/dashboard");
-      } else if (['coordinator', 'evaluator', 'screener', 'reviewer'].includes(userRole)) {
-        router.push("/desk");
-      } else { // Default for applicant
-        router.push("/home");
-      }
+      // IMPORTANT: Removed client-side router.push() calls here.
+      // The middleware is now solely responsible for redirecting after login.
 
     } catch (error: any) {
       toast.error(error.message || "An unexpected error occurred during sign-in.");
@@ -93,12 +80,12 @@ export function SignInForm({ onSwitchToSignUp }: SignInFormProps) {
           control={form.control}
           name="email"
           render={({ field }) => (
-            <FormItem className="space-y-2"> {/* Added space-y-2 for better internal spacing */}
+            <FormItem className="space-y-2">
               <FormLabel className="text-label-large">Email address</FormLabel>
               <FormControl>
                 <Input placeholder="you@example.com" {...field} className="rounded-md" />
               </FormControl>
-              <FormMessage className="text-body-small" /> {/* Ensured message uses body-small */}
+              <FormMessage className="text-body-small" />
             </FormItem>
           )}
         />
@@ -106,12 +93,12 @@ export function SignInForm({ onSwitchToSignUp }: SignInFormProps) {
           control={form.control}
           name="password"
           render={({ field }) => (
-            <FormItem className="space-y-2"> {/* Added space-y-2 for better internal spacing */}
+            <FormItem className="space-y-2">
               <FormLabel className="text-label-large">Password</FormLabel>
               <FormControl>
                 <Input type="password" placeholder="••••••••" {...field} className="rounded-md" />
               </FormControl>
-              <FormMessage className="text-body-small" /> {/* Ensured message uses body-small */}
+              <FormMessage className="text-body-small" />
             </FormItem>
           )}
         />
