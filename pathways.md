@@ -597,6 +597,7 @@ The implementation will proceed in distinct vertical slices, ensuring end-to-end
 *   **User Profile Enhancements:** Fully implemented, allowing users to manage detailed personal and professional information, including email display from `auth.users`.
 *   **Homepage Footer & Dashboard Access Refinements:** Implemented for improved branding and consistent error handling.
 *   **Routing Fixes:** Corrected all navigation links in the sidebar, middleware redirection logic, and client-side login redirects to align with the new root paths for Admin (`/dashboard`), Workbench (`/desk`), and Portal (`/home`) route groups. The Admin Console page has been renamed to Admin Dashboard.
+*   **Conflicting Route Fix:** Removed the conflicting `src/app/(portal)/dashboard/page.tsx` file to resolve the build error.
 
 **What to do next:**
 Based on the `Architecture.md` roadmap, the next logical step is to focus on the remaining aspects of **Vertical 3: Packages & Individual Assignments**. Specifically, we should implement the "Packages" concept, which could involve grouping multiple campaigns or pathways together, and further define "Individual Assignments" beyond just reviewer assignments, potentially for assigning specific tasks or roles to users within a program or campaign. This will involve:

@@ -85,9 +85,9 @@ The project follows a modular and domain-driven directory structure, aligning wi
     *   It includes client-side redirection logic to guide authenticated users to their respective role-based dashboards.
     *   The layout has been adjusted to ensure robust centering of the login card.
 *   **Role-Based Dashboard Placeholders:**
-    *   **`src/app/(admin)/dashboard/page.tsx`**: This page (formerly `console/page.tsx`) now features an M3-compliant dashboard with overview cards for "Total Users," "Active Campaigns," "Pending Applications," and "System Status." It also includes a "Quick Actions" section with `tonal` buttons linking to user management, system settings, and pathway templates. Access is strictly limited to the 'admin' role.
+    *   **`src/app/(admin)/dashboard/page.tsx`**: This page now features an M3-compliant dashboard with overview cards for "Total Users," "Active Campaigns," "Pending Applications," and "System Status." It also includes a "Quick Actions" section with `tonal` buttons linking to user management, system settings, and pathway templates. Access is strictly limited to the 'admin' role.
     *   **`src/app/(workbench)/desk/page.tsx`**: A placeholder for managers, reviewers, and screeners, offering a welcome and role-specific links (e.g., "Manage Campaigns," "View Assignments"). It restricts access to these specific roles.
-    *   **`src/app/(portal)/home/page.tsx`**: This page (formerly `dashboard/page.tsx`) serves as the primary dashboard for applicants, displaying a welcome message and links to their applications and profile management. It enforces that only 'applicant' roles (or higher roles that can access portal) can view it.
+    *   **`src/app/(portal)/home/page.tsx`**: This page serves as the primary dashboard for applicants, displaying a welcome message and links to their applications and profile management. It enforces that only 'applicant' roles (or higher roles that can access portal) can view it.
     *   **`src/app/(portal)/test-page/page.tsx`**: A simple test page within the portal route group to verify routing and layout.
     *   Each dashboard page uses `createClient` from `src/integrations/supabase/server` to perform server-side user authentication and role verification, redirecting unauthorized users.
 *   **Authentication Middleware (`middleware.ts`):**
@@ -477,6 +477,7 @@ The project follows a modular and domain-driven directory structure, aligning wi
 *   **User Profile Enhancements:** Fully implemented, allowing users to manage detailed personal and professional information, including email display from `auth.users`.
 *   **Homepage Footer & Dashboard Access Refinements:** Implemented for improved branding and consistent error handling.
 *   **Routing Fixes:** Corrected all navigation links in the sidebar, middleware redirection logic, and client-side login redirects to align with the new root paths for Admin (`/dashboard`), Workbench (`/desk`), and Portal (`/home`) route groups. The Admin Console page has been renamed to Admin Dashboard.
+*   **Conflicting Route Fix:** Removed the conflicting `src/app/(portal)/dashboard/page.tsx` file to resolve the build error.
 
 **What to do next:**
 Based on the `Architecture.md` roadmap, the next logical step is to focus on the remaining aspects of **Vertical 3: Packages & Individual Assignments**. Specifically, we should implement the "Packages" concept, which could involve grouping multiple campaigns or pathways together, and further define "Individual Assignments" beyond just reviewer assignments, potentially for assigning specific tasks or roles to users within a program or campaign. This will involve:
