@@ -15,42 +15,34 @@ interface AuthenticatedLayoutProps {
 
 export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
   const { session, isLoading } = useSession();
-  const router = useRouter(); // Keep useRouter for potential future client-side navigation, but not for initial auth redirect
+  const router = useRouter();
   const { isSidebarOpen, toggleSidebar, isSidebarCollapsed, toggleSidebarCollapsed } = useLayout();
   const isMobile = useIsMobile();
 
-  // Removed useEffect block that caused client-side redirection loop.
-  // The middleware.ts is now the single source of truth for initial authentication redirects.
+  // The middleware.ts should handle redirects for unauthenticated users.
+  // If we reach this component, a session should exist.
+  // The `isLoading` from useSession is for client-side hydration of the session,
+  // which should not prevent the server-rendered `children` from appearing.
+  // Removing the full-page loading state that replaces `children` to avoid RSC hydration mismatches.
 
-  if (isLoading || !session) { // Keep loading state and also check for session here
-    // Full-height loading overlay for the content area, with a placeholder sidebar
-    return (
-      <div className="flex flex-row flex-1 bg-background h-full"> {/* Changed to flex-row and h-full */}
-        {/* Placeholder for a collapsed sidebar during loading */}
-        {!isMobile && (
-          <aside className="w-20 border-r border-border bg-sidebar-background p-4 space-y-6 rounded-xl shadow-lg flex-shrink-0 h-full overflow-y-auto">
-            <Skeleton className="h-8 w-3/4 mb-6" />
-            <div className="space-y-2">
-              {[...Array(5)].map((_, i) => (
-                <Skeleton key={i} className="h-10 w-full rounded-md" />
-              ))}
-            </div>
-          </aside>
-        )}
-        <main className={cn(
-          "flex-1 p-8 flex items-center justify-center bg-background text-foreground transition-all duration-300 min-h-0 h-full overflow-y-auto"
-        )}>
-          <div className="flex flex-col items-center space-y-4">
-            <Skeleton className="h-12 w-64 rounded-md" />
-            <Skeleton className="h-6 w-48 rounded-md" />
-          </div>
-        </main>
-      </div>
-    );
-  }
+  // If for some reason, after initial load, session becomes null (e.g., token expires client-side),
+  // the middleware will eventually catch it on the next navigation.
+  // For immediate client-side reaction, we could add a useEffect here to push to login,
+  // but it's generally better to let middleware handle the primary redirect.
+  useEffect(() => {
+    if (!isLoading && !session) {
+      // This case should ideally be handled by middleware, but as a fallback for client-side session expiry
+      // or if middleware somehow misses it, we can redirect.
+      // However, this can also contribute to redirect loops if not careful.
+      // Given the current middleware, this should not be necessary for initial load.
+      // Let's keep it commented out for now and rely on middleware.
+      // router.push("/login");
+    }
+  }, [session, isLoading, router]);
+
 
   return (
-    <div className="flex flex-row h-full w-full"> {/* Removed overflow-hidden here */}
+    <div className="flex flex-row h-full w-full">
       {/* Desktop Sidebar */}
       {!isMobile && (
         <Sidebar
@@ -86,6 +78,7 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
           "flex-1 p-8 overflow-y-auto bg-background text-foreground transition-all duration-300 min-h-0 h-full"
         )}
       >
+        {/* Render children directly. The middleware ensures authentication. */}
         {children}
       </main>
     </div>
