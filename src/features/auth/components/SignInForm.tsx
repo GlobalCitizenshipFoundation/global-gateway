@@ -54,7 +54,27 @@ export function SignInForm({ onSwitchToSignUp }: SignInFormProps) {
       }
 
       toast.success("Signed in successfully!");
-      // Redirection will be handled by middleware after successful sign-in
+
+      // Explicitly refresh the router to re-run middleware and re-fetch server components
+      router.refresh();
+
+      // Fetch the user session to determine the correct dashboard to redirect to
+      const { data: { user }, error: getUserError } = await supabase.auth.getUser();
+      if (getUserError || !user) {
+        console.error("Error getting user after sign-in:", getUserError?.message);
+        router.push("/login"); // Fallback to login if user data is somehow missing
+        return;
+      }
+
+      const userRole: string = user.user_metadata?.role || '';
+      if (userRole === "admin") {
+        router.push("/dashboard");
+      } else if (['coordinator', 'evaluator', 'screener', 'reviewer'].includes(userRole)) {
+        router.push("/desk");
+      } else { // Default for applicant
+        router.push("/home");
+      }
+
     } catch (error: any) {
       toast.error(error.message || "An unexpected error occurred during sign-in.");
       console.error("Unexpected sign-in error:", error);
