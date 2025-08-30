@@ -7,23 +7,14 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
 export default async function AdminDashboardPage() {
+  // The middleware.ts should have already ensured the user is authenticated and is an admin.
+  // We can still fetch the user to display their name, but no redirects are needed here.
   const supabase = await createClient();
-  const { data: { user }, error: userError } = await supabase.auth.getUser();
-  console.log(`[AdminDashboardPage] Server Component User: ${user ? user.id : 'null'}, Error: ${userError ? userError.message : 'none'}`);
-
-
-  if (!user) {
-    console.log("[AdminDashboardPage] No user found, redirecting to /login");
-    redirect("/login"); // Redirect to login if no user session
-  }
-
-  const userRole: string = user.user_metadata?.role;
-  console.log(`[AdminDashboardPage] User role: ${userRole}`);
-
-  if (userRole !== 'admin') {
-    console.log(`[AdminDashboardPage] User ${user.id} is not admin (${userRole}), redirecting to /error/403`);
-    redirect("/error/403"); // Redirect to 403 if authenticated but not an admin
-  }
+  const { data: { user } } = await supabase.auth.getUser();
+  
+  // At this point, 'user' should always be present and have the 'admin' role due to middleware.
+  // If not, it indicates a middleware misconfiguration or bypass.
+  // No explicit redirect for !user or !admin role is needed here, as middleware handles it.
 
   // Placeholder data for demonstration - in a real app, this would come from a service layer
   const totalUsers = 1250;
@@ -34,7 +25,7 @@ export default async function AdminDashboardPage() {
   return (
     <div className="container mx-auto py-8 px-4 space-y-8">
       <h1 className="text-display-small font-bold text-foreground">Admin Dashboard</h1>
-      <p className="text-headline-small text-muted-foreground">Welcome, {user.user_metadata?.first_name || user.email}!</p>
+      <p className="text-headline-small text-muted-foreground">Welcome, {user?.user_metadata?.first_name || user?.email}!</p>
 
       {/* Overview Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

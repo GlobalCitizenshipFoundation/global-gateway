@@ -5,19 +5,22 @@ import { getProfileByIdAction } from "@/features/user-profile/actions";
 import { UserProfilePage } from "@/features/user-profile/components/UserProfilePage";
 
 export default async function ProfilePage() {
+  // The middleware.ts should have already ensured the user is authenticated.
+  // We fetch the user here to get their ID for the profile action.
   const supabase = await createClient();
-  const { data: { user }, error: userError } = await supabase.auth.getUser();
+  const { data: { user } } = await supabase.auth.getUser();
 
-  if (userError || !user) {
-    redirect("/login");
-  }
+  // If user is null here, it means middleware failed or was bypassed.
+  // The getProfileByIdAction will handle redirects if the profile isn't found or unauthorized.
+  const profile = await getProfileByIdAction(user!.id); // user should be present due to middleware
 
-  const profile = await getProfileByIdAction(user.id);
-
+  // The getProfileByIdAction already handles redirects for not found/unauthorized profiles.
+  // If it returns null, it means a redirect has already occurred.
+  // This component should only render if a profile is successfully fetched.
   if (!profile) {
-    // This case should ideally be handled by getProfileByIdAction's redirect,
-    // but as a fallback, ensure we don't render without a profile.
-    redirect("/error/404");
+    // This case should ideally not be reached if getProfileByIdAction handles redirects.
+    // As a final fallback, if for some reason profile is null here, redirect to a generic error.
+    redirect("/error/500"); 
   }
 
   return (
