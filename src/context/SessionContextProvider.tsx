@@ -36,19 +36,26 @@ export const SessionContextProvider = ({
 
   useEffect(() => {
     const getSession = async () => {
+      console.log("[SessionContextProvider] Attempting to get session...");
       const {
         data: { session },
+        error,
       } = await supabase.auth.getSession();
+      if (error) {
+        console.error("[SessionContextProvider] Error getting session:", error.message);
+      }
       setSession(session);
       setUser(session?.user || null);
       setIsLoading(false);
+      console.log(`[SessionContextProvider] Initial session loaded. User: ${session?.user?.id || 'null'}, Session: ${session ? 'present' : 'null'}`);
     };
 
     getSession();
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event: AuthChangeEvent, session: Session | null) => {
+    } = supabase.auth.onAuthStateChange((event: AuthChangeEvent, session: Session | null) => {
+      console.log(`[SessionContextProvider] Auth state changed: ${event}. User: ${session?.user?.id || 'null'}, Session: ${session ? 'present' : 'null'}`);
       setSession(session);
       setUser(session?.user || null);
       setIsLoading(false);

@@ -8,15 +8,20 @@ import { Button } from "@/components/ui/button";
 
 export default async function AdminDashboardPage() {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data: { user }, error: userError } = await supabase.auth.getUser();
+  console.log(`[AdminDashboardPage] Server Component User: ${user ? user.id : 'null'}, Error: ${userError ? userError.message : 'none'}`);
+
 
   if (!user) {
+    console.log("[AdminDashboardPage] No user found, redirecting to /login");
     redirect("/login"); // Redirect to login if no user session
   }
 
   const userRole: string = user.user_metadata?.role;
+  console.log(`[AdminDashboardPage] User role: ${userRole}`);
 
   if (userRole !== 'admin') {
+    console.log(`[AdminDashboardPage] User ${user.id} is not admin (${userRole}), redirecting to /error/403`);
     redirect("/error/403"); // Redirect to 403 if authenticated but not an admin
   }
 
