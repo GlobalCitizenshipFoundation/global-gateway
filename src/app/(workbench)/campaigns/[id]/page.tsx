@@ -4,13 +4,13 @@ import { CampaignDetail } from "@/features/campaigns/components/CampaignDetail";
 import { getCampaignByIdAction } from "@/features/campaigns/actions";
 
 interface CampaignDetailPageProps {
-  params: Promise<{ id: string }>; // Adjusted type for Next.js type checker
-  searchParams?: Record<string, string | string[] | undefined>;
+  params: Promise<{ id: string }>;
+  searchParams?: Promise<Record<string, string | string[] | undefined>>; // Adjusted type for Next.js type checker
 }
 
 export default async function CampaignDetailPage(props: CampaignDetailPageProps) {
   const { params } = props;
-  const resolvedParams = await params; // Await params to resolve proxy
+  const resolvedParams = await params;
   const { id } = resolvedParams;
   // Fetch campaign to ensure user has read access before rendering the client component
   const campaign = await getCampaignByIdAction(id);
