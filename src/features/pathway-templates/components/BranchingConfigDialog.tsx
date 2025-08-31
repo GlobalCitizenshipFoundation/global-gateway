@@ -147,18 +147,22 @@ export function BranchingConfigDialog({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-label-large">Next Phase (On Success/Accept)</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value || ""} disabled={!canModify || isLoadingPhases}>
+                  <Select
+                    onValueChange={(value) => field.onChange(value === "none" ? null : value)}
+                    value={field.value || "none"} // Use "none" for null/undefined
+                    disabled={!canModify || isLoadingPhases}
+                  >
                     <FormControl>
                       <SelectTrigger className="rounded-md">
                         <SelectValue placeholder={isLoadingPhases ? "Loading phases..." : "Select a phase (optional)"} />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent className="rounded-md shadow-lg bg-card text-card-foreground border-border">
-                      <SelectItem value="" className="text-body-medium hover:bg-muted hover:text-muted-foreground cursor-pointer">
+                      <SelectItem value="none" className="text-body-medium hover:bg-muted hover:text-muted-foreground cursor-pointer">
                         None (End of Path)
                       </SelectItem>
                       {allPhases.length === 0 && !isLoadingPhases ? (
-                        <SelectItem value="no-phases" disabled className="text-body-medium text-muted-foreground">
+                        <SelectItem value="no-phases-available" disabled className="text-body-medium text-muted-foreground">
                           No other phases available.
                         </SelectItem>
                       ) : (
@@ -180,18 +184,22 @@ export function BranchingConfigDialog({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-label-large">Next Phase (On Failure/Reject)</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value || ""} disabled={!canModify || isLoadingPhases}>
+                  <Select
+                    onValueChange={(value) => field.onChange(value === "none" ? null : value)}
+                    value={field.value || "none"} // Use "none" for null/undefined
+                    disabled={!canModify || isLoadingPhases}
+                  >
                     <FormControl>
                       <SelectTrigger className="rounded-md">
                         <SelectValue placeholder={isLoadingPhases ? "Loading phases..." : "Select a phase (optional)"} />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent className="rounded-md shadow-lg bg-card text-card-foreground border-border">
-                      <SelectItem value="" className="text-body-medium hover:bg-muted hover:text-muted-foreground cursor-pointer">
+                      <SelectItem value="none" className="text-body-medium hover:bg-muted hover:text-muted-foreground cursor-pointer">
                         None (End of Path)
                       </SelectItem>
                       {allPhases.length === 0 && !isLoadingPhases ? (
-                        <SelectItem value="no-phases" disabled className="text-body-medium text-muted-foreground">
+                        <SelectItem value="no-phases-available" disabled className="text-body-medium text-muted-foreground">
                           No other phases available.
                         </SelectItem>
                       ) : (
