@@ -83,36 +83,25 @@ export function PhaseConfigurationPanel({
         );
       default:
         return (
-          <Card className="rounded-xl shadow-md p-6">
-            <CardHeader className="p-0 mb-4">
-              <CardTitle className="text-headline-small text-muted-foreground">
-                No Configuration Available
-              </CardTitle>
-              <CardDescription className="text-body-medium text-muted-foreground">
-                The phase type &quot;{phase.type}&quot; does not currently have a dedicated configuration interface.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="p-0 text-body-small text-muted-foreground">
-              <p>Please check back later for updates or contact support for custom configurations.</p>
-            </CardContent>
-          </Card>
+          <div className="rounded-xl shadow-md p-6 bg-muted/20 border border-border">
+            <h4 className="text-headline-small text-muted-foreground">
+              No Configuration Available
+            </h4>
+            <p className="text-body-medium text-muted-foreground mt-2">
+              The phase type &quot;{phase.type}&quot; does not currently have a dedicated configuration interface.
+            </p>
+            <p className="text-body-small text-muted-foreground mt-1">
+              Please check back later for updates or contact support for custom configurations.
+            </p>
+          </div>
         );
     }
   };
 
   return (
     <div className="space-y-6">
-      <h3 className="text-title-large font-bold text-foreground">Configure {phase.name} ({phase.type})</h3>
+      <h3 className="text-title-large font-bold text-foreground">Phase Configuration</h3>
       {renderConfigComponent()}
-
-      <Separator className="my-8" />
-
-      {/* Generic Phase Task Management */}
-      <PhaseTaskManagementPanel
-        phaseId={phase.id}
-        pathwayTemplateId={parentId} // Pass parentId as pathwayTemplateId for authorization
-        canModify={canModify}
-      />
     </div>
   );
 }

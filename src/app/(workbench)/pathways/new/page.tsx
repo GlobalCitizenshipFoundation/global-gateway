@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { PathwayTemplateForm } from "@/features/pathways/components/PathwayTemplateForm";
 import { useRouter } from "next/navigation";
 import { useSession } from "@/context/SessionContextProvider";
@@ -9,12 +9,15 @@ import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"; // Import Dialog components
 
 export default function CreatePathwayTemplatePage() {
   const router = useRouter();
   const { user, isLoading: isSessionLoading } = useSession();
+  const [isFormOpen, setIsFormOpen] = useState(true); // Control the dialog state
 
   const handleTemplateSaved = (templateId?: string) => {
+    setIsFormOpen(false); // Close dialog
     if (templateId) {
       toast.success("Pathway template created successfully!");
       router.push(`/pathways/${templateId}`); // Redirect to the detail page (builder)
@@ -25,6 +28,7 @@ export default function CreatePathwayTemplatePage() {
   };
 
   const handleCancel = () => {
+    setIsFormOpen(false); // Close dialog
     router.push("/pathways");
   };
 
@@ -49,11 +53,19 @@ export default function CreatePathwayTemplatePage() {
         </Button>
       </div>
       <h1 className="text-display-small font-bold text-foreground">Create New Pathway Template</h1>
-      <PathwayTemplateForm
-        onTemplateSaved={handleTemplateSaved}
-        onCancel={handleCancel}
-        canModify={canModify}
-      />
+
+      <Dialog open={isFormOpen} onOpenChange={handleCancel}> {/* Use handleCancel to close and navigate */}
+        <DialogContent className="sm:max-w-[600px] rounded-xl shadow-lg bg-card text-card-foreground border-border max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-headline-small">Create New Pathway Template</DialogTitle>
+          </DialogHeader>
+          <PathwayTemplateForm
+            onTemplateSaved={handleTemplateSaved}
+            onCancel={handleCancel}
+            canModify={canModify}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -15,11 +15,10 @@ import { WorkflowCanvas } from "./WorkflowCanvas";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { CloneTemplateDialog } from "./CloneTemplateDialog";
-import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
-import { InspectorPanel } from "./InspectorPanel"; // New InspectorPanel component
-import { TemplateVersionHistory } from "./TemplateVersionHistory"; // Import TemplateVersionHistory
-import { BranchingConfigForm } from "./BranchingConfigForm"; // Import BranchingConfigForm
-import { DropResult } from "@hello-pangea/dnd"; // Import DropResult
+import { TemplateVersionHistory } from "./TemplateVersionHistory";
+import { TemplateActivityLog } from "./TemplateActivityLog";
+import { PathwayTemplateForm } from "./PathwayTemplateForm"; // Import PathwayTemplateForm for modal editing
+import { FloatingInspector } from "./FloatingInspector"; // Import FloatingInspector
 
 interface PathwayTemplateDetailProps {
   templateId: string;
@@ -31,11 +30,10 @@ export function PathwayTemplateDetail({ templateId }: PathwayTemplateDetailProps
   const [template, setTemplate] = useState<PathwayTemplate | null>(null);
   const [phases, setPhases] = useState<Phase[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [selectedPhaseId, setSelectedPhaseId] = useState<string | null>(null); // Track selected phase for inspector
-  const [isEditingTemplateDetails, setIsEditingTemplateDetails] = useState(false); // Track if template details are being edited
   const [isCloneDialogOpen, setIsCloneDialogOpen] = useState(false);
-  const [isBranchingDialogOpen, setIsBranchingDialogOpen] = useState(false); // State for branching dialog
-  const [branchingPhase, setBranchingPhase] = useState<Phase | undefined>(undefined); // State for phase being branched
+  const [isTemplateFormOpen, setIsTemplateFormOpen] = useState(false); // State for template details modal
+  const [isFloatingInspectorOpen, setIsFloatingInspectorOpen] = useState(false); // State for floating inspector
+  const [phaseForFloatingInspector, setPhaseForFloatingInspector] = useState<Phase | undefined>(undefined); // Phase data for inspector
 
   const fetchTemplateAndPhases = useCallback(async () => {
     setIsLoading(true);
@@ -69,44 +67,16 @@ export function PathwayTemplateDetail({ templateId }: PathwayTemplateDetailProps
     }
   }, [user, isSessionLoading, fetchTemplateAndPhases]);
 
-  const handlePhaseSaved = () => {
+  const handlePhaseUpdated = () => {
     fetchTemplateAndPhases(); // Re-fetch to update list and order indices
-    setSelectedPhaseId(null); // Close inspector after saving
-    setIsEditingTemplateDetails(false);
   };
 
   const handleTemplateSaved = (updatedTemplateId?: string) => {
-    // If the template ID changed (e.g., after a clone, though clone redirects),
-    // or if it's an update, re-fetch and close the inspector.
+    setIsTemplateFormOpen(false); // Close the template form dialog
     fetchTemplateAndPhases(); // Re-fetch to update template details
-    setIsEditingTemplateDetails(false);
-    setSelectedPhaseId(null); // Close inspector
-    // If a new template was created and this callback is used, it would redirect.
-    // For edits, we just refresh the current page.
     if (updatedTemplateId && updatedTemplateId !== templateId) {
       router.push(`/pathways/${updatedTemplateId}`);
     }
-  };
-
-  const handleEditPhase = (phaseId: string) => {
-    setSelectedPhaseId(phaseId);
-    setIsEditingTemplateDetails(false);
-  };
-
-  const handleConfigurePhase = (phaseId: string) => {
-    setSelectedPhaseId(phaseId);
-    setIsEditingTemplateDetails(false);
-  };
-
-  const handleConfigureBranching = (phase: Phase) => {
-    setBranchingPhase(phase);
-    setIsBranchingDialogOpen(true);
-  };
-
-  const handleBranchingConfigSaved = () => {
-    setIsBranchingDialogOpen(false);
-    setBranchingPhase(undefined);
-    fetchTemplateAndPhases(); // Re-fetch to update workflow canvas
   };
 
   const handleDeletePhase = async (phaseId: string) => {
@@ -126,14 +96,14 @@ export function PathwayTemplateDetail({ templateId }: PathwayTemplateDetailProps
     const newPhases = reorderedPhaseIdsAndOrder.map(reordered => {
       const originalPhase = phases.find(p => p.id === reordered.id);
       return originalPhase ? { ...originalPhase, order_index: reordered.order_index } : null;
-    }).filter(Boolean) as Phase[]; // Filter out any nulls and assert type
+    }).filter(Boolean) as Phase[];
 
     setPhases(newPhases); // Optimistic update
 
     try {
       const success = await reorderPhasesAction(
         templateId,
-        reorderedPhaseIdsAndOrder // Pass the array directly as it already has the correct structure
+        reorderedPhaseIdsAndOrder
       );
       if (!success) {
         toast.error("Failed to reorder phases. Reverting changes.");
@@ -183,9 +153,24 @@ export function PathwayTemplateDetail({ templateId }: PathwayTemplateDetailProps
     }
   };
 
+  const handleOpenNewPhaseDialog = () => {
+    setPhaseForFloatingInspector(undefined); // Clear any existing phase data
+    setIsFloatingInspectorOpen(true); // Open the inspector for new phase creation
+  };
+
+  const handlePopOutToInspector = (phaseId: string) => {
+    const phase = phases.find(p => p.id === phaseId);
+    if (phase) {
+      setPhaseForFloatingInspector(phase);
+      setIsFloatingInspectorOpen(true);
+    } else {
+      toast.error("Phase not found for inspector.");
+    }
+  };
+
   if (isLoading || !template) {
     return (
-      <div className="space-y-8">
+      <div className="container mx-auto py-8 px-4 space-y-8">
         <Skeleton className="h-10 w-48 mb-4" />
         <Card className="rounded-xl shadow-md p-6">
           <Skeleton className="h-8 w-3/4 mb-2" />
@@ -218,47 +203,48 @@ export function PathwayTemplateDetail({ templateId }: PathwayTemplateDetailProps
   const canModifyTemplate: boolean = currentTemplate.creator_id === currentUser.id || isAdmin;
 
   return (
-    <ResizablePanelGroup direction="horizontal" className="min-h-[calc(100vh - var(--header-height) - 64px)] rounded-xl border">
-      <ResizablePanel defaultSize={70} minSize={40}>
-        <div className="flex flex-col h-full p-6 space-y-8 overflow-y-auto">
-          <div className="flex items-center justify-between">
-            <Button asChild variant="ghost" className="rounded-full px-4 py-2 text-label-large">
-              <Link href="/pathways">
-                <ArrowLeft className="mr-2 h-5 w-5" /> Back to Templates
-              </Link>
-            </Button>
-            <div className="flex space-x-2">
-              {canModifyTemplate && (
-                <>
-                  <Button variant="outlined" className="rounded-full px-6 py-3 text-label-large" onClick={handleCreateVersion}>
-                    <Save className="mr-2 h-5 w-5" /> Save New Version
-                  </Button>
-                  {currentTemplate.status !== 'published' && (
-                    <Button variant="filled" className="rounded-full px-6 py-3 text-label-large" onClick={handlePublishTemplate}>
-                      <CheckCircle className="mr-2 h-5 w-5" /> Publish Template
-                    </Button>
-                  )}
-                  {currentTemplate.status === 'published' && (
-                    <Button variant="tonal" className="rounded-full px-6 py-3 text-label-large" onClick={() => handleUpdateStatus('archived')}>
-                      <Clock className="mr-2 h-5 w-5" /> Archive Template
-                    </Button>
-                  )}
-                </>
+    <div className="flex flex-col h-full p-6 space-y-8 overflow-y-auto">
+      <div className="flex items-center justify-between">
+        <Button asChild variant="ghost" className="rounded-full px-4 py-2 text-label-large">
+          <Link href="/pathways">
+            <ArrowLeft className="mr-2 h-5 w-5" /> Back to Templates
+          </Link>
+        </Button>
+        <div className="flex space-x-2">
+          {canModifyTemplate && (
+            <>
+              <Button variant="outlined" className="rounded-full px-6 py-3 text-label-large" onClick={() => setIsTemplateFormOpen(true)}>
+                <Edit className="mr-2 h-5 w-5" /> Edit Template Details
+              </Button>
+              <Button variant="outlined" className="rounded-full px-6 py-3 text-label-large" onClick={handleCreateVersion}>
+                <Save className="mr-2 h-5 w-5" /> Save New Version
+              </Button>
+              {currentTemplate.status !== 'published' && (
+                <Button variant="filled" className="rounded-full px-6 py-3 text-label-large" onClick={handlePublishTemplate}>
+                  <CheckCircle className="mr-2 h-5 w-5" /> Publish Template
+                </Button>
               )}
-            </div>
-          </div>
+              {currentTemplate.status === 'published' && (
+                <Button variant="tonal" className="rounded-full px-6 py-3 text-label-large" onClick={() => handleUpdateStatus('archived')}>
+                  <Clock className="mr-2 h-5 w-5" /> Archive Template
+                </Button>
+              )}
+            </>
+          )}
+        </div>
+      </div>
 
-          <Card className="rounded-xl shadow-lg p-6">
-            <CardHeader className="p-0 mb-4">
-              <CardTitle className="text-display-small font-bold text-foreground flex items-center gap-2">
-                <Workflow className="h-7 w-7 text-primary" /> {currentTemplate.name}
-                <TooltipProvider>
-                  {currentTemplate.is_private ? (
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Lock className="h-5 w-5 text-muted-foreground" />
-                      </TooltipTrigger>
-                      <TooltipContent className="rounded-md shadow-lg bg-card text-card-foreground border-border text-body-small">
+      <Card className="rounded-xl shadow-lg p-6">
+        <CardHeader className="p-0 mb-4">
+          <CardTitle className="text-display-small font-bold text-foreground flex items-center gap-2">
+            <Workflow className="h-7 w-7 text-primary" /> {currentTemplate.name}
+            <TooltipProvider>
+              {currentTemplate.is_private ? (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Lock className="h-5 w-5 text-muted-foreground" />
+                  </TooltipTrigger>
+                  <TooltipContent className="rounded-md shadow-lg bg-card text-card-foreground border-border text-body-small">
                         Private Template
                       </TooltipContent>
                     </Tooltip>
@@ -288,7 +274,7 @@ export function PathwayTemplateDetail({ templateId }: PathwayTemplateDetailProps
           <div className="flex justify-between items-center mt-8">
             <h2 className="text-headline-large font-bold text-foreground">Phases</h2>
             {canModifyTemplate && (
-              <Button onClick={() => { setSelectedPhaseId("new"); setIsEditingTemplateDetails(false); }} className="rounded-full px-6 py-3 text-label-large">
+              <Button onClick={handleOpenNewPhaseDialog} className="rounded-full px-6 py-3 text-label-large">
                 <PlusCircle className="mr-2 h-5 w-5" /> Add New Phase
               </Button>
             )}
@@ -301,7 +287,7 @@ export function PathwayTemplateDetail({ templateId }: PathwayTemplateDetailProps
                 This template currently has no phases. Add phases to define its workflow.
               </CardDescription>
               {canModifyTemplate && (
-                <Button onClick={() => { setSelectedPhaseId("new"); setIsEditingTemplateDetails(false); }} className="mt-6 rounded-full px-6 py-3 text-label-large">
+                <Button onClick={handleOpenNewPhaseDialog} className="mt-6 rounded-full px-6 py-3 text-label-large">
                   <PlusCircle className="mr-2 h-5 w-5" /> Add First Phase
                 </Button>
               )}
@@ -310,10 +296,9 @@ export function PathwayTemplateDetail({ templateId }: PathwayTemplateDetailProps
             <WorkflowCanvas
               phases={phases}
               onReorder={handleReorderPhases}
-              onEditPhase={handleEditPhase}
               onDeletePhase={handleDeletePhase}
-              onConfigurePhase={handleConfigurePhase}
-              onConfigureBranching={handleConfigureBranching}
+              onPhaseUpdated={handlePhaseUpdated}
+              onPopOutToInspector={handlePopOutToInspector}
               canModify={canModifyTemplate}
             />
           )}
@@ -323,47 +308,46 @@ export function PathwayTemplateDetail({ templateId }: PathwayTemplateDetailProps
             canModify={canModifyTemplate}
             onTemplateRolledBack={fetchTemplateAndPhases}
           />
-        </div>
-      </ResizablePanel>
-      <ResizableHandle withHandle />
-      <ResizablePanel defaultSize={30} minSize={20}>
-        <InspectorPanel
-          template={currentTemplate}
-          phases={phases}
-          selectedPhaseId={selectedPhaseId}
-          isEditingTemplateDetails={isEditingTemplateDetails}
-          onClose={() => { setSelectedPhaseId(null); setIsEditingTemplateDetails(false); }}
-          onSelectPhase={setSelectedPhaseId}
-          onEditTemplateDetails={() => { setIsEditingTemplateDetails(true); setSelectedPhaseId(null); }}
-          canModifyTemplate={canModifyTemplate}
-        />
-      </ResizablePanel>
 
-      {/* Branching Configuration Dialog */}
-      {branchingPhase && (
-        <Dialog open={isBranchingDialogOpen} onOpenChange={setIsBranchingDialogOpen}>
-          <DialogContent className="sm:max-w-[600px] rounded-xl shadow-lg bg-card text-card-foreground border-border max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle className="text-headline-small">
-                Configure Branching for &quot;{branchingPhase.name}&quot;
-              </DialogTitle>
-            </DialogHeader>
-            <BranchingConfigForm
-              pathwayTemplateId={templateId}
-              phase={branchingPhase}
-              onConfigSaved={handleBranchingConfigSaved}
-              canModify={canModifyTemplate}
+          <TemplateActivityLog templateId={templateId} />
+
+          {/* Template Details Edit Dialog */}
+          <Dialog open={isTemplateFormOpen} onOpenChange={setIsTemplateFormOpen}>
+            <DialogContent className="sm:max-w-[600px] rounded-xl shadow-lg bg-card text-card-foreground border-border max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle className="text-headline-small">Edit Template Details</DialogTitle>
+              </DialogHeader>
+              <PathwayTemplateForm
+                initialData={currentTemplate}
+                onTemplateSaved={handleTemplateSaved}
+                onCancel={() => setIsTemplateFormOpen(false)}
+                canModify={canModifyTemplate}
+              />
+            </DialogContent>
+          </Dialog>
+
+          {/* Floating Inspector */}
+          {phaseForFloatingInspector && (
+            <FloatingInspector
+              isOpen={isFloatingInspectorOpen}
+              onClose={() => { setIsFloatingInspectorOpen(false); setPhaseForFloatingInspector(undefined); }}
+              phase={phaseForFloatingInspector}
+              template={currentTemplate}
+              canModifyTemplate={canModifyTemplate}
+              onPhaseUpdated={handlePhaseUpdated}
             />
-          </DialogContent>
-        </Dialog>
-      )}
-
-      <CloneTemplateDialog
-        isOpen={isCloneDialogOpen}
-        onClose={() => { setIsCloneDialogOpen(false); fetchTemplateAndPhases(); }}
-        templateId={templateId}
-        originalTemplateName={currentTemplate.name}
-      />
-    </ResizablePanelGroup>
+          )}
+          {/* For new phase creation, open inspector with undefined phase */}
+          {!phaseForFloatingInspector && isFloatingInspectorOpen && (
+            <FloatingInspector
+              isOpen={isFloatingInspectorOpen}
+              onClose={() => { setIsFloatingInspectorOpen(false); setPhaseForFloatingInspector(undefined); }}
+              phase={undefined as any} // Pass undefined for new phase, will be handled by forms
+              template={currentTemplate}
+              canModifyTemplate={canModifyTemplate}
+              onPhaseUpdated={handlePhaseUpdated}
+            />
+          )}
+        </div>
   );
 }

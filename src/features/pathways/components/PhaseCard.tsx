@@ -1,26 +1,30 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Trash2, GripVertical, Settings, GitFork, FileText, Award, Mail, Calendar, MailCheck, Info } from "lucide-react"; // Import all necessary icons
+import { Trash2, GripVertical, Settings, GitFork, FileText, Award, Mail, Calendar, MailCheck, Info, ExternalLink } from "lucide-react";
 import { Phase } from "../services/pathway-template-service";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Draggable } from "@hello-pangea/dnd"; // Using a dnd library
+import { Draggable } from "@hello-pangea/dnd";
 import { cn } from "@/lib/utils";
-import { Badge } from "@/components/ui/badge"; // Import Badge
+import { Badge } from "@/components/ui/badge";
+import { PhaseDetailsForm } from "./PhaseDetailsForm";
+import { PhaseConfigurationPanel } from "./PhaseConfigurationPanel";
+import { PhaseTaskManagementPanel } from "./PhaseTaskManagementPanel";
+import { BranchingConfigForm } from "./BranchingConfigForm";
 
 interface PhaseCardProps {
   phase: Phase;
   index: number;
-  onEdit: (phaseId: string) => void; // Changed to pass phaseId directly
   onDelete: (phaseId: string) => void;
-  onConfigure: (phaseId: string) => void; // Changed to pass phaseId directly
-  onConfigureBranching: (phase: Phase) => void; // Still needs full phase object for branching dialog
-  canEditOrDelete: boolean;
+  onPhaseUpdated: () => void; // Callback to refresh parent data
+  onPopOutToInspector: (phaseId: string) => void; // New prop for pop-out
+  canModify: boolean;
 }
 
-export function PhaseCard({ phase, index, onEdit, onDelete, onConfigure, onConfigureBranching, canEditOrDelete }: PhaseCardProps) {
+export function PhaseCard({ phase, index, onDelete, onPhaseUpdated, onPopOutToInspector, canModify }: PhaseCardProps) {
+  const [isExpanded, setIsExpanded] = useState(false);
   const isConditional = phase.type === "Decision" || phase.type === "Review";
 
   // Determine icon based on phase type
@@ -52,6 +56,21 @@ export function PhaseCard({ phase, index, onEdit, onDelete, onConfigure, onConfi
   // Basic check for incomplete configuration
   const isConfigIncomplete = Object.keys(phase.config || {}).length === 0;
 
+  const handleSaveAndCollapse = () => {
+    onPhaseUpdated(); // Trigger parent refresh
+    setIsExpanded(false); // Collapse the card
+  };
+
+  const handleCancelAndCollapse = () => {
+    setIsExpanded(false); // Collapse the card without saving
+  };
+
+  const handlePopOut = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent card from collapsing
+    onPopOutToInspector(phase.id);
+    setIsExpanded(false); // Collapse inline view when popping out
+  };
+
   return (
     <Draggable draggableId={phase.id} index={index}>
       {(provided, snapshot) => (
@@ -59,48 +78,39 @@ export function PhaseCard({ phase, index, onEdit, onDelete, onConfigure, onConfi
           ref={provided.innerRef}
           {...provided.draggableProps}
           className={cn(
-            "rounded-xl shadow-md transition-all duration-200 border-l-8", // Added border-l-8 for color-coding
+            "rounded-xl shadow-md transition-all duration-200 border-l-8",
             getPhaseColorClasses(phase.type),
             snapshot.isDragging ? "shadow-lg ring-2 ring-primary-container" : "hover:shadow-lg",
-            "flex items-center p-4 cursor-pointer"
+            "flex flex-col cursor-pointer"
           )}
-          onClick={() => onEdit(phase.id)} // Clicking card now triggers onEdit
+          onClick={() => setIsExpanded(!isExpanded)}
         >
-          <div {...provided.dragHandleProps} className="cursor-grab p-2 -ml-2 mr-2 text-muted-foreground hover:text-foreground transition-colors">
-            <GripVertical className="h-5 w-5" />
-          </div>
-          <div className="flex-shrink-0 mr-4 text-primary"> {/* Prominent Icon */}
-            {getPhaseIcon(phase.type)}
-          </div>
-          <CardHeader className="flex-grow p-0">
-            <CardTitle className="text-title-medium text-foreground flex items-center gap-2">
-              {phase.name}
-              <span className="text-body-small text-muted-foreground font-normal">({phase.type})</span>
-              {isConfigIncomplete && (
-                <Badge variant="outline" className="ml-2 bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">
-                  <Info className="h-3 w-3 mr-1" /> Config Incomplete
-                </Badge>
-              )}
-            </CardTitle>
-            {phase.description && (
-              <CardDescription className="text-body-small text-muted-foreground">
-                {phase.description}
-              </CardDescription>
-            )}
-          </CardHeader>
-          <CardContent className="flex-shrink-0 flex items-center space-x-2 p-0 pl-4">
-            {canEditOrDelete && (
-              <>
-                <Button variant="outlined" size="icon" className="rounded-md" onClick={(e) => { e.stopPropagation(); onConfigure(phase.id); }}>
-                  <Settings className="h-4 w-4" />
-                  <span className="sr-only">Configure Phase</span>
-                </Button>
-                {isConditional && (
-                  <Button variant="outlined" size="icon" className="rounded-md" onClick={(e) => { e.stopPropagation(); onConfigureBranching(phase); }}>
-                    <GitFork className="h-4 w-4" />
-                    <span className="sr-only">Configure Branching</span>
-                  </Button>
+          {/* Summary View */}
+          <div className="flex items-center p-4">
+            <div {...provided.dragHandleProps} className="cursor-grab p-2 -ml-2 mr-2 text-muted-foreground hover:text-foreground transition-colors">
+              <GripVertical className="h-5 w-5" />
+            </div>
+            <div className="flex-shrink-0 mr-4 text-primary">
+              {getPhaseIcon(phase.type)}
+            </div>
+            <CardHeader className="flex-grow p-0">
+              <CardTitle className="text-title-medium text-foreground flex items-center gap-2">
+                {phase.name}
+                <span className="text-body-small text-muted-foreground font-normal">({phase.type})</span>
+                {isConfigIncomplete && (
+                  <Badge variant="outline" className="ml-2 bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">
+                    <Info className="h-3 w-3 mr-1" /> Config Incomplete
+                  </Badge>
                 )}
+              </CardTitle>
+              {phase.description && (
+                <CardDescription className="text-body-small text-muted-foreground">
+                  {phase.description}
+                </CardDescription>
+              )}
+            </CardHeader>
+            <CardContent className="flex-shrink-0 flex items-center space-x-2 p-0 pl-4">
+              {canModify && (
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
                     <Button variant="destructive" size="icon" className="rounded-md" onClick={(e) => e.stopPropagation()}>
@@ -126,9 +136,64 @@ export function PhaseCard({ phase, index, onEdit, onDelete, onConfigure, onConfi
                     </AlertDialogFooter>
                   </AlertDialogContent>
                 </AlertDialog>
-              </>
+              )}
+            </CardContent>
+          </div>
+
+          {/* Expanded Configuration View */}
+          <div
+            className={cn(
+              "overflow-hidden transition-max-height duration-300 ease-in-out",
+              isExpanded ? "max-h-screen-content p-4 pt-0" : "max-h-0"
             )}
-          </CardContent>
+          >
+            {isExpanded && ( // Only render content when expanded to avoid unnecessary component lifecycle
+              <div className="space-y-6 p-4 border border-border rounded-lg bg-background shadow-inner">
+                <div className="flex justify-end">
+                  {canModify && (
+                    <Button variant="outlined" size="sm" onClick={handlePopOut} className="rounded-md text-label-small">
+                      <ExternalLink className="mr-2 h-4 w-4" /> Pop Out to Inspector
+                    </Button>
+                  )}
+                </div>
+
+                {/* Phase Details Form */}
+                <PhaseDetailsForm
+                  pathwayTemplateId={phase.pathway_template_id}
+                  initialData={phase}
+                  onPhaseSaved={handleSaveAndCollapse}
+                  onCancel={handleCancelAndCollapse}
+                  nextOrderIndex={phase.order_index} // Not relevant for editing, but required prop
+                  canModify={canModify}
+                />
+
+                {/* Phase Type-Specific Configuration */}
+                <PhaseConfigurationPanel
+                  phase={phase}
+                  parentId={phase.pathway_template_id}
+                  onConfigSaved={handleSaveAndCollapse}
+                  canModify={canModify}
+                />
+
+                {/* Phase Task Management */}
+                <PhaseTaskManagementPanel
+                  phaseId={phase.id}
+                  pathwayTemplateId={phase.pathway_template_id}
+                  canModify={canModify}
+                />
+
+                {/* Branching Configuration (Conditional) */}
+                {isConditional && (
+                  <BranchingConfigForm
+                    pathwayTemplateId={phase.pathway_template_id}
+                    phase={phase}
+                    onConfigSaved={handleSaveAndCollapse}
+                    canModify={canModify}
+                  />
+                )}
+              </div>
+            )}
+          </div>
         </Card>
       )}
     </Draggable>

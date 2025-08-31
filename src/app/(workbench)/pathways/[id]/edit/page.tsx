@@ -1,4 +1,4 @@
-"use client"; // Add "use client" directive
+"use client";
 
 import React, { useEffect, useState } from "react";
 import { notFound, useRouter } from "next/navigation";
@@ -11,9 +11,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"; // Import Dialog components
 
 interface EditPathwayTemplatePageProps {
-  params: { id: string }; // Adjusted type for Next.js type checker
+  params: { id: string };
 }
 
 export default function EditPathwayTemplatePage({ params }: EditPathwayTemplatePageProps) {
@@ -22,14 +23,14 @@ export default function EditPathwayTemplatePage({ params }: EditPathwayTemplateP
   const { user, isLoading: isSessionLoading } = useSession();
   const [template, setTemplate] = useState<PathwayTemplate | null>(null);
   const [isLoadingTemplate, setIsLoadingTemplate] = useState(true);
+  const [isFormOpen, setIsFormOpen] = useState(true); // Control the dialog state
 
   useEffect(() => {
     const fetchTemplate = async () => {
       setIsLoadingTemplate(true);
-      // Validate if 'id' is a UUID before proceeding to fetch
       const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
       if (!isUUID) {
-        notFound(); // If it's not a valid UUID, it's a 404
+        notFound();
         return;
       }
 
@@ -43,7 +44,7 @@ export default function EditPathwayTemplatePage({ params }: EditPathwayTemplateP
       } catch (error: any) {
         console.error("Error fetching template for edit:", error);
         toast.error(error.message || "Failed to load template for editing.");
-        notFound(); // Redirect to 404 or error page
+        notFound();
       } finally {
         setIsLoadingTemplate(false);
       }
@@ -57,6 +58,7 @@ export default function EditPathwayTemplatePage({ params }: EditPathwayTemplateP
   }, [id, user, isSessionLoading, router]);
 
   const handleTemplateSaved = (templateId?: string) => {
+    setIsFormOpen(false); // Close dialog
     if (templateId) {
       toast.success("Pathway template updated successfully!");
       router.push(`/pathways/${templateId}`); // Redirect to the detail page (builder)
@@ -67,6 +69,7 @@ export default function EditPathwayTemplatePage({ params }: EditPathwayTemplateP
   };
 
   const handleCancel = () => {
+    setIsFormOpen(false); // Close dialog
     router.push(`/pathways/${id}`);
   };
 
@@ -80,7 +83,7 @@ export default function EditPathwayTemplatePage({ params }: EditPathwayTemplateP
   }
 
   if (!template) {
-    return null; // notFound() should handle this, but as a fallback
+    return null;
   }
 
   const canModify = !!user && (template.creator_id === user.id || user.user_metadata?.role === 'admin');
@@ -95,12 +98,20 @@ export default function EditPathwayTemplatePage({ params }: EditPathwayTemplateP
         </Button>
       </div>
       <h1 className="text-display-small font-bold text-foreground">Edit Pathway Template</h1>
-      <PathwayTemplateForm
-        initialData={template}
-        onTemplateSaved={handleTemplateSaved}
-        onCancel={handleCancel}
-        canModify={canModify}
-      />
+
+      <Dialog open={isFormOpen} onOpenChange={handleCancel}> {/* Use handleCancel to close and navigate */}
+        <DialogContent className="sm:max-w-[600px] rounded-xl shadow-lg bg-card text-card-foreground border-border max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-headline-small">Edit Pathway Template</DialogTitle>
+          </DialogHeader>
+          <PathwayTemplateForm
+            initialData={template}
+            onTemplateSaved={handleTemplateSaved}
+            onCancel={handleCancel}
+            canModify={canModify}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

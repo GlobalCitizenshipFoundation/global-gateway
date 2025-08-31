@@ -206,4 +206,17 @@
   .body-with-fixed-header {
     padding-top: var(--header-height);
   }
+
+  /* Custom utility for max-height transition */
+  .max-h-0 {
+    max-height: 0;
+  }
+  .max-h-screen-content { /* A large enough value for content to expand */
+    max-height: 100vh; /* Or a larger fixed value like 2000px if content can exceed viewport height */
+  }
+  .transition-max-height {
+    transition-property: max-height;
+    transition-duration: 300ms;
+    transition-timing-function: ease-in-out;
+  }
 }

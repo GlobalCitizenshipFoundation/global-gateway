@@ -20,7 +20,7 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Phase } from "../services/pathway-template-service";
 import { createPhaseAction, updatePhaseAction } from "../actions";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"; // Import Card components
+// Removed unused Card imports as per previous instruction to remove outer Card elements
 
 const phaseFormSchema = z.object({
   name: z.string().min(1, { message: "Phase name is required." }).max(100, { message: "Name cannot exceed 100 characters." }),
@@ -33,7 +33,7 @@ interface PhaseDetailsFormProps {
   initialData?: Phase;
   onPhaseSaved: () => void;
   onCancel: () => void;
-  nextOrderIndex: number;
+  nextOrderIndex: number; // Only relevant for creation, but kept for consistency
   canModify: boolean;
 }
 
@@ -100,91 +100,80 @@ export function PhaseDetailsForm({
   ];
 
   return (
-    <Card className="rounded-xl shadow-lg p-6">
-      <CardHeader className="p-0 mb-4">
-        <CardTitle className="text-headline-small">
-          {initialData ? "Edit Phase Details" : "Add New Phase"}
-        </CardTitle>
-        <CardDescription className="text-body-medium text-muted-foreground">
-          {initialData
-            ? "Update the basic details of this phase."
-            : "Define a new phase for your pathway template."}
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="p-0">
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4 py-4">
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-label-large">Phase Name</FormLabel>
+    <div className="space-y-6">
+      <h3 className="text-title-large font-bold text-foreground">Phase Details</h3>
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4 py-4">
+          <FormField
+            control={form.control}
+            name="name"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-label-large">Phase Name</FormLabel>
+                <FormControl>
+                  <Input placeholder="e.g., Initial Application" {...field} className="rounded-md" disabled={!canModify} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="type"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-label-large">Phase Type</FormLabel>
+                <Select onValueChange={field.onChange} defaultValue={field.value} disabled={!canModify || !!initialData}> {/* Disable type change on edit */}
                   <FormControl>
-                    <Input placeholder="e.g., Initial Application" {...field} className="rounded-md" disabled={!canModify} />
+                    <SelectTrigger className="rounded-md">
+                      <SelectValue placeholder="Select a phase type" />
+                    </SelectTrigger>
                   </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="type"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-label-large">Phase Type</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value} disabled={!canModify}>
+                  <SelectContent className="rounded-md shadow-lg bg-card text-card-foreground border-border">
+                        {phaseTypes.map((type) => (
+                          <SelectItem key={type.value} value={type.value} className="text-body-medium hover:bg-muted hover:text-muted-foreground cursor-pointer">
+                            {type.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-label-large">Description</FormLabel>
                     <FormControl>
-                      <SelectTrigger className="rounded-md">
-                        <SelectValue placeholder="Select a phase type" />
-                      </SelectTrigger>
+                      <Textarea
+                        placeholder="Optional description for this phase."
+                        className="resize-y min-h-[80px] rounded-md"
+                        {...field}
+                        value={field.value || ""}
+                        disabled={!canModify}
+                      />
                     </FormControl>
-                    <SelectContent className="rounded-md shadow-lg bg-card text-card-foreground border-border">
-                      {phaseTypes.map((type) => (
-                        <SelectItem key={type.value} value={type.value} className="text-body-medium hover:bg-muted hover:text-muted-foreground cursor-pointer">
-                          {type.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-label-large">Description</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder="Optional description for this phase."
-                      className="resize-y min-h-[80px] rounded-md"
-                      {...field}
-                      value={field.value || ""}
-                      disabled={!canModify}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <div className="flex justify-end space-x-2">
-              <Button type="button" variant="outlined" onClick={onCancel} className="rounded-md text-label-large">
-                Cancel
-              </Button>
-              <Button type="submit" className="rounded-md text-label-large" disabled={form.formState.isSubmitting || !canModify}>
-                {form.formState.isSubmitting
-                  ? "Saving..."
-                  : initialData
-                  ? "Save Changes"
-                  : "Add Phase"}
-              </Button>
-            </div>
-          </form>
-        </Form>
-      </CardContent>
-    </Card>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <div className="flex justify-end space-x-2">
+                <Button type="button" variant="outlined" onClick={onCancel} className="rounded-md text-label-large">
+                  Cancel
+                </Button>
+                <Button type="submit" className="rounded-md text-label-large" disabled={form.formState.isSubmitting || !canModify}>
+                  {form.formState.isSubmitting
+                    ? "Saving..."
+                    : initialData
+                    ? "Save Changes"
+                    : "Add Phase"}
+                </Button>
+              </div>
+            </form>
+          </Form>
+        </div>
   );
 }

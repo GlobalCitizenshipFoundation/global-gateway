@@ -12,10 +12,9 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 interface WorkflowCanvasProps {
   phases: Phase[];
   onReorder: (reorderedPhases: { id: string; order_index: number }[]) => void;
-  onEditPhase: (phaseId: string) => void; // Changed to pass phaseId directly
+  onPhaseUpdated: () => void; // New prop for refreshing data
+  onPopOutToInspector: (phaseId: string) => void; // New prop for pop-out
   onDeletePhase: (phaseId: string) => void;
-  onConfigurePhase: (phaseId: string) => void; // Changed to pass phaseId directly
-  onConfigureBranching: (phase: Phase) => void;
   canModify: boolean;
 }
 
@@ -60,10 +59,9 @@ const Connector: React.FC<{ type: 'straight' | 'conditional-success' | 'conditio
 export function WorkflowCanvas({
   phases,
   onReorder,
-  onEditPhase,
+  onPhaseUpdated,
+  onPopOutToInspector,
   onDeletePhase,
-  onConfigurePhase,
-  onConfigureBranching,
   canModify,
 }: WorkflowCanvasProps) {
   const [internalPhases, setInternalPhases] = useState<Phase[]>(phases);
@@ -96,11 +94,10 @@ export function WorkflowCanvas({
         <PhaseCard
           phase={phase}
           index={index}
-          onEdit={onEditPhase} // Pass onEditPhase directly
           onDelete={onDeletePhase}
-          onConfigure={onConfigurePhase} // Pass onConfigurePhase directly
-          onConfigureBranching={onConfigureBranching}
-          canEditOrDelete={canModify}
+          onPhaseUpdated={onPhaseUpdated}
+          onPopOutToInspector={onPopOutToInspector}
+          canModify={canModify}
         />
       </div>
     );
@@ -129,11 +126,11 @@ export function WorkflowCanvas({
                 <ArrowRight className="h-4 w-4 mr-1" /> Failure: {nextFailurePhase.name}
               </div>
             )}
-            <Connector type="end" /> {/* Always end the path after conditional branches */}
+            <Connector type="end" />
           </div>
         );
       }
-      return <Connector type="end" />; // If last phase, not conditional, or conditional without branches, just end
+      return <Connector type="end" />;
     }
 
     // For non-last phases, check if it's conditional and has branches

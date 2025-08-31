@@ -98,118 +98,107 @@ export function BranchingConfigForm({
 
   if (!isConditionalPhase) {
     return (
-      <Card className="rounded-xl shadow-lg p-6">
-        <CardHeader className="p-0 mb-4">
-          <CardTitle className="text-headline-small">Branching Configuration</CardTitle>
-          <CardDescription className="text-body-medium text-muted-foreground">
-            This phase type ({phase.type}) does not support conditional branching.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="p-0">
-          <p className="text-body-medium text-muted-foreground">
-            Only 'Decision' and 'Review' phases can have conditional branching.
-          </p>
-        </CardContent>
-      </Card>
+      <div className="rounded-xl shadow-md p-6 bg-muted/20 border border-border">
+        <h4 className="text-headline-small text-muted-foreground">Branching Configuration</h4>
+        <p className="text-body-medium text-muted-foreground mt-2">
+          This phase type ({phase.type}) does not support conditional branching.
+        </p>
+        <p className="text-body-small text-muted-foreground mt-1">
+          Only 'Decision' and 'Review' phases can have conditional branching.
+        </p>
+      </div>
     );
   }
 
   return (
-    <Card className="rounded-xl shadow-lg p-6">
-      <CardHeader className="p-0 mb-4">
-        <CardTitle className="text-headline-small">Configure Branching for &quot;{phase.name}&quot;</CardTitle>
-        <CardDescription className="text-body-medium text-muted-foreground">
-          Define the next steps based on the outcome of this {phase.type} phase.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="p-0">
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4 py-4">
-            <FormField
-              control={form.control}
-              name="next_phase_id_on_success"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-label-large">Next Phase (On Success/Accept)</FormLabel>
-                  <Select
-                    onValueChange={(value) => field.onChange(value === "none" ? null : value)}
-                    value={field.value || "none"}
-                    disabled={!canModify || isLoadingPhases}
-                  >
-                    <FormControl>
-                      <SelectTrigger className="rounded-md">
-                        <SelectValue placeholder={isLoadingPhases ? "Loading phases..." : "Select a phase (optional)"} />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent className="rounded-md shadow-lg bg-card text-card-foreground border-border">
-                      <SelectItem value="none" className="text-body-medium hover:bg-muted hover:text-muted-foreground cursor-pointer">
-                        None (End of Path)
+    <div className="space-y-6">
+      <h3 className="text-title-large font-bold text-foreground">Branching Configuration</h3>
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4 py-4">
+          <FormField
+            control={form.control}
+            name="next_phase_id_on_success"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-label-large">Next Phase (On Success/Accept)</FormLabel>
+                <Select
+                  onValueChange={(value) => field.onChange(value === "none" ? null : value)}
+                  value={field.value || "none"}
+                  disabled={!canModify || isLoadingPhases}
+                >
+                  <FormControl>
+                    <SelectTrigger className="rounded-md">
+                      <SelectValue placeholder={isLoadingPhases ? "Loading phases..." : "Select a phase (optional)"} />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent className="rounded-md shadow-lg bg-card text-card-foreground border-border">
+                    <SelectItem value="none" className="text-body-medium hover:bg-muted hover:text-muted-foreground cursor-pointer">
+                      None (End of Path)
+                    </SelectItem>
+                    {allPhases.length === 0 && !isLoadingPhases ? (
+                      <SelectItem value="no-phases-available" disabled className="text-body-medium text-muted-foreground">
+                        No other phases available.
                       </SelectItem>
-                      {allPhases.length === 0 && !isLoadingPhases ? (
-                        <SelectItem value="no-phases-available" disabled className="text-body-medium text-muted-foreground">
-                          No other phases available.
+                    ) : (
+                      allPhases.map((p) => (
+                        <SelectItem key={p.id} value={p.id} className="text-body-medium hover:bg-muted hover:text-muted-foreground cursor-pointer">
+                          {p.name} ({p.type})
                         </SelectItem>
-                      ) : (
-                        allPhases.map((p) => (
-                          <SelectItem key={p.id} value={p.id} className="text-body-medium hover:bg-muted hover:text-muted-foreground cursor-pointer">
-                            {p.name} ({p.type})
-                          </SelectItem>
-                        ))
-                      )}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="next_phase_id_on_failure"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-label-large">Next Phase (On Failure/Reject)</FormLabel>
-                  <Select
-                    onValueChange={(value) => field.onChange(value === "none" ? null : value)}
-                    value={field.value || "none"}
-                    disabled={!canModify || isLoadingPhases}
-                  >
-                    <FormControl>
-                      <SelectTrigger className="rounded-md">
-                        <SelectValue placeholder={isLoadingPhases ? "Loading phases..." : "Select a phase (optional)"} />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent className="rounded-md shadow-lg bg-card text-card-foreground border-border">
-                      <SelectItem value="none" className="text-body-medium hover:bg-muted hover:text-muted-foreground cursor-pointer">
-                        None (End of Path)
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="next_phase_id_on_failure"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-label-large">Next Phase (On Failure/Reject)</FormLabel>
+                <Select
+                  onValueChange={(value) => field.onChange(value === "none" ? null : value)}
+                  value={field.value || "none"}
+                  disabled={!canModify || isLoadingPhases}
+                >
+                  <FormControl>
+                    <SelectTrigger className="rounded-md">
+                      <SelectValue placeholder={isLoadingPhases ? "Loading phases..." : "Select a phase (optional)"} />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent className="rounded-md shadow-lg bg-card text-card-foreground border-border">
+                    <SelectItem value="none" className="text-body-medium hover:bg-muted hover:text-muted-foreground cursor-pointer">
+                      None (End of Path)
+                    </SelectItem>
+                    {allPhases.length === 0 && !isLoadingPhases ? (
+                      <SelectItem value="no-phases-available" disabled className="text-body-medium text-muted-foreground">
+                        No other phases available.
                       </SelectItem>
-                      {allPhases.length === 0 && !isLoadingPhases ? (
-                        <SelectItem value="no-phases-available" disabled className="text-body-medium text-muted-foreground">
-                          No other phases available.
+                    ) : (
+                      allPhases.map((p) => (
+                        <SelectItem key={p.id} value={p.id} className="text-body-medium hover:bg-muted hover:text-muted-foreground cursor-pointer">
+                          {p.name} ({p.type})
                         </SelectItem>
-                      ) : (
-                        allPhases.map((p) => (
-                          <SelectItem key={p.id} value={p.id} className="text-body-medium hover:bg-muted hover:text-muted-foreground cursor-pointer">
-                            {p.name} ({p.type})
-                          </SelectItem>
-                        ))
-                      )}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <div className="flex justify-end space-x-2">
-              <Button type="button" variant="outlined" onClick={onConfigSaved} className="rounded-md text-label-large">
-                Cancel
-              </Button>
-              <Button type="submit" className="rounded-md text-label-large" disabled={form.formState.isSubmitting || !canModify}>
-                {form.formState.isSubmitting ? "Saving..." : "Save Branching"}
-              </Button>
-            </div>
-          </form>
-        </Form>
-      </CardContent>
-    </Card>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <div className="flex justify-end space-x-2">
+            <Button type="button" variant="outlined" onClick={onConfigSaved} className="rounded-md text-label-large">
+              Cancel
+            </Button>
+            <Button type="submit" className="rounded-md text-label-large" disabled={form.formState.isSubmitting || !canModify}>
+              {form.formState.isSubmitting ? "Saving..." : "Save Branching"}
+            </Button>
+          </div>
+        </form>
+      </Form>
+    </div>
   );
 }
