@@ -24,21 +24,35 @@ import { GlobalSetting } from "@/features/settings/services/global-settings-serv
 import { getGlobalSettingAction, updateGlobalSettingAction } from "@/features/settings/actions";
 import { Skeleton } from "@/components/ui/skeleton";
 
-// Define the schema for the global settings form
+// Define a schema for a generic JSONB value
+const jsonStringSchema = z.string()
+  .transform((val, ctx) => {
+    try {
+      // Attempt to parse the string as JSON
+      const parsed = JSON.parse(val);
+      // Ensure the parsed value is an object (or null if empty string was parsed to null)
+      if (typeof parsed === 'object' && parsed !== null) {
+        return parsed;
+      }
+      // If it's not an object, it's invalid JSON for our purpose
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Value must be a valid JSON object.",
+      });
+      return z.NEVER;
+    } catch (e) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Invalid JSON format",
+      });
+      return z.NEVER;
+    }
+  });
+
 const globalSettingsFormSchema = z.object({
   key: z.string().min(1, "Setting key is required."),
-  value: z.string().min(1, "Value is required and must be valid JSON."), // Expects a string input
+  value: z.string(), // The form field itself holds a string
   description: z.string().nullable().optional(),
-}).refine((data) => {
-  try {
-    JSON.parse(data.value);
-    return true;
-  } catch (e) {
-    return false;
-  }
-}, {
-  message: "Value must be a valid JSON format.",
-  path: ["value"],
 });
 
 interface SettingFormProps {
@@ -53,7 +67,7 @@ function SettingForm({ settingKey, initialData, onSettingSaved, canModify }: Set
     resolver: zodResolver(globalSettingsFormSchema),
     defaultValues: {
       key: initialData?.key || settingKey,
-      value: initialData?.value ? JSON.stringify(initialData.value, null, 2) : "{}", // Ensure string value for textarea
+      value: initialData?.value ? JSON.stringify(initialData.value, null, 2) : "{}",
       description: initialData?.description || "",
     },
     mode: "onChange",
@@ -63,13 +77,13 @@ function SettingForm({ settingKey, initialData, onSettingSaved, canModify }: Set
     if (initialData) {
       form.reset({
         key: initialData.key,
-        value: JSON.stringify(initialData.value, null, 2), // Ensure string value for textarea
+        value: JSON.stringify(initialData.value, null, 2),
         description: initialData.description || "",
       });
     } else {
       form.reset({
         key: settingKey,
-        value: "{}", // Ensure string value for textarea
+        value: "{}",
         description: "",
       });
     }
@@ -81,9 +95,12 @@ function SettingForm({ settingKey, initialData, onSettingSaved, canModify }: Set
       return;
     }
     try {
+      // Validate the JSON string before sending
+      const parsedValue = jsonStringSchema.parse(values.value);
+
       const formData = new FormData();
       formData.append("key", values.key);
-      formData.append("value", values.value); // values.value is now the JSON string
+      formData.append("value", JSON.stringify(parsedValue)); // Ensure value is stringified JSON
       formData.append("description", values.description || "");
 
       const result = await updateGlobalSettingAction(formData);
@@ -93,7 +110,12 @@ function SettingForm({ settingKey, initialData, onSettingSaved, canModify }: Set
       }
     } catch (error: any) {
       console.error("Global setting submission error:", error);
-      toast.error(error.message || "Failed to save global setting.");
+      // If it's a Zod error from parsing, display it
+      if (error instanceof z.ZodError) {
+        error.errors.forEach(err => toast.error(err.message));
+      } else {
+        toast.error(error.message || "Failed to save global setting.");
+      }
     }
   };
 

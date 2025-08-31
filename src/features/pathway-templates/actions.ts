@@ -393,6 +393,51 @@ export async function reorderPhasesAction(pathwayTemplateId: string, phases: { i
   }
 }
 
+// --- Template Cloning Server Action ---
+export async function clonePathwayTemplateAction(templateId: string, newName: string): Promise<PathwayTemplate | null> {
+  const supabase = await createClient();
+  const { data: { user }, error: userError } = await supabase.auth.getUser();
+
+  if (userError || !user) {
+    redirect("/login");
+  }
+
+  // Authorization check: User must have read access to the original template to clone it.
+  // The service function will handle fetching the template, so we just need to ensure the user is authenticated.
+  // The RLS on pathway_templates will ensure they can only read public or their own templates.
+  // If they are an admin, they can clone any template.
+  try {
+    await authorizeTemplateAction(templateId, 'read');
+  } catch (error: any) {
+    console.error("Error in clonePathwayTemplateAction authorization:", error.message);
+    if (error.message === "UnauthorizedAccessToPrivateTemplate") {
+      redirect("/error/403");
+    } else if (error.message === "TemplateNotFound") {
+      redirect("/error/404");
+    } else if (error.message === "FailedToRetrieveTemplate") {
+      redirect("/error/500");
+    }
+    redirect("/login"); // Fallback for unauthenticated or other critical errors
+  }
+
+  if (!newName) {
+    throw new Error("New template name is required.");
+  }
+
+  try {
+    const clonedTemplate = await clonePathwayTemplate( // Use the service function
+      templateId,
+      newName,
+      user.id // The new template will be owned by the current user
+    );
+    revalidatePath("/pathway-templates");
+    return clonedTemplate;
+  } catch (error: any) {
+    console.error("Error in clonePathwayTemplateAction:", error.message);
+    throw error; // Re-throw to be caught by client-side toast
+  }
+}
+
 // --- Phase Task Management Server Actions ---
 
 // Helper function to authorize access to a phase task
@@ -557,50 +602,6 @@ export async function deletePhaseTaskAction(taskId: string, phaseId: string): Pr
       redirect("/error/404");
     }
     throw error; // Re-throw for client-side toast
-  }
-}
-
-export async function clonePathwayTemplateAction(templateId: string, newName: string): Promise<PathwayTemplate | null> {
-  const supabase = await createClient();
-  const { data: { user }, error: userError } = await supabase.auth.getUser();
-
-  if (userError || !user) {
-    redirect("/login");
-  }
-
-  // Authorization check: User must have read access to the original template to clone it.
-  // The service function will handle fetching the template, so we just need to ensure the user is authenticated.
-  // The RLS on pathway_templates will ensure they can only read public or their own templates.
-  // If they are an admin, they can clone any template.
-  try {
-    await authorizeTemplateAction(templateId, 'read');
-  } catch (error: any) {
-    console.error("Error in clonePathwayTemplateAction authorization:", error.message);
-    if (error.message === "UnauthorizedAccessToPrivateTemplate") {
-      redirect("/error/403");
-    } else if (error.message === "TemplateNotFound") {
-      redirect("/error/404");
-    } else if (error.message === "FailedToRetrieveTemplate") {
-      redirect("/error/500");
-    }
-    redirect("/login"); // Fallback for unauthenticated or other critical errors
-  }
-
-  if (!newName) {
-    throw new Error("New template name is required.");
-  }
-
-  try {
-    const clonedTemplate = await clonePathwayTemplate( // Use the service function
-      templateId,
-      newName,
-      user.id // The new template will be owned by the current user
-    );
-    revalidatePath("/pathway-templates");
-    return clonedTemplate;
-  } catch (error: any) {
-    console.error("Error in clonePathwayTemplateAction:", error.message);
-    throw error; // Re-throw to be caught by client-side toast
   }
 }
 
