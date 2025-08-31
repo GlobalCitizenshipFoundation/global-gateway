@@ -817,17 +817,6 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
 
       {template && (
         <>
-          <div className="flex flex-wrap justify-end items-center gap-2 mt-8 pt-6 border-t border-border">
-            {/* Version History Trigger */}
-            <Button variant="outlined" className="rounded-full px-6 py-3 text-label-large" onClick={() => setIsVersionHistoryOpen(true)}>
-              <History className="mr-2 h-5 w-5" /> Version History
-            </Button>
-            {/* Activity Log Trigger */}
-            <Button variant="outlined" className="rounded-full px-6 py-3 text-label-large" onClick={() => setIsActivityLogOpen(true)}>
-              <Activity className="mr-2 h-5 w-5" /> Activity Log
-            </Button>
-          </div>
-
           {/* Version History Dialog */}
           <Dialog open={isVersionHistoryOpen} onOpenChange={setIsVersionHistoryOpen}>
             <DialogContent className="sm:max-w-[900px] rounded-xl shadow-lg bg-card text-card-foreground border-border max-h-[90vh] overflow-y-auto">
@@ -959,9 +948,21 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
       </AlertDialog>
 
       {template && (
-        <CardFooter className="flex flex-col items-start text-body-small text-muted-foreground border-t border-border pt-6 mt-8">
-          <p>Created by {template.creator_id} on {new Date(template.created_at).toLocaleDateString()}</p>
-          <p>Last updated by {template.last_updated_by} on {new Date(template.updated_at).toLocaleDateString()}</p>
+        <CardFooter className="flex flex-col md:flex-row md:justify-between md:items-center text-body-small text-muted-foreground border-t border-border pt-6 mt-8">
+          <div className="flex flex-col items-start mb-4 md:mb-0">
+            <p>Created by {template.creator_id} on {new Date(template.created_at).toLocaleDateString()}</p>
+            <p>Last updated by {template.last_updated_by} on {new Date(template.updated_at).toLocaleDateString()}</p>
+          </div>
+          <div className="flex flex-wrap justify-end items-center gap-2">
+            {/* Version History Trigger */}
+            <Button variant="outlined" className="rounded-full px-6 py-3 text-label-large" onClick={() => setIsVersionHistoryOpen(true)}>
+              <History className="mr-2 h-5 w-5" /> Version History
+            </Button>
+            {/* Activity Log Trigger */}
+            <Button variant="outlined" className="rounded-full px-6 py-3 text-label-large" onClick={() => setIsActivityLogOpen(true)}>
+              <Activity className="mr-2 h-5 w-5" /> Activity Log
+            </Button>
+          </div>
         </CardFooter>
       )}
     </div>
