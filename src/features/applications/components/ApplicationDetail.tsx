@@ -421,7 +421,7 @@ export function ApplicationDetail({ applicationId }: ApplicationDetailProps) {
         <CardContent className="p-0">
           {application.campaign_id && (
             <WorkflowParticipation
-              campaignId={application.campaigns.id}
+              campaignId={application.campaign_id}
               currentCampaignPhaseId={application.current_campaign_phase_id}
               applicationOverallStatus={application.status}
             />

@@ -25,28 +25,25 @@ import { getGlobalSettingAction, updateGlobalSettingAction } from "@/features/se
 import { Skeleton } from "@/components/ui/skeleton";
 
 // Define a schema for a generic JSONB value
-const jsonSchema = z.any()
+const jsonSchema = z.string() // Changed to string for form input
   .transform((val, ctx) => {
-    if (typeof val === 'string') {
-      try {
-        return JSON.parse(val);
-      } catch (e) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: "Invalid JSON format",
-        });
-        return z.NEVER;
-      }
+    try {
+      return JSON.parse(val);
+    } catch (e) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Invalid JSON format",
+      });
+      return z.NEVER;
     }
-    return val;
   })
-  .refine((val: unknown) => typeof val === 'object' && val !== null, { // Explicitly type val and corrected 'refile' to 'refine'
+  .refine((val: unknown) => typeof val === 'object' && val !== null, {
     message: "Value must be a valid JSON object.",
   });
 
 const globalSettingsFormSchema = z.object({
   key: z.string().min(1, "Setting key is required."),
-  value: z.string(), // Changed to string for form input
+  value: jsonSchema, // Now expects a string input that transforms to object
   description: z.string().nullable().optional(),
 });
 
@@ -62,7 +59,7 @@ function SettingForm({ settingKey, initialData, onSettingSaved, canModify }: Set
     resolver: zodResolver(globalSettingsFormSchema),
     defaultValues: {
       key: initialData?.key || settingKey,
-      value: initialData?.value ? JSON.stringify(initialData.value, null, 2) : "{}",
+      value: initialData?.value ? JSON.stringify(initialData.value, null, 2) : "{}", // Keep as string for textarea
       description: initialData?.description || "",
     },
     mode: "onChange",
@@ -72,13 +69,13 @@ function SettingForm({ settingKey, initialData, onSettingSaved, canModify }: Set
     if (initialData) {
       form.reset({
         key: initialData.key,
-        value: JSON.stringify(initialData.value, null, 2),
+        value: JSON.stringify(initialData.value, null, 2), // Keep as string for textarea
         description: initialData.description || "",
       });
     } else {
       form.reset({
         key: settingKey,
-        value: "{}",
+        value: "{}", // Keep as string for textarea
         description: "",
       });
     }
@@ -92,7 +89,7 @@ function SettingForm({ settingKey, initialData, onSettingSaved, canModify }: Set
     try {
       const formData = new FormData();
       formData.append("key", values.key);
-      formData.append("value", values.value); // value is already a string
+      formData.append("value", JSON.stringify(values.value)); // values.value is already the parsed object due to transform
       formData.append("description", values.description || "");
 
       const result = await updateGlobalSettingAction(formData);
@@ -168,7 +165,6 @@ function SettingForm({ settingKey, initialData, onSettingSaved, canModify }: Set
             {form.formState.isSubmitting ? "Saving..." : "Save Setting"}
             <Save className="ml-2 h-4 w-4" />
           </Button>
-        </Button>
         )}
       </form>
     </Form>
