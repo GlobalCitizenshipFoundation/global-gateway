@@ -114,26 +114,19 @@ export function PathwayTemplateDetail({ templateId }: PathwayTemplateDetailProps
     }
   };
 
-  const onDragEnd = async (result: DropResult) => {
-    if (!result.destination) {
-      return;
-    }
+  const handleReorderPhases = async (reorderedPhaseIdsAndOrder: { id: string; order_index: number }[]) => {
+    // Create a new phases array with updated order_index, preserving all other properties
+    const newPhases = reorderedPhaseIdsAndOrder.map(reordered => {
+      const originalPhase = phases.find(p => p.id === reordered.id);
+      return originalPhase ? { ...originalPhase, order_index: reordered.order_index } : null;
+    }).filter(Boolean) as Phase[]; // Filter out any nulls and assert type
 
-    const reorderedPhases = Array.from(phases);
-    const [removed] = reorderedPhases.splice(result.source.index, 1);
-    reorderedPhases.splice(result.destination.index, 0, removed);
-
-    const updatedPhases = reorderedPhases.map((phase, index) => ({
-      ...phase,
-      order_index: index,
-    }));
-
-    setPhases(updatedPhases); // Optimistic update
+    setPhases(newPhases); // Optimistic update
 
     try {
       const success = await reorderPhasesAction(
         templateId,
-        updatedPhases.map((p: Phase) => ({ id: p.id, order_index: p.order_index }))
+        reorderedPhaseIdsAndOrder // Pass the array directly as it already has the correct structure
       );
       if (!success) {
         toast.error("Failed to reorder phases. Reverting changes.");
@@ -309,7 +302,7 @@ export function PathwayTemplateDetail({ templateId }: PathwayTemplateDetailProps
           ) : (
             <WorkflowCanvas
               phases={phases}
-              onReorder={onDragEnd}
+              onReorder={handleReorderPhases}
               onEditPhase={handleEditPhase}
               onDeletePhase={handleDeletePhase}
               onConfigurePhase={handleConfigurePhase}
