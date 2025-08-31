@@ -412,14 +412,18 @@ export function PhaseTaskManagementPanel({ phaseId, pathwayTemplateId, canModify
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="text-label-large">Assigned to Role (Optional)</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value || ""} disabled={!canEditDetailsForEditingTask && !!editingTask}>
+                      <Select
+                        onValueChange={(val) => field.onChange(val === "unassigned" ? null : val)}
+                        value={field.value ?? "unassigned"}
+                        disabled={!canEditDetailsForEditingTask && !!editingTask}
+                      >
                         <FormControl>
                           <SelectTrigger className="rounded-md">
                             <SelectValue placeholder="Select a role" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent className="rounded-md shadow-lg bg-card text-card-foreground border-border">
-                          <SelectItem value="" className="text-body-medium hover:bg-muted hover:text-muted-foreground cursor-pointer">
+                          <SelectItem value="unassigned" className="text-body-medium hover:bg-muted hover:text-muted-foreground cursor-pointer">
                             None
                           </SelectItem>
                           {assignedRoleOptions.map((role) => (
@@ -442,14 +446,18 @@ export function PhaseTaskManagementPanel({ phaseId, pathwayTemplateId, canModify
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="text-label-large">Assigned to Specific User (Optional)</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value || ""} disabled={!canEditDetailsForEditingTask && !!editingTask}>
+                      <Select
+                        onValueChange={(val) => field.onChange(val === "unassigned" ? null : val)}
+                        value={field.value ?? "unassigned"}
+                        disabled={!canEditDetailsForEditingTask && !!editingTask}
+                      >
                         <FormControl>
                           <SelectTrigger className="rounded-md">
                             <SelectValue placeholder="Select a user" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent className="rounded-md shadow-lg bg-card text-card-foreground border-border">
-                          <SelectItem value="" className="text-body-medium hover:bg-muted hover:text-muted-foreground cursor-pointer">
+                          <SelectItem value="unassigned" className="text-body-medium hover:bg-muted hover:text-muted-foreground cursor-pointer">
                             None
                           </SelectItem>
                           {availableUsers.map((u) => (
