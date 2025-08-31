@@ -33,11 +33,12 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { PhaseBuilderCard } from "./PhaseBuilderCard"; // Changed from PhaseCard
+import { PhaseBuilderCard } from "./PhaseBuilderCard";
 import { CloneTemplateDialog } from "./CloneTemplateDialog";
 import { TemplateVersionHistory } from "./TemplateVersionHistory";
 import { TemplateActivityLog } from "./TemplateActivityLog";
-import { PhaseCreationDialog } from "./PhaseCreationDialog"; // Added import
+import { PhaseCreationDialog } from "./PhaseCreationDialog";
+import { FloatingInspector } from "./FloatingInspector"; // Import FloatingInspector
 
 // Zod schema for the entire template builder page (template details + phases)
 const templateBuilderSchema = z.object({
@@ -64,7 +65,9 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
   const [isLoading, setIsLoading] = useState(true);
   const [isCloneDialogOpen, setIsCloneDialogOpen] = useState(false);
   const [templateToClone, setTemplateToClone] = useState<PathwayTemplate | null>(null);
-  const [isPhaseCreationDialogOpen, setIsPhaseCreationDialogOpen] = useState(false); // State for new phase dialog
+  const [isPhaseCreationDialogOpen, setIsPhaseCreationDialogOpen] = useState(false);
+  const [isInspectorOpen, setIsInspectorOpen] = useState(false); // State for FloatingInspector
+  const [selectedPhaseForInspector, setSelectedPhaseForInspector] = useState<Phase | null>(null); // State for phase being configured
 
   const form = useForm<z.infer<typeof templateBuilderSchema>>({
     resolver: zodResolver(templateBuilderSchema),
@@ -251,6 +254,11 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
   const handleClone = (templateToClone: PathwayTemplate) => {
     setTemplateToClone(templateToClone);
     setIsCloneDialogOpen(true);
+  };
+
+  const handleConfigurePhase = (phase: Phase) => {
+    setSelectedPhaseForInspector(phase);
+    setIsInspectorOpen(true);
   };
 
   if (isLoading || isSessionLoading || (!templateId && !user)) {
@@ -614,12 +622,12 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
             {(provided) => (
               <div {...provided.droppableProps} ref={provided.innerRef} className="space-y-4">
                 {phases.map((phase: Phase, index: number) => (
-                  <PhaseBuilderCard // Changed from PhaseCard
+                  <PhaseBuilderCard
                     key={phase.id}
                     phase={phase}
                     index={index}
                     onDelete={handleDeletePhase}
-                    onPhaseUpdated={handlePhaseUpdated}
+                    onConfigure={handleConfigurePhase} // Pass the new handler
                     canModify={canModifyTemplate}
                   />
                 ))}
@@ -660,6 +668,18 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
           pathwayTemplateId={templateId}
           onPhaseCreated={handlePhaseUpdated}
           nextOrderIndex={phases.length}
+          canModify={canModifyTemplate}
+        />
+      )}
+
+      {/* Floating Inspector for Phase Configuration */}
+      {templateId && selectedPhaseForInspector && (
+        <FloatingInspector
+          isOpen={isInspectorOpen}
+          onClose={() => { setIsInspectorOpen(false); setSelectedPhaseForInspector(null); }}
+          phase={selectedPhaseForInspector}
+          pathwayTemplateId={templateId}
+          onConfigSaved={handlePhaseUpdated}
           canModify={canModifyTemplate}
         />
       )}
