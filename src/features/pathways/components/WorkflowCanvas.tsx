@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { DragDropContext, Droppable, DropResult } from "@hello-pangea/dnd";
 import { PhaseCard } from "./PhaseCard";
 import { Phase } from "../services/pathway-template-service";
@@ -12,10 +12,10 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 interface WorkflowCanvasProps {
   phases: Phase[];
   onReorder: (reorderedPhases: { id: string; order_index: number }[]) => void;
-  onEditPhase: (phase: Phase) => void;
+  onEditPhase: (phaseId: string) => void; // Changed to pass phaseId directly
   onDeletePhase: (phaseId: string) => void;
-  onConfigurePhase: (phase: Phase) => void;
-  onConfigureBranching: (phase: Phase) => void; // New prop for branching config
+  onConfigurePhase: (phaseId: string) => void; // Changed to pass phaseId directly
+  onConfigureBranching: (phase: Phase) => void;
   canModify: boolean;
 }
 
@@ -91,39 +91,17 @@ export function WorkflowCanvas({
   };
 
   const renderPhaseNode = (phase: Phase, index: number) => {
-    const isConditional = phase.type === "Decision" || phase.type === "Review";
-    const nextPhaseOnSuccess = phase.config?.next_phase_id_on_success;
-    const nextPhaseOnFailure = phase.config?.next_phase_id_on_failure;
-
     return (
       <div key={phase.id} className="relative">
         <PhaseCard
           phase={phase}
           index={index}
-          onEdit={onEditPhase}
+          onEdit={onEditPhase} // Pass onEditPhase directly
           onDelete={onDeletePhase}
-          onConfigure={onConfigurePhase}
+          onConfigure={onConfigurePhase} // Pass onConfigurePhase directly
+          onConfigureBranching={onConfigureBranching}
           canEditOrDelete={canModify}
         />
-        {isConditional && canModify && (
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="tonal"
-                  size="sm"
-                  className="absolute -bottom-4 left-1/2 -translate-x-1/2 rounded-full px-3 py-1 text-label-small z-10 shadow-md"
-                  onClick={() => onConfigureBranching(phase)}
-                >
-                  <GitFork className="h-4 w-4 mr-1" /> Branching
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent className="rounded-md shadow-lg bg-card text-card-foreground border-border text-body-small">
-                Configure conditional paths for this phase
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        )}
       </div>
     );
   };

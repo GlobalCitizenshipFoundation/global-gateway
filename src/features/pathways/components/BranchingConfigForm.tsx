@@ -7,14 +7,6 @@ import * as z from "zod";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
   Form,
   FormControl,
   FormField,
@@ -26,29 +18,26 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Phase } from "../services/pathway-template-service";
 import { updatePhaseBranchingAction, getPhasesAction } from "../actions";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"; // Import Card components
 
 const branchingFormSchema = z.object({
   next_phase_id_on_success: z.string().uuid("Invalid phase ID.").nullable().optional(),
   next_phase_id_on_failure: z.string().uuid("Invalid phase ID.").nullable().optional(),
 });
 
-interface BranchingConfigDialogProps {
-  isOpen: boolean;
-  onClose: () => void;
+interface BranchingConfigFormProps {
   pathwayTemplateId: string;
   phase: Phase; // The phase for which branching is being configured
   onConfigSaved: () => void;
   canModify: boolean;
 }
 
-export function BranchingConfigDialog({
-  isOpen,
-  onClose,
+export function BranchingConfigForm({
   pathwayTemplateId,
   phase,
   onConfigSaved,
   canModify,
-}: BranchingConfigDialogProps) {
+}: BranchingConfigFormProps) {
   const [allPhases, setAllPhases] = useState<Phase[]>([]);
   const [isLoadingPhases, setIsLoadingPhases] = useState(true);
 
@@ -77,14 +66,12 @@ export function BranchingConfigDialog({
       }
     };
 
-    if (isOpen) {
-      fetchPhases();
-      form.reset({
-        next_phase_id_on_success: phase.config?.next_phase_id_on_success || null,
-        next_phase_id_on_failure: phase.config?.next_phase_id_on_failure || null,
-      });
-    }
-  }, [isOpen, pathwayTemplateId, phase, form]);
+    fetchPhases();
+    form.reset({
+      next_phase_id_on_success: phase.config?.next_phase_id_on_success || null,
+      next_phase_id_on_failure: phase.config?.next_phase_id_on_failure || null,
+    });
+  }, [pathwayTemplateId, phase, form]);
 
   const onSubmit = async (values: z.infer<typeof branchingFormSchema>) => {
     if (!canModify) {
@@ -100,7 +87,6 @@ export function BranchingConfigDialog({
       if (result) {
         toast.success("Branching configuration updated successfully!");
         onConfigSaved();
-        onClose();
       }
     } catch (error: any) {
       console.error("Branching config submission error:", error);
@@ -112,33 +98,31 @@ export function BranchingConfigDialog({
 
   if (!isConditionalPhase) {
     return (
-      <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="sm:max-w-[425px] rounded-xl shadow-lg bg-card text-card-foreground border-border">
-          <DialogHeader>
-            <DialogTitle className="text-headline-small">Branching Configuration</DialogTitle>
-            <DialogDescription className="text-body-medium text-muted-foreground">
-              This phase type ({phase.type}) does not support conditional branching.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button type="button" variant="outlined" onClick={onClose} className="rounded-md text-label-large">
-              Close
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <Card className="rounded-xl shadow-lg p-6">
+        <CardHeader className="p-0 mb-4">
+          <CardTitle className="text-headline-small">Branching Configuration</CardTitle>
+          <CardDescription className="text-body-medium text-muted-foreground">
+            This phase type ({phase.type}) does not support conditional branching.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="p-0">
+          <p className="text-body-medium text-muted-foreground">
+            Only 'Decision' and 'Review' phases can have conditional branching.
+          </p>
+        </CardContent>
+      </Card>
     );
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[425px] rounded-xl shadow-lg bg-card text-card-foreground border-border">
-        <DialogHeader>
-          <DialogTitle className="text-headline-small">Configure Branching for &quot;{phase.name}&quot;</DialogTitle>
-          <DialogDescription className="text-body-medium text-muted-foreground">
-            Define the next steps based on the outcome of this {phase.type} phase.
-          </DialogDescription>
-        </DialogHeader>
+    <Card className="rounded-xl shadow-lg p-6">
+      <CardHeader className="p-0 mb-4">
+        <CardTitle className="text-headline-small">Configure Branching for &quot;{phase.name}&quot;</CardTitle>
+        <CardDescription className="text-body-medium text-muted-foreground">
+          Define the next steps based on the outcome of this {phase.type} phase.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="p-0">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4 py-4">
             <FormField
@@ -149,7 +133,7 @@ export function BranchingConfigDialog({
                   <FormLabel className="text-label-large">Next Phase (On Success/Accept)</FormLabel>
                   <Select
                     onValueChange={(value) => field.onChange(value === "none" ? null : value)}
-                    value={field.value || "none"} // Use "none" for null/undefined
+                    value={field.value || "none"}
                     disabled={!canModify || isLoadingPhases}
                   >
                     <FormControl>
@@ -186,7 +170,7 @@ export function BranchingConfigDialog({
                   <FormLabel className="text-label-large">Next Phase (On Failure/Reject)</FormLabel>
                   <Select
                     onValueChange={(value) => field.onChange(value === "none" ? null : value)}
-                    value={field.value || "none"} // Use "none" for null/undefined
+                    value={field.value || "none"}
                     disabled={!canModify || isLoadingPhases}
                   >
                     <FormControl>
@@ -215,17 +199,17 @@ export function BranchingConfigDialog({
                 </FormItem>
               )}
             />
-            <DialogFooter>
-              <Button type="button" variant="outlined" onClick={onClose} className="rounded-md text-label-large">
+            <div className="flex justify-end space-x-2">
+              <Button type="button" variant="outlined" onClick={onConfigSaved} className="rounded-md text-label-large">
                 Cancel
               </Button>
               <Button type="submit" className="rounded-md text-label-large" disabled={form.formState.isSubmitting || !canModify}>
                 {form.formState.isSubmitting ? "Saving..." : "Save Branching"}
               </Button>
-            </DialogFooter>
+            </div>
           </form>
         </Form>
-      </DialogContent>
-    </Dialog>
+      </CardContent>
+    </Card>
   );
 }

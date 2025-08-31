@@ -9,14 +9,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
   Form,
   FormControl,
   FormDescription,
@@ -28,6 +20,7 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Phase } from "../services/pathway-template-service";
 import { createPhaseAction, updatePhaseAction } from "../actions";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"; // Import Card components
 
 const phaseFormSchema = z.object({
   name: z.string().min(1, { message: "Phase name is required." }).max(100, { message: "Name cannot exceed 100 characters." }),
@@ -35,23 +28,23 @@ const phaseFormSchema = z.object({
   description: z.string().max(500, { message: "Description cannot exceed 500 characters." }).nullable(),
 });
 
-interface PhaseFormDialogProps {
-  isOpen: boolean;
-  onClose: () => void;
+interface PhaseDetailsFormProps {
   pathwayTemplateId: string;
   initialData?: Phase;
   onPhaseSaved: () => void;
+  onCancel: () => void;
   nextOrderIndex: number;
+  canModify: boolean;
 }
 
-export function PhaseFormDialog({
-  isOpen,
-  onClose,
+export function PhaseDetailsForm({
   pathwayTemplateId,
   initialData,
   onPhaseSaved,
+  onCancel,
   nextOrderIndex,
-}: PhaseFormDialogProps) {
+  canModify,
+}: PhaseDetailsFormProps) {
   const form = useForm<z.infer<typeof phaseFormSchema>>({
     resolver: zodResolver(phaseFormSchema),
     defaultValues: {
@@ -62,16 +55,18 @@ export function PhaseFormDialog({
   });
 
   useEffect(() => {
-    if (isOpen) {
-      form.reset({
-        name: initialData?.name || "",
-        type: initialData?.type || "",
-        description: initialData?.description || "",
-      });
-    }
-  }, [isOpen, initialData, form]);
+    form.reset({
+      name: initialData?.name || "",
+      type: initialData?.type || "",
+      description: initialData?.description || "",
+    });
+  }, [initialData, form]);
 
   const onSubmit = async (values: z.infer<typeof phaseFormSchema>) => {
+    if (!canModify) {
+      toast.error("You do not have permission to modify phases.");
+      return;
+    }
     try {
       const formData = new FormData();
       formData.append("name", values.name);
@@ -88,7 +83,6 @@ export function PhaseFormDialog({
 
       if (result) {
         onPhaseSaved();
-        onClose();
       }
     } catch (error: any) {
       console.error("Phase form submission error:", error);
@@ -106,18 +100,18 @@ export function PhaseFormDialog({
   ];
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[425px] rounded-xl shadow-lg bg-card text-card-foreground border-border">
-        <DialogHeader>
-          <DialogTitle className="text-headline-small">
-            {initialData ? "Edit Phase" : "Add New Phase"}
-          </DialogTitle>
-          <DialogDescription className="text-body-medium text-muted-foreground">
-            {initialData
-              ? "Update the details of this phase."
-              : "Define a new phase for your pathway template."}
-          </DialogDescription>
-        </DialogHeader>
+    <Card className="rounded-xl shadow-lg p-6">
+      <CardHeader className="p-0 mb-4">
+        <CardTitle className="text-headline-small">
+          {initialData ? "Edit Phase Details" : "Add New Phase"}
+        </CardTitle>
+        <CardDescription className="text-body-medium text-muted-foreground">
+          {initialData
+            ? "Update the basic details of this phase."
+            : "Define a new phase for your pathway template."}
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="p-0">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4 py-4">
             <FormField
@@ -127,7 +121,7 @@ export function PhaseFormDialog({
                 <FormItem>
                   <FormLabel className="text-label-large">Phase Name</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g., Initial Application" {...field} className="rounded-md" />
+                    <Input placeholder="e.g., Initial Application" {...field} className="rounded-md" disabled={!canModify} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -139,7 +133,7 @@ export function PhaseFormDialog({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-label-large">Phase Type</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select onValueChange={field.onChange} defaultValue={field.value} disabled={!canModify}>
                     <FormControl>
                       <SelectTrigger className="rounded-md">
                         <SelectValue placeholder="Select a phase type" />
@@ -169,27 +163,28 @@ export function PhaseFormDialog({
                       className="resize-y min-h-[80px] rounded-md"
                       {...field}
                       value={field.value || ""}
+                      disabled={!canModify}
                     />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            <DialogFooter>
-              <Button type="button" variant="outlined" onClick={onClose} className="rounded-md text-label-large">
+            <div className="flex justify-end space-x-2">
+              <Button type="button" variant="outlined" onClick={onCancel} className="rounded-md text-label-large">
                 Cancel
               </Button>
-              <Button type="submit" className="rounded-md text-label-large" disabled={form.formState.isSubmitting}>
+              <Button type="submit" className="rounded-md text-label-large" disabled={form.formState.isSubmitting || !canModify}>
                 {form.formState.isSubmitting
                   ? "Saving..."
                   : initialData
                   ? "Save Changes"
                   : "Add Phase"}
               </Button>
-            </DialogFooter>
+            </div>
           </form>
         </Form>
-      </DialogContent>
-    </Dialog>
+      </CardContent>
+    </Card>
   );
 }

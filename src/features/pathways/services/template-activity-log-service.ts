@@ -1,22 +1,14 @@
 "use server";
 
 import { createClient } from "@/integrations/supabase/server";
+import { TemplateActivityLog } from "./template-activity-log-types"; // Import the new type
 
-export interface TemplateActivityLog {
-  id: string;
-  template_id: string;
-  user_id: string | null;
-  event_type: string;
-  description: string;
-  details: Record<string, any> | null;
-  created_at: string;
-}
-
+// Internal helper to get Supabase client
 async function getSupabase() {
   return await createClient();
 }
 
-export async function logTemplateActivity(
+export async function createActivityLog(
   templateId: string,
   userId: string | null,
   eventType: string,
@@ -31,7 +23,7 @@ export async function logTemplateActivity(
     .single();
 
   if (error) {
-    console.error("Error logging template activity:", error.message);
+    console.error("Error creating template activity log:", error.message);
     return null;
   }
   return data;
@@ -41,7 +33,7 @@ export async function getTemplateActivityLogs(templateId: string): Promise<Templ
   const supabase = await getSupabase();
   const { data, error } = await supabase
     .from("template_activity_log")
-    .select("*, profiles(first_name, last_name, avatar_url)") // Join with profiles for user info
+    .select("*, profiles(first_name, last_name, avatar_url)") // Join with profiles to get user info
     .eq("template_id", templateId)
     .order("created_at", { ascending: false });
 
@@ -49,5 +41,5 @@ export async function getTemplateActivityLogs(templateId: string): Promise<Templ
     console.error(`Error fetching activity logs for template ${templateId}:`, error.message);
     return null;
   }
-  return data as TemplateActivityLog[];
+  return data;
 }

@@ -1,16 +1,6 @@
--- Add status column to public.pathway_templates
--- First, add as TEXT without a default to avoid casting issues
+-- Add status column as TEXT initially to public.pathway_templates
 ALTER TABLE public.pathway_templates
 ADD COLUMN status TEXT;
-
--- Update existing rows to a default value compatible with the ENUM
-UPDATE public.pathway_templates
-SET status = 'draft'
-WHERE status IS NULL;
-
--- Set the column as NOT NULL
-ALTER TABLE public.pathway_templates
-ALTER COLUMN status SET NOT NULL;
 
 -- Create ENUM type for pathway_templates.status
 DO $$ BEGIN
@@ -19,21 +9,31 @@ EXCEPTION
     WHEN duplicate_object THEN NULL;
 END $$;
 
--- Alter column to use the new ENUM type, explicitly casting existing data
-ALTER TABLE public.pathway_templates
-ALTER COLUMN status TYPE public.pathway_template_status USING status::public.pathway_template_status;
+-- Update existing rows to a valid ENUM value before altering type
+UPDATE public.pathway_templates
+SET status = 'draft' WHERE status IS NULL;
 
--- Set the default value for the ENUM type
+-- Alter column to use the new ENUM type and set NOT NULL and DEFAULT
 ALTER TABLE public.pathway_templates
+ALTER COLUMN status TYPE public.pathway_template_status USING status::public.pathway_template_status,
+ALTER COLUMN status SET NOT NULL,
 ALTER COLUMN status SET DEFAULT 'draft'::public.pathway_template_status;
 
 -- Add last_updated_by column to public.pathway_templates
 ALTER TABLE public.pathway_templates
 ADD COLUMN last_updated_by UUID REFERENCES auth.users(id) ON DELETE SET NULL;
 
+-- Add is_deleted column to public.pathway_templates for soft deletes
+ALTER TABLE public.pathway_templates
+ADD COLUMN is_deleted BOOLEAN NOT NULL DEFAULT FALSE;
+
 -- Add last_updated_by column to public.phases
 ALTER TABLE public.phases
 ADD COLUMN last_updated_by UUID REFERENCES auth.users(id) ON DELETE SET NULL;
+
+-- Add is_deleted column to public.phases for soft deletes
+ALTER TABLE public.phases
+ADD COLUMN is_deleted BOOLEAN NOT NULL DEFAULT FALSE;
 
 -- Create public.template_activity_log table
 CREATE TABLE public.template_activity_log (

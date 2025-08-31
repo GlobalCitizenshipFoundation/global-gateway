@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -22,19 +22,24 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { PathwayTemplate } from "../services/pathway-template-service";
-import { createPathwayTemplateAction, updatePathwayTemplateAction } from "../actions";
+import { updatePathwayTemplateAction, updatePathwayTemplateStatusAction } from "../actions"; // Import updatePathwayTemplateStatusAction
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"; // Import Select components
 
 const formSchema = z.object({
   name: z.string().min(1, { message: "Template name is required." }).max(100, { message: "Name cannot exceed 100 characters." }),
   description: z.string().max(500, { message: "Description cannot exceed 500 characters." }).nullable(),
   is_private: z.boolean(),
+  status: z.enum(['draft', 'pending_review', 'published', 'archived']), // Added status field
 });
 
 interface PathwayTemplateFormProps {
   initialData?: PathwayTemplate;
+  onTemplateSaved: () => void;
+  onCancel: () => void;
+  canModify: boolean;
 }
 
-export function PathwayTemplateForm({ initialData }: PathwayTemplateFormProps) {
+export function PathwayTemplateForm({ initialData, onTemplateSaved, onCancel, canModify }: PathwayTemplateFormProps) {
   const router = useRouter();
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -43,10 +48,24 @@ export function PathwayTemplateForm({ initialData }: PathwayTemplateFormProps) {
       name: initialData?.name || "",
       description: initialData?.description || "",
       is_private: initialData?.is_private ?? false,
+      status: initialData?.status || "draft", // Set default status
     },
   });
 
+  useEffect(() => {
+    form.reset({
+      name: initialData?.name || "",
+      description: initialData?.description || "",
+      is_private: initialData?.is_private ?? false,
+      status: initialData?.status || "draft",
+    });
+  }, [initialData, form]);
+
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    if (!canModify) {
+      toast.error("You do not have permission to modify this template.");
+      return;
+    }
     try {
       const formData = new FormData();
       formData.append("name", values.name);
@@ -56,16 +75,19 @@ export function PathwayTemplateForm({ initialData }: PathwayTemplateFormProps) {
       let result: PathwayTemplate | null;
       if (initialData) {
         result = await updatePathwayTemplateAction(initialData.id, formData);
+        // If status is also changed, call the status update action
+        if (initialData.status !== values.status) {
+          await updatePathwayTemplateStatusAction(initialData.id, values.status);
+        }
         if (result) {
           toast.success("Pathway template updated successfully!");
-          router.push(`/pathways/${result.id}`); // Corrected path
+          onTemplateSaved();
         }
       } else {
-        result = await createPathwayTemplateAction(formData);
-        if (result) {
-          toast.success("Pathway template created successfully!");
-          router.push(`/pathways/${result.id}`); // Corrected path
-        }
+        // This form is now primarily for editing. Creation is handled elsewhere.
+        // If this component were to be used for creation, the logic would go here.
+        // For now, we'll assume it's always for updating an existing template.
+        toast.error("Template creation is not supported directly from this form.");
       }
     } catch (error: any) {
       console.error("Form submission error:", error);
@@ -73,19 +95,26 @@ export function PathwayTemplateForm({ initialData }: PathwayTemplateFormProps) {
     }
   };
 
+  const statusOptions = [
+    { value: "draft", label: "Draft" },
+    { value: "pending_review", label: "Pending Review" },
+    { value: "published", label: "Published" },
+    { value: "archived", label: "Archived" },
+  ];
+
   return (
-    <Card className="w-full max-w-2xl mx-auto rounded-xl shadow-lg">
-      <CardHeader>
-        <CardTitle className="text-headline-medium text-primary">
-          {initialData ? "Edit Pathway Template" : "Create New Pathway Template"}
+    <Card className="w-full rounded-xl shadow-lg">
+      <CardHeader className="p-0 mb-4">
+        <CardTitle className="text-headline-small text-primary">
+          {initialData ? "Edit Template Details" : "Create New Pathway Template"}
         </CardTitle>
         <CardDescription className="text-body-medium text-muted-foreground">
           {initialData
-            ? "Update the details of your pathway template."
+            ? "Update the core details of your pathway template."
             : "Define a new reusable workflow template for your programs."}
         </CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="p-0">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <FormField
@@ -95,7 +124,7 @@ export function PathwayTemplateForm({ initialData }: PathwayTemplateFormProps) {
                 <FormItem>
                   <FormLabel className="text-label-large">Template Name</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g., Global Fellowship Application" {...field} className="rounded-md" />
+                    <Input placeholder="e.g., Global Fellowship Application" {...field} className="rounded-md" disabled={!canModify} />
                   </FormControl>
                   <FormDescription className="text-body-small">
                     A unique and descriptive name for your pathway template.
@@ -116,6 +145,7 @@ export function PathwayTemplateForm({ initialData }: PathwayTemplateFormProps) {
                       className="resize-y min-h-[80px] rounded-md"
                       {...field}
                       value={field.value || ""}
+                      disabled={!canModify}
                     />
                   </FormControl>
                   <FormDescription className="text-body-small">
@@ -142,18 +172,49 @@ export function PathwayTemplateForm({ initialData }: PathwayTemplateFormProps) {
                       checked={field.value}
                       onCheckedChange={field.onChange}
                       className="data-[state=checked]:bg-primary data-[state=unchecked]:bg-muted-foreground"
+                      disabled={!canModify}
                     />
                   </FormControl>
                 </FormItem>
               )}
             />
-            <Button type="submit" className="w-full rounded-md text-label-large" disabled={form.formState.isSubmitting}>
-              {form.formState.isSubmitting
-                ? "Saving..."
-                : initialData
-                ? "Update Template"
-                : "Create Template"}
-            </Button>
+            <FormField
+              control={form.control}
+              name="status"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-label-large">Template Status</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value} disabled={!canModify}>
+                    <FormControl>
+                      <SelectTrigger className="rounded-md">
+                        <SelectValue placeholder="Select template status" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent className="rounded-md shadow-lg bg-card text-card-foreground border-border">
+                      {statusOptions.map((status) => (
+                        <SelectItem key={status.value} value={status.value} className="text-body-medium hover:bg-muted hover:text-muted-foreground cursor-pointer">
+                          {status.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormDescription className="text-body-small">
+                    The current lifecycle status of the template.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <div className="flex justify-end space-x-4">
+              <Button type="button" variant="outlined" onClick={onCancel} className="rounded-md text-label-large">
+                Cancel
+              </Button>
+              <Button type="submit" className="rounded-md text-label-large" disabled={form.formState.isSubmitting || !canModify}>
+                {form.formState.isSubmitting
+                  ? "Saving..."
+                  : "Save Changes"}
+              </Button>
+            </div>
           </form>
         </Form>
       </CardContent>
