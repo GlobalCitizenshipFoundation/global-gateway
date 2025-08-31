@@ -19,7 +19,7 @@ import { createClient } from "@/integrations/supabase/server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getProgramById } from "@/features/programs/services/program-service"; // Import specific function directly
-import { getPathwayTemplateById } from "@/features/pathway-templates/services/pathway-template-service"; // Import specific function
+import { getPathwayTemplateById } from "@/features/pathways/services/pathway-template-service"; // Import specific function
 
 // Helper function to check user authorization for a campaign
 async function authorizeCampaignAction(campaignId: string, action: 'read' | 'write'): Promise<{ user: any; campaign: Campaign | null; isAdmin: boolean }> {

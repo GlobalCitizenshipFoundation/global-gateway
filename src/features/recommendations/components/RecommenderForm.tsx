@@ -66,8 +66,8 @@ export function RecommenderForm({ request }: RecommenderFormProps) {
     const fetchPhaseConfig = async () => {
       setIsLoadingPhaseConfig(true);
       try {
-        const fetchedPhases = await getCampaignPhasesAction(request.campaign_phase_id);
-        const currentPhase = fetchedPhases?.find(p => p.id === request.campaign_phase_id);
+        const fetchedPhases = await getCampaignPhasesAction(request.applications?.campaigns?.id || "");
+        const currentPhase = fetchedPhases?.find((p: CampaignPhase) => p.id === request.campaign_phase_id);
 
         if (!currentPhase) {
           toast.error("Campaign phase not found for recommendation configuration.");
@@ -108,12 +108,12 @@ export function RecommenderForm({ request }: RecommenderFormProps) {
         if (values.hasOwnProperty(key)) {
           const value = values[key];
           if (value instanceof Date) {
-            submissionData[key] = value.toISOString();
-          } else {
-            submissionData[key] = value;
-          }
-        }
-      }
+                            submissionData[key] = value.toISOString();
+                          } else {
+                            submissionData[key] = value;
+                          }
+                        }
+                      }
 
       // Convert submissionData to FormData
       const formData = new FormData();

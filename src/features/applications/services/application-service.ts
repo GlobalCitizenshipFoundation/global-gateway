@@ -2,7 +2,7 @@
 
 import { createClient } from "@/integrations/supabase/server";
 import { Campaign } from "@/features/campaigns/services/campaign-service";
-import { BaseConfigurableItem } from "@/features/pathway-templates/services/pathway-template-service";
+import { BaseConfigurableItem } from "@/features/pathways/services/pathway-template-service";
 
 // Extend BaseConfigurableItem for current_campaign_phase to reuse its structure
 export interface ApplicationPhase extends BaseConfigurableItem {

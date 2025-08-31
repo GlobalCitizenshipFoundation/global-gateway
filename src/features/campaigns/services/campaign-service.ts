@@ -1,7 +1,7 @@
 "use server";
 
 import { createClient } from "@/integrations/supabase/server";
-import { PathwayTemplate, BaseConfigurableItem, Phase as TemplatePhase } from "@/features/pathway-templates/services/pathway-template-service";
+import { PathwayTemplate, BaseConfigurableItem, Phase as TemplatePhase } from "@/features/pathways/services/pathway-template-service";
 
 // New interface for Program
 export interface Program {

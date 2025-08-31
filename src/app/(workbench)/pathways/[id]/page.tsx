@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
-import { PathwayTemplateDetail } from "@/features/pathway-templates/components/PathwayTemplateDetail";
-import { getTemplateByIdAction } from "@/features/pathway-templates/actions";
+import { PathwayTemplateDetail } from "@/features/pathways/components/PathwayTemplateDetail";
+import { getTemplateByIdAction } from "@/features/pathways/actions";
 import React from "react";
 
 interface PathwayTemplateDetailPageProps {

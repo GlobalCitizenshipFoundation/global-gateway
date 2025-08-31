@@ -1,5 +1,5 @@
 import React from "react";
-import { PathwayTemplateList } from "@/features/pathway-templates/components/PathwayTemplateList";
+import { PathwayTemplateList } from "@/features/pathways/components/PathwayTemplateList";
 
 export default function PathwayTemplatesPage() {
   return (

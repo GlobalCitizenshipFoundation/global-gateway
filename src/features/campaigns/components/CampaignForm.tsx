@@ -29,8 +29,8 @@ import { format } from "date-fns";
 import { Calendar } from "@/components/ui/calendar";
 import { Campaign, Program } from "@/features/campaigns/services/campaign-service"; // Import Program interface
 import { createCampaignAction, updateCampaignAction } from "@/features/campaigns/actions";
-import { getTemplatesAction } from "@/features/pathway-templates/actions";
-import { PathwayTemplate } from "@/features/pathway-templates/services/pathway-template-service";
+import { getTemplatesAction } from "@/features/pathways/actions";
+import { PathwayTemplate } from "@/features/pathways/services/pathway-template-service";
 import { getProgramsAction } from "@/features/programs/actions"; // Import getProgramsAction
 import { cn } from "@/lib/utils";
 

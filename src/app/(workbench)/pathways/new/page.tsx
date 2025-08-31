@@ -1,5 +1,5 @@
 import React from "react";
-import { PathwayTemplateForm } from "@/features/pathway-templates/components/PathwayTemplateForm";
+import { PathwayTemplateForm } from "@/features/pathways/components/PathwayTemplateForm";
 
 export default function CreatePathwayTemplatePage() {
   return (

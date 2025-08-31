@@ -96,12 +96,13 @@ export function PhaseTaskManagementPanel({ phaseId, pathwayTemplateId, canModify
 
   useEffect(() => {
     if (isTaskFormOpen && editingTask) {
+      const startDate = editingTask.due_date ? new Date(editingTask.due_date) : null;
       form.reset({
         name: editingTask.name,
         description: editingTask.description,
         assigned_to_role: editingTask.assigned_to_role,
         assigned_to_user_id: editingTask.assigned_to_user_id,
-        due_date: editingTask.due_date ? new Date(editingTask.due_date) : null,
+        due_date: startDate,
         status: editingTask.status,
       });
     } else if (isTaskFormOpen && !editingTask) {

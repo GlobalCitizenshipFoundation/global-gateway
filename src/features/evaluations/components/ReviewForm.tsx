@@ -81,8 +81,10 @@ export function ReviewForm({
     const fetchPhaseConfig = async () => {
       setIsLoadingPhaseConfig(true);
       try {
-        const fetchedPhases = await getCampaignPhasesAction(campaignPhaseId); // This action fetches all phases for a campaign
-        const currentPhase = fetchedPhases?.find(p => p.id === campaignPhaseId);
+        // Fetch all phases for the campaign, then find the specific one
+        const campaignId = initialReview?.applications?.campaign_id || ''; // Assuming campaign_id is available in initialReview or can be derived
+        const fetchedPhases = await getCampaignPhasesAction(campaignId);
+        const currentPhase = fetchedPhases?.find((p: CampaignPhase) => p.id === campaignPhaseId);
 
         if (!currentPhase) {
           toast.error("Campaign phase not found for review configuration.");

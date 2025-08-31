@@ -80,7 +80,7 @@ export function WorkflowParticipation({
 
   return (
     <div className="space-y-4">
-      {phases.map((phase, index) => {
+      {phases.map((phase: CampaignPhase, index: number) => {
         const { status, icon } = getPhaseStatus(phase);
         const isCurrent = phase.id === currentCampaignPhaseId;
 

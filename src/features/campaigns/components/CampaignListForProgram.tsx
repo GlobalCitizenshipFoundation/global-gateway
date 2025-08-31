@@ -132,7 +132,7 @@ export function CampaignListForProgram({ programId, canModifyProgram }: Campaign
                     {campaign.pathway_template_id && campaign.pathway_templates?.name && (
                       <p className="text-body-small text-muted-foreground flex items-center gap-1 mt-2">
                         <Workflow className="h-4 w-4" />
-                        Template: <Link href={`/pathway-templates/${campaign.pathway_template_id}`} className="text-primary hover:underline">
+                        Template: <Link href={`/pathways/${campaign.pathway_template_id}`} className="text-primary hover:underline">
                           {campaign.pathway_templates.name}
                         </Link>
                       </p>

@@ -20,9 +20,9 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { getCampaignsAction } from "@/features/campaigns/actions";
-import { getTemplatesAction } from "@/features/pathway-templates/actions";
+import { getTemplatesAction } from "@/features/pathways/actions";
 import { Campaign } from "@/features/campaigns/services/campaign-service";
-import { PathwayTemplate } from "@/features/pathway-templates/services/pathway-template-service";
+import { PathwayTemplate } from "@/features/pathways/services/pathway-template-service";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useRouter } from "next/navigation"; // Added this import
 

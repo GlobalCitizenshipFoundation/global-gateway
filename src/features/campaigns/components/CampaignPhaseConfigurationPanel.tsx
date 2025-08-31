@@ -3,15 +3,15 @@
 import React from "react";
 import { CampaignPhase } from "../services/campaign-service";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-// Import configuration components from pathway-templates, as they are reusable
-import { FormPhaseConfig } from "@/features/pathway-templates/components/phase-configs/FormPhaseConfig";
-import { ReviewPhaseConfig } from "@/features/pathway-templates/components/phase-configs/ReviewPhaseConfig";
-import { EmailPhaseConfig } from "@/features/pathway-templates/components/phase-configs/EmailPhaseConfig";
-import { SchedulingPhaseConfig } from "@/features/pathway-templates/components/phase-configs/SchedulingPhaseConfig";
-import { DecisionPhaseConfig } from "@/features/pathway-templates/components/phase-configs/DecisionPhaseConfig";
-import { RecommendationPhaseConfig } from "@/features/pathway-templates/components/phase-configs/RecommendationPhaseConfig";
+// Import configuration components from pathways, as they are reusable
+import { FormPhaseConfig } from "@/features/pathways/components/phase-configs/FormPhaseConfig";
+import { ReviewPhaseConfig } from "@/features/pathways/components/phase-configs/ReviewPhaseConfig";
+import { EmailPhaseConfig } from "@/features/pathways/components/phase-configs/EmailPhaseConfig";
+import { SchedulingPhaseConfig } from "@/features/pathways/components/phase-configs/SchedulingPhaseConfig";
+import { DecisionPhaseConfig } from "@/features/pathways/components/phase-configs/DecisionPhaseConfig";
+import { RecommendationPhaseConfig } from "@/features/pathways/components/phase-configs/RecommendationPhaseConfig";
 import { updateCampaignPhaseConfigAction } from "../actions"; // Campaign-specific action
-import { BaseConfigurableItem } from "@/features/pathway-templates/services/pathway-template-service"; // Import BaseConfigurableItem
+import { BaseConfigurableItem } from "@/features/pathways/services/pathway-template-service"; // Import BaseConfigurableItem
 
 interface CampaignPhaseConfigurationPanelProps {
   phase: CampaignPhase;

@@ -219,7 +219,7 @@ export function CampaignDetail({ campaignId }: CampaignDetailProps) {
           {currentCampaign.pathway_template_id && currentCampaign.pathway_templates?.name && (
             <p className="flex items-center gap-1">
               <Workflow className="h-4 w-4" />
-              Template: <Link href={`/pathway-templates/${currentCampaign.pathway_template_id}`} className="text-primary hover:underline"> {/* Corrected link */}
+              Template: <Link href={`/pathways/${currentCampaign.pathway_template_id}`} className="text-primary hover:underline"> {/* Corrected link */}
                 {currentCampaign.pathway_templates.name}
               </Link>
             </p>

@@ -1,7 +1,7 @@
 import React from "react";
 import { notFound } from "next/navigation";
-import { PathwayTemplateForm } from "@/features/pathway-templates/components/PathwayTemplateForm";
-import { getTemplateByIdAction } from "@/features/pathway-templates/actions";
+import { PathwayTemplateForm } from "@/features/pathways/components/PathwayTemplateForm";
+import { getTemplateByIdAction } from "@/features/pathways/actions";
 
 interface EditPathwayTemplatePageProps {
   params: Promise<{ id: string }>; // Adjusted type for Next.js type checker
