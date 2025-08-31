@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/form";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { UserCircle2, PlusCircle, Trash2, CheckCircle, XCircle, Clock } from "lucide-react";
+import { UserCircle2, PlusCircle, Trash2, CheckCircle, XCircle, Clock, Award } from "lucide-react"; // Imported Award
 import { useSession } from "@/context/SessionContextProvider";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";

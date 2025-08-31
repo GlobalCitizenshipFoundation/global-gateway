@@ -74,7 +74,7 @@ export function DecisionForm({
         // Assuming campaignId is available from the application context or can be fetched
         // For now, we'll fetch all phases and find the relevant one.
         // In a real app, you might pass campaignId directly or fetch application first.
-        const campaignId = initialDecision?.applications?.campaigns?.id || ''; // Derive campaignId if possible
+        const campaignId = initialDecision?.applications?.campaign_id || ''; // Derive campaignId if possible
         const fetchedPhases = await getCampaignPhasesAction(campaignId);
         const currentPhase = fetchedPhases?.find((p: CampaignPhase) => p.id === campaignPhaseId);
 

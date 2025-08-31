@@ -203,7 +203,7 @@ export function ReviewerDashboard() {
             <SelectItem value="assigned" className="text-body-medium hover:bg-muted hover:text-muted-foreground cursor-pointer">Assigned</SelectItem>
             <SelectItem value="accepted" className="text-body-medium hover:bg-muted hover:text-muted-foreground cursor-pointer">Accepted</SelectItem>
             <SelectItem value="declined" className="text-body-medium hover:bg-muted hover:text-muted-foreground cursor-pointer">Declined</SelectItem>
-            <SelectItem value="completed" className className="text-body-medium hover:bg-muted hover:text-muted-foreground cursor-pointer">Completed</SelectItem>
+            <SelectItem value="completed" className="text-body-medium hover:bg-muted hover:text-muted-foreground cursor-pointer">Completed</SelectItem>
           </SelectContent>
         </Select>
         <Select value={reviewStatusFilter} onValueChange={setReviewStatusFilter}>
