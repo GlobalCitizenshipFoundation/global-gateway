@@ -8,12 +8,12 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { ArrowLeft, PlusCircle, Workflow, Lock, Globe, Edit, Copy, Save, CheckCircle, Clock, UserCircle2, CalendarDays, Info, X, Trash2, ChevronDown, ChevronUp } from "lucide-react"; // Added ChevronDown, ChevronUp
+import { ArrowLeft, PlusCircle, Workflow, Lock, Globe, Edit, Copy, Save, CheckCircle, Clock, UserCircle2, CalendarDays, Info, X, Trash2, ChevronDown, ChevronUp } from "lucide-react";
 import { PathwayTemplate, Phase } from "@/types/supabase";
 import { toast } from "sonner";
 import { useSession } from "@/context/SessionContextProvider";
 import { Skeleton } from "@/components/ui/skeleton";
-import { getTemplateByIdAction, getPhasesAction, reorderPhasesAction, deletePhaseAction, createTemplateVersionAction, publishPathwayTemplateAction, updatePathwayTemplateStatusAction, updatePathwayTemplateAction, createPathwayTemplateAction, createPhaseAction, deletePathwayTemplateAction } from "../actions";
+import { getTemplateByIdAction, getPhasesAction, reorderPhasesAction, deletePhaseAction, createTemplateVersionAction, publishPathwayTemplateAction, updatePathwayTemplateStatusAction, updatePathwayTemplateAction, createPathwayTemplateAction, deletePathwayTemplateAction, createPhaseAction } from "../actions";
 import { DragDropContext, Droppable, DropResult } from "@hello-pangea/dnd";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Input } from "@/components/ui/input";
@@ -45,7 +45,7 @@ const templateBuilderSchema = z.object({
   name: z.string().min(1, { message: "Template name is required." }).max(100, { message: "Name cannot exceed 100 characters." }),
   description: z.string().max(500, { message: "Description cannot exceed 500 characters." }).nullable(),
   is_private: z.boolean(),
-  status: z.enum(['draft', 'pending_review', 'published', 'archived']),
+  // Removed status from schema as it's managed by actions
   application_open_date: z.date().nullable().optional(),
   participation_deadline: z.date().nullable().optional(),
   general_instructions: z.string().max(5000, { message: "General instructions cannot exceed 5000 characters." }).nullable().optional(),
@@ -75,7 +75,9 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
   const [isCloneDialogOpen, setIsCloneDialogOpen] = useState(false);
   const [templateToClone, setTemplateToClone] = useState<PathwayTemplate | null>(null);
   const [isAddingNewPhase, setIsAddingNewPhase] = useState(false);
-  const [expandedPhaseIds, setExpandedPhaseIds] = useState<Set<string>>(new Set()); // Changed to Set for multiple expanded phases
+  const [expandedPhaseIds, setExpandedPhaseIds] = useState<Set<string>>(new Set());
+  const [showUnsavedChangesWarning, setShowUnsavedChangesWarning] = useState(false); // State for unsaved changes warning
+  const [nextPath, setNextPath] = useState<string | null>(null); // Path to navigate to if changes are discarded
 
   const templateForm = useForm<z.infer<typeof templateBuilderSchema>>({
     resolver: zodResolver(templateBuilderSchema),
@@ -83,7 +85,7 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
       name: initialTemplate?.name || "",
       description: initialTemplate?.description || "",
       is_private: initialTemplate?.is_private ?? false,
-      status: initialTemplate?.status || "draft",
+      // Removed status from defaultValues
       application_open_date: initialTemplate?.application_open_date ? new Date(initialTemplate.application_open_date) : null,
       participation_deadline: initialTemplate?.participation_deadline ? new Date(initialTemplate.participation_deadline) : null,
       general_instructions: initialTemplate?.general_instructions || "",
@@ -120,7 +122,7 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
         name: fetchedTemplate.name,
         description: fetchedTemplate.description,
         is_private: fetchedTemplate.is_private,
-        status: fetchedTemplate.status,
+        // Removed status from reset
         application_open_date: fetchedTemplate.application_open_date ? new Date(fetchedTemplate.application_open_date) : null,
         participation_deadline: fetchedTemplate.participation_deadline ? new Date(fetchedTemplate.participation_deadline) : null,
         general_instructions: fetchedTemplate.general_instructions || "",
@@ -150,8 +152,56 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
     }
   }, [user, isSessionLoading, fetchTemplateAndPhases]);
 
+  // Unsaved changes warning logic
+  useEffect(() => {
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      if (templateForm.formState.isDirty) {
+        event.preventDefault();
+        event.returnValue = ''; // Required for Chrome
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [templateForm.formState.isDirty]);
+
+  const handleNavigate = (path: string) => {
+    if (templateForm.formState.isDirty) {
+      setNextPath(path);
+      setShowUnsavedChangesWarning(true);
+    } else {
+      router.push(path);
+    }
+  };
+
+  const handleDiscardChanges = () => {
+    setShowUnsavedChangesWarning(false);
+    if (nextPath) {
+      templateForm.reset(); // Reset form to clear dirty state
+      router.push(nextPath);
+    }
+  };
+
+  const handleStayOnPage = () => {
+    setShowUnsavedChangesWarning(false);
+    setNextPath(null);
+  };
+
   const handleTemplateDetailsSave = async (values: z.infer<typeof templateBuilderSchema>) => {
-    if (!canModifyTemplate) {
+    // Ensure template is not null for existing templates
+    if (templateId && !template) {
+      toast.error("Template data is not loaded. Cannot save.");
+      return;
+    }
+
+    const currentUser = user!; // Safe due to earlier redirect
+    const isAdmin = currentUser.user_metadata?.role === 'admin';
+    const canModify = template ? (template.creator_id === currentUser.id || isAdmin) : true; // For new templates, assume can modify.
+
+    if (!canModify) {
       toast.error("You do not have permission to modify this template.");
       return;
     }
@@ -160,6 +210,7 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
       formData.append("name", values.name);
       formData.append("description", values.description || "");
       formData.append("is_private", values.is_private ? "on" : "off");
+      // Status is no longer part of the form schema, so it's not appended here.
       formData.append("application_open_date", values.application_open_date ? values.application_open_date.toISOString() : "");
       formData.append("participation_deadline", values.participation_deadline ? values.participation_deadline.toISOString() : "");
       formData.append("general_instructions", values.general_instructions || "");
@@ -171,24 +222,15 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
       let result: PathwayTemplate | null;
       if (templateId) {
         result = await updatePathwayTemplateAction(templateId, formData);
-        if (template?.status !== values.status) {
-          await updatePathwayTemplateStatusAction(templateId, values.status);
-          if (values.status === 'published') {
-            await createTemplateVersionAction(templateId);
-          }
-        }
+        // Status updates are now handled by explicit buttons, not form submission
       } else {
         result = await createPathwayTemplateAction(formData);
-        if (result && values.status !== 'draft') {
-          await updatePathwayTemplateStatusAction(result.id, values.status);
-          if (values.status === 'published') {
-            await createTemplateVersionAction(result.id);
-          }
-        }
+        // Status updates are now handled by explicit buttons, not form submission
       }
 
       if (result) {
         toast.success(`Template ${templateId ? "updated" : "created"} successfully!`);
+        templateForm.reset(values); // Reset form to clear dirty state
         if (!templateId) {
           router.push(`/pathways/${result.id}`);
         } else {
@@ -203,13 +245,16 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
 
   const handlePhaseUpdated = () => {
     fetchTemplateAndPhases();
-    // No longer collapsing all phases, just ensuring data is fresh
     setIsAddingNewPhase(false);
   };
 
   const handleDeletePhase = async (phaseId: string) => {
+    if (!templateId) {
+      toast.error("Cannot delete phase from a new template.");
+      return;
+    }
     try {
-      const success = await deletePhaseAction(phaseId, templateId!);
+      const success = await deletePhaseAction(phaseId, templateId);
       if (success) {
         toast.success("Phase deleted successfully!");
         fetchTemplateAndPhases();
@@ -225,7 +270,7 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
   };
 
   const handleReorderPhases = async (result: DropResult) => {
-    if (!result.destination) {
+    if (!result.destination || !templateId) {
       return;
     }
 
@@ -242,7 +287,7 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
 
     try {
       const success = await reorderPhasesAction(
-        templateId!,
+        templateId,
         updatedPhases.map((p: Phase) => ({ id: p.id, order_index: p.order_index }))
       );
       if (!success) {
@@ -258,8 +303,12 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
   };
 
   const handleCreateVersion = async () => {
+    if (!templateId) {
+      toast.error("Cannot create version for a new template.");
+      return;
+    }
     try {
-      const newVersion = await createTemplateVersionAction(templateId!);
+      const newVersion = await createTemplateVersionAction(templateId);
       if (newVersion) {
         toast.success(`New version ${newVersion.version_number} created!`);
         fetchTemplateAndPhases();
@@ -270,8 +319,12 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
   };
 
   const handlePublishTemplate = async () => {
+    if (!templateId) {
+      toast.error("Cannot publish a new template.");
+      return;
+    }
     try {
-      const publishedVersion = await publishPathwayTemplateAction(templateId!);
+      const publishedVersion = await publishPathwayTemplateAction(templateId);
       if (publishedVersion) {
         toast.success(`Template published and new version ${publishedVersion.version_number} created!`);
         fetchTemplateAndPhases();
@@ -295,8 +348,12 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
   };
 
   const handleDeleteTemplate = async () => {
+    if (!templateId) {
+      toast.error("Cannot delete a new template.");
+      return;
+    }
     try {
-      const success = await deletePathwayTemplateAction(templateId!);
+      const success = await deletePathwayTemplateAction(templateId);
       if (success) {
         toast.success("Template permanently deleted!");
         router.push("/pathways");
@@ -364,6 +421,8 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
     }
   };
 
+  const isNewTemplate = !templateId;
+
   if (isLoading || isSessionLoading || (!templateId && !user)) {
     return (
       <div className="container mx-auto py-8 px-4 space-y-8">
@@ -396,15 +455,8 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
 
   const userRole: string = currentUser.user_metadata?.role || '';
   const isAdmin = userRole === 'admin';
-  const canModifyTemplate: boolean = (templateId && currentTemplate.creator_id === currentUser.id) || isAdmin;
-  const isNewTemplate = !templateId;
+  const canModifyTemplate: boolean = template ? (template.creator_id === currentUser.id || isAdmin) : true;
 
-  const statusOptions = [
-    { value: "draft", label: "Draft" },
-    { value: "pending_review", label: "Pending Review" },
-    { value: "published", label: "Published" },
-    { value: "archived", label: "Archived" },
-  ];
 
   const phaseTypes = [
     { value: "Form", label: "Form" },
@@ -420,236 +472,230 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
     <div className="container mx-auto py-8 px-4 space-y-8">
       <div className="flex items-center justify-between">
         <Button asChild variant="ghost" className="rounded-full px-4 py-2 text-label-large">
-          <Link href="/pathways">
+          <Link href="#" onClick={() => handleNavigate("/pathways")}> {/* Intercept navigation */}
             <ArrowLeft className="mr-2 h-5 w-5" /> Back to Templates
           </Link>
         </Button>
-        <div className="flex space-x-2">
-          {templateId && canModifyTemplate && (
-            <>
-              <Button variant="outlined" className="rounded-full px-6 py-3 text-label-large" onClick={() => handleClone(currentTemplate)}>
-                <Copy className="mr-2 h-5 w-5" /> Clone Template
-              </Button>
-              <Button variant="outlined" className="rounded-full px-6 py-3 text-label-large" onClick={handleCreateVersion}>
-                <Save className="mr-2 h-5 w-5" /> Save New Version
-              </Button>
-              {currentTemplate.status !== 'published' && (
-                <Button variant="filled" className="rounded-full px-6 py-3 text-label-large" onClick={handlePublishTemplate}>
-                  <CheckCircle className="mr-2 h-5 w-5" /> Publish Template
-                </Button>
-              )}
-              {currentTemplate.status === 'published' && (
-                <Button variant="tonal" className="rounded-full px-6 py-3 text-label-large" onClick={() => handleUpdateStatus('archived')}>
-                  <Clock className="mr-2 h-5 w-5" /> Archive Template
-                </Button>
-              )}
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button variant="destructive" className="rounded-full px-6 py-3 text-label-large">
-                    <Trash2 className="mr-2 h-5 w-5" /> Delete Template
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent className="rounded-xl shadow-lg bg-card text-card-foreground border-border">
-                  <AlertDialogHeader>
-                    <AlertDialogTitle className="text-headline-small">Confirm Permanent Deletion</AlertDialogTitle>
-                    <AlertDialogDescription className="text-body-medium text-muted-foreground">
-                      Are you sure you want to permanently delete the &quot;{currentTemplate.name}&quot; pathway template? This action cannot be undone and will remove all associated phases and data.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel className="rounded-md text-label-large">Cancel</AlertDialogCancel>
-                    <AlertDialogAction
-                      onClick={handleDeleteTemplate}
-                      className="rounded-md text-label-large bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                    >
-                      Delete Permanently
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            </>
-          )}
-        </div>
       </div>
 
       <h1 className="text-display-small font-bold text-foreground">
-        {isNewTemplate ? "Create New Pathway Template" : `Edit Pathway Template: ${currentTemplate.name}`}
+        {isNewTemplate ? "Create New Pathway Template" : `Edit Pathway Template: ${template?.name || 'Loading...'}`}
       </h1>
 
       <Form {...templateForm}>
         <form onSubmit={templateForm.handleSubmit(handleTemplateDetailsSave)} className="space-y-8">
           {/* Template Basics Card */}
-          <Card className="rounded-xl shadow-lg p-6">
-            <CardHeader className="p-0 mb-4">
-              <CardTitle className="text-headline-large font-bold text-foreground flex items-center gap-2">
-                Template Basics
-                <TooltipProvider>
-                  {currentTemplate.is_private ? (
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Lock className="h-5 w-5 text-muted-foreground" />
-                      </TooltipTrigger>
-                      <TooltipContent className="rounded-md shadow-lg bg-card text-card-foreground border-border text-body-small">
-                        Private Template
-                      </TooltipContent>
-                    </Tooltip>
-                  ) : (
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Globe className="h-5 w-5 text-muted-foreground" />
-                      </TooltipTrigger>
-                      <TooltipContent className="rounded-md shadow-lg bg-card text-card-foreground border-border text-body-small">
-                        Public Template
-                      </TooltipContent>
-                    </Tooltip>
-                  )}
-                </TooltipProvider>
-              </CardTitle>
-              <CardDescription className="text-body-large text-muted-foreground">
-                Define the core identity and visibility of this pathway template.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="p-0 space-y-6">
-              <FormField
-                control={templateForm.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-label-large">Template Name</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g., Global Fellowship Application" {...field} className="rounded-md" disabled={!canModifyTemplate} />
-                    </FormControl>
-                    <FormDescription className="text-body-small">
-                      A unique and descriptive name for your pathway template.
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={templateForm.control}
-                name="description"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-label-large">Template Description</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder="Provide a brief overview of this pathway template's purpose."
-                        className="resize-y min-h-[80px] rounded-md"
-                        {...field}
-                        value={field.value || ""}
-                        disabled={!canModifyTemplate}
-                      />
-                    </FormControl>
-                    <FormDescription className="text-body-small">
-                      Optional: A detailed description of what this template is used for.
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={templateForm.control}
-                name="is_private"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                    <div className="space-y-0.5">
-                      <FormLabel className="text-label-large">Keep Private</FormLabel>
-                      <FormDescription className="text-body-small">
-                        If enabled, this template will only be visible to you and platform administrators.
-                        Otherwise, it will be visible to all workbench users.
-                      </FormDescription>
-                    </div>
-                    <FormControl>
-                      <Switch
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                        className="data-[state=checked]:bg-primary data-[state=unchecked]:bg-muted-foreground"
-                        disabled={!canModifyTemplate}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={templateForm.control}
-                name="status"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-label-large">Template Status</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value} disabled={!canModifyTemplate}>
+          {template && (
+            <Card className="rounded-xl shadow-lg p-6">
+              <CardHeader className="p-0 mb-4">
+                <CardTitle className="text-headline-large font-bold text-foreground flex items-center gap-2">
+                  Template Basics
+                  <TooltipProvider>
+                    {template.is_private ? (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Lock className="h-5 w-5 text-muted-foreground" />
+                        </TooltipTrigger>
+                        <TooltipContent className="rounded-md shadow-lg bg-card text-card-foreground border-border text-body-small">
+                          Private Template
+                        </TooltipContent>
+                      </Tooltip>
+                    ) : (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Globe className="h-5 w-5 text-muted-foreground" />
+                        </TooltipTrigger>
+                        <TooltipContent className="rounded-md shadow-lg bg-card text-card-foreground border-border text-body-small">
+                          Public Template
+                        </TooltipContent>
+                      </Tooltip>
+                    )}
+                  </TooltipProvider>
+                </CardTitle>
+                <CardDescription className="text-body-large text-muted-foreground">
+                  Define the core identity and visibility of this pathway template.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="p-0 space-y-6">
+                <FormField
+                  control={templateForm.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-label-large">Template Name</FormLabel>
                       <FormControl>
-                        <SelectTrigger className="rounded-md">
-                          <SelectValue placeholder="Select template status" />
-                        </SelectTrigger>
+                        <Input placeholder="e.g., Global Fellowship Application" {...field} className="rounded-md" disabled={!canModifyTemplate} />
                       </FormControl>
-                      <SelectContent className="rounded-md shadow-lg bg-card text-card-foreground border-border">
-                        {statusOptions.map((status) => (
-                          <SelectItem key={status.value} value={status.value} className="text-body-medium hover:bg-muted hover:text-muted-foreground cursor-pointer">
-                            {status.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormDescription className="text-body-small">
-                      The current lifecycle status of the template.
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </CardContent>
-          </Card>
+                      <FormDescription className="text-body-small">
+                        A unique and descriptive name for your pathway template.
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={templateForm.control}
+                  name="description"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-label-large">Template Description</FormLabel>
+                      <FormControl>
+                        <Textarea
+                          placeholder="Provide a brief overview of this pathway template's purpose."
+                          className="resize-y min-h-[80px] rounded-md"
+                          {...field}
+                          value={field.value || ""}
+                          disabled={!canModifyTemplate}
+                        />
+                      </FormControl>
+                      <FormDescription className="text-body-small">
+                        Optional: A detailed description of what this template is used for.
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={templateForm.control}
+                  name="is_private"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                      <div className="space-y-0.5">
+                        <FormLabel className="text-label-large">Keep Private</FormLabel>
+                        <FormDescription className="text-body-small">
+                          If enabled, this template will only be visible to you and platform administrators.
+                          Otherwise, it will be visible to all workbench users.
+                        </FormDescription>
+                      </div>
+                      <FormControl>
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                          className="data-[state=checked]:bg-primary data-[state=unchecked]:bg-muted-foreground"
+                          disabled={!canModifyTemplate}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </CardContent>
+            </Card>
+          )}
 
           {/* Essential Information Card */}
-          <Card className="rounded-xl shadow-lg p-6">
-            <CardHeader className="p-0 mb-4">
-              <CardTitle className="text-headline-large font-bold text-foreground">
-                Essential Information
-              </CardTitle>
-              <CardDescription className="text-body-large text-muted-foreground">
-                Key dates and general instructions for applicants.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="p-0 space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {template && (
+            <Card className="rounded-xl shadow-lg p-6">
+              <CardHeader className="p-0 mb-4">
+                <CardTitle className="text-headline-large font-bold text-foreground">
+                  Essential Information
+                </CardTitle>
+                <CardDescription className="text-body-large text-muted-foreground">
+                  Key dates and general instructions for applicants.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="p-0 space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={templateForm.control}
+                    name="application_open_date"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-col">
+                        <FormLabel className="text-label-large">Application Open Date</FormLabel>
+                        <Popover>
+                          <PopoverTrigger asChild disabled={!canModifyTemplate}>
+                            <FormControl>
+                              <Button
+                                variant="outlined"
+                                className={cn(
+                                  "w-full pl-3 text-left font-normal rounded-md",
+                                  !field.value && "text-muted-foreground"
+                                )}
+                              >
+                                {field.value ? (
+                                  format(field.value, "PPP")
+                                ) : (
+                                  <span>Pick a date</span>
+                                )}
+                                <CalendarDays className="ml-auto h-4 w-4 opacity-50" />
+                              </Button>
+                            </FormControl>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0 rounded-xl shadow-lg bg-card text-card-foreground border-border" align="start">
+                            <Calendar
+                              mode="single"
+                              selected={field.value || undefined}
+                              onSelect={field.onChange}
+                              initialFocus
+                            />
+                          </PopoverContent>
+                        </Popover>
+                        <FormDescription className="text-body-small">
+                          The date when applications for campaigns using this template will open.
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={templateForm.control}
+                    name="participation_deadline"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-col">
+                        <FormLabel className="text-label-large">Participation Deadline</FormLabel>
+                        <Popover>
+                          <PopoverTrigger asChild disabled={!canModifyTemplate}>
+                            <FormControl>
+                              <Button
+                                variant="outlined"
+                                className={cn(
+                                  "w-full pl-3 text-left font-normal rounded-md",
+                                  !field.value && "text-muted-foreground"
+                                )}
+                              >
+                                {field.value ? (
+                                  format(field.value, "PPP")
+                                ) : (
+                                  <span>Pick a date</span>
+                                )}
+                                <CalendarDays className="ml-auto h-4 w-4 opacity-50" />
+                              </Button>
+                            </FormControl>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0 rounded-xl shadow-lg bg-card text-card-foreground border-border" align="start">
+                            <Calendar
+                              mode="single"
+                              selected={field.value || undefined}
+                              onSelect={field.onChange}
+                              initialFocus
+                            />
+                          </PopoverContent>
+                        </Popover>
+                        <FormDescription className="text-body-small">
+                          The final date for applicants to submit their participation.
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
                 <FormField
                   control={templateForm.control}
-                  name="application_open_date"
+                  name="general_instructions"
                   render={({ field }) => (
-                    <FormItem className="flex flex-col">
-                      <FormLabel className="text-label-large">Application Open Date</FormLabel>
-                      <Popover>
-                        <PopoverTrigger asChild disabled={!canModifyTemplate}>
-                          <FormControl>
-                            <Button
-                              variant="outlined"
-                              className={cn(
-                                "w-full pl-3 text-left font-normal rounded-md",
-                                !field.value && "text-muted-foreground"
-                              )}
-                            >
-                              {field.value ? (
-                                format(field.value, "PPP")
-                              ) : (
-                                <span>Pick a date</span>
-                              )}
-                              <CalendarDays className="ml-auto h-4 w-4 opacity-50" />
-                            </Button>
-                          </FormControl>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0 rounded-xl shadow-lg bg-card text-card-foreground border-border" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={field.value || undefined}
-                            onSelect={field.onChange}
-                            initialFocus
-                          />
-                        </PopoverContent>
-                      </Popover>
+                    <FormItem>
+                      <FormLabel className="text-label-large">General Instructions</FormLabel>
+                      <FormControl>
+                        <Textarea
+                          placeholder="Provide general instructions or guidelines for applicants."
+                          className="resize-y min-h-[150px] rounded-md"
+                          {...field}
+                          value={field.value || ""}
+                          disabled={!canModifyTemplate}
+                        />
+                      </FormControl>
                       <FormDescription className="text-body-small">
-                        The date when applications for campaigns using this template will open.
+                        These instructions will be visible to applicants. (Rich text editor integration coming soon)
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
@@ -657,142 +703,79 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
                 />
                 <FormField
                   control={templateForm.control}
-                  name="participation_deadline"
+                  name="applicant_instructions"
                   render={({ field }) => (
-                    <FormItem className="flex flex-col">
-                      <FormLabel className="text-label-large">Participation Deadline</FormLabel>
-                      <Popover>
-                        <PopoverTrigger asChild disabled={!canModifyTemplate}>
-                          <FormControl>
-                            <Button
-                              variant="outlined"
-                              className={cn(
-                                "w-full pl-3 text-left font-normal rounded-md",
-                                !field.value && "text-muted-foreground"
-                              )}
-                            >
-                              {field.value ? (
-                                format(field.value, "PPP")
-                              ) : (
-                                <span>Pick a date</span>
-                              )}
-                              <CalendarDays className="ml-auto h-4 w-4 opacity-50" />
-                            </Button>
-                          </FormControl>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0 rounded-xl shadow-lg bg-card text-card-foreground border-border" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={field.value || undefined}
-                            onSelect={field.onChange}
-                            initialFocus
-                          />
-                        </PopoverContent>
-                      </Popover>
+                    <FormItem>
+                      <FormLabel className="text-label-large">Applicant Instructions (Optional)</FormLabel>
+                      <FormControl>
+                        <Textarea
+                          placeholder="Instructions specifically for applicants regarding the entire template."
+                          className="resize-y min-h-[80px] rounded-md"
+                          {...field}
+                          value={field.value || ""}
+                          disabled={!canModifyTemplate}
+                        />
+                      </FormControl>
                       <FormDescription className="text-body-small">
-                        The final date for applicants to submit their participation.
+                        These instructions are visible to applicants in their portal for the overall template.
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-              </div>
-              <FormField
-                control={templateForm.control}
-                name="general_instructions"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-label-large">General Instructions</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder="Provide general instructions or guidelines for applicants."
-                        className="resize-y min-h-[150px] rounded-md"
-                        {...field}
-                        value={field.value || ""}
-                        disabled={!canModifyTemplate}
-                      />
-                    </FormControl>
-                    <FormDescription className="text-body-small">
-                      These instructions will be visible to applicants. (Rich text editor integration coming soon)
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={templateForm.control}
-                name="applicant_instructions"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-label-large">Applicant Instructions (Optional)</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder="Instructions specifically for applicants regarding the entire template."
-                        className="resize-y min-h-[80px] rounded-md"
-                        {...field}
-                        value={field.value || ""}
-                        disabled={!canModifyTemplate}
-                      />
-                    </FormControl>
-                    <FormDescription className="text-body-small">
-                      These instructions are visible to applicants in their portal for the overall template.
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={templateForm.control}
-                name="manager_instructions"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-label-large">Manager Instructions (Optional)</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder="Instructions specifically for managers/recruiters regarding the entire template."
-                        className="resize-y min-h-[80px] rounded-md"
-                        {...field}
-                        value={field.value || ""}
-                        disabled={!canModifyTemplate}
-                      />
-                    </FormControl>
-                    <FormDescription className="text-body-small">
-                      These instructions are for internal staff only (e.g., hiring managers, recruiters).
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={templateForm.control}
-                name="is_visible_to_applicants"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                    <div className="space-y-0.5">
-                      <FormLabel className="text-label-large">Visible to Applicants (Overall Template)</FormLabel>
+                <FormField
+                  control={templateForm.control}
+                  name="manager_instructions"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-label-large">Manager Instructions (Optional)</FormLabel>
+                      <FormControl>
+                        <Textarea
+                          placeholder="Instructions specifically for managers/recruiters regarding the entire template."
+                          className="resize-y min-h-[80px] rounded-md"
+                          {...field}
+                          value={field.value || ""}
+                          disabled={!canModifyTemplate}
+                        />
+                      </FormControl>
                       <FormDescription className="text-body-small">
-                        Control whether this entire template is visible to applicants in their portal.
+                        These instructions are for internal staff only (e.g., hiring managers, recruiters).
                       </FormDescription>
-                    </div>
-                    <FormControl>
-                      <Switch
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                        className="data-[state=checked]:bg-primary data-[state=unchecked]:bg-muted-foreground"
-                        disabled={!canModifyTemplate}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </CardContent>
-          </Card>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={templateForm.control}
+                  name="is_visible_to_applicants"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                      <div className="space-y-0.5">
+                        <FormLabel className="text-label-large">Visible to Applicants (Overall Template)</FormLabel>
+                        <FormDescription className="text-body-small">
+                          Control whether this entire template is visible to applicants in their portal.
+                        </FormDescription>
+                      </div>
+                      <FormControl>
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                          className="data-[state=checked]:bg-primary data-[state=unchecked]:bg-muted-foreground"
+                          disabled={!canModifyTemplate}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </CardContent>
+            </Card>
+          )}
 
-          {/* Save Template Details Button */}
+          {/* Save Template Details Button (now "Save Draft") */}
           {canModifyTemplate && (
             <Button type="submit" className="w-full rounded-md text-label-large" disabled={templateForm.formState.isSubmitting}>
-              {templateForm.formState.isSubmitting ? "Saving Template Details..." : "Save Template Details"}
+              {templateForm.formState.isSubmitting ? "Saving Draft..." : "Save Draft"}
             </Button>
           )}
         </form>
@@ -851,7 +834,7 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
                     onDelete={handleDeletePhase}
                     onPhaseUpdated={handlePhaseUpdated}
                     canModify={canModifyTemplate}
-                    isExpanded={expandedPhaseIds.has(phase.id)} // Use the Set here
+                    isExpanded={expandedPhaseIds.has(phase.id)}
                     onToggleExpand={handleToggleExpandPhase}
                   />
                 ))}
@@ -919,15 +902,58 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
       )}
 
       {/* Version History and Activity Log */}
-      {templateId && (
+      {template && (
         <>
           <TemplateVersionHistory
-            pathwayTemplateId={templateId}
+            pathwayTemplateId={template.id}
             canModify={canModifyTemplate}
             onTemplateRolledBack={handlePhaseUpdated}
           />
-          <TemplateActivityLog templateId={templateId} />
+          <TemplateActivityLog templateId={template.id} />
         </>
+      )}
+
+      {/* Template Action Buttons (Moved to bottom) */}
+      {template && canModifyTemplate && (
+        <div className="flex flex-wrap justify-end items-center gap-2 mt-8 pt-6 border-t border-border">
+          <Button variant="outlined" className="rounded-full px-6 py-3 text-label-large" onClick={() => handleClone(template)}>
+            <Copy className="mr-2 h-5 w-5" /> Clone Template
+          </Button>
+          {/* Removed Save New Version button */}
+          {template.status !== 'published' ? (
+            <Button variant="filled" className="rounded-full px-6 py-3 text-label-large" onClick={handlePublishTemplate}>
+              <CheckCircle className="mr-2 h-5 w-5" /> Publish Template
+            </Button>
+          ) : (
+            <Button variant="tonal" className="rounded-full px-6 py-3 text-label-large" onClick={() => handleUpdateStatus('archived')}>
+              <Clock className="mr-2 h-5 w-5" /> Archive Template
+            </Button>
+          )}
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="destructive" className="rounded-full px-6 py-3 text-label-large">
+                <Trash2 className="mr-2 h-5 w-5" /> Delete Template
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent className="rounded-xl shadow-lg bg-card text-card-foreground border-border">
+              <AlertDialogHeader>
+                <AlertDialogTitle className="text-headline-small">Confirm Permanent Deletion</AlertDialogTitle>
+                <AlertDialogDescription className="text-body-medium text-muted-foreground">
+                  Are you sure you want to permanently delete the &quot;{template.name}&quot; pathway template? This action cannot be undone and will remove all associated phases and data.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel className="rounded-md text-label-large">Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={handleDeleteTemplate}
+                  className="rounded-md text-label-large bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                >
+                  Delete Permanently
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
       )}
 
       {/* Clone Template Dialog */}
@@ -940,11 +966,29 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
         />
       )}
 
+      {/* Unsaved Changes Warning Dialog */}
+      <AlertDialog open={showUnsavedChangesWarning} onOpenChange={setShowUnsavedChangesWarning}>
+        <AlertDialogContent className="rounded-xl shadow-lg bg-card text-card-foreground border-border">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-headline-small">Unsaved Changes</AlertDialogTitle>
+            <AlertDialogDescription className="text-body-medium text-muted-foreground">
+              You have unsaved changes. Are you sure you want to leave? Your changes will be lost.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleStayOnPage} className="rounded-md text-label-large">Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDiscardChanges} className="rounded-md text-label-large bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Leave Page
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       {/* Footer Metadata */}
-      {templateId && (
+      {template && (
         <CardFooter className="flex flex-col items-start text-body-small text-muted-foreground border-t border-border pt-6 mt-8">
-          <p>Created by: {currentTemplate.creator_id} on {new Date(currentTemplate.created_at).toLocaleDateString()}</p>
-          <p>Last updated by: {currentTemplate.last_updated_by} on {new Date(currentTemplate.updated_at).toLocaleDateString()}</p>
+          <p>Created by {template.creator_id} on {new Date(template.created_at).toLocaleDateString()}</p>
+          <p>Last updated by {template.last_updated_by} on {new Date(template.updated_at).toLocaleDateString()}</p>
         </CardFooter>
       )}
     </div>
