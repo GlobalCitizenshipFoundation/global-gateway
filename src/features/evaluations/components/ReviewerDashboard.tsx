@@ -256,13 +256,13 @@ export function ReviewerDashboard() {
                     </div>
                   </div>
                   <div className="flex flex-col space-y-2">
-                    <Button asChild variant="outlined" size="sm" className="rounded-md text-label-small">
+                    <Button asChild variant="outline" size="sm" className="rounded-md text-label-small">
                       <Link href={`/applications/${assignment.application_id}`}>
                         <Eye className="mr-1 h-3 w-3" /> View App
                       </Link>
                     </Button>
                     {assignment.status === 'assigned' && (
-                      <Button variant="filled" size="sm" className="rounded-md text-label-small" onClick={() => handleUpdateAssignmentStatus(assignment.id, 'accepted')}>
+                      <Button variant="default" size="sm" className="rounded-md text-label-small" onClick={() => handleUpdateAssignmentStatus(assignment.id, 'accepted')}>
                         <CheckCircle className="mr-1 h-3 w-3" /> Accept
                       </Button>
                     )}
@@ -340,7 +340,7 @@ export function ReviewerDashboard() {
                     </div>
                   </div>
                   <div className="flex flex-col space-y-2">
-                    <Button asChild variant="outlined" size="sm" className="rounded-md text-label-small">
+                    <Button asChild variant="outline" size="sm" className="rounded-md text-label-small">
                       <Link href={`/applications/${review.application_id}`}>
                         <Eye className="mr-1 h-3 w-3" /> View App
                       </Link>

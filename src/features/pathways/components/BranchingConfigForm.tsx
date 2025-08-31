@@ -193,7 +193,7 @@ export function BranchingConfigForm({
             )}
           />
           <div className="flex justify-end space-x-2">
-            <Button type="button" variant="outlined" onClick={onCancel} className="rounded-md text-label-large">
+            <Button type="button" variant="outline" onClick={onCancel} className="rounded-md text-label-large">
               <X className="mr-2 h-4 w-4" /> Cancel
             </Button>
             <Button type="submit" className="rounded-md text-label-large" disabled={form.formState.isSubmitting || !canModify}>

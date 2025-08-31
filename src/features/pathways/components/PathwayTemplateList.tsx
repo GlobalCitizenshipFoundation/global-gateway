@@ -192,11 +192,11 @@ export function PathwayTemplateList() {
                     <p>Last Updated: {new Date(template.updated_at).toLocaleDateString()}</p>
                   </CardContent>
                   <div className="flex justify-end p-4 pt-0 space-x-2">
-                    <Button variant="outlined" size="icon" className="rounded-md" onClick={() => handleClone(template)}>
+                    <Button variant="outline" size="icon" className="rounded-md" onClick={() => handleClone(template)}>
                       <Copy className="h-4 w-4" />
                       <span className="sr-only">Clone Template</span>
                     </Button>
-                    <Button asChild variant="outlined" size="icon" className="rounded-md">
+                    <Button asChild variant="outline" size="icon" className="rounded-md">
                       <Link href={`/pathways/${template.id}`}>
                         <Edit className="h-4 w-4" />
                         <span className="sr-only">Edit</span>

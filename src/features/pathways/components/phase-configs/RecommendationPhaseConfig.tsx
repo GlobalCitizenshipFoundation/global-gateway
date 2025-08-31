@@ -218,26 +218,26 @@ export function RecommendationPhaseConfig({ phase, parentId, onConfigSaved, onCa
                     control={form.control}
                     name={`recommenderInformationFields.${index}.options`}
                     render={({ field: optionsField }) => (
-                      <FormItem>
-                        <FormLabel className="text-label-large">Options (one per line)</FormLabel>
-                        <FormControl>
-                          <Textarea
-                            {...optionsField}
-                            value={optionsField.value?.join("\n") || ""}
-                            onChange={(e) => optionsField.onChange(e.target.value.split("\n").map(s => s.trim()).filter(Boolean))}
-                            placeholder="Option 1\nOption 2\nOption 3"
-                            className="resize-y min-h-[80px] rounded-md"
-                            disabled={!canModify}
-                          />
-                        </FormControl>
-                        <FormDescription className="text-body-small">
-                          Enter each option on a new line.
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
+                          <FormItem>
+                            <FormLabel className="text-label-large">Options (one per line)</FormLabel>
+                            <FormControl>
+                              <Textarea
+                                {...optionsField}
+                                value={optionsField.value?.join("\n") || ""}
+                                onChange={(e) => optionsField.onChange(e.target.value.split("\n").map(s => s.trim()).filter(Boolean))}
+                                placeholder="Option 1\nOption 2\nOption 3"
+                                className="resize-y min-h-[80px] rounded-md"
+                                disabled={!canModify}
+                              />
+                            </FormControl>
+                            <FormDescription className="text-body-small">
+                              Enter each option on a new line.
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
                     )}
-                  />
-                )}
 
                 <FormField
                   control={form.control}
@@ -285,7 +285,7 @@ export function RecommendationPhaseConfig({ phase, parentId, onConfigSaved, onCa
             {canModify && (
               <Button
                 type="button"
-                variant="outlined"
+                variant="outline"
                 onClick={() => append({ id: crypto.randomUUID(), label: "", type: "Text", required: true, helperText: null, options: [] })}
                 className="w-full rounded-md text-label-large"
               >
@@ -381,7 +381,7 @@ export function RecommendationPhaseConfig({ phase, parentId, onConfigSaved, onCa
             />
 
             <div className="flex justify-end space-x-2">
-              <Button type="button" variant="outlined" onClick={onCancel} className="rounded-md text-label-large">
+              <Button type="button" variant="outline" onClick={onCancel} className="rounded-md text-label-large">
                 <X className="mr-2 h-4 w-4" /> Cancel
               </Button>
               {canModify && (

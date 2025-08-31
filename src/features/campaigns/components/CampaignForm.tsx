@@ -11,7 +11,6 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Form,
   FormControl,
@@ -27,6 +26,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { CalendarIcon } from "lucide-react";
 import { format } from "date-fns";
 import { Calendar } from "@/components/ui/calendar";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"; // Added Card imports
 import { Campaign, Program } from "@/features/campaigns/services/campaign-service"; // Import Program interface
 import { createCampaignAction, updateCampaignAction } from "@/features/campaigns/actions";
 import { getTemplatesAction } from "@/features/pathways/actions";
@@ -281,7 +281,7 @@ export function CampaignForm({ initialData }: CampaignFormProps) {
                       <PopoverTrigger asChild>
                         <FormControl>
                           <Button
-                            variant="outlined"
+                            variant="outline"
                             className={cn(
                               "w-full pl-3 text-left font-normal rounded-md",
                               !field.value && "text-muted-foreground"
@@ -322,7 +322,7 @@ export function CampaignForm({ initialData }: CampaignFormProps) {
                       <PopoverTrigger asChild>
                         <FormControl>
                           <Button
-                            variant="outlined"
+                            variant="outline"
                             className={cn(
                               "w-full pl-3 text-left font-normal rounded-md",
                               !field.value && "text-muted-foreground"

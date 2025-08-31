@@ -155,7 +155,7 @@ export function ProgramForm({ initialData }: ProgramFormProps) {
                       <PopoverTrigger asChild>
                         <FormControl>
                           <Button
-                            variant="outlined"
+                            variant="outline"
                             className={cn(
                               "w-full pl-3 text-left font-normal rounded-md",
                               !field.value && "text-muted-foreground"
@@ -196,7 +196,7 @@ export function ProgramForm({ initialData }: ProgramFormProps) {
                       <PopoverTrigger asChild>
                         <FormControl>
                           <Button
-                            variant="outlined"
+                            variant="outline"
                             className={cn(
                               "w-full pl-3 text-left font-normal rounded-md",
                               !field.value && "text-muted-foreground"

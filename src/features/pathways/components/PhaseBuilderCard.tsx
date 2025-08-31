@@ -125,7 +125,7 @@ export function PhaseBuilderCard({ phase, index, onDelete, onPhaseUpdated, canMo
             <CardContent className="flex-shrink-0 flex items-center space-x-2 p-0 pl-4">
               {canModify && (
                 <>
-                  <Button variant="outlined" size="icon" className="rounded-md" onClick={(e) => { e.stopPropagation(); onToggleExpand(phase.id); }}>
+                  <Button variant="outline" size="icon" className="rounded-md" onClick={(e) => { e.stopPropagation(); onToggleExpand(phase.id); }}>
                     {isExpanded ? <ChevronUp className="h-4 w-4" /> : <Settings className="h-4 w-4" />}
                     <span className="sr-only">{isExpanded ? "Collapse" : "Configure Phase"}</span>
                   </Button>
@@ -212,7 +212,7 @@ export function PhaseBuilderCard({ phase, index, onDelete, onPhaseUpdated, canMo
                 {/* Collapse button at the end */}
                 <div className="flex justify-center mt-8">
                   <Button 
-                    variant="outlined" 
+                    variant="outline" 
                     className="rounded-full px-6 py-3 text-label-large" 
                     onClick={() => onToggleExpand(phase.id)}
                   >

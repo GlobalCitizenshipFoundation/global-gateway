@@ -201,7 +201,7 @@ export function PhaseDetailsForm({
                         <PopoverTrigger asChild disabled={!canModify}>
                           <FormControl>
                             <Button
-                              variant="outlined"
+                              variant="outline"
                               className={cn(
                                 "w-full pl-3 text-left font-normal rounded-md",
                                 !field.value && "text-muted-foreground"
@@ -242,7 +242,7 @@ export function PhaseDetailsForm({
                         <PopoverTrigger asChild disabled={!canModify}>
                           <FormControl>
                             <Button
-                              variant="outlined"
+                              variant="outline"
                               className={cn(
                                 "w-full pl-3 text-left font-normal rounded-md",
                                 !field.value && "text-muted-foreground"
@@ -346,7 +346,7 @@ export function PhaseDetailsForm({
               />
 
               <div className="flex justify-end space-x-2">
-                <Button type="button" variant="outlined" onClick={onCancel} className="rounded-md text-label-large">
+                <Button type="button" variant="outline" onClick={onCancel} className="rounded-md text-label-large">
                   <X className="mr-2 h-4 w-4" /> Cancel
                 </Button>
                 <Button type="submit" className="rounded-md text-label-large" disabled={form.formState.isSubmitting || !canModify}>

@@ -285,7 +285,7 @@ export function PhaseTaskManagementPanel({ phaseId, pathwayTemplateId, canModify
                       </div>
                       <div className="flex items-center space-x-2">
                         {canEditDetails && (
-                          <Button variant="outlined" size="icon" className="rounded-md" onClick={() => { setEditingTask(task); setIsTaskFormOpen(true); }}>
+                          <Button variant="outline" size="icon" className="rounded-md" onClick={() => { setEditingTask(task); setIsTaskFormOpen(true); }}>
                             <PlusCircle className="h-4 w-4" /> {/* Reusing PlusCircle for edit, could be Edit icon */}
                             <span className="sr-only">Edit Task</span>
                           </Button>
@@ -361,7 +361,7 @@ export function PhaseTaskManagementPanel({ phaseId, pathwayTemplateId, canModify
         {canModify && (
           <Button
             type="button"
-            variant="outlined"
+            variant="outline"
             onClick={() => { setEditingTask(undefined); setIsTaskFormOpen(true); }}
             className="w-full rounded-md text-label-large mt-6"
           >
@@ -480,7 +480,7 @@ export function PhaseTaskManagementPanel({ phaseId, pathwayTemplateId, canModify
                         <PopoverTrigger asChild disabled={!canEditDetailsForEditingTask}>
                           <FormControl>
                             <Button
-                              variant="outlined"
+                              variant="outline"
                               className={cn(
                                 "w-full pl-3 text-left font-normal rounded-md",
                                 !field.value && "text-muted-foreground"
@@ -532,7 +532,7 @@ export function PhaseTaskManagementPanel({ phaseId, pathwayTemplateId, canModify
                   )}
                 />
                 <DialogFooter>
-                  <Button type="button" variant="outlined" onClick={() => setIsTaskFormOpen(false)} className="rounded-md text-label-large">
+                  <Button type="button" variant="outline" onClick={() => setIsTaskFormOpen(false)} className="rounded-md text-label-large">
                     Cancel
                   </Button>
                   <Button type="submit" className="rounded-md text-label-large" disabled={form.formState.isSubmitting || (!canEditDetailsForEditingTask && !canUpdateStatusForEditingTask)}>

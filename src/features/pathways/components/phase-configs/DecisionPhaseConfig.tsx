@@ -191,7 +191,7 @@ export function DecisionPhaseConfig({ phase, parentId, onConfigSaved, onCancel, 
             {canModify && (
               <Button
                 type="button"
-                variant="outlined"
+                variant="outline"
                 onClick={() => appendOutcome({ id: crypto.randomUUID(), label: "", isFinal: false })}
                 className="w-full rounded-md text-label-large"
               >
@@ -299,7 +299,7 @@ export function DecisionPhaseConfig({ phase, parentId, onConfigSaved, onCancel, 
             {canModify && (
               <Button
                 type="button"
-                variant="outlined"
+                variant="outline"
                 onClick={() => appendRule({ id: crypto.randomUUID(), condition: "", outcome: "", priority: 1 })}
                 className="w-full rounded-md text-label-large"
               >
@@ -364,7 +364,7 @@ export function DecisionPhaseConfig({ phase, parentId, onConfigSaved, onCancel, 
             />
 
             <div className="flex justify-end space-x-2">
-              <Button type="button" variant="outlined" onClick={onCancel} className="rounded-md text-label-large">
+              <Button type="button" variant="outline" onClick={onCancel} className="rounded-md text-label-large">
                 <X className="mr-2 h-4 w-4" /> Cancel
               </Button>
               {canModify && (

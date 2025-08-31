@@ -623,7 +623,7 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
                           <PopoverTrigger asChild disabled={!canModifyTemplate}>
                             <FormControl>
                               <Button
-                                variant="outlined"
+                                variant="outline"
                                 className={cn(
                                   "w-full pl-3 text-left font-normal rounded-md",
                                   !field.value && "text-muted-foreground"
@@ -664,7 +664,7 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
                           <PopoverTrigger asChild disabled={!canModifyTemplate}>
                             <FormControl>
                               <Button
-                                variant="outlined"
+                                variant="outline"
                                 className={cn(
                                   "w-full pl-3 text-left font-normal rounded-md",
                                   !field.value && "text-muted-foreground"
@@ -728,7 +728,7 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
         <h2 className="text-headline-large font-bold text-foreground">Phases</h2>
         {templateId && canModifyTemplate && (
           <Button
-            variant="outlined"
+            variant="outline"
             className="rounded-full px-6 py-3 text-label-large"
             onClick={handleToggleAllPhases}
           >
@@ -819,7 +819,7 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
                 )}
               />
               <div className="flex justify-end space-x-2">
-                <Button type="button" variant="outlined" onClick={() => setIsAddingNewPhase(false)} className="rounded-md text-label-large">
+                <Button type="button" variant="outline" onClick={() => setIsAddingNewPhase(false)} className="rounded-md text-label-large">
                   <X className="mr-2 h-4 w-4" /> Cancel
                 </Button>
                 <Button type="submit" className="rounded-md text-label-large" disabled={inlinePhaseForm.formState.isSubmitting}>
@@ -873,14 +873,14 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
           </Button>
 
           {/* Publish Template */}
-          <Button variant="filled" className="rounded-full px-6 py-3 text-label-large" onClick={handlePublishTemplate} disabled={currentTemplate.status === 'published'}>
+          <Button variant="default" className="rounded-full px-6 py-3 text-label-large" onClick={handlePublishTemplate} disabled={currentTemplate.status === 'published'}>
             <CheckCircle className="mr-2 h-5 w-5" /> {currentTemplate.status === 'published' ? "Published" : "Publish Template"}
           </Button>
 
           {/* More Actions Dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outlined" size="icon" className="rounded-full">
+              <Button variant="outline" size="icon" className="rounded-full">
                 <MoreVertical className="h-5 w-5" />
                 <span className="sr-only">More actions</span>
               </Button>
@@ -922,7 +922,7 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
-                    <AlertDialogCancel className="rounded-md text-label-large">Cancel</AlertDialogCancel>
+                    <AlertDialogCancel onClick={handleStayOnPage} className="rounded-md text-label-large">Cancel</AlertDialogCancel>
                     <AlertDialogAction
                       onClick={handleDeleteTemplate}
                       className="rounded-md text-label-large bg-destructive text-destructive-foreground hover:bg-destructive/90"
@@ -983,11 +983,11 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
           </div>
           <div className="flex flex-wrap justify-end items-center gap-2">
             {/* Version History Trigger */}
-            <Button variant="outlined" className="rounded-full px-6 py-3 text-label-large" onClick={() => setIsVersionHistoryOpen(true)}>
+            <Button variant="outline" className="rounded-full px-6 py-3 text-label-large" onClick={() => setIsVersionHistoryOpen(true)}>
               <History className="mr-2 h-5 w-5" /> Version History
             </Button>
             {/* Activity Log Trigger */}
-            <Button variant="outlined" className="rounded-full px-6 py-3 text-label-large" onClick={() => setIsActivityLogOpen(true)}>
+            <Button variant="outline" className="rounded-full px-6 py-3 text-label-large" onClick={() => setIsActivityLogOpen(true)}>
               <Activity className="mr-2 h-5 w-5" /> Activity Log
             </Button>
           </div>

@@ -299,7 +299,7 @@ export function ReviewPhaseConfig({ phase, parentId, onConfigSaved, onCancel, ca
             {canModify && (
               <Button
                 type="button"
-                variant="outlined"
+                variant="outline"
                 onClick={() => append({ id: crypto.randomUUID(), name: "", description: "", maxScore: 5, weight: 1 })}
                 className="w-full rounded-md text-label-large"
               >
@@ -308,7 +308,7 @@ export function ReviewPhaseConfig({ phase, parentId, onConfigSaved, onCancel, ca
             )}
 
             <div className="flex justify-end space-x-2">
-              <Button type="button" variant="outlined" onClick={onCancel} className="rounded-md text-label-large">
+              <Button type="button" variant="outline" onClick={onCancel} className="rounded-md text-label-large">
                 <X className="mr-2 h-4 w-4" /> Cancel
               </Button>
               {canModify && (

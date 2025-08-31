@@ -121,7 +121,7 @@ export function TemplateVersionHistory({ pathwayTemplateId, canModify, onTemplat
                   </p>
                 </div>
                 <div className="flex space-x-2">
-                  <Button variant="outlined" size="icon" className="rounded-md" onClick={() => handleViewSnapshot(version.snapshot)}>
+                  <Button variant="outline" size="icon" className="rounded-md" onClick={() => handleViewSnapshot(version.snapshot)}>
                     <Eye className="h-4 w-4" />
                     <span className="sr-only">View Snapshot</span>
                   </Button>
