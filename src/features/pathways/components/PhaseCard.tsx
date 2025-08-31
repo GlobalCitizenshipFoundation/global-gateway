@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Trash2, GripVertical, Settings, GitFork } from "lucide-react"; // Import GitFork icon
 import { Phase } from "../services/pathway-template-service";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Draggable } from "@hello-pangea/dnd";
+import { Draggable } from "@hello-pangea/dnd"; // Using a dnd library
 
 interface PhaseCardProps {
   phase: Phase;

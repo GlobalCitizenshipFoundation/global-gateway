@@ -59,7 +59,7 @@ export function PhaseTaskManagementPanel({ phaseId, pathwayTemplateId, canModify
   const { user, isLoading: isSessionLoading } = useSession();
   const [tasks, setTasks] = useState<PhaseTask[]>([]);
   const [isLoadingTasks, setIsLoadingTasks] = useState(true);
-  const [isTaskFormOpen, setIsTaskFormOpen] = useState(true); // Changed to true for testing
+  const [isTaskFormOpen, setIsTaskFormOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<PhaseTask | undefined>(undefined);
 
   const form = useForm<z.infer<typeof taskFormSchema>>({

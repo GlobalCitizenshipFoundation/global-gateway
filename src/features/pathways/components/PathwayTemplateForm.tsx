@@ -34,7 +34,7 @@ const formSchema = z.object({
 
 interface PathwayTemplateFormProps {
   initialData?: PathwayTemplate;
-  onTemplateSaved: () => void;
+  onTemplateSaved: (templateId?: string) => void; // Modified to pass templateId
   onCancel: () => void;
   canModify: boolean;
 }
@@ -81,15 +81,14 @@ export function PathwayTemplateForm({ initialData, onTemplateSaved, onCancel, ca
         }
         if (result) {
           toast.success("Pathway template updated successfully!");
-          onTemplateSaved();
+          onTemplateSaved(result.id); // Pass ID on update
         }
       } else {
-        // Handle creation for new templates
-        formData.append("status", values.status); // Include status for creation
+        // Handle creation
         result = await createPathwayTemplateAction(formData);
         if (result) {
           toast.success("Pathway template created successfully!");
-          onTemplateSaved(); // Call onTemplateSaved which might trigger a redirect
+          onTemplateSaved(result.id); // Pass ID on creation
         }
       }
     } catch (error: any) {

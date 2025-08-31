@@ -4,14 +4,13 @@ import { getTemplateByIdAction } from "@/features/pathways/actions";
 import React from "react";
 
 interface PathwayTemplateDetailPageProps {
-  params: Promise<{ id: string }>;
-  searchParams?: Promise<{ [key: string]: string | string[] | undefined }>; // Adjusted type for Next.js type checker
+  params: { id: string }; // Adjusted type for Next.js type checker
+  searchParams?: { [key: string]: string | string[] | undefined }; // Adjusted type for Next.js type checker
 }
 
 export default async function PathwayTemplateDetailPage(props: PathwayTemplateDetailPageProps) {
   const { params } = props;
-  const resolvedParams = await params;
-  const { id } = resolvedParams;
+  const { id } = params;
 
   // Validate if 'id' is a UUID before proceeding to fetch
   const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
