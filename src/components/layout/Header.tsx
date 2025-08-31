@@ -96,17 +96,23 @@ export function Header() {
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator className="bg-border" />
                 <DropdownMenuItem className="text-body-medium hover:bg-muted hover:text-muted-foreground cursor-pointer">
-                  <UserCircle2 className="mr-2 h-4 w-4" />
-                  <Link href="/profile"><span>Profile</span></Link>
+                  <div className="flex items-center"> {/* Wrap children in a single div */}
+                    <UserCircle2 className="mr-2 h-4 w-4" />
+                    <Link href="/profile"><span>Profile</span></Link>
+                  </div>
                 </DropdownMenuItem>
                 <DropdownMenuItem className="text-body-medium hover:bg-muted hover:text-muted-foreground cursor-pointer">
-                  <Settings className="mr-2 h-4 w-4" />
-                  <Link href="/settings"><span>Settings</span></Link>
+                  <div className="flex items-center"> {/* Wrap children in a single div */}
+                    <Settings className="mr-2 h-4 w-4" />
+                    <Link href="/settings"><span>Settings</span></Link>
+                  </div>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator className="bg-border" />
                 <DropdownMenuItem onClick={handleSignOut} className="text-body-medium hover:bg-muted hover:text-muted-foreground cursor-pointer">
-                  <LogOut className="mr-2 h-4 w-4" />
-                  <span>Log out</span>
+                  <div className="flex items-center"> {/* Wrap children in a single div */}
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>Log out</span>
+                  </div>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
