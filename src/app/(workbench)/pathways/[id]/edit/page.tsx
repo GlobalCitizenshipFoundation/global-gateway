@@ -8,6 +8,9 @@ import { PathwayTemplate } from "@/features/pathways/services/pathway-template-s
 import { useSession } from "@/context/SessionContextProvider";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ArrowLeft } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
 
 interface EditPathwayTemplatePageProps {
   params: { id: string }; // Adjusted type for Next.js type checker
@@ -55,9 +58,11 @@ export default function EditPathwayTemplatePage({ params }: EditPathwayTemplateP
 
   const handleTemplateSaved = (templateId?: string) => {
     if (templateId) {
-      router.push(`/pathways/${templateId}`);
+      toast.success("Pathway template updated successfully!");
+      router.push(`/pathways/${templateId}`); // Redirect to the detail page (builder)
     } else {
-      router.push("/pathways");
+      toast.error("Failed to update pathway template.");
+      router.push(`/pathways/${id}`);
     }
   };
 
@@ -81,7 +86,15 @@ export default function EditPathwayTemplatePage({ params }: EditPathwayTemplateP
   const canModify = !!user && (template.creator_id === user.id || user.user_metadata?.role === 'admin');
 
   return (
-    <div className="container mx-auto py-8 px-4">
+    <div className="container mx-auto py-8 px-4 space-y-8">
+      <div className="flex items-center justify-between">
+        <Button asChild variant="ghost" className="rounded-full px-4 py-2 text-label-large">
+          <Link href={`/pathways/${id}`}>
+            <ArrowLeft className="mr-2 h-5 w-5" /> Back to Template Details
+          </Link>
+        </Button>
+      </div>
+      <h1 className="text-display-small font-bold text-foreground">Edit Pathway Template</h1>
       <PathwayTemplateForm
         initialData={template}
         onTemplateSaved={handleTemplateSaved}

@@ -75,10 +75,17 @@ export function PathwayTemplateDetail({ templateId }: PathwayTemplateDetailProps
     setIsEditingTemplateDetails(false);
   };
 
-  const handleTemplateSaved = () => {
+  const handleTemplateSaved = (updatedTemplateId?: string) => {
+    // If the template ID changed (e.g., after a clone, though clone redirects),
+    // or if it's an update, re-fetch and close the inspector.
     fetchTemplateAndPhases(); // Re-fetch to update template details
     setIsEditingTemplateDetails(false);
     setSelectedPhaseId(null); // Close inspector
+    // If a new template was created and this callback is used, it would redirect.
+    // For edits, we just refresh the current page.
+    if (updatedTemplateId && updatedTemplateId !== templateId) {
+      router.push(`/pathways/${updatedTemplateId}`);
+    }
   };
 
   const handleEditPhase = (phaseId: string) => {
