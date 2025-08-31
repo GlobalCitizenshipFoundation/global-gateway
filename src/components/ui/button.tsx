@@ -1,7 +1,8 @@
+"use client";
+
 import * as React from "react";
 import { Slot } from "@radix-ui/react-slot";
 import { cva, type VariantProps } from "class-variance-authority";
-
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
@@ -9,21 +10,21 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground shadow-md hover:bg-primary/90", // MD3 Filled button
+        default: "bg-primary text-primary-foreground hover:bg-primary/90",
         destructive:
-          "bg-destructive text-destructive-foreground shadow-md hover:bg-destructive/90", // MD3 Destructive button
+          "bg-destructive text-destructive-foreground hover:bg-destructive/90",
         outline:
-          "border border-border bg-background shadow-sm hover:bg-accent hover:text-accent-foreground", // MD3 Outlined button
+          "border border-input bg-background hover:bg-accent hover:text-accent-foreground",
         secondary:
-          "bg-secondary text-secondary-foreground shadow-md hover:bg-secondary/90", // MD3 Secondary button (similar to filled but with secondary color)
-        ghost: "hover:bg-accent hover:text-accent-foreground", // MD3 Text button (without background)
-        link: "text-primary underline-offset-4 hover:underline", // MD3 Text button (for navigation/links)
-        tonal: "bg-secondary-container text-on-secondary-container shadow-sm hover:bg-secondary-container/80", // MD3 Tonal button
+          "bg-secondary text-secondary-foreground hover:bg-secondary/80",
+        ghost: "hover:bg-accent hover:text-accent-foreground",
+        link: "text-primary underline-offset-4 hover:underline",
+        tonal: "bg-primary-container text-on-primary-container hover:bg-primary-container/80", // Added tonal variant
       },
       size: {
         default: "h-10 px-4 py-2",
-        sm: "h-9 px-3",
-        lg: "h-11 px-8",
+        sm: "h-9 rounded-md px-3",
+        lg: "h-11 rounded-md px-8",
         icon: "h-10 w-10",
       },
     },
@@ -54,4 +55,4 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
 );
 Button.displayName = "Button";
 
-export { Button, buttonVariants, type VariantProps };
+export { Button, buttonVariants, VariantProps };
