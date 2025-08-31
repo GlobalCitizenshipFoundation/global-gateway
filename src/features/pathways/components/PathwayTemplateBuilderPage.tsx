@@ -393,7 +393,7 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
           <Card className="rounded-xl shadow-lg p-6">
             <CardHeader className="p-0 mb-4">
               <CardTitle className="text-headline-large font-bold text-foreground flex items-center gap-2">
-                <Workflow className="h-7 w-7 text-primary" /> Template Basics
+                Template Basics {/* Removed Workflow icon */}
                 <TooltipProvider>
                   {currentTemplate.is_private ? (
                     <Tooltip>
@@ -517,7 +517,7 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
           <Card className="rounded-xl shadow-lg p-6">
             <CardHeader className="p-0 mb-4">
               <CardTitle className="text-headline-large font-bold text-foreground flex items-center gap-2">
-                <Info className="h-7 w-7 text-secondary" /> Essential Information
+                Essential Information {/* Removed Info icon */}
               </CardTitle>
               <CardDescription className="text-body-large text-muted-foreground">
                 Key dates and general instructions for applicants.
