@@ -831,7 +831,7 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-label-large">Phase Type</FormLabel>
-                    <Select key={field.name} onValueChange={field.onChange} value={field.value || ""} disabled={!canModifyTemplate}>
+                    <Select key={field.name} onValueChange={(value) => field.onChange(value === "" ? "" : value)} value={field.value || ""} disabled={!canModifyTemplate}>
                       <FormControl>
                         <SelectTrigger className="rounded-md" onBlur={field.onBlur}>
                           <SelectValue placeholder="Select a phase type" />
