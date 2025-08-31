@@ -23,8 +23,8 @@ import {
 } from "@/components/ui/form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PlusCircle, Trash2, GripVertical } from "lucide-react";
-import { BaseConfigurableItem } from "../../services/pathway-template-service"; // Import BaseConfigurableItem
-import { updatePhaseConfigAction as defaultUpdatePhaseConfigAction } from "../../actions"; // Renamed default action
+import { BaseConfigurableItem } from "../../services/pathway-template-service";
+import { updatePhaseConfigAction as defaultUpdatePhaseConfigAction } from "../../actions";
 import { cn } from "@/lib/utils";
 
 // Zod schema for a single rubric criterion
@@ -33,6 +33,7 @@ const rubricCriterionSchema = z.object({
   name: z.string().min(1, "Criterion name is required."),
   description: z.string().nullable().optional(),
   maxScore: z.coerce.number().min(1, "Max score must be at least 1."),
+  weight: z.coerce.number().min(0, "Weight cannot be negative.").max(100, "Weight cannot exceed 100.").optional(), // Added weight
 });
 
 // Zod schema for the entire Review Phase configuration
@@ -44,11 +45,10 @@ const reviewPhaseConfigSchema = z.object({
 });
 
 interface ReviewPhaseConfigProps {
-  phase: BaseConfigurableItem; // Changed from Phase to BaseConfigurableItem
-  parentId: string; // Renamed from pathwayTemplateId
+  phase: BaseConfigurableItem;
+  parentId: string;
   onConfigSaved: () => void;
   canModify: boolean;
-  // Optional prop to override the default update action, now returns BaseConfigurableItem | null
   updatePhaseConfigAction?: (phaseId: string, parentId: string, configUpdates: Record<string, any>) => Promise<BaseConfigurableItem | null>;
 }
 
@@ -56,7 +56,10 @@ export function ReviewPhaseConfig({ phase, parentId, onConfigSaved, canModify, u
   const form = useForm<z.infer<typeof reviewPhaseConfigSchema>>({
     resolver: zodResolver(reviewPhaseConfigSchema),
     defaultValues: {
-      rubricCriteria: (phase.config?.rubricCriteria as z.infer<typeof rubricCriterionSchema>[]) || [],
+      rubricCriteria: (phase.config?.rubricCriteria as z.infer<typeof rubricCriterionSchema>[])?.map(criterion => ({
+        ...criterion,
+        weight: criterion.weight ?? 1, // Default weight to 1 if not present
+      })) || [],
       scoringScale: phase.config?.scoringScale || "1-5",
       anonymizationSettings: phase.config?.anonymizationSettings || "None",
       allowComments: phase.config?.allowComments ?? true,
@@ -78,7 +81,7 @@ export function ReviewPhaseConfig({ phase, parentId, onConfigSaved, canModify, u
     try {
       const updatedConfig = { ...phase.config, ...values };
       const action = updatePhaseConfigAction || defaultUpdatePhaseConfigAction;
-      const result = await action(phase.id, parentId, updatedConfig); // Use parentId here
+      const result = await action(phase.id, parentId, updatedConfig);
       if (result) {
         toast.success("Review phase configuration updated successfully!");
         onConfigSaved();
@@ -255,22 +258,40 @@ export function ReviewPhaseConfig({ phase, parentId, onConfigSaved, canModify, u
                   )}
                 />
 
-                <FormField
-                  control={form.control}
-                  name={`rubricCriteria.${index}.maxScore`}
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-label-large">Maximum Score</FormLabel>
-                      <FormControl>
-                        <Input type="number" {...field} placeholder="e.g., 5" className="rounded-md" disabled={!canModify} />
-                      </FormControl>
-                      <FormDescription className="text-body-small">
-                        The highest score a reviewer can give for this criterion.
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name={`rubricCriteria.${index}.maxScore`}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-label-large">Maximum Score</FormLabel>
+                        <FormControl>
+                          <Input type="number" {...field} placeholder="e.g., 5" className="rounded-md" disabled={!canModify} />
+                        </FormControl>
+                        <FormDescription className="text-body-small">
+                          The highest score a reviewer can give for this criterion.
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name={`rubricCriteria.${index}.weight`}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-label-large">Weight (%)</FormLabel>
+                        <FormControl>
+                          <Input type="number" {...field} placeholder="e.g., 25" className="rounded-md" disabled={!canModify} />
+                        </FormControl>
+                        <FormDescription className="text-body-small">
+                          Relative importance of this criterion (0-100).
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
               </Card>
             ))}
 
@@ -278,7 +299,7 @@ export function ReviewPhaseConfig({ phase, parentId, onConfigSaved, canModify, u
               <Button
                 type="button"
                 variant="outlined"
-                onClick={() => append({ id: crypto.randomUUID(), name: "", description: "", maxScore: 5 })}
+                onClick={() => append({ id: crypto.randomUUID(), name: "", description: "", maxScore: 5, weight: 1 })}
                 className="w-full rounded-md text-label-large"
               >
                 <PlusCircle className="mr-2 h-5 w-5" /> Add Criterion

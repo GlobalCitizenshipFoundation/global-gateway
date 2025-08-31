@@ -22,6 +22,7 @@ import { getReviewsAction, getReviewerAssignmentsAction, getDecisionsAction } fr
 import { Review, ReviewerAssignment, Decision } from "@/features/evaluations/services/evaluation-service";
 import { DecisionForm } from "@/features/evaluations/components/DecisionForm"; // Import DecisionForm
 import { DecisionList } from "@/features/evaluations/components/DecisionList"; // Import DecisionList
+import { ReviewerAssignmentPanel } from "./ReviewerAssignmentPanel"; // Import ReviewerAssignmentPanel
 
 interface ApplicationDetailProps {
   applicationId: string;
@@ -139,6 +140,7 @@ export function ApplicationDetail({ applicationId }: ApplicationDetailProps) {
   const canModifyApplication: boolean = isAdminOrRecruiter || application.applicant_id === user?.id;
   const canAddNotes: boolean = isAdminOrRecruiter;
   const canModifyDecisions: boolean = isAdminOrRecruiter; // Only admin/campaign creator can manage decisions
+  const canModifyAssignments: boolean = isAdminOrRecruiter; // Only admin/campaign creator can manage assignments
 
   const isCurrentPhaseReview = application.current_campaign_phases?.type === 'Review';
   const canSubmitReview = isReviewer && isCurrentPhaseReview && reviewerAssignment?.status === 'accepted';
@@ -254,6 +256,16 @@ export function ApplicationDetail({ applicationId }: ApplicationDetailProps) {
           onNotesUpdated={fetchApplicationDetails}
         />
       </div>
+
+      {/* Reviewer Assignment Panel */}
+      {application.campaigns?.id && (
+        <ReviewerAssignmentPanel
+          applicationId={application.id}
+          campaignId={application.campaigns.id}
+          canModifyAssignments={canModifyAssignments}
+          onAssignmentsUpdated={fetchApplicationDetails}
+        />
+      )}
 
       {/* Application Decisions Section */}
       <DecisionList
