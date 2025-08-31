@@ -16,6 +16,13 @@ import {
   updatePhase as updatePhaseService, // Renamed to avoid conflict with local updatePhaseAction
   updatePhaseBranchingConfig as updatePhaseBranchingConfigService, // Import new service function
 } from "./services/pathway-template-service";
+import {
+  PhaseTask,
+  getPhaseTasksByPhaseId,
+  createPhaseTask,
+  updatePhaseTask,
+  deletePhaseTask,
+} from "./services/phase-task-service"; // Import new phase task service
 import { createClient } from "@/integrations/supabase/server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -420,5 +427,172 @@ export async function clonePathwayTemplateAction(templateId: string, newName: st
   } catch (error: any) {
     console.error("Error in clonePathwayTemplateAction:", error.message);
     throw error; // Re-throw to be caught by client-side toast
+  }
+}
+
+// --- Phase Task Management Server Actions ---
+
+// Helper function to authorize access to a phase task
+async function authorizePhaseTaskAction(taskId: string | null, phaseId: string, action: 'read' | 'write' | 'update_status'): Promise<{ user: any; task: PhaseTask | null; isAdmin: boolean; isPhaseCreator: boolean; isAssignedUser: boolean }> {
+  const supabase = await createClient();
+  const { data: { user }, error: userError } = await supabase.auth.getUser();
+
+  if (userError || !user) {
+    redirect("/login");
+  }
+
+  const userRole: string = user.user_metadata?.role || '';
+  const isAdmin = userRole === 'admin';
+
+  // First, authorize access to the parent phase/template
+  const { template } = await authorizeTemplateAction(phaseId, 'read'); // Read access to parent template is sufficient for task read
+  if (!template) {
+    throw new Error("ParentTemplateNotFound");
+  }
+  const isPhaseCreator = template.creator_id === user.id;
+
+  let task: PhaseTask | null = null;
+  if (taskId) {
+    const tasks = await getPhaseTasksByPhaseId(phaseId);
+    task = tasks?.find(t => t.id === taskId) || null;
+    if (!task) {
+      throw new Error("PhaseTaskNotFound");
+    }
+  }
+
+  const isAssignedUser = task?.assigned_to_user_id === user.id;
+
+  if (action === 'read') {
+    // RLS on phase_tasks handles read access based on parent phase/template
+  } else if (action === 'write') { // For create, update (except status), delete
+    if (!isAdmin && !isPhaseCreator) {
+      throw new Error("UnauthorizedToModifyPhaseTasks");
+    }
+  } else if (action === 'update_status') { // Specific for updating task status
+    if (!isAdmin && !isPhaseCreator && !isAssignedUser) {
+      throw new Error("UnauthorizedToUpdateTaskStatus");
+    }
+  }
+
+  return { user, task, isAdmin, isPhaseCreator, isAssignedUser };
+}
+
+export async function getPhaseTasksAction(phaseId: string): Promise<PhaseTask[] | null> {
+  try {
+    // Authorize read access to the parent phase's template
+    await authorizeTemplateAction(phaseId, 'read');
+    const tasks = await getPhaseTasksByPhaseId(phaseId);
+    return tasks;
+  } catch (error: any) {
+    console.error("Error in getPhaseTasksAction:", error.message);
+    if (error.message === "UnauthorizedAccessToPrivateTemplate") {
+      redirect("/error/403");
+    } else if (error.message === "TemplateNotFound") {
+      redirect("/error/404");
+    } else if (error.message === "FailedToRetrieveTemplate") {
+      redirect("/error/500");
+    }
+    redirect("/login"); // Fallback
+  }
+}
+
+export async function createPhaseTaskAction(phaseId: string, formData: FormData): Promise<PhaseTask | null> {
+  try {
+    await authorizePhaseTaskAction(null, phaseId, 'write'); // Authorize creation
+
+    const name = formData.get("name") as string;
+    const description = formData.get("description") as string | null;
+    const assigned_to_role = formData.get("assigned_to_role") as string | null;
+    const assigned_to_user_id = formData.get("assigned_to_user_id") as string | null;
+    const due_date_str = formData.get("due_date") as string | null;
+    const order_index = parseInt(formData.get("order_index") as string);
+
+    if (!name || isNaN(order_index)) {
+      throw new Error("Task name and order index are required.");
+    }
+
+    const newPhaseTask = await createPhaseTask(
+      phaseId,
+      name,
+      description,
+      assigned_to_role,
+      assigned_to_user_id,
+      due_date_str,
+      order_index
+    );
+
+    revalidatePath(`/pathway-templates/${phaseId}`); // Revalidate parent template detail
+    return newPhaseTask;
+  } catch (error: any) {
+    console.error("Error in createPhaseTaskAction:", error.message);
+    if (error.message === "UnauthorizedToModifyPhaseTasks") {
+      redirect("/error/403");
+    }
+    throw error; // Re-throw for client-side toast
+  }
+}
+
+export async function updatePhaseTaskAction(taskId: string, phaseId: string, formData: FormData): Promise<PhaseTask | null> {
+  try {
+    const { user, task, isAdmin, isPhaseCreator, isAssignedUser } = await authorizePhaseTaskAction(taskId, phaseId, 'write');
+    if (!task) {
+      throw new Error("PhaseTaskNotFound");
+    }
+
+    const updates: Partial<PhaseTask> = {};
+    const name = formData.get("name") as string | undefined;
+    const description = formData.get("description") as string | null | undefined;
+    const assigned_to_role = formData.get("assigned_to_role") as string | null | undefined;
+    const assigned_to_user_id = formData.get("assigned_to_user_id") as string | null | undefined;
+    const due_date_str = formData.get("due_date") as string | null | undefined;
+    const status = formData.get("status") as PhaseTask['status'] | undefined;
+
+    // Only allow status update by assigned user, creator, or admin
+    if (status !== undefined) {
+      const { user: statusUser, task: statusTask, isAdmin: statusIsAdmin, isPhaseCreator: statusIsPhaseCreator, isAssignedUser: statusIsAssignedUser } = await authorizePhaseTaskAction(taskId, phaseId, 'update_status');
+      if (!statusIsAdmin && !statusIsPhaseCreator && !statusIsAssignedUser) {
+        throw new Error("UnauthorizedToUpdateTaskStatus");
+      }
+      updates.status = status;
+    }
+
+    // Other fields can only be updated by creator or admin
+    if (name !== undefined && (isAdmin || isPhaseCreator)) updates.name = name;
+    if (description !== undefined && (isAdmin || isPhaseCreator)) updates.description = description;
+    if (assigned_to_role !== undefined && (isAdmin || isPhaseCreator)) updates.assigned_to_role = assigned_to_role;
+    if (assigned_to_user_id !== undefined && (isAdmin || isPhaseCreator)) updates.assigned_to_user_id = assigned_to_user_id;
+    if (due_date_str !== undefined && (isAdmin || isPhaseCreator)) updates.due_date = due_date_str;
+
+    const updatedPhaseTask = await updatePhaseTask(taskId, updates);
+
+    revalidatePath(`/pathway-templates/${phaseId}`);
+    return updatedPhaseTask;
+  } catch (error: any) {
+    console.error("Error in updatePhaseTaskAction:", error.message);
+    if (error.message === "UnauthorizedToModifyPhaseTasks" || error.message === "UnauthorizedToUpdateTaskStatus") {
+      redirect("/error/403");
+    } else if (error.message === "PhaseTaskNotFound") {
+      redirect("/error/404");
+    }
+    throw error; // Re-throw for client-side toast
+  }
+}
+
+export async function deletePhaseTaskAction(taskId: string, phaseId: string): Promise<boolean> {
+  try {
+    await authorizePhaseTaskAction(taskId, phaseId, 'write'); // Authorize deletion
+
+    const success = await deletePhaseTask(taskId);
+
+    revalidatePath(`/pathway-templates/${phaseId}`);
+    return success;
+  } catch (error: any) {
+    console.error("Error in deletePhaseTaskAction:", error.message);
+    if (error.message === "UnauthorizedToModifyPhaseTasks") {
+      redirect("/error/403");
+    } else if (error.message === "PhaseTaskNotFound") {
+      redirect("/error/404");
+    }
+    throw error; // Re-throw for client-side toast
   }
 }

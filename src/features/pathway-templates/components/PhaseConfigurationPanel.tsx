@@ -9,10 +9,12 @@ import { SchedulingPhaseConfig } from "./phase-configs/SchedulingPhaseConfig";
 import { DecisionPhaseConfig } from "./phase-configs/DecisionPhaseConfig";
 import { RecommendationPhaseConfig } from "./phase-configs/RecommendationPhaseConfig";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { PhaseTaskManagementPanel } from "./PhaseTaskManagementPanel"; // Import new task panel
+import { Separator } from "@/components/ui/separator"; // Import Separator
 
 interface PhaseConfigurationPanelProps {
   phase: BaseConfigurableItem;
-  parentId: string;
+  parentId: string; // This is pathwayTemplateId for pathway templates
   onConfigSaved: () => void;
   canModify: boolean;
 }
@@ -102,6 +104,15 @@ export function PhaseConfigurationPanel({
     <div className="space-y-6">
       <h3 className="text-title-large font-bold text-foreground">Configure {phase.name} ({phase.type})</h3>
       {renderConfigComponent()}
+
+      <Separator className="my-8" />
+
+      {/* Generic Phase Task Management */}
+      <PhaseTaskManagementPanel
+        phaseId={phase.id}
+        pathwayTemplateId={parentId} // Pass parentId as pathwayTemplateId for authorization
+        canModify={canModify}
+      />
     </div>
   );
 }
