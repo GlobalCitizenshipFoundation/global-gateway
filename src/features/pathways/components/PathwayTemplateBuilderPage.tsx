@@ -853,33 +853,38 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
 
       {template && canModifyTemplate && (
         <div className="flex flex-wrap justify-end items-center gap-2 mt-8 pt-6 border-t border-border">
-          <Button type="submit" className="rounded-full px-6 py-3 text-label-large" disabled={templateForm.formState.isSubmitting}>
+          {/* Save Draft */}
+          <Button type="submit" variant="secondary" className="rounded-full px-6 py-3 text-label-large" disabled={templateForm.formState.isSubmitting}>
             {templateForm.formState.isSubmitting ? "Saving Draft..." : <><Save className="mr-2 h-5 w-5" /> Save Draft</>}
           </Button>
-          <Button variant="outlined" className="rounded-full px-6 py-3 text-label-large" onClick={() => handleClone(template)}>
-            <Copy className="mr-2 h-5 w-5" /> Clone Template
-          </Button>
-          {currentTemplate.status === 'published' ? (
-            <Button variant="tonal" className="rounded-full px-6 py-3 text-label-large" onClick={() => handleUpdateStatus('draft')}>
-              <X className="mr-2 h-5 w-5" /> Unpublish
-            </Button>
-          ) : (
+
+          {/* Publish Template */}
+          {currentTemplate.status !== 'published' && (
             <Button variant="filled" className="rounded-full px-6 py-3 text-label-large" onClick={handlePublishTemplate}>
               <CheckCircle className="mr-2 h-5 w-5" /> Publish Template
             </Button>
           )}
+
+          {/* Clone Template */}
+          <Button variant="outline" className="rounded-full px-6 py-3 text-label-large" onClick={() => handleClone(template)}>
+            <Copy className="mr-2 h-5 w-5" /> Clone Template
+          </Button>
+
+          {/* Archive / Unarchive Template */}
           {currentTemplate.status === 'archived' ? (
             <Button variant="tonal" className="rounded-full px-6 py-3 text-label-large" onClick={() => handleUpdateStatus('draft')}>
               <RotateCcw className="mr-2 h-5 w-5" /> Unarchive
             </Button>
           ) : (
-            <Button variant="outlined" className="rounded-full px-6 py-3 text-label-large" onClick={() => handleUpdateStatus('archived')}>
+            <Button variant="destructive" className="rounded-full px-6 py-3 text-label-large" onClick={() => handleUpdateStatus('archived')}>
               <Archive className="mr-2 h-5 w-5" /> Archive Template
             </Button>
           )}
+
+          {/* Delete Template */}
           <AlertDialog>
             <AlertDialogTrigger asChild>
-              <Button variant="destructive" className="rounded-full px-6 py-3 text-label-large">
+              <Button variant="ghost" className="rounded-full px-6 py-3 text-label-large text-destructive hover:bg-destructive-container hover:text-destructive">
                 <Trash2 className="mr-2 h-5 w-5" /> Delete Template
               </Button>
             </AlertDialogTrigger>
