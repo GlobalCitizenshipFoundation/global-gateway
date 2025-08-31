@@ -196,7 +196,7 @@ export function ScreeningChecklist({
             {canModify && (
               <Button
                 type="button"
-                variant="outlined"
+                variant="outline"
                 onClick={() => append({ id: crypto.randomUUID(), item: "", checked: false, notes: "" })}
                 className="w-full rounded-md text-label-large"
               >

@@ -213,7 +213,7 @@ export function CommunicationTemplateList() {
                     <p>Last Updated: {new Date(template.updated_at).toLocaleDateString()}</p>
                   </CardContent>
                   <div className="flex justify-end p-4 pt-0 space-x-2">
-                    <Button asChild variant="outlined" size="icon" className="rounded-md">
+                    <Button asChild variant="outline" size="icon" className="rounded-md">
                       <Link href={`/communications/templates/${template.id}/edit`}>
                         <Edit className="h-4 w-4" />
                         <span className="sr-only">Edit</span>

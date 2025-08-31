@@ -21,7 +21,7 @@ export default function HomePage() {
             <p className="text-headline-small text-muted-foreground">
               Celebrating individuals and organizations foster positive change with global certification and accreditation.
             </p>
-            <Button asChild variant="filled" size="lg" className="rounded-lg px-8 py-6 shadow-md hover:bg-primary/90">
+            <Button asChild variant="default" size="lg" className="rounded-lg px-8 py-6 shadow-md hover:bg-primary/90">
               <Link href="/login">
                 Explore Pathways <ArrowRight className="ml-2 h-5 w-5" aria-hidden="true" />
               </Link>

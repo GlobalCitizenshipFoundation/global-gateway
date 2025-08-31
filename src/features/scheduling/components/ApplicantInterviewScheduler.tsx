@@ -188,7 +188,7 @@ export function ApplicantInterviewScheduler({ applicationId, campaignPhaseId }: 
                       <PopoverTrigger asChild>
                         <FormControl>
                           <Button
-                            variant="outlined"
+                            variant="outline" // Changed to 'outline'
                             className={cn(
                               "w-full pl-3 text-left font-normal rounded-md",
                               !field.value && "text-muted-foreground"
@@ -237,7 +237,7 @@ export function ApplicantInterviewScheduler({ applicationId, campaignPhaseId }: 
                             <Button
                               key={slot.id}
                               type="button"
-                              variant={field.value === slot.id ? "filled" : "outlined"}
+                              variant={field.value === slot.id ? "default" : "outline"} // Changed to 'default' and 'outline'
                               onClick={() => field.onChange(slot.id)}
                               className="rounded-md text-label-large"
                               disabled={hasBookedInterview} // Disable if an interview is already booked

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, UserCircle2, Briefcase, Workflow, CalendarDays, CheckCircle, XCircle, Clock, FileText, Info, Award, Edit, PlusCircle, MailCheck } from "lucide-react";
+import { ArrowLeft, UserCircle2, Briefcase, Workflow, CalendarDays, CheckCircle, XCircle, Clock, FileText, Info, Award, Edit, PlusCircle, MailCheck } from "lucide-react"; // Added MailCheck
 import { Application } from "../services/application-service";
 import { getApplicationByIdAction, updateApplicationAction } from "../actions";
 import { toast } from "sonner";
@@ -389,7 +389,7 @@ export function ApplicationDetail({ applicationId }: ApplicationDetailProps) {
                       </Button>
                     )}
                     {canManageRecommendations && req.status === 'submitted' && (
-                      <Button variant="outlined" size="sm" className="rounded-md text-label-small" asChild>
+                      <Button variant="outline" size="sm" className="rounded-md text-label-small" asChild>
                         <Link href={`/recommendation/${req.unique_token}`} target="_blank">
                           <FileText className="mr-1 h-3 w-3" /> View Submission
                         </Link>
@@ -524,7 +524,7 @@ export function ApplicationDetail({ applicationId }: ApplicationDetailProps) {
                     )}
                   />
                   <DialogFooter>
-                    <Button type="button" variant="outlined" onClick={() => setIsRecommendationRequestFormOpen(false)} className="rounded-md text-label-large">
+                    <Button type="button" variant="outline" onClick={() => setIsRecommendationRequestFormOpen(false)} className="rounded-md text-label-large">
                       Cancel
                     </Button>
                     <Button type="submit" className="rounded-md text-label-large" disabled={recommendationForm.formState.isSubmitting}>

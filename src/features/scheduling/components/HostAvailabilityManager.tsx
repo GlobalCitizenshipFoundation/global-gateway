@@ -207,7 +207,7 @@ export function HostAvailabilityManager({ canModify }: HostAvailabilityManagerPr
                 </div>
                 {canModify && (
                   <div className="flex space-x-2">
-                    <Button variant="outlined" size="icon" className="rounded-md" onClick={() => { setEditingAvailability(slot); setIsAvailabilityFormOpen(true); }}>
+                    <Button variant="outline" size="icon" className="rounded-md" onClick={() => { setEditingAvailability(slot); setIsAvailabilityFormOpen(true); }}>
                       <PlusCircle className="h-4 w-4" /> {/* Reusing PlusCircle for edit */}
                       <span className="sr-only">Edit Availability</span>
                     </Button>
@@ -246,7 +246,7 @@ export function HostAvailabilityManager({ canModify }: HostAvailabilityManagerPr
         {canModify && (
           <Button
             type="button"
-            variant="outlined"
+            variant="outline"
             onClick={() => { setEditingAvailability(undefined); setIsAvailabilityFormOpen(true); }}
             className="w-full rounded-md text-label-large mt-6"
           >
@@ -277,7 +277,7 @@ export function HostAvailabilityManager({ canModify }: HostAvailabilityManagerPr
                         <PopoverTrigger asChild disabled={!canModify}>
                           <FormControl>
                             <Button
-                              variant="outlined"
+                              variant="outline"
                               className={cn(
                                 "w-full pl-3 text-left font-normal rounded-md",
                                 !field.value && "text-muted-foreground"
@@ -356,7 +356,7 @@ export function HostAvailabilityManager({ canModify }: HostAvailabilityManagerPr
                   )}
                 />
                 <DialogFooter>
-                  <Button type="button" variant="outlined" onClick={() => setIsAvailabilityFormOpen(false)} className="rounded-md text-label-large">
+                  <Button type="button" variant="outline" onClick={() => setIsAvailabilityFormOpen(false)} className="rounded-md text-label-large">
                     Cancel
                   </Button>
                   <Button type="submit" className="rounded-md text-label-large" disabled={form.formState.isSubmitting || !canModify}>

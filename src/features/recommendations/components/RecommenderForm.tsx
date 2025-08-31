@@ -210,7 +210,7 @@ export function RecommenderForm({ request }: RecommenderFormProps) {
                             <Popover>
                               <PopoverTrigger asChild>
                                 <Button
-                                  variant="outlined"
+                                  variant="outline" // Changed to 'outline'
                                   className={cn(
                                     "w-full pl-3 text-left font-normal rounded-md",
                                     !field.value && "text-muted-foreground"

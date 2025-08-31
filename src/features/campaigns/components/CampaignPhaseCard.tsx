@@ -45,11 +45,11 @@ export function CampaignPhaseCard({ phase, index, onEdit, onDelete, onConfigure,
           <CardContent className="flex-shrink-0 flex items-center space-x-2 p-0 pl-4">
             {canEditOrDelete && (
               <>
-                <Button variant="outlined" size="icon" className="rounded-md" onClick={() => onConfigure(phase)}>
+                <Button variant="outline" size="icon" className="rounded-md" onClick={() => onConfigure(phase)}>
                   <Settings className="h-4 w-4" />
                   <span className="sr-only">Configure Phase</span>
                 </Button>
-                <Button variant="outlined" size="icon" className="rounded-md" onClick={() => onEdit(phase)}>
+                <Button variant="outline" size="icon" className="rounded-md" onClick={() => onEdit(phase)}>
                   <Edit className="h-4 w-4" />
                   <span className="sr-only">Edit Phase</span>
                 </Button>

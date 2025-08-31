@@ -16,8 +16,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-// import { authService } from "@/services/auth-service"; // Removed server-only authService
-import { useSession } from "@/context/SessionContextProvider"; // Use client-side supabase from context
+import { useSession } from "@/context/SessionContextProvider";
 
 const signInFormSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address." }),
@@ -30,7 +29,7 @@ interface SignInFormProps {
 
 export function SignInForm({ onSwitchToSignUp }: SignInFormProps) {
   const router = useRouter();
-  const { supabase } = useSession(); // Use supabase client from context
+  const { supabase } = useSession();
 
   const form = useForm<z.infer<typeof signInFormSchema>>({
     resolver: zodResolver(signInFormSchema),
@@ -54,9 +53,6 @@ export function SignInForm({ onSwitchToSignUp }: SignInFormProps) {
       }
 
       toast.success("Signed in successfully!");
-
-      // Removed direct router.push calls here.
-      // The LoginPage's useEffect will now handle the redirect based on session state.
 
     } catch (error: any) {
       toast.error(error.message || "An unexpected error occurred during sign-in.");
@@ -105,7 +101,7 @@ export function SignInForm({ onSwitchToSignUp }: SignInFormProps) {
 
         <div className="text-center text-body-medium text-muted-foreground">
           Don't have an account?{" "}
-          <Button variant="text" type="button" onClick={onSwitchToSignUp} className="p-0 h-auto text-primary">
+          <Button variant="link" type="button" onClick={onSwitchToSignUp} className="p-0 h-auto text-primary">
             Sign Up
           </Button>
         </div>

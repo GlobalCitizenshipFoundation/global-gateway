@@ -237,12 +237,13 @@ export function DecisionForm({
                       className="data-[state=checked]:bg-primary data-[state=unchecked]:bg-muted-foreground"
                     />
                   </FormControl>
+                  <FormMessage />
                 </FormItem>
               )}
             />
 
             <div className="flex justify-end space-x-4">
-              <Button type="button" variant="outlined" onClick={onCancel} className="rounded-md text-label-large">
+              <Button type="button" variant="outline" onClick={onCancel} className="rounded-md text-label-large">
                 Cancel
               </Button>
               <Button type="submit" className="w-full rounded-md text-label-large" disabled={form.formState.isSubmitting}>

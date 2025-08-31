@@ -16,8 +16,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-// import { authService } from "@/services/auth-service"; // Removed server-only authService
-import { useSession } from "@/context/SessionContextProvider"; // Use client-side supabase from context
+import { useSession } from "@/context/SessionContextProvider";
 
 const signUpFormSchema = z.object({
   first_name: z.string().min(1, { message: "First name is required." }),
@@ -37,7 +36,7 @@ interface SignUpFormProps {
 
 export function SignUpForm({ onSwitchToSignIn }: SignUpFormProps) {
   const router = useRouter();
-  const { supabase } = useSession(); // Use supabase client from context
+  const { supabase } = useSession();
 
   const form = useForm<z.infer<typeof signUpFormSchema>>({
     resolver: zodResolver(signUpFormSchema),
@@ -59,9 +58,9 @@ export function SignUpForm({ onSwitchToSignIn }: SignUpFormProps) {
         options: {
           data: {
             first_name: values.first_name,
-            middle_name: values.middle_name || null, // Pass null if optional middle name is empty
+            middle_name: values.middle_name || null,
             last_name: values.last_name,
-            role: "applicant", // Default role for new sign-ups
+            role: "applicant",
           },
         },
       });
@@ -73,7 +72,7 @@ export function SignUpForm({ onSwitchToSignIn }: SignUpFormProps) {
       }
 
       toast.success("Account created successfully! Please check your email to confirm your account.");
-      onSwitchToSignIn(); // Redirect to sign-in after successful sign-up
+      onSwitchToSignIn();
     } catch (error: any) {
       toast.error(error.message || "An unexpected error occurred during sign-up.");
       console.error("Unexpected sign-up error:", error);
@@ -93,7 +92,7 @@ export function SignUpForm({ onSwitchToSignIn }: SignUpFormProps) {
             control={form.control}
             name="first_name"
             render={({ field }) => (
-              <FormItem className="space-y-2"> {/* Added space-y-2 for better internal spacing */}
+              <FormItem className="space-y-2">
                 <FormLabel className="text-label-large">First Name</FormLabel>
                 <FormControl>
                   <Input placeholder="John" {...field} className="rounded-md" />
@@ -106,7 +105,7 @@ export function SignUpForm({ onSwitchToSignIn }: SignUpFormProps) {
             control={form.control}
             name="middle_name"
             render={({ field }) => (
-              <FormItem className="space-y-2"> {/* Added space-y-2 for better internal spacing */}
+              <FormItem className="space-y-2">
                 <FormLabel className="text-label-large">Middle Name (Optional)</FormLabel>
                 <FormControl>
                   <Input placeholder="Doe" {...field} className="rounded-md" value={field.value ?? ""} />
@@ -120,7 +119,7 @@ export function SignUpForm({ onSwitchToSignIn }: SignUpFormProps) {
           control={form.control}
           name="last_name"
           render={({ field }) => (
-            <FormItem className="space-y-2"> {/* Added space-y-2 for better internal spacing */}
+            <FormItem className="space-y-2">
               <FormLabel className="text-label-large">Last Name</FormLabel>
               <FormControl>
                 <Input placeholder="Smith" {...field} className="rounded-md" />
@@ -133,7 +132,7 @@ export function SignUpForm({ onSwitchToSignIn }: SignUpFormProps) {
           control={form.control}
           name="email"
           render={({ field }) => (
-            <FormItem className="space-y-2"> {/* Added space-y-2 for better internal spacing */}
+            <FormItem className="space-y-2">
               <FormLabel className="text-label-large">Email address</FormLabel>
               <FormControl>
                 <Input placeholder="you@example.com" {...field} className="rounded-md" />
@@ -146,7 +145,7 @@ export function SignUpForm({ onSwitchToSignIn }: SignUpFormProps) {
           control={form.control}
           name="password"
           render={({ field }) => (
-            <FormItem className="space-y-2"> {/* Added space-y-2 for better internal spacing */}
+            <FormItem className="space-y-2">
               <FormLabel className="text-label-large">Password</FormLabel>
               <FormControl>
                 <Input type="password" placeholder="••••••••" {...field} className="rounded-md" />
@@ -159,7 +158,7 @@ export function SignUpForm({ onSwitchToSignIn }: SignUpFormProps) {
           control={form.control}
           name="confirm_password"
           render={({ field }) => (
-            <FormItem className="space-y-2"> {/* Added space-y-2 for better internal spacing */}
+            <FormItem className="space-y-2">
               <FormLabel className="text-label-large">Confirm Password</FormLabel>
               <FormControl>
                 <Input type="password" placeholder="••••••••" {...field} className="rounded-md" />
@@ -175,7 +174,7 @@ export function SignUpForm({ onSwitchToSignIn }: SignUpFormProps) {
 
         <div className="text-center text-body-medium text-muted-foreground">
           Already have an account?{" "}
-          <Button variant="text" type="button" onClick={onSwitchToSignIn} className="p-0 h-auto text-primary">
+          <Button variant="link" type="button" onClick={onSwitchToSignIn} className="p-0 h-auto text-primary">
             Sign In
           </Button>
         </div>

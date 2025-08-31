@@ -177,7 +177,7 @@ export function CampaignPhaseFormDialog({
               )}
             />
             <DialogFooter>
-              <Button type="button" variant="outlined" onClick={onClose} className="rounded-md text-label-large">
+              <Button type="button" variant="outline" onClick={onClose} className="rounded-md text-label-large">
                 Cancel
               </Button>
               <Button type="submit" className="rounded-md text-label-large" disabled={form.formState.isSubmitting}>

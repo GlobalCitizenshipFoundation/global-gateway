@@ -39,7 +39,7 @@ export function ProfileBio({ profile, canModify, onProfileUpdated }: ProfileBioP
           </CardDescription>
         </div>
         {canModify && (
-          <Button variant="outlined" size="icon" className="rounded-md" onClick={() => setIsEditing(true)}>
+          <Button variant="outline" size="icon" className="rounded-md" onClick={() => setIsEditing(true)}>
             <Edit className="h-4 w-4" />
             <span className="sr-only">Edit Bio</span>
           </Button>
