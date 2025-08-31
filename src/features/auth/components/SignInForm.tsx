@@ -16,8 +16,8 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { authService } from "@/services/auth-service";
-import { useSession } from "@/context/SessionContextProvider";
+// import { authService } from "@/services/auth-service"; // Removed server-only authService
+import { useSession } from "@/context/SessionContextProvider"; // Use client-side supabase from context
 
 const signInFormSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address." }),

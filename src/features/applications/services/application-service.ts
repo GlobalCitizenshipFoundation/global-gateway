@@ -1,7 +1,7 @@
-"use client";
+"use server"; // Changed to server-only
 
-import { createClient } from "@/integrations/supabase/client";
-import { toast } from "sonner";
+import { createClient } from "@/integrations/supabase/server"; // Changed to server-side client
+import { toast } from "sonner"; // Keep toast for client-side calls, but remove from server-only functions
 import { Campaign } from "@/features/campaigns/services/campaign-service";
 import { BaseConfigurableItem } from "@/features/pathway-templates/services/pathway-template-service";
 
@@ -37,24 +37,29 @@ export interface ApplicationNote {
 }
 
 export const applicationService = {
-  supabase: createClient(),
+  // Supabase client is now created on demand for server-side operations
+  async getSupabase() {
+    return await createClient();
+  },
 
   async getApplications(): Promise<Application[] | null> {
-    const { data, error } = await this.supabase
+    const supabase = await this.getSupabase();
+    const { data, error } = await supabase
       .from("applications")
       .select("*, campaigns(*), profiles(first_name, last_name, avatar_url), current_campaign_phases(*)")
       .order("created_at", { ascending: false });
 
     if (error) {
       console.error("Error fetching applications:", error.message);
-      toast.error("Failed to load applications.");
+      // toast.error("Failed to load applications."); // Cannot use toast in server-only service
       return null;
     }
     return data as Application[];
   },
 
   async getApplicationById(id: string): Promise<Application | null> {
-    const { data, error } = await this.supabase
+    const supabase = await this.getSupabase();
+    const { data, error } = await supabase
       .from("applications")
       .select("*, campaigns(*), profiles(first_name, last_name, avatar_url), current_campaign_phases(*)")
       .eq("id", id)
@@ -62,7 +67,7 @@ export const applicationService = {
 
     if (error) {
       console.error(`Error fetching application ${id}:`, error.message);
-      toast.error(`Failed to load application ${id}.`);
+      // toast.error(`Failed to load application ${id}.`); // Cannot use toast in server-only service
       return null;
     }
     return data as Application;
@@ -75,7 +80,8 @@ export const applicationService = {
     initialStatus: Application['status'] = 'draft',
     initialScreeningStatus: Application['screening_status'] = 'Pending'
   ): Promise<Application | null> {
-    const { data, error } = await this.supabase
+    const supabase = await this.getSupabase();
+    const { data, error } = await supabase
       .from("applications")
       .insert([{
         campaign_id: campaignId,
@@ -89,10 +95,10 @@ export const applicationService = {
 
     if (error) {
       console.error("Error creating application:", error.message);
-      toast.error("Failed to create application.");
+      // toast.error("Failed to create application."); // Cannot use toast in server-only service
       return null;
     }
-    toast.success("Application created successfully!");
+    // toast.success("Application created successfully!"); // Cannot use toast in server-only service
     return data as Application;
   },
 
@@ -100,7 +106,8 @@ export const applicationService = {
     id: string,
     updates: Partial<Omit<Application, "id" | "applicant_id" | "campaign_id" | "created_at">>
   ): Promise<Application | null> {
-    const { data, error } = await this.supabase
+    const supabase = await this.getSupabase();
+    const { data, error } = await supabase
       .from("applications")
       .update({ ...updates, updated_at: new Date().toISOString() })
       .eq("id", id)
@@ -109,32 +116,34 @@ export const applicationService = {
 
     if (error) {
       console.error(`Error updating application ${id}:`, error.message);
-      toast.error("Failed to update application.");
+      // toast.error("Failed to update application."); // Cannot use toast in server-only service
       return null;
     }
-    toast.success("Application updated successfully!");
+    // toast.success("Application updated successfully!"); // Cannot use toast in server-only service
     return data as Application;
   },
 
   async deleteApplication(id: string): Promise<boolean> {
-    const { error } = await this.supabase
+    const supabase = await this.getSupabase();
+    const { error } = await supabase
       .from("applications")
       .delete()
       .eq("id", id);
 
     if (error) {
       console.error(`Error deleting application ${id}:`, error.message);
-      toast.error("Failed to delete application.");
+      // toast.error("Failed to delete application."); // Cannot use toast in server-only service
       return false;
     }
-    toast.success("Application deleted successfully!");
+    // toast.success("Application deleted successfully!"); // Cannot use toast in server-only service
     return true;
   },
 
   // --- Collaborative Notes Management ---
 
   async getApplicationNotes(applicationId: string): Promise<ApplicationNote[] | null> {
-    const { data, error } = await this.supabase
+    const supabase = await this.getSupabase();
+    const { data, error } = await supabase
       .from("application_notes")
       .select("*, profiles(first_name, last_name, avatar_url)")
       .eq("application_id", applicationId)
@@ -142,7 +151,7 @@ export const applicationService = {
 
     if (error) {
       console.error(`Error fetching notes for application ${applicationId}:`, error.message);
-      toast.error("Failed to load collaborative notes.");
+      // toast.error("Failed to load collaborative notes."); // Cannot use toast in server-only service
       return null;
     }
     return data as ApplicationNote[];
@@ -153,7 +162,8 @@ export const applicationService = {
     authorId: string,
     content: string
   ): Promise<ApplicationNote | null> {
-    const { data, error } = await this.supabase
+    const supabase = await this.getSupabase();
+    const { data, error } = await supabase
       .from("application_notes")
       .insert([{ application_id: applicationId, author_id: authorId, content }])
       .select("*, profiles(first_name, last_name, avatar_url)")
@@ -161,10 +171,10 @@ export const applicationService = {
 
     if (error) {
       console.error("Error creating application note:", error.message);
-      toast.error("Failed to add note.");
+      // toast.error("Failed to add note."); // Cannot use toast in server-only service
       return null;
     }
-    toast.success("Note added successfully!");
+    // toast.success("Note added successfully!"); // Cannot use toast in server-only service
     return data as ApplicationNote;
   },
 
@@ -172,7 +182,8 @@ export const applicationService = {
     noteId: string,
     updates: Partial<Omit<ApplicationNote, "id" | "application_id" | "author_id" | "created_at">>
   ): Promise<ApplicationNote | null> {
-    const { data, error } = await this.supabase
+    const supabase = await this.getSupabase();
+    const { data, error } = await supabase
       .from("application_notes")
       .update({ ...updates, updated_at: new Date().toISOString() })
       .eq("id", noteId)
@@ -181,25 +192,26 @@ export const applicationService = {
 
     if (error) {
       console.error(`Error updating note ${noteId}:`, error.message);
-      toast.error("Failed to update note.");
+      // toast.error("Failed to update note."); // Cannot use toast in server-only service
       return null;
     }
-    toast.success("Note updated successfully!");
+    // toast.success("Note updated successfully!"); // Cannot use toast in server-only service
     return data as ApplicationNote;
   },
 
   async deleteApplicationNote(noteId: string): Promise<boolean> {
-    const { error } = await this.supabase
+    const supabase = await this.getSupabase();
+    const { error } = await supabase
       .from("application_notes")
       .delete()
       .eq("id", noteId);
 
     if (error) {
       console.error(`Error deleting note ${noteId}:`, error.message);
-      toast.error("Failed to delete note.");
+      // toast.error("Failed to delete note."); // Cannot use toast in server-only service
       return false;
     }
-    toast.success("Note deleted successfully!");
+    // toast.success("Note deleted successfully!"); // Cannot use toast in server-only service
     return true;
   },
 };

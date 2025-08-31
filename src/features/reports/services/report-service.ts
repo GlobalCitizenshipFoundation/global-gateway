@@ -1,7 +1,7 @@
-"use client";
+"use server"; // Changed to server-only
 
-import { createClient } from "@/integrations/supabase/client";
-import { toast } from "sonner";
+import { createClient } from "@/integrations/supabase/server"; // Changed to server-side client
+import { toast } from "sonner"; // Keep toast for client-side calls, but remove from server-only functions
 
 export interface ApplicationOverviewReport {
   totalApplications: number;
@@ -14,32 +14,36 @@ export interface ApplicationOverviewReport {
 }
 
 export const reportService = {
-  supabase: createClient(),
+  // Supabase client is now created on demand for server-side operations
+  async getSupabase() {
+    return await createClient();
+  },
 
   async getApplicationOverviewReport(): Promise<ApplicationOverviewReport | null> {
     try {
+      const supabase = await this.getSupabase();
       // Fetch total applications
-      const { count: totalApplications, error: totalError } = await this.supabase
+      const { count: totalApplications, error: totalError } = await supabase
         .from("applications")
         .select("*", { count: 'exact', head: true });
       if (totalError) throw totalError;
 
       // Fetch applications by status
-      const { data: statusCounts, error: statusError } = await this.supabase
+      const { data: statusCounts, error: statusError } = await supabase
         .from("applications")
         .select("status, count")
         .order("status"); // Group by status and count
       if (statusError) throw statusError;
 
       // Fetch applications by screening_status
-      const { data: screeningStatusCounts, error: screeningStatusError } = await this.supabase
+      const { data: screeningStatusCounts, error: screeningStatusError } = await supabase
         .from("applications")
         .select("screening_status, count")
         .order("screening_status"); // Group by screening_status and count
       if (screeningStatusError) throw screeningStatusError;
 
       // Fetch applications by campaign_id and count them using Supabase aggregation syntax
-      const { data: campaignIdCounts, error: campaignIdError } = await this.supabase
+      const { data: campaignIdCounts, error: campaignIdError } = await supabase
         .from("applications")
         .select("campaign_id, count()") // Correct aggregation syntax
         .returns<{ campaign_id: string | null; count: number }[]>(); // Explicitly type the return
@@ -57,7 +61,7 @@ export const reportService = {
 
       if (uniqueCampaignIds.length > 0) {
         // Fetch campaign names for these IDs
-        const { data: campaignNames, error: campaignNamesError } = await this.supabase
+        const { data: campaignNames, error: campaignNamesError } = await supabase
           .from("campaigns")
           .select("id, name")
           .in("id", uniqueCampaignIds);
@@ -96,7 +100,7 @@ export const reportService = {
       };
     } catch (error: any) {
       console.error("Error fetching application overview report:", error.message);
-      toast.error("Failed to load application overview report.");
+      // toast.error("Failed to load application overview report."); // Cannot use toast in server-only service
       return null;
     }
   },

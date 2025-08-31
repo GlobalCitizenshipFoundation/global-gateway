@@ -1,13 +1,16 @@
-import 'server-only'; // This directive ensures this module is only ever bundled for the server
+"use server"; // Changed to server-only
 
 import { createClient } from "@/integrations/supabase/server";
 import { Profile } from "@/types/supabase";
 
 export const profileService = {
-  supabase: createClient(),
+  // Supabase client is now created on demand for server-side operations
+  async getSupabase() {
+    return await createClient();
+  },
 
   async getProfileById(userId: string): Promise<Profile | null> {
-    const supabase = await this.supabase;
+    const supabase = await this.getSupabase();
     const { data, error } = await supabase
       .from("profiles")
       .select("*, auth.users(email)")
@@ -32,7 +35,7 @@ export const profileService = {
     userId: string,
     updates: Partial<Omit<Profile, "id" | "created_at" | "email">>
   ): Promise<Profile | null> {
-    const supabase = await this.supabase;
+    const supabase = await this.getSupabase();
     const { data, error } = await supabase
       .from("profiles")
       .update({ ...updates, updated_at: new Date().toISOString() })

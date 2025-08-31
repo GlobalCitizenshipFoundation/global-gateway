@@ -1,7 +1,7 @@
-"use client";
+"use server"; // Changed to server-only
 
-import { createClient } from "@/integrations/supabase/client";
-import { toast } from "sonner";
+import { createClient } from "@/integrations/supabase/server"; // Changed to server-side client
+import { toast } from "sonner"; // Keep toast for client-side calls, but remove from server-only functions
 import { Campaign } from "@/features/campaigns/services/campaign-service";
 import { PathwayTemplate } from "@/features/pathway-templates/services/pathway-template-service";
 
@@ -29,24 +29,29 @@ export interface PackageItem {
 }
 
 export const packageService = {
-  supabase: createClient(),
+  // Supabase client is now created on demand for server-side operations
+  async getSupabase() {
+    return await createClient();
+  },
 
   async getPackages(): Promise<Package[] | null> {
-    const { data, error } = await this.supabase
+    const supabase = await this.getSupabase();
+    const { data, error } = await supabase
       .from("packages")
       .select("*")
       .order("created_at", { ascending: false });
 
     if (error) {
       console.error("Error fetching packages:", error.message);
-      toast.error("Failed to load packages.");
+      // toast.error("Failed to load packages."); // Cannot use toast in server-only service
       return null;
     }
     return data;
   },
 
   async getPackageById(id: string): Promise<Package | null> {
-    const { data, error } = await this.supabase
+    const supabase = await this.getSupabase();
+    const { data, error } = await supabase
       .from("packages")
       .select("*")
       .eq("id", id)
@@ -54,7 +59,7 @@ export const packageService = {
 
     if (error) {
       console.error(`Error fetching package ${id}:`, error.message);
-      toast.error(`Failed to load package ${id}.`);
+      // toast.error(`Failed to load package ${id}.`); // Cannot use toast in server-only service
       return null;
     }
     return data;
@@ -66,7 +71,8 @@ export const packageService = {
     is_public: boolean,
     creator_id: string
   ): Promise<Package | null> {
-    const { data, error } = await this.supabase
+    const supabase = await this.getSupabase();
+    const { data, error } = await supabase
       .from("packages")
       .insert([{ name, description, is_public, creator_id }])
       .select()
@@ -74,10 +80,10 @@ export const packageService = {
 
     if (error) {
       console.error("Error creating package:", error.message);
-      toast.error("Failed to create package.");
+      // toast.error("Failed to create package."); // Cannot use toast in server-only service
       return null;
     }
-    toast.success("Package created successfully!");
+    // toast.success("Package created successfully!"); // Cannot use toast in server-only service
     return data;
   },
 
@@ -85,7 +91,8 @@ export const packageService = {
     id: string,
     updates: Partial<Omit<Package, "id" | "creator_id" | "created_at">>
   ): Promise<Package | null> {
-    const { data, error } = await this.supabase
+    const supabase = await this.getSupabase();
+    const { data, error } = await supabase
       .from("packages")
       .update({ ...updates, updated_at: new Date().toISOString() })
       .eq("id", id)
@@ -94,32 +101,34 @@ export const packageService = {
 
     if (error) {
       console.error(`Error updating package ${id}:`, error.message);
-      toast.error("Failed to update package.");
+      // toast.error("Failed to update package."); // Cannot use toast in server-only service
       return null;
     }
-    toast.success("Package updated successfully!");
+    // toast.success("Package updated successfully!"); // Cannot use toast in server-only service
     return data;
   },
 
   async deletePackage(id: string): Promise<boolean> {
-    const { error } = await this.supabase
+    const supabase = await this.getSupabase();
+    const { error } = await supabase
       .from("packages")
       .delete()
       .eq("id", id);
 
     if (error) {
       console.error(`Error deleting package ${id}:`, error.message);
-      toast.error("Failed to delete package.");
+      // toast.error("Failed to delete package."); // Cannot use toast in server-only service
       return false;
     }
-    toast.success("Package deleted successfully!");
+    // toast.success("Package deleted successfully!"); // Cannot use toast in server-only service
     return true;
   },
 
   // --- Package Item Management ---
 
   async getPackageItemsByPackageId(packageId: string): Promise<PackageItem[] | null> {
-    const { data, error } = await this.supabase
+    const supabase = await this.getSupabase();
+    const { data, error } = await supabase
       .from("package_items")
       .select("*, campaigns(*), pathway_templates(*)") // Join with campaigns and pathway_templates
       .eq("package_id", packageId)
@@ -127,7 +136,7 @@ export const packageService = {
 
     if (error) {
       console.error(`Error fetching package items for package ${packageId}:`, error.message);
-      toast.error("Failed to load package items.");
+      // toast.error("Failed to load package items."); // Cannot use toast in server-only service
       return null;
     }
     return data as PackageItem[];
@@ -139,7 +148,8 @@ export const packageService = {
     itemId: string,
     orderIndex: number
   ): Promise<PackageItem | null> {
-    const { data, error } = await this.supabase
+    const supabase = await this.getSupabase();
+    const { data, error } = await supabase
       .from("package_items")
       .insert([{ package_id: packageId, item_type: itemType, item_id: itemId, order_index: orderIndex }])
       .select("*, campaigns(*), pathway_templates(*)")
@@ -147,10 +157,10 @@ export const packageService = {
 
     if (error) {
       console.error("Error adding package item:", error.message);
-      toast.error("Failed to add package item.");
+      // toast.error("Failed to add package item."); // Cannot use toast in server-only service
       return null;
     }
-    toast.success("Package item added successfully!");
+    // toast.success("Package item added successfully!"); // Cannot use toast in server-only service
     return data as PackageItem;
   },
 
@@ -158,7 +168,8 @@ export const packageService = {
     id: string,
     orderIndex: number
   ): Promise<PackageItem | null> {
-    const { data, error } = await this.supabase
+    const supabase = await this.getSupabase();
+    const { data, error } = await supabase
       .from("package_items")
       .update({ order_index: orderIndex, updated_at: new Date().toISOString() })
       .eq("id", id)
@@ -167,24 +178,25 @@ export const packageService = {
 
     if (error) {
       console.error(`Error updating package item order ${id}:`, error.message);
-      toast.error("Failed to update package item order.");
+      // toast.error("Failed to update package item order."); // Cannot use toast in server-only service
       return null;
     }
     return data as PackageItem;
   },
 
   async removePackageItem(id: string): Promise<boolean> {
-    const { error } = await this.supabase
+    const supabase = await this.getSupabase();
+    const { error } = await supabase
       .from("package_items")
       .delete()
       .eq("id", id);
 
     if (error) {
       console.error(`Error removing package item ${id}:`, error.message);
-      toast.error("Failed to remove package item.");
+      // toast.error("Failed to remove package item."); // Cannot use toast in server-only service
       return false;
     }
-    toast.success("Package item removed successfully!");
+    // toast.success("Package item removed successfully!"); // Cannot use toast in server-only service
     return true;
   },
 };

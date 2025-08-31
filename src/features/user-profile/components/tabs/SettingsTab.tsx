@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/form";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Settings, KeyRound } from "lucide-react";
-import { useSession } from "@/context/SessionContextProvider";
+import { useSession } from "@/context/SessionContextProvider"; // Use client-side supabase from context
 
 const passwordChangeSchema = z.object({
   password: z.string().min(6, { message: "New password must be at least 6 characters." }),
@@ -29,7 +29,7 @@ const passwordChangeSchema = z.object({
 });
 
 export function SettingsTab() {
-  const { supabase } = useSession();
+  const { supabase } = useSession(); // Get supabase client from context
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<z.infer<typeof passwordChangeSchema>>({

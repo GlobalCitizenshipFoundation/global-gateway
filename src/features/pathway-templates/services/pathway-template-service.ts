@@ -1,6 +1,6 @@
-"use client";
+"use server"; // Changed to server-only
 
-import { createClient } from "@/integrations/supabase/client";
+import { createClient } from "@/integrations/supabase/server"; // Changed to server-side client
 import { toast } from "sonner";
 
 // New base interface for configurable items (phases)
@@ -31,24 +31,29 @@ export interface Phase extends BaseConfigurableItem {
 }
 
 export const pathwayTemplateService = {
-  supabase: createClient(),
+  // Supabase client is now created on demand for server-side operations
+  async getSupabase() {
+    return await createClient();
+  },
 
   async getPathwayTemplates(): Promise<PathwayTemplate[] | null> {
-    const { data, error } = await this.supabase
+    const supabase = await this.getSupabase();
+    const { data, error } = await supabase
       .from("pathway_templates")
       .select("*")
       .order("created_at", { ascending: false });
 
     if (error) {
       console.error("Error fetching pathway templates:", error.message);
-      toast.error("Failed to load pathway templates.");
+      // toast.error("Failed to load pathway templates."); // Cannot use toast in server-only service
       return null;
     }
     return data;
   },
 
   async getPathwayTemplateById(id: string): Promise<PathwayTemplate | null> {
-    const { data, error } = await this.supabase
+    const supabase = await this.getSupabase();
+    const { data, error } = await supabase
       .from("pathway_templates")
       .select("*")
       .eq("id", id)
@@ -56,7 +61,7 @@ export const pathwayTemplateService = {
 
     if (error) {
       console.error(`Error fetching pathway template ${id}:`, error.message);
-      toast.error(`Failed to load pathway template ${id}.`);
+      // toast.error(`Failed to load pathway template ${id}.`); // Cannot use toast in server-only service
       return null;
     }
     return data;
@@ -68,7 +73,8 @@ export const pathwayTemplateService = {
     is_private: boolean, // Added is_private parameter
     creator_id: string
   ): Promise<PathwayTemplate | null> {
-    const { data, error } = await this.supabase
+    const supabase = await this.getSupabase();
+    const { data, error } = await supabase
       .from("pathway_templates")
       .insert([{ name, description, is_private, creator_id }]) // Included is_private
       .select()
@@ -76,10 +82,10 @@ export const pathwayTemplateService = {
 
     if (error) {
       console.error("Error creating pathway template:", error.message);
-      toast.error("Failed to create pathway template.");
+      // toast.error("Failed to create pathway template."); // Cannot use toast in server-only service
       return null;
     }
-    toast.success("Pathway template created successfully!");
+    // toast.success("Pathway template created successfully!"); // Cannot use toast in server-only service
     return data;
   },
 
@@ -87,7 +93,8 @@ export const pathwayTemplateService = {
     id: string,
     updates: Partial<Omit<PathwayTemplate, "id" | "creator_id" | "created_at">>
   ): Promise<PathwayTemplate | null> {
-    const { data, error } = await this.supabase
+    const supabase = await this.getSupabase();
+    const { data, error } = await supabase
       .from("pathway_templates")
       .update({ ...updates, updated_at: new Date().toISOString() })
       .eq("id", id)
@@ -96,32 +103,34 @@ export const pathwayTemplateService = {
 
     if (error) {
       console.error(`Error updating pathway template ${id}:`, error.message);
-      toast.error("Failed to update pathway template.");
+      // toast.error("Failed to update pathway template."); // Cannot use toast in server-only service
       return null;
     }
-    toast.success("Pathway template updated successfully!");
+    // toast.success("Pathway template updated successfully!"); // Cannot use toast in server-only service
     return data;
   },
 
   async deletePathwayTemplate(id: string): Promise<boolean> {
-    const { error } = await this.supabase
+    const supabase = await this.getSupabase();
+    const { error } = await supabase
       .from("pathway_templates")
       .delete()
       .eq("id", id);
 
     if (error) {
       console.error(`Error deleting pathway template ${id}:`, error.message);
-      toast.error("Failed to delete pathway template.");
+      // toast.error("Failed to delete pathway template."); // Cannot use toast in server-only service
       return false;
     }
-    toast.success("Pathway template deleted successfully!");
+    // toast.success("Pathway template deleted successfully!"); // Cannot use toast in server-only service
     return true;
   },
 
   async getPhasesByPathwayTemplateId(
     pathwayTemplateId: string
   ): Promise<Phase[] | null> {
-    const { data, error } = await this.supabase
+    const supabase = await this.getSupabase();
+    const { data, error } = await supabase
       .from("phases")
       .select("*")
       .eq("pathway_template_id", pathwayTemplateId)
@@ -132,7 +141,7 @@ export const pathwayTemplateService = {
         `Error fetching phases for template ${pathwayTemplateId}:`,
         error.message
       );
-      toast.error("Failed to load phases.");
+      // toast.error("Failed to load phases."); // Cannot use toast in server-only service
       return null;
     }
     return data;
@@ -146,7 +155,8 @@ export const pathwayTemplateService = {
     description: string | null = null,
     config: Record<string, any> = {}
   ): Promise<Phase | null> {
-    const { data, error } = await this.supabase
+    const supabase = await this.getSupabase();
+    const { data, error } = await supabase
       .from("phases")
       .insert([
         { pathway_template_id: pathwayTemplateId, name, type, order_index, description, config },
@@ -156,10 +166,10 @@ export const pathwayTemplateService = {
 
     if (error) {
       console.error("Error creating phase:", error.message);
-      toast.error("Failed to create phase.");
+      // toast.error("Failed to create phase."); // Cannot use toast in server-only service
       return null;
     }
-    toast.success("Phase created successfully!");
+    // toast.success("Phase created successfully!"); // Cannot use toast in server-only service
     return data;
   },
 
@@ -167,7 +177,8 @@ export const pathwayTemplateService = {
     id: string,
     updates: Partial<Omit<Phase, "id" | "pathway_template_id" | "created_at">>
   ): Promise<Phase | null> {
-    const { data, error } = await this.supabase
+    const supabase = await this.getSupabase();
+    const { data, error } = await supabase
       .from("phases")
       .update({ ...updates, updated_at: new Date().toISOString() })
       .eq("id", id)
@@ -176,22 +187,23 @@ export const pathwayTemplateService = {
 
     if (error) {
       console.error(`Error updating phase ${id}:`, error.message);
-      toast.error("Failed to update phase.");
+      // toast.error("Failed to update phase."); // Cannot use toast in server-only service
       return null;
     }
-    toast.success("Phase updated successfully!");
+    // toast.success("Phase updated successfully!"); // Cannot use toast in server-only service
     return data;
   },
 
   async deletePhase(id: string): Promise<boolean> {
-    const { error } = await this.supabase.from("phases").delete().eq("id", id);
+    const supabase = await this.getSupabase();
+    const { error } = await supabase.from("phases").delete().eq("id", id);
 
     if (error) {
       console.error(`Error deleting phase ${id}:`, error.message);
-      toast.error("Failed to delete phase.");
+      // toast.error("Failed to delete phase."); // Cannot use toast in server-only service
       return false;
     }
-    toast.success("Phase deleted successfully!");
+    // toast.success("Phase deleted successfully!"); // Cannot use toast in server-only service
     return true;
   },
 
@@ -200,7 +212,8 @@ export const pathwayTemplateService = {
     newName: string,
     creatorId: string
   ): Promise<PathwayTemplate | null> {
-    const { data: originalTemplate, error: templateError } = await this.supabase
+    const supabase = await this.getSupabase();
+    const { data: originalTemplate, error: templateError } = await supabase
       .from("pathway_templates")
       .select("*")
       .eq("id", templateId)
@@ -208,11 +221,11 @@ export const pathwayTemplateService = {
 
     if (templateError || !originalTemplate) {
       console.error("Error fetching original template for cloning:", templateError?.message);
-      toast.error("Failed to find original template for cloning.");
+      // toast.error("Failed to find original template for cloning."); // Cannot use toast in server-only service
       return null;
     }
 
-    const { data: originalPhases, error: phasesError } = await this.supabase
+    const { data: originalPhases, error: phasesError } = await supabase
       .from("phases")
       .select("*")
       .eq("pathway_template_id", templateId)
@@ -220,12 +233,12 @@ export const pathwayTemplateService = {
 
     if (phasesError) {
       console.error("Error fetching original phases for cloning:", phasesError.message);
-      toast.error("Failed to find original phases for cloning.");
+      // toast.error("Failed to find original phases for cloning."); // Cannot use toast in server-only service
       return null;
     }
 
     // Create the new template
-    const { data: newTemplate, error: newTemplateError } = await this.supabase
+    const { data: newTemplate, error: newTemplateError } = await supabase
       .from("pathway_templates")
       .insert([
         {
@@ -240,7 +253,7 @@ export const pathwayTemplateService = {
 
     if (newTemplateError || !newTemplate) {
       console.error("Error creating new template during cloning:", newTemplateError?.message);
-      toast.error("Failed to create new template during cloning.");
+      // toast.error("Failed to create new template during cloning."); // Cannot use toast in server-only service
       return null;
     }
 
@@ -255,20 +268,20 @@ export const pathwayTemplateService = {
     }));
 
     if (newPhasesData.length > 0) {
-      const { error: newPhasesError } = await this.supabase
+      const { error: newPhasesError } = await supabase
         .from("phases")
         .insert(newPhasesData);
 
       if (newPhasesError) {
         console.error("Error creating new phases during cloning:", newPhasesError.message);
-        toast.error("Failed to create phases for the cloned template.");
+        // toast.error("Failed to create phases for the cloned template."); // Cannot use toast in server-only service
         // Optionally, delete the newly created template if phase creation fails
-        await this.supabase.from("pathway_templates").delete().eq("id", newTemplate.id);
+        await supabase.from("pathway_templates").delete().eq("id", newTemplate.id);
         return null;
       }
     }
 
-    toast.success(`Pathway template "${newName}" cloned successfully!`);
+    // toast.success(`Pathway template "${newName}" cloned successfully!`); // Cannot use toast in server-only service
     return newTemplate;
   },
 };

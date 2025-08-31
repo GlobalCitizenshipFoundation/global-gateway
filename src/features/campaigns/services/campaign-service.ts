@@ -1,7 +1,7 @@
-"use client";
+"use server"; // Changed to server-only
 
-import { createClient } from "@/integrations/supabase/client";
-import { toast } from "sonner";
+import { createClient } from "@/integrations/supabase/server"; // Changed to server-side client
+import { toast } from "sonner"; // Keep toast for client-side calls, but remove from server-only functions
 import { PathwayTemplate, BaseConfigurableItem, Phase as TemplatePhase } from "@/features/pathway-templates/services/pathway-template-service";
 
 // New interface for Program
@@ -42,24 +42,29 @@ export interface CampaignPhase extends BaseConfigurableItem {
 }
 
 export const campaignService = {
-  supabase: createClient(),
+  // Supabase client is now created on demand for server-side operations
+  async getSupabase() {
+    return await createClient();
+  },
 
   async getCampaigns(): Promise<Campaign[] | null> {
-    const { data, error } = await this.supabase
+    const supabase = await this.getSupabase();
+    const { data, error } = await supabase
       .from("campaigns")
       .select("*, pathway_templates(id, name, description, is_private), programs(id, name, creator_id)") // Select related template and program data
       .order("created_at", { ascending: false });
 
     if (error) {
       console.error("Error fetching campaigns:", error.message);
-      toast.error("Failed to load campaigns.");
+      // toast.error("Failed to load campaigns."); // Cannot use toast in server-only service
       return null;
     }
     return data as Campaign[];
   },
 
   async getCampaignById(id: string): Promise<Campaign | null> {
-    const { data, error } = await this.supabase
+    const supabase = await this.getSupabase();
+    const { data, error } = await supabase
       .from("campaigns")
       .select("*, pathway_templates(id, name, description, is_private), programs(id, name, creator_id)")
       .eq("id", id)
@@ -67,7 +72,7 @@ export const campaignService = {
 
     if (error) {
       console.error(`Error fetching campaign ${id}:`, error.message);
-      toast.error(`Failed to load campaign ${id}.`);
+      // toast.error(`Failed to load campaign ${id}.`); // Cannot use toast in server-only service
       return null;
     }
     return data as Campaign;
@@ -85,7 +90,8 @@ export const campaignService = {
     creator_id: string,
     program_id: string | null = null // Added program_id parameter
   ): Promise<Campaign | null> {
-    const { data, error } = await this.supabase
+    const supabase = await this.getSupabase();
+    const { data, error } = await supabase
       .from("campaigns")
       .insert([{ name, description, pathway_template_id, start_date, end_date, is_public, status, config, creator_id, program_id }]) // Included program_id
       .select("*, pathway_templates(id, name, description, is_private), programs(id, name, creator_id)")
@@ -93,10 +99,10 @@ export const campaignService = {
 
     if (error) {
       console.error("Error creating campaign:", error.message);
-      toast.error("Failed to create campaign.");
+      // toast.error("Failed to create campaign."); // Cannot use toast in server-only service
       return null;
     }
-    toast.success("Campaign created successfully!");
+    // toast.success("Campaign created successfully!"); // Cannot use toast in server-only service
     return data as Campaign;
   },
 
@@ -104,7 +110,8 @@ export const campaignService = {
     id: string,
     updates: Partial<Omit<Campaign, "id" | "creator_id" | "created_at">>
   ): Promise<Campaign | null> {
-    const { data, error } = await this.supabase
+    const supabase = await this.getSupabase();
+    const { data, error } = await supabase
       .from("campaigns")
       .update({ ...updates, updated_at: new Date().toISOString() })
       .eq("id", id)
@@ -113,32 +120,34 @@ export const campaignService = {
 
     if (error) {
       console.error(`Error updating campaign ${id}:`, error.message);
-      toast.error("Failed to update campaign.");
+      // toast.error("Failed to update campaign."); // Cannot use toast in server-only service
       return null;
     }
-    toast.success("Campaign updated successfully!");
+    // toast.success("Campaign updated successfully!"); // Cannot use toast in server-only service
     return data as Campaign;
   },
 
   async deleteCampaign(id: string): Promise<boolean> {
-    const { error } = await this.supabase
+    const supabase = await this.getSupabase();
+    const { error } = await supabase
       .from("campaigns")
       .delete()
       .eq("id", id);
 
     if (error) {
       console.error(`Error deleting campaign ${id}:`, error.message);
-      toast.error("Failed to delete campaign.");
+      // toast.error("Failed to delete campaign."); // Cannot use toast in server-only service
       return false;
     }
-    toast.success("Campaign deleted successfully!");
+    // toast.success("Campaign deleted successfully!"); // Cannot use toast in server-only service
     return true;
   },
 
   // --- Campaign Phase Management ---
 
   async getCampaignPhasesByCampaignId(campaignId: string): Promise<CampaignPhase[] | null> {
-    const { data, error } = await this.supabase
+    const supabase = await this.getSupabase();
+    const { data, error } = await supabase
       .from("campaign_phases")
       .select("*")
       .eq("campaign_id", campaignId)
@@ -146,7 +155,7 @@ export const campaignService = {
 
     if (error) {
       console.error(`Error fetching campaign phases for campaign ${campaignId}:`, error.message);
-      toast.error("Failed to load campaign phases.");
+      // toast.error("Failed to load campaign phases."); // Cannot use toast in server-only service
       return null;
     }
     return data;
@@ -161,7 +170,8 @@ export const campaignService = {
     config: Record<string, any> = {},
     original_phase_id: string | null = null
   ): Promise<CampaignPhase | null> {
-    const { data, error } = await this.supabase
+    const supabase = await this.getSupabase();
+    const { data, error } = await supabase
       .from("campaign_phases")
       .insert([
         { campaign_id: campaignId, original_phase_id, name, type, order_index, description, config },
@@ -171,10 +181,10 @@ export const campaignService = {
 
     if (error) {
       console.error("Error creating campaign phase:", error.message);
-      toast.error("Failed to create campaign phase.");
+      // toast.error("Failed to create campaign phase."); // Cannot use toast in server-only service
       return null;
     }
-    toast.success("Campaign phase created successfully!");
+    // toast.success("Campaign phase created successfully!"); // Cannot use toast in server-only service
     return data;
   },
 
@@ -182,7 +192,8 @@ export const campaignService = {
     id: string,
     updates: Partial<Omit<CampaignPhase, "id" | "campaign_id" | "created_at">>
   ): Promise<CampaignPhase | null> {
-    const { data, error } = await this.supabase
+    const supabase = await this.getSupabase();
+    const { data, error } = await supabase
       .from("campaign_phases")
       .update({ ...updates, updated_at: new Date().toISOString() })
       .eq("id", id)
@@ -191,25 +202,26 @@ export const campaignService = {
 
     if (error) {
       console.error(`Error updating campaign phase ${id}:`, error.message);
-      toast.error("Failed to update campaign phase.");
+      // toast.error("Failed to update campaign phase."); // Cannot use toast in server-only service
       return null;
     }
-    toast.success("Campaign phase updated successfully!");
+    // toast.success("Campaign phase updated successfully!"); // Cannot use toast in server-only service
     return data;
   },
 
   async deleteCampaignPhase(id: string): Promise<boolean> {
-    const { error } = await this.supabase
+    const supabase = await this.getSupabase();
+    const { error } = await supabase
       .from("campaign_phases")
       .delete()
       .eq("id", id);
 
     if (error) {
       console.error(`Error deleting campaign phase ${id}:`, error.message);
-      toast.error("Failed to delete campaign phase.");
+      // toast.error("Failed to delete campaign phase."); // Cannot use toast in server-only service
       return false;
     }
-    toast.success("Campaign phase deleted successfully!");
+    // toast.success("Campaign phase deleted successfully!"); // Cannot use toast in server-only service
     return true;
   },
 
@@ -217,8 +229,9 @@ export const campaignService = {
     campaignId: string,
     templateId: string
   ): Promise<CampaignPhase[] | null> {
+    const supabase = await this.getSupabase();
     // Fetch phases from the original pathway template
-    const { data: templatePhases, error: fetchError } = await this.supabase
+    const { data: templatePhases, error: fetchError } = await supabase
       .from("phases")
       .select("*")
       .eq("pathway_template_id", templateId)
@@ -245,7 +258,7 @@ export const campaignService = {
     }));
 
     // Insert all new campaign phases
-    const { data: newCampaignPhases, error: insertError } = await this.supabase
+    const { data: newCampaignPhases, error: insertError } = await supabase
       .from("campaign_phases")
       .insert(campaignPhasesToInsert)
       .select("*");

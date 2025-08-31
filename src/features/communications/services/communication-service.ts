@@ -1,7 +1,7 @@
-"use client";
+"use server"; // Changed to server-only
 
-import { createClient } from "@/integrations/supabase/client";
-import { toast } from "sonner";
+import { createClient } from "@/integrations/supabase/server"; // Changed to server-side client
+import { toast } from "sonner"; // Keep toast for client-side calls, but remove from server-only functions
 
 export interface CommunicationTemplate {
   id: string;
@@ -16,24 +16,29 @@ export interface CommunicationTemplate {
 }
 
 export const communicationService = {
-  supabase: createClient(),
+  // Supabase client is now created on demand for server-side operations
+  async getSupabase() {
+    return await createClient();
+  },
 
   async getCommunicationTemplates(): Promise<CommunicationTemplate[] | null> {
-    const { data, error } = await this.supabase
+    const supabase = await this.getSupabase();
+    const { data, error } = await supabase
       .from("communication_templates")
       .select("*")
       .order("created_at", { ascending: false });
 
     if (error) {
       console.error("Error fetching communication templates:", error.message);
-      toast.error("Failed to load communication templates.");
+      // toast.error("Failed to load communication templates."); // Cannot use toast in server-only service
       return null;
     }
     return data;
   },
 
   async getCommunicationTemplateById(id: string): Promise<CommunicationTemplate | null> {
-    const { data, error } = await this.supabase
+    const supabase = await this.getSupabase();
+    const { data, error } = await supabase
       .from("communication_templates")
       .select("*")
       .eq("id", id)
@@ -41,7 +46,7 @@ export const communicationService = {
 
     if (error) {
       console.error(`Error fetching communication template ${id}:`, error.message);
-      toast.error(`Failed to load communication template ${id}.`);
+      // toast.error(`Failed to load communication template ${id}.`); // Cannot use toast in server-only service
       return null;
     }
     return data;
@@ -55,7 +60,8 @@ export const communicationService = {
     is_public: boolean,
     creator_id: string
   ): Promise<CommunicationTemplate | null> {
-    const { data, error } = await this.supabase
+    const supabase = await this.getSupabase();
+    const { data, error } = await supabase
       .from("communication_templates")
       .insert([{ name, subject, body, type, is_public, creator_id }])
       .select()
@@ -63,10 +69,10 @@ export const communicationService = {
 
     if (error) {
       console.error("Error creating communication template:", error.message);
-      toast.error("Failed to create communication template.");
+      // toast.error("Failed to create communication template."); // Cannot use toast in server-only service
       return null;
     }
-    toast.success("Communication template created successfully!");
+    // toast.success("Communication template created successfully!"); // Cannot use toast in server-only service
     return data;
   },
 
@@ -74,7 +80,8 @@ export const communicationService = {
     id: string,
     updates: Partial<Omit<CommunicationTemplate, "id" | "creator_id" | "created_at">>
   ): Promise<CommunicationTemplate | null> {
-    const { data, error } = await this.supabase
+    const supabase = await this.getSupabase();
+    const { data, error } = await supabase
       .from("communication_templates")
       .update({ ...updates, updated_at: new Date().toISOString() })
       .eq("id", id)
@@ -83,25 +90,26 @@ export const communicationService = {
 
     if (error) {
       console.error(`Error updating communication template ${id}:`, error.message);
-      toast.error("Failed to update communication template.");
+      // toast.error("Failed to update communication template."); // Cannot use toast in server-only service
       return null;
     }
-    toast.success("Communication template updated successfully!");
+    // toast.success("Communication template updated successfully!"); // Cannot use toast in server-only service
     return data;
   },
 
   async deleteCommunicationTemplate(id: string): Promise<boolean> {
-    const { error } = await this.supabase
+    const supabase = await this.getSupabase();
+    const { error } = await supabase
       .from("communication_templates")
       .delete()
       .eq("id", id);
 
     if (error) {
       console.error(`Error deleting communication template ${id}:`, error.message);
-      toast.error("Failed to delete communication template.");
+      // toast.error("Failed to delete communication template."); // Cannot use toast in server-only service
       return false;
     }
-    toast.success("Communication template deleted successfully!");
+    // toast.success("Communication template deleted successfully!"); // Cannot use toast in server-only service
     return true;
   },
 };

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Award, LogOut, Settings, UserCircle2, Menu } from "lucide-react"; // Import Menu icon
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { useSession } from "@/context/SessionContextProvider";
+import { useSession } from "@/context/SessionContextProvider"; // Use client-side supabase from context
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -15,21 +15,26 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { authService } from "@/services/auth-service";
+// import { authService } from "@/services/auth-service"; // Removed server-only authService
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useLayout } from "@/context/LayoutContext"; // Import useLayout
 import { useIsMobile } from "@/hooks/use-mobile"; // Import useIsMobile
 
 export function Header() {
-  const { session, user, isLoading } = useSession();
+  const { session, user, isLoading, supabase } = useSession(); // Get supabase client from context
   const { toggleSidebar } = useLayout(); // Get toggleSidebar from LayoutContext
   const isMobile = useIsMobile(); // Determine if on mobile
   const router = useRouter();
 
   const handleSignOut = async () => {
     try {
-      await authService.signOut();
+      const { error } = await supabase.auth.signOut(); // Use client-side supabase for signOut
+      if (error) {
+        console.error("Error signing out:", error.message);
+        toast.error("Failed to sign out.");
+        return;
+      }
       toast.success("You have been signed out.");
       router.push("/login");
     } catch (error) {
