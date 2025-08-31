@@ -405,12 +405,13 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
       const formData = new FormData();
       formData.append("name", values.name);
       formData.append("type", values.type);
-      formData.append("description", "");
+      formData.append("description", ""); // Empty string for description is fine for TEXT column
       formData.append("order_index", phases.length.toString());
-      formData.append("phase_start_date", "");
-      formData.append("phase_end_date", "");
-      formData.append("applicant_instructions", "");
-      formData.append("manager_instructions", "");
+      // Pass null for optional date/text fields if they are empty
+      formData.append("phase_start_date", ""); // Will be handled as null in action if empty
+      formData.append("phase_end_date", ""); // Will be handled as null in action if empty
+      formData.append("applicant_instructions", ""); // Will be handled as null in action if empty
+      formData.append("manager_instructions", ""); // Will be handled as null in action if empty
       formData.append("is_visible_to_applicants", "on");
 
       const result = await createPhaseAction(templateId, formData);

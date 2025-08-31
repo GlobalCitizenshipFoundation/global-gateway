@@ -30,7 +30,7 @@ import { Switch } from "@/components/ui/switch"; // Import Switch
 const phaseFormSchema = z.object({
   name: z.string().min(1, { message: "Phase name is required." }).max(100, { message: "Name cannot exceed 100 characters." }),
   type: z.string().min(1, { message: "Phase type is required." }),
-  description: z.string().max(500, { message: "Description cannot exceed 500 characters." }).nullable(),
+  description: z.string().max(500, { message: "Description cannot exceed 500 characters." }).nullable().optional(),
   phase_start_date: z.date().nullable().optional(), // New field
   phase_end_date: z.date().nullable().optional(), // New field
   applicant_instructions: z.string().max(5000, { message: "Applicant instructions cannot exceed 5000 characters." }).nullable().optional(), // New field
@@ -94,6 +94,7 @@ export function PhaseDetailsForm({
       formData.append("name", values.name);
       formData.append("type", values.type);
       formData.append("description", values.description || "");
+      // Pass null for optional date/text fields if they are empty
       formData.append("phase_start_date", values.phase_start_date ? values.phase_start_date.toISOString() : "");
       formData.append("phase_end_date", values.phase_end_date ? values.phase_end_date.toISOString() : "");
       formData.append("applicant_instructions", values.applicant_instructions || "");

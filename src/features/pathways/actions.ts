@@ -127,9 +127,9 @@ export async function createPathwayTemplateAction(formData: FormData): Promise<P
   const name = formData.get("name") as string;
   const description = formData.get("description") as string | null;
   const is_private = formData.get("is_private") === "on";
-  const application_open_date = formData.get("application_open_date") as string || null;
-  const participation_deadline = formData.get("participation_deadline") as string || null;
-  const general_instructions = formData.get("general_instructions") as string || null;
+  const application_open_date = (formData.get("application_open_date") as string) || null;
+  const participation_deadline = (formData.get("participation_deadline") as string) || null;
+  const general_instructions = (formData.get("general_instructions") as string) || null;
   const is_visible_to_applicants = formData.get("is_visible_to_applicants") === "on";
 
 
@@ -173,9 +173,9 @@ export async function updatePathwayTemplateAction(id: string, formData: FormData
     const name = formData.get("name") as string;
     const description = formData.get("description") as string | null;
     const is_private = formData.get("is_private") === "on";
-    const application_open_date = formData.get("application_open_date") as string || null;
-    const participation_deadline = formData.get("participation_deadline") as string || null;
-    const general_instructions = formData.get("general_instructions") as string || null;
+    const application_open_date = (formData.get("application_open_date") as string) || null;
+    const participation_deadline = (formData.get("participation_deadline") as string) || null;
+    const general_instructions = (formData.get("general_instructions") as string) || null;
     const is_visible_to_applicants = formData.get("is_visible_to_applicants") === "on";
 
 
@@ -360,12 +360,12 @@ export async function createPhaseAction(pathwayTemplateId: string, formData: For
 
     const name = formData.get("name") as string;
     const type = formData.get("type") as string;
-    const description = formData.get("description") as string | null;
+    const description = (formData.get("description") as string) || null;
     const order_index = parseInt(formData.get("order_index") as string);
-    const phase_start_date = formData.get("phase_start_date") as string || null;
-    const phase_end_date = formData.get("phase_end_date") as string || null;
-    const applicant_instructions = formData.get("applicant_instructions") as string || null;
-    const manager_instructions = formData.get("manager_instructions") as string || null;
+    const phase_start_date = (formData.get("phase_start_date") as string) || null;
+    const phase_end_date = (formData.get("phase_end_date") as string) || null;
+    const applicant_instructions = (formData.get("applicant_instructions") as string) || null;
+    const manager_instructions = (formData.get("manager_instructions") as string) || null;
     const is_visible_to_applicants = formData.get("is_visible_to_applicants") === "on";
 
 
@@ -416,11 +416,11 @@ export async function updatePhaseAction(phaseId: string, pathwayTemplateId: stri
 
     const name = formData.get("name") as string;
     const type = formData.get("type") as string;
-    const description = formData.get("description") as string | null;
-    const phase_start_date = formData.get("phase_start_date") as string || null;
-    const phase_end_date = formData.get("phase_end_date") as string || null;
-    const applicant_instructions = formData.get("applicant_instructions") as string || null;
-    const manager_instructions = formData.get("manager_instructions") as string || null;
+    const description = (formData.get("description") as string) || null;
+    const phase_start_date = (formData.get("phase_start_date") as string) || null;
+    const phase_end_date = (formData.get("phase_end_date") as string) || null;
+    const applicant_instructions = (formData.get("applicant_instructions") as string) || null;
+    const manager_instructions = (formData.get("manager_instructions") as string) || null;
     const is_visible_to_applicants = formData.get("is_visible_to_applicants") === "on";
 
 
@@ -501,8 +501,8 @@ export async function updatePhaseBranchingAction(phaseId: string, pathwayTemplat
       throw new Error("TemplateNotFound");
     }
 
-    const next_phase_id_on_success = formData.get("next_phase_id_on_success") as string | null;
-    const next_phase_id_on_failure = formData.get("next_phase_id_on_failure") as string | null;
+    const next_phase_id_on_success = (formData.get("next_phase_id_on_success") as string) || null;
+    const next_phase_id_on_failure = (formData.get("next_phase_id_on_failure") as string) || null;
 
     // Basic validation: Ensure selected phases exist within the same template
     const allPhases = await getPhasesByPathwayTemplateId(pathwayTemplateId);
@@ -820,10 +820,10 @@ export async function createPhaseTaskAction(phaseId: string, pathwayTemplateId: 
     }
 
     const name = formData.get("name") as string;
-    const description = formData.get("description") as string | null;
-    const assigned_to_role = formData.get("assigned_to_role") as string | null;
-    const assigned_to_user_id = formData.get("assigned_to_user_id") as string | null;
-    const due_date_str = formData.get("due_date") as string | null;
+    const description = (formData.get("description") as string) || null;
+    const assigned_to_role = (formData.get("assigned_to_role") as string) || null;
+    const assigned_to_user_id = (formData.get("assigned_to_user_id") as string) || null;
+    const due_date_str = (formData.get("due_date") as string) || null;
     const order_index = parseInt(formData.get("order_index") as string);
 
     if (!name || isNaN(order_index)) {
@@ -863,12 +863,12 @@ export async function updatePhaseTaskAction(taskId: string, phaseId: string, pat
     }
 
     const updates: Partial<PhaseTask> = {};
-    const name = formData.get("name") as string | undefined;
-    const description = formData.get("description") as string | null | undefined;
-    const assigned_to_role = formData.get("assigned_to_role") as string | null | undefined;
-    const assigned_to_user_id = formData.get("assigned_to_user_id") as string | null | undefined;
-    const due_date_str = formData.get("due_date") as string | null | undefined;
-    const status = formData.get("status") as PhaseTask['status'] | undefined;
+    const name = (formData.get("name") as string) || undefined;
+    const description = (formData.get("description") as string) || null;
+    const assigned_to_role = (formData.get("assigned_to_role") as string) || null;
+    const assigned_to_user_id = (formData.get("assigned_to_user_id") as string) || null;
+    const due_date_str = (formData.get("due_date") as string) || null;
+    const status = (formData.get("status") as PhaseTask['status']) || undefined;
 
     // Only allow status update by assigned user, creator, or admin
     if (status !== undefined) {
