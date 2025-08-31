@@ -77,32 +77,37 @@ export function PhaseBuilderCard({ phase, index, onDelete, onPhaseUpdated, canMo
             <div {...provided.dragHandleProps} className="cursor-grab p-2 -ml-2 mr-2 text-muted-foreground hover:text-foreground transition-colors">
               <GripVertical className="h-5 w-5" />
             </div>
-            <div className="flex-shrink-0 mr-4 text-primary">
-              {getPhaseIcon(phase.type)}
-            </div>
-            <CardHeader className="flex-grow p-0">
-              <CardTitle className="text-title-medium text-foreground flex items-center gap-2">
-                {phase.name}
-                <span className="text-body-small text-muted-foreground font-normal">({phase.type})</span>
-                {isConfigIncomplete && (
-                  <Badge variant="outline" className="ml-2 bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">
-                    <Info className="h-3 w-3 mr-1" /> Config Incomplete
-                  </Badge>
+            <div 
+              className="flex-grow flex items-center cursor-pointer" 
+              onClick={() => onToggleExpand(phase.id)} // Toggle expand on header click
+            >
+              <div className="flex-shrink-0 mr-4 text-primary">
+                {getPhaseIcon(phase.type)}
+              </div>
+              <CardHeader className="flex-grow p-0">
+                <CardTitle className="text-title-medium text-foreground flex items-center gap-2">
+                  {phase.name}
+                  <span className="text-body-small text-muted-foreground font-normal">({phase.type})</span>
+                  {isConfigIncomplete && (
+                    <Badge variant="outline" className="ml-2 bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">
+                      <Info className="h-3 w-3 mr-1" /> Config Incomplete
+                    </Badge>
+                  )}
+                </CardTitle>
+                {phase.description && (
+                  <CardDescription className="text-body-small text-muted-foreground">
+                    {phase.description}
+                  </CardDescription>
                 )}
-              </CardTitle>
-              {phase.description && (
-                <CardDescription className="text-body-small text-muted-foreground">
-                  {phase.description}
-                </CardDescription>
-              )}
-              {(phase.phase_start_date || phase.phase_end_date) && (
-                <p className="text-body-small text-muted-foreground flex items-center gap-1 mt-1">
-                  <CalendarDays className="h-4 w-4" />
-                  {phase.phase_start_date ? format(new Date(phase.phase_start_date), "PPP") : "N/A"} -{" "}
-                  {phase.phase_end_date ? format(new Date(phase.phase_end_date), "PPP") : "N/A"}
-                </p>
-              )}
-            </CardHeader>
+                {(phase.phase_start_date || phase.phase_end_date) && (
+                  <p className="text-body-small text-muted-foreground flex items-center gap-1 mt-1">
+                    <CalendarDays className="h-4 w-4" />
+                    {phase.phase_start_date ? format(new Date(phase.phase_start_date), "PPP") : "N/A"} -{" "}
+                    {phase.phase_end_date ? format(new Date(phase.phase_end_date), "PPP") : "N/A"}
+                  </p>
+                )}
+              </CardHeader>
+            </div>
             <CardContent className="flex-shrink-0 flex items-center space-x-2 p-0 pl-4">
               {canModify && (
                 <>
@@ -144,7 +149,7 @@ export function PhaseBuilderCard({ phase, index, onDelete, onPhaseUpdated, canMo
           <div
             className={cn(
               "overflow-hidden transition-max-height duration-300 ease-in-out",
-              isExpanded ? "max-h-[1200px] overflow-y-auto p-4 pt-0" : "max-h-0 p-0" // Increased max-h
+              isExpanded ? "max-h-screen-content overflow-y-auto p-4 pt-0" : "max-h-0 p-0" 
             )}
           >
             {isExpanded && (
@@ -189,6 +194,17 @@ export function PhaseBuilderCard({ phase, index, onDelete, onPhaseUpdated, canMo
                     />
                   </>
                 )}
+                
+                {/* Collapse button at the end */}
+                <div className="flex justify-center mt-8">
+                  <Button 
+                    variant="outlined" 
+                    className="rounded-full px-6 py-3 text-label-large" 
+                    onClick={() => onToggleExpand(phase.id)}
+                  >
+                    <ChevronUp className="mr-2 h-5 w-5" /> Collapse Phase
+                  </Button>
+                </div>
               </div>
             )}
           </div>

@@ -217,316 +217,326 @@ export function PhaseTaskManagementPanel({ phaseId, pathwayTemplateId, canModify
 
   const assignedRoleOptions = [
     { value: "applicant", label: "Applicant" },
-    { value: "reviewer", label: "Reviewer<dyad-problem-report summary="210 problems">
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="241" column="6" code="17008">JSX element 'div' has no corresponding closing tag.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="363" column="8" code="17008">JSX element 'Dialog' has no corresponding closing tag.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="364" column="10" code="17008">JSX element 'DialogContent' has no corresponding closing tag.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="373" column="12" code="17008">JSX element 'Form' has no corresponding closing tag.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="374" column="14" code="17008">JSX element 'form' has no corresponding closing tag.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="378" column="25" code="2657">JSX expressions must have one parent element.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="509" column="9" code="1005">'}' expected.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="509" column="33" code="1003">Identifier expected.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="528" column="2" code="17008">JSX element 'dyad-write' has no corresponding closing tag.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="533" column="5" code="1005">'}' expected.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="548" column="1" code="1381">Unexpected token. Did you mean `{'}'}` or `&amp;rbrace;`?</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="551" column="5" code="1005">'}' expected.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="567" column="1" code="1381">Unexpected token. Did you mean `{'}'}` or `&amp;rbrace;`?</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="571" column="5" code="1005">'}' expected.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="576" column="24" code="1003">Identifier expected.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="576" column="29" code="1382">Unexpected token. Did you mean `{'&gt;'}` or `&amp;gt;`?</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="586" column="1" code="1381">Unexpected token. Did you mean `{'}'}` or `&amp;rbrace;`?</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="590" column="22" code="1005">'}' expected.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="591" column="1" code="1381">Unexpected token. Did you mean `{'}'}` or `&amp;rbrace;`?</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="595" column="5" code="1005">'}' expected.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="607" column="1" code="1381">Unexpected token. Did you mean `{'}'}` or `&amp;rbrace;`?</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="609" column="73" code="1005">'&lt;/' expected.</problem>
-<problem file="src/features/pathways/actions.ts" line="4" column="3" code="2724">'&quot;./services/pathway-template-service&quot;' has no exported member named 'PathwayTemplate'. Did you mean 'getPathwayTemplates'?</problem>
-<problem file="src/features/pathways/actions.ts" line="5" column="3" code="2459">Module '&quot;./services/pathway-template-service&quot;' declares 'Phase' locally, but it is not exported.</problem>
-<problem file="src/features/pathways/actions.ts" line="19" column="3" code="2459">Module '&quot;./services/phase-task-service&quot;' declares 'PhaseTask' locally, but it is not exported.</problem>
-<problem file="src/features/packages/components/PackageDetail.tsx" line="44" column="64" code="2304">Cannot find name 'Campaign'.</problem>
-<problem file="src/features/packages/components/PackageDetail.tsx" line="407" column="63" code="2304">Cannot find name 'Campaign'.</problem>
-<problem file="src/features/pathways/components/phase-configs/FormPhaseConfig.tsx" line="24" column="10" code="2459">Module '&quot;../../services/pathway-template-service&quot;' declares 'BaseConfigurableItem' locally, but it is not exported.</problem>
-<problem file="src/features/pathways/components/phase-configs/ReviewPhaseConfig.tsx" line="26" column="10" code="2459">Module '&quot;../../services/pathway-template-service&quot;' declares 'BaseConfigurableItem' locally, but it is not exported.</problem>
-<problem file="src/features/pathways/components/phase-configs/EmailPhaseConfig.tsx" line="22" column="10" code="2459">Module '&quot;../../services/pathway-template-service&quot;' declares 'BaseConfigurableItem' locally, but it is not exported.</problem>
-<problem file="src/features/pathways/components/phase-configs/SchedulingPhaseConfig.tsx" line="21" column="10" code="2459">Module '&quot;../../services/pathway-template-service&quot;' declares 'BaseConfigurableItem' locally, but it is not exported.</problem>
-<problem file="src/features/pathways/components/phase-configs/DecisionPhaseConfig.tsx" line="22" column="10" code="2459">Module '&quot;../../services/pathway-template-service&quot;' declares 'BaseConfigurableItem' locally, but it is not exported.</problem>
-<problem file="src/features/pathways/components/phase-configs/RecommendationPhaseConfig.tsx" line="24" column="10" code="2459">Module '&quot;../../services/pathway-template-service&quot;' declares 'BaseConfigurableItem' locally, but it is not exported.</problem>
-<problem file="src/features/pathways/components/phase-configs/ScreeningPhaseConfig.tsx" line="23" column="10" code="2459">Module '&quot;../../services/pathway-template-service&quot;' declares 'BaseConfigurableItem' locally, but it is not exported.</problem>
-<problem file="src/features/campaigns/components/CampaignPhaseConfigurationPanel.tsx" line="14" column="10" code="2459">Module '&quot;@/features/pathways/services/pathway-template-service&quot;' declares 'BaseConfigurableItem' locally, but it is not exported.</problem>
-<problem file="src/features/campaigns/components/CampaignForm.tsx" line="33" column="10" code="2724">'&quot;@/features/pathways/services/pathway-template-service&quot;' has no exported member named 'PathwayTemplate'. Did you mean 'getPathwayTemplates'?</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="378" column="17" code="2322">Type 'Element' is not assignable to type '({ field, fieldState, formState, }: { field: ControllerRenderProps&lt;{ name: string; description?: string | null | undefined; status?: &quot;pending&quot; | &quot;completed&quot; | undefined; assigned_to_role?: string | null | undefined; assigned_to_user_id?: string | ... 1 more ... | undefined; due_date?: Date | ... 1 more ... | undefin...'.
-  Type 'ReactElement&lt;any, any&gt;' provides no match for the signature '({ field, fieldState, formState, }: { field: ControllerRenderProps&lt;{ name: string; description?: string | null | undefined; status?: &quot;pending&quot; | &quot;completed&quot; | undefined; assigned_to_role?: string | null | undefined; assigned_to_user_id?: string | ... 1 more ... | undefined; due_date?: Date | ... 1 more ... | undefined; }, &quot;name&quot;&gt;; fieldState: ControllerFieldState; formState: UseFormStateReturn&lt;...&gt;; }): ReactElement&lt;...&gt;'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="378" column="25" code="2339">Property 'dyad-problem-report' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="379" column="1" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="379" column="156" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="380" column="1" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="380" column="116" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="381" column="1" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="381" column="154" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="382" column="1" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="382" column="116" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="383" column="1" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="383" column="153" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="384" column="1" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="384" column="115" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="385" column="1" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="385" column="136" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="386" column="1" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="386" column="122" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="387" column="1" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="387" column="136" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="388" column="1" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="388" column="176" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="389" column="1" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="389" column="236" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="390" column="1" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="390" column="209" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="391" column="1" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="391" column="215" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="392" column="1" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="392" column="188" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="393" column="1" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="393" column="187" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="394" column="1" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="394" column="142" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="395" column="1" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="395" column="145" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="396" column="1" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="396" column="134" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="397" column="1" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="397" column="134" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="398" column="1" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="398" column="136" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="399" column="1" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="399" column="134" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="400" column="1" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="400" column="137" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="401" column="1" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="401" column="137" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="402" column="1" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="402" column="140" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="403" column="1" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="403" column="134" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="404" column="1" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="404" column="137" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="405" column="1" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="405" column="137" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="406" column="1" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="406" column="140" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="407" column="1" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="407" column="139" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="408" column="1" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="408" column="141" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="409" column="1" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="409" column="141" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="410" column="1" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="410" column="141" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="411" column="1" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="411" column="141" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="412" column="1" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="412" column="145" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="413" column="1" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="413" column="134" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="414" column="1" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="414" column="138" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="415" column="1" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="415" column="134" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="416" column="1" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="416" column="125" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="417" column="1" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="417" column="243" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="418" column="1" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="418" column="245" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="419" column="1" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="419" column="244" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="420" column="1" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="420" column="249" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="421" column="1" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="421" column="247" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="422" column="1" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="422" column="253" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="423" column="1" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="423" column="248" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="424" column="1" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="424" column="260" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="425" column="1" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="425" column="253" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="426" column="1" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="426" column="218" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="427" column="1" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="427" column="233" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="428" column="1" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="428" column="215" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="429" column="1" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="429" column="155" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="430" column="1" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="430" column="147" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="431" column="1" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="431" column="154" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="432" column="1" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="432" column="142" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="433" column="1" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="433" column="154" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="434" column="1" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="434" column="154" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="435" column="1" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="435" column="153" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="436" column="1" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="436" column="152" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="437" column="1" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="437" column="152" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="438" column="1" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="438" column="158" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="439" column="1" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="439" column="158" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="440" column="1" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="440" column="153" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="441" column="1" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="441" column="153" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="442" column="1" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="442" column="153" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="443" column="1" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="443" column="153" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="444" column="1" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="444" column="153" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="445" column="1" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="445" column="153" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="446" column="1" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="446" column="153" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="447" column="1" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="447" column="154" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="448" column="1" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="448" column="147" code="2339">Property 'problem' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="449" column="1" code="2339">Property 'dyad-problem-report' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="449" column="23" code="2339">Property 'think' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="509" column="1" code="2339">Property 'think' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="528" column="1" code="2339">Property 'dyad-write' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="533" column="3" code="2304">Cannot find name 'id'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="551" column="3" code="2304">Cannot find name 'id'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="571" column="3" code="2304">Cannot find name 'id'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="576" column="17" code="2339">Property 'string' does not exist on type 'JSX.IntrinsicElements'.</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="590" column="3" code="2552">Cannot find name 'pathway_template_id'. Did you mean 'pathwayTemplateId'?</problem>
-<problem file="src/features/pathways/components/PhaseTaskManagementPanel.tsx" line="595" column="3" code="2304">Cannot find name 'id'.</problem>
-<problem file="src/features/pathways/components/PhaseConfigurationPanel.tsx" line="4" column="10" code="2459">Module '&quot;../services/pathway-template-service&quot;' declares 'BaseConfigurableItem' locally, but it is not exported.</problem>
-<problem file="src/features/pathways/components/BranchingConfigForm.tsx" line="18" column="10" code="2459">Module '&quot;../services/pathway-template-service&quot;' declares 'Phase' locally, but it is not exported.</problem>
-<problem file="src/features/pathways/components/PathwayTemplateBuilderPage.tsx" line="407" column="108" code="2304">Cannot find name 'handleUpdateStatus'.</problem>
-<problem file="src/features/pathways/components/PathwayTemplateBuilderPage.tsx" line="411" column="16" code="2304">Cannot find name 'AlertDialog'.</problem>
-<problem file="src/features/pathways/components/PathwayTemplateBuilderPage.tsx" line="412" column="18" code="2304">Cannot find name 'AlertDialogTrigger'.</problem>
-<problem file="src/features/pathways/components/PathwayTemplateBuilderPage.tsx" line="414" column="22" code="2304">Cannot find name 'Trash2'.</problem>
-<problem file="src/features/pathways/components/PathwayTemplateBuilderPage.tsx" line="416" column="19" code="2304">Cannot find name 'AlertDialogTrigger'.</problem>
-<problem file="src/features/pathways/components/PathwayTemplateBuilderPage.tsx" line="417" column="18" code="2304">Cannot find name 'AlertDialogContent'.</problem>
-<problem file="src/features/pathways/components/PathwayTemplateBuilderPage.tsx" line="418" column="20" code="2304">Cannot find name 'AlertDialogHeader'.</problem>
-<problem file="src/features/pathways/components/PathwayTemplateBuilderPage.tsx" line="419" column="22" code="2304">Cannot find name 'AlertDialogTitle'.</problem>
-<problem file="src/features/pathways/components/PathwayTemplateBuilderPage.tsx" line="419" column="99" code="2304">Cannot find name 'AlertDialogTitle'.</problem>
-<problem file="src/features/pathways/components/PathwayTemplateBuilderPage.tsx" line="420" column="22" code="2304">Cannot find name 'AlertDialogDescription'.</problem>
-<problem file="src/features/pathways/components/PathwayTemplateBuilderPage.tsx" line="422" column="23" code="2304">Cannot find name 'AlertDialogDescription'.</problem>
-<problem file="src/features/pathways/components/PathwayTemplateBuilderPage.tsx" line="423" column="21" code="2304">Cannot find name 'AlertDialogHeader'.</problem>
-<problem file="src/features/pathways/components/PathwayTemplateBuilderPage.tsx" line="424" column="20" code="2304">Cannot find name 'AlertDialogFooter'.</problem>
-<problem file="src/features/pathways/components/PathwayTemplateBuilderPage.tsx" line="425" column="22" code="2304">Cannot find name 'AlertDialogCancel'.</problem>
-<problem file="src/features/pathways/components/PathwayTemplateBuilderPage.tsx" line="425" column="88" code="2304">Cannot find name 'AlertDialogCancel'.</problem>
-<problem file="src/features/pathways/components/PathwayTemplateBuilderPage.tsx" line="426" column="22" code="2304">Cannot find name 'AlertDialogAction'.</problem>
-<problem file="src/features/pathways/components/PathwayTemplateBuilderPage.tsx" line="431" column="23" code="2304">Cannot find name 'AlertDialogAction'.</problem>
-<problem file="src/features/pathways/components/PathwayTemplateBuilderPage.tsx" line="432" column="21" code="2304">Cannot find name 'AlertDialogFooter'.</problem>
-<problem file="src/features/pathways/components/PathwayTemplateBuilderPage.tsx" line="433" column="19" code="2304">Cannot find name 'AlertDialogContent'.</problem>
-<problem file="src/features/pathways/components/PathwayTemplateBuilderPage.tsx" line="434" column="17" code="2304">Cannot find name 'AlertDialog'.</problem>
-</dyad-problem-report>You are absolutely right! My apologies for those persistent TypeScript errors and the oversight in adhering to the "no soft delete" and "form-level save actions" guidelines. I've reviewed the issues and will implement the necessary fixes to ensure a clean, M3-compliant, and functional experience.
+    { value: "reviewer", label: "Reviewer" },
+    { value: "coordinator", label: "Coordinator" },
+    { value: "admin", label: "Administrator" },
+    { value: "screener", label: "Screener" },
+    { value: "evaluator", label: "Evaluator" },
+  ];
 
-The core problems were:
-1.  **Incorrect Type Imports**: Many components were importing `PathwayTemplate`, `Phase`, `BaseConfigurableItem`, and `PhaseTask` from incorrect paths (e.g., service files) instead of the central `src/types/supabase.ts`.
-2.  **`CampaignPhase` Interface Definition**: The `CampaignPhase` interface was not correctly inheriting properties from `BaseConfigurableItem` in some contexts, leading to property-not-found errors.
-3.  **Missing `AlertDialog` Imports**: The `AlertDialog` components were used in `PathwayTemplateBuilderPage` without being imported.
-4.  **Missing `handleUpdateStatus` Function**: The `handleUpdateStatus` function was called but not defined in `PathwayTemplateBuilderPage`.
-5.  **JSX Syntax Errors**: There were indeed some JSX syntax issues in `PackageDetail.tsx` and `PhaseTaskManagementPanel.tsx`.
+  // Placeholder for fetching actual users for assignment.
+  // In a real app, this would be a more sophisticated user search/selection.
+  const availableUsers = [
+    { id: user?.id || "current_user_id", name: user?.user_metadata?.first_name || "Current User" },
+    { id: "user_1", name: "Alice Smith" },
+    { id: "user_2", name: "Bob Johnson" },
+  ];
 
-I've addressed these issues by:
+  // Determine permissions for the dialog's current editing task
+  const isAssignedToCurrentUserForEditingTask = user?.id === editingTask?.assigned_to_user_id;
+  const canUpdateStatusForEditingTask = canModify || isAssignedToCurrentUserForEditingTask;
+  const canEditDetailsForEditingTask = canModify;
 
-*   **Centralizing Type Definitions**: Ensured `PhaseTask` is correctly exported from `src/types/supabase.ts` and all relevant files import `PathwayTemplate`, `Phase`, `BaseConfigurableItem`, and `PhaseTask` directly from `src/types/supabase.ts`.
-*   **Correcting `CampaignPhase`**: Ensured `CampaignPhase` correctly extends `BaseConfigurableItem` and that its properties are accessible.
-*   **Adding `AlertDialog` Imports**: Imported all necessary `AlertDialog` components in `src/features/pathways/components/PathwayTemplateBuilderPage.tsx`.
-*   **Implementing `handleUpdateStatus`**: Added the `handleUpdateStatus` function to `src/features/pathways/components/PathwayTemplateBuilderPage.tsx`.
-*   **Fixing JSX Syntax**: Corrected the JSX structure in `src/features/packages/components/PackageDetail.tsx` and `src/features/pathways/components/PhaseTaskManagementPanel.tsx`.
+  return (
+    <div className="space-y-6">
+      <h3 className="text-title-large font-bold text-foreground">Phase Tasks</h3>
+      <p className="text-body-medium text-muted-foreground">
+        Define and manage sub-tasks for this phase.
+      </p>
+      {isLoadingTasks ? (
+        <div className="space-y-4">
+          {[...Array(2)].map((_, i) => (
+            <Skeleton key={i} className="h-24 w-full rounded-lg" />
+          ))}
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {tasks.length === 0 ? (
+            <p className="text-body-medium text-muted-foreground text-center">No tasks defined for this phase yet.</p>
+          ) : (
+            tasks.map((task) => {
+              const isAssignedToCurrentUser = user?.id === task.assigned_to_user_id;
+              const canUpdateStatus = canModify || isAssignedToCurrentUser; // Creator/Admin or assigned user can update status
+              const canEditDetails = canModify; // Only creator/admin can edit details
 
-Here are the updated files:
+              return (
+                <Card key={task.id} className="rounded-lg border p-4 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Checkbox
+                        checked={task.status === 'completed'}
+                        onCheckedChange={() => canUpdateStatus && handleToggleTaskStatus(task)}
+                        disabled={!canUpdateStatus}
+                        className="data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"
+                      />
+                      <h4 className={cn("text-title-medium font-medium text-foreground", task.status === 'completed' && "line-through text-muted-foreground")}>
+                        {task.name}
+                      </h4>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      {canEditDetails && (
+                        <Button variant="outlined" size="icon" className="rounded-md" onClick={() => { setEditingTask(task); setIsTaskFormOpen(true); }}>
+                          <PlusCircle className="h-4 w-4" /> {/* Reusing PlusCircle for edit, could be Edit icon */}
+                          <span className="sr-only">Edit Task</span>
+                        </Button>
+                      )}
+                      {canEditDetails && (
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="destructive" size="icon" className="rounded-md">
+                              <Trash2 className="h-4 w-4" />
+                              <span className="sr-only">Delete Task</span>
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent className="rounded-xl shadow-lg bg-card text-card-foreground border-border">
+                            <AlertDialogHeader>
+                              <AlertDialogTitle className="text-headline-small">Confirm Deletion</AlertDialogTitle>
+                              <AlertDialogDescription className="text-body-medium text-muted-foreground">
+                                Are you sure you want to delete the task &quot;{task.name}&quot;? This action cannot be undone.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel className="rounded-md text-label-large">Cancel</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() => handleDeleteTask(task.id)}
+                                className="rounded-md text-label-large bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                              >
+                                Delete
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      )}
+                    </div>
+                  </div>
+                  {task.description && (
+                    <p className="text-body-small text-muted-foreground ml-7">{task.description}</p>
+                  )}
+                  <div className="flex items-center gap-4 text-body-small text-muted-foreground ml-7">
+                    {task.assigned_to_user_id && (
+                      <div className="flex items-center gap-1">
+                        <Avatar className="h-5 w-5">
+                          <AvatarImage src={task.profiles?.avatar_url || ""} alt={task.profiles?.first_name || "User"} />
+                          <AvatarFallback className="bg-primary-container text-on-primary-container text-label-small">
+                            {getUserInitials(task.profiles?.first_name, task.profiles?.last_name)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <span>Assigned to: {task.profiles?.first_name || "Unknown User"}</span>
+                      </div>
+                    )}
+                    {task.assigned_to_role && !task.assigned_to_user_id && (
+                      <div className="flex items-center gap-1">
+                        <UserCircle2 className="h-4 w-4" />
+                        <span>Assigned to: {task.assigned_to_role}</span>
+                      </div>
+                    )}
+                    {task.due_date && (
+                      <div className="flex items-center gap-1">
+                        <CalendarIcon className="h-4 w-4" />
+                        <span>Due: {new Date(task.due_date).toLocaleDateString()}</span>
+                      </div>
+                    )}
+                    <div className="flex items-center gap-1">
+                      {task.status === 'completed' ? <CheckCircle className="h-4 w-4 text-green-600" /> : <Clock className="h-4 w-4 text-yellow-600" />}
+                      <span className="capitalize">{task.status}</span>
+                    </div>
+                  </div>
+                </Card>
+              );
+            })
+          )}
+        </div>
+      )}
 
-<dyad-write path="src/types/supabase.ts" description="Centralized type definitions for PathwayTemplate, Phase, BaseConfigurableItem, and PhaseTask.">
-// This file defines common TypeScript interfaces for Supabase tables,
-// especially for joined data, to ensure type safety across the application.
+      {canModify && (
+        <Button
+          type="button"
+          variant="outlined"
+          onClick={() => { setEditingTask(undefined); setIsTaskFormOpen(true); }}
+          className="w-full rounded-md text-label-large mt-6"
+        >
+          <PlusCircle className="mr-2 h-5 w-5" /> Add New Task
+        </Button>
+      )}
 
-export interface Profile {
-  id: string;
-  first_name: string | null;
-  last_name: string | null;
-  middle_name: string | null;
-  avatar_url: string | null;
-  updated_at: string | null;
-  job_title: string | null;
-  organization: string | null;
-  location: string | null;
-  phone_number: string | null;
-  linkedin_url: string | null;
-  orcid_url: string | null;
-  website_url: string | null;
-  bio: string | null;
-  email: string | null; // Added email field
+      {/* Task Form Dialog */}
+      <Dialog open={isTaskFormOpen} onOpenChange={setIsTaskFormOpen}>
+        <DialogContent className="sm:max-w-[425px] rounded-xl shadow-lg bg-card text-card-foreground border-border">
+          <DialogHeader>
+            <DialogTitle className="text-headline-small">
+              {editingTask ? "Edit Task" : "Add New Task"}
+            </DialogTitle>
+            <DialogDescription className="text-body-medium text-muted-foreground">
+              {editingTask ? "Update the details of this task." : "Define a new task for this phase."}
+            </DialogDescription>
+          </DialogHeader>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4 py-4">
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-label-large">Task Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g., Review application documents" {...field} className="rounded-md" disabled={!canEditDetailsForEditingTask} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-label-large">Description (Optional)</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="Provide a brief description of the task."
+                        className="resize-y min-h-[80px] rounded-md"
+                        {...field}
+                        value={field.value || ""}
+                        disabled={!canEditDetailsForEditingTask}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="assigned_to_role"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-label-large">Assigned To Role (Optional)</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value || ""} disabled={!canEditDetailsForEditingTask}>
+                      <FormControl>
+                        <SelectTrigger className="rounded-md">
+                          <SelectValue placeholder="Select a role" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent className="rounded-md shadow-lg bg-card text-card-foreground border-border">
+                        <SelectItem value="" className="text-body-medium hover:bg-muted hover:text-muted-foreground cursor-pointer">None</SelectItem>
+                        {assignedRoleOptions.map((role) => (
+                          <SelectItem key={role.value} value={role.value} className="text-body-medium hover:bg-muted hover:text-muted-foreground cursor-pointer">
+                            {role.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormDescription className="text-body-small">
+                      Assign this task to a specific role within the platform.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="assigned_to_user_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-label-large">Assigned To User (Optional)</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value || ""} disabled={!canEditDetailsForEditingTask}>
+                      <FormControl>
+                        <SelectTrigger className="rounded-md">
+                          <SelectValue placeholder="Select a user" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent className="rounded-md shadow-lg bg-card text-card-foreground border-border">
+                        <SelectItem value="" className="text-body-medium hover:bg-muted hover:text-muted-foreground cursor-pointer">None</SelectItem>
+                        {availableUsers.map((userOption) => (
+                          <SelectItem key={userOption.id} value={userOption.id} className="text-body-medium hover:bg-muted hover:text-muted-foreground cursor-pointer">
+                            {userOption.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormDescription className="text-body-small">
+                      Assign this task to a specific user. Overrides role assignment.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="due_date"
+                render={({ field }) => (
+                  <FormItem className="flex flex-col">
+                    <FormLabel className="text-label-large">Due Date (Optional)</FormLabel>
+                    <Popover>
+                      <PopoverTrigger asChild disabled={!canEditDetailsForEditingTask}>
+                        <FormControl>
+                          <Button
+                            variant="outlined"
+                            className={cn(
+                              "w-full pl-3 text-left font-normal rounded-md",
+                              !field.value && "text-muted-foreground"
+                            )}
+                          >
+                            {field.value ? (
+                              format(field.value, "PPP")
+                            ) : (
+                              <span>Pick a date</span>
+                            )}
+                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                          </Button>
+                        </FormControl>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0 rounded-xl shadow-lg bg-card text-card-foreground border-border" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={field.value || undefined}
+                          onSelect={field.onChange}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="status"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-label-large">Task Status</FormLabel>
+                      <FormDescription className="text-body-small">
+                        Mark this task as pending or completed.
+                      </FormDescription>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value === 'completed'}
+                        onCheckedChange={(checked) => field.onChange(checked ? 'completed' : 'pending')}
+                        className="data-[state=checked]:bg-primary data-[state=unchecked]:bg-muted-foreground"
+                        disabled={!canUpdateStatusForEditingTask}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <DialogFooter>
+                <Button type="button" variant="outlined" onClick={() => setIsTaskFormOpen(false)} className="rounded-md text-label-large">
+                  Cancel
+                </Button>
+                <Button type="submit" className="rounded-md text-label-large" disabled={form.formState.isSubmitting || (!canEditDetailsForEditingTask && !canUpdateStatusForEditingTask)}>
+                  {form.formState.isSubmitting
+                    ? "Saving..."
+                    : editingTask
+                    ? "Save Changes"
+                    : "Add Task"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
 }
-
-export interface PathwayTemplate {
-  id: string;
-  creator_id: string;
-  name: string;
-  description: string | null;
-  is_private: boolean;
-  status: 'draft' | 'pending_review' | 'published' | 'archived';
-  created_at: string;
-  updated_at: string;
-  last_updated_by: string | null;
-  // New fields for template-level essential information
-  application_open_date: string | null; // ISO date string
-  participation_deadline: string | null; // ISO date string
-  general_instructions: string | null; // Rich text content
-  applicant_instructions: string | null; // New field
-  manager_instructions: string | null; // New field
-  is_visible_to_applicants: boolean; // New field
-}
-
-// New base interface for configurable items (phases)
-export interface BaseConfigurableItem {
-  id: string;
-  name: string;
-  type: string; // e.g., 'Form', 'Review', 'Email', 'Scheduling', 'Decision', 'Recommendation'
-  description: string | null;
-  order_index: number;
-  config: Record<string, any>; // JSONB field for phase-specific configuration
-  created_at: string;
-  updated_at: string;
-  last_updated_by: string | null;
-  // New phase-level fields
-  phase_start_date: string | null;
-  phase_end_date: string | null;
-  applicant_instructions: string | null;
-  manager_instructions: string | null;
-  is_visible_to_applicants: boolean;
-}
-
-// Phase now extends BaseConfigurableItem
-export interface Phase extends BaseConfigurableItem {
-  pathway_template_id: string;
-}
-
-// Define PhaseTask here as well for central typing
-export interface PhaseTask {
-  id: string;
-  phase_id: string;
-  name: string;
-  description: string | null;
-  assigned_to_role: string | null;
-  assigned_to_user_id: string | null;
-  due_date: string | null;
-  status: 'pending' | 'completed';
-  order_index: number;
-  created_at: string;
-  updated_at: string;
-  profiles?: Profile; // Joined profile data for the assigned user
-}
-
-// You can add more interfaces here as needed for other Supabase tables.

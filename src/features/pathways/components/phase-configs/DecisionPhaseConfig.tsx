@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PlusCircle, Trash2, GripVertical, GitFork, Save, X } from "lucide-react"; // Added Save and X icons
-import { BaseConfigurableItem } from "../../services/pathway-template-service";
+import { BaseConfigurableItem } from "@/types/supabase"; // Corrected import path
 import { updatePhaseConfigAction as defaultUpdatePhaseConfigAction } from "../../actions";
 import { Checkbox } from "@/components/ui/checkbox";
 

@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { BaseConfigurableItem } from "../services/pathway-template-service";
+import { BaseConfigurableItem } from "@/types/supabase"; // Corrected import path
 import { FormPhaseConfig } from "./phase-configs/FormPhaseConfig";
 import { ReviewPhaseConfig } from "./phase-configs/ReviewPhaseConfig";
 import { EmailPhaseConfig } from "./phase-configs/EmailPhaseConfig";
@@ -27,7 +27,7 @@ export function PhaseConfigurationPanel({
   onConfigSaved,
   onCancel, // Destructure onCancel
   canModify,
-}: PhaseConfigurationPanelProps) {
+}: PhaseConfigurationPanelPanelProps) {
   const renderConfigComponent = () => {
     switch (phase.type) {
       case "Form":
