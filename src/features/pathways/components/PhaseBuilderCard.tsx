@@ -41,17 +41,31 @@ export function PhaseBuilderCard({ phase, index, onDelete, onPhaseUpdated, canMo
     }
   };
 
-  // Determine color classes based on phase type
-  const getPhaseColorClasses = (type: string) => {
+  // Determine border color classes based on phase type
+  const getPhaseBorderColorClass = (type: string) => {
     switch (type) {
-      case "Form": return "border-phase-form bg-phase-form-container text-on-phase-form-container";
-      case "Review": return "border-phase-review bg-phase-review-container text-on-phase-review-container";
-      case "Email": return "border-phase-email bg-phase-email-container text-on-phase-email-container";
-      case "Scheduling": return "border-phase-scheduling bg-phase-scheduling-container text-on-phase-scheduling-container";
-      case "Decision": return "border-phase-decision bg-phase-decision-container text-on-phase-decision-container";
-      case "Recommendation": return "border-phase-recommendation bg-phase-recommendation-container text-on-phase-recommendation-container";
-      case "Screening": return "border-phase-screening bg-phase-screening-container text-on-phase-screening-container";
-      default: return "border-muted bg-muted/30 text-muted-foreground";
+      case "Form": return "border-phase-form";
+      case "Review": return "border-phase-review";
+      case "Email": return "border-phase-email";
+      case "Scheduling": return "border-phase-scheduling";
+      case "Decision": return "border-phase-decision";
+      case "Recommendation": return "border-phase-recommendation";
+      case "Screening": return "border-phase-screening";
+      default: return "border-muted";
+    }
+  };
+
+  // Determine icon color classes based on phase type
+  const getPhaseIconColorClass = (type: string) => {
+    switch (type) {
+      case "Form": return "text-phase-form";
+      case "Review": return "text-phase-review";
+      case "Email": return "text-phase-email";
+      case "Scheduling": return "text-phase-scheduling";
+      case "Decision": return "text-phase-decision";
+      case "Recommendation": return "text-phase-recommendation";
+      case "Screening": return "text-phase-screening";
+      default: return "text-muted-foreground";
     }
   };
 
@@ -66,8 +80,8 @@ export function PhaseBuilderCard({ phase, index, onDelete, onPhaseUpdated, canMo
           ref={provided.innerRef}
           {...provided.draggableProps}
           className={cn(
-            "rounded-xl shadow-md transition-all duration-200 border-l-8",
-            getPhaseColorClasses(phase.type),
+            "rounded-xl shadow-md transition-all duration-200 border-l-8 bg-card text-foreground", // Changed background to bg-card
+            getPhaseBorderColorClass(phase.type), // Only border color
             snapshot.isDragging ? "shadow-lg ring-2 ring-primary-container" : "hover:shadow-lg",
             "flex flex-col"
           )}
@@ -81,7 +95,7 @@ export function PhaseBuilderCard({ phase, index, onDelete, onPhaseUpdated, canMo
               className="flex-grow flex items-center cursor-pointer" 
               onClick={() => onToggleExpand(phase.id)} // Toggle expand on header click
             >
-              <div className="flex-shrink-0 mr-4 text-primary">
+              <div className={cn("flex-shrink-0 mr-4", getPhaseIconColorClass(phase.type))}> {/* Dynamic icon color */}
                 {getPhaseIcon(phase.type)}
               </div>
               <CardHeader className="flex-grow p-0">

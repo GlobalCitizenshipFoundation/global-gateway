@@ -753,8 +753,8 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
       )}
 
       {templateId && canModifyTemplate && (
-        <div className="mt-6">
-          <Button onClick={() => setIsAddingNewPhase(true)} className="w-full rounded-md text-label-large">
+        <div className="mt-6 flex justify-center"> {/* Added flex justify-center */}
+          <Button onClick={() => setIsAddingNewPhase(true)} className="w-fit rounded-md text-label-large"> {/* Changed w-full to w-fit */}
             <PlusCircle className="mr-2 h-5 w-5" /> Add New Phase
           </Button>
         </div>
