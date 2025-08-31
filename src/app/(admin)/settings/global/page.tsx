@@ -46,7 +46,7 @@ const jsonSchema = z.any()
 
 const globalSettingsFormSchema = z.object({
   key: z.string().min(1, "Setting key is required."),
-  value: jsonSchema,
+  value: z.string(), // Changed to string for form input
   description: z.string().nullable().optional(),
 });
 
@@ -92,7 +92,7 @@ function SettingForm({ settingKey, initialData, onSettingSaved, canModify }: Set
     try {
       const formData = new FormData();
       formData.append("key", values.key);
-      formData.append("value", JSON.stringify(values.value)); // Ensure value is stringified JSON
+      formData.append("value", values.value); // value is already a string
       formData.append("description", values.description || "");
 
       const result = await updateGlobalSettingAction(formData);
@@ -168,6 +168,7 @@ function SettingForm({ settingKey, initialData, onSettingSaved, canModify }: Set
             {form.formState.isSubmitting ? "Saving..." : "Save Setting"}
             <Save className="ml-2 h-4 w-4" />
           </Button>
+        </Button>
         )}
       </form>
     </Form>
