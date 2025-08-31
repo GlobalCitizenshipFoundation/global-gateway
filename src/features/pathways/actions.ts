@@ -129,6 +129,11 @@ export async function createPathwayTemplateAction(formData: FormData): Promise<P
   const name = formData.get("name") as string;
   const description = formData.get("description") as string | null;
   const is_private = formData.get("is_private") === "on";
+  // New fields
+  const application_open_date = formData.get("application_open_date") as string || null;
+  const participation_deadline = formData.get("participation_deadline") as string || null;
+  const general_instructions = formData.get("general_instructions") as string || null;
+
 
   if (!name) {
     throw new Error("Template name is required.");
@@ -141,7 +146,10 @@ export async function createPathwayTemplateAction(formData: FormData): Promise<P
       is_private,
       user.id,
       'draft', // New templates start as draft
-      user.id // Set last_updated_by
+      user.id, // Set last_updated_by
+      application_open_date, // New field
+      participation_deadline, // New field
+      general_instructions // New field
     );
 
     if (newTemplate) {
@@ -166,17 +174,42 @@ export async function updatePathwayTemplateAction(id: string, formData: FormData
     const name = formData.get("name") as string;
     const description = formData.get("description") as string | null;
     const is_private = formData.get("is_private") === "on";
+    // New fields
+    const application_open_date = formData.get("application_open_date") as string || null;
+    const participation_deadline = formData.get("participation_deadline") as string || null;
+    const general_instructions = formData.get("general_instructions") as string || null;
 
     if (!name) {
       throw new Error("Template name is required.");
     }
 
-    const oldValues = { name: template.name, description: template.description, is_private: template.is_private };
-    const newValues = { name, description, is_private };
+    const oldValues = {
+      name: template.name,
+      description: template.description,
+      is_private: template.is_private,
+      application_open_date: template.application_open_date,
+      participation_deadline: template.participation_deadline,
+      general_instructions: template.general_instructions,
+    };
+    const newValues = {
+      name,
+      description,
+      is_private,
+      application_open_date,
+      participation_deadline,
+      general_instructions,
+    };
 
     const updatedTemplate = await updatePathwayTemplateService(
       id,
-      { name, description, is_private },
+      {
+        name,
+        description,
+        is_private,
+        application_open_date,
+        participation_deadline,
+        general_instructions,
+      },
       user.id // Pass updaterId
     );
 

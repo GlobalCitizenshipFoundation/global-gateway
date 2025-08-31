@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
-import { PathwayTemplateDetail } from "@/features/pathways/components/PathwayTemplateDetail";
-import { getTemplateByIdAction } from "@/features/pathways/actions";
+import { getTemplateByIdAction, getPhasesAction } from "@/features/pathways/actions";
 import React from "react";
+import { PathwayTemplateBuilderPage } from "@/features/pathways/components/PathwayTemplateBuilderPage"; // Import the new builder page
 
 interface PathwayTemplateDetailPageProps {
   params: Promise<{ id: string }>; // Adjusted type for Next.js type checker
@@ -19,16 +19,19 @@ export default async function PathwayTemplateDetailPage(props: PathwayTemplateDe
     notFound(); // If it's not a valid UUID, it's a 404
   }
 
-  // Fetch template to ensure user has read access before rendering the client component
+  // Fetch template and phases to ensure user has read access before rendering the client component
   const template = await getTemplateByIdAction(id);
+  const phases = template ? await getPhasesAction(id) : null; // Only fetch phases if template is found
 
   if (!template) {
     notFound(); // This will render the nearest not-found.tsx or the global 404 page
   }
 
   return (
-    <div className="container mx-auto py-8 px-4">
-      <PathwayTemplateDetail templateId={id} />
-    </div>
+    <PathwayTemplateBuilderPage
+      templateId={id}
+      initialTemplate={template}
+      initialPhases={phases || []}
+    />
   );
 }

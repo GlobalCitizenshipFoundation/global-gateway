@@ -27,6 +27,10 @@ export interface PathwayTemplate {
   updated_at: string;
   last_updated_by: string | null; // Added last_updated_by
   is_deleted: boolean; // Added is_deleted for soft deletes
+  // New fields for template-level essential information
+  application_open_date: string | null; // ISO date string
+  participation_deadline: string | null; // ISO date string
+  general_instructions: string | null; // Rich text content
 }
 
 // Phase now extends BaseConfigurableItem
@@ -76,12 +80,26 @@ export async function createPathwayTemplate(
   is_private: boolean,
   creator_id: string,
   status: PathwayTemplate['status'] = 'draft', // Default status to draft
-  last_updated_by: string
+  last_updated_by: string,
+  // New parameters for creation
+  application_open_date: string | null,
+  participation_deadline: string | null,
+  general_instructions: string | null
 ): Promise<PathwayTemplate | null> {
   const supabase = await getSupabase();
   const { data, error } = await supabase
     .from("pathway_templates")
-    .insert([{ name, description, is_private, creator_id, status, last_updated_by }])
+    .insert([{
+      name,
+      description,
+      is_private,
+      creator_id,
+      status,
+      last_updated_by,
+      application_open_date, // New field
+      participation_deadline, // New field
+      general_instructions, // New field
+    }])
     .select()
     .single();
 
@@ -314,6 +332,9 @@ export async function clonePathwayTemplate(
         status: 'draft', // Cloned template starts as draft
         creator_id: creatorId,
         last_updated_by: lastUpdatedBy,
+        application_open_date: originalTemplate.application_open_date, // Copy new field
+        participation_deadline: originalTemplate.participation_deadline, // Copy new field
+        general_instructions: originalTemplate.general_instructions, // Copy new field
       },
     ])
     .select()
