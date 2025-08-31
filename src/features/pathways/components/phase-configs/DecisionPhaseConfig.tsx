@@ -18,10 +18,10 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { PlusCircle, Trash2, GripVertical, GitFork } from "lucide-react"; // Import GitFork for rules
-import { BaseConfigurableItem } from "../../services/pathway-template-service"; // Import BaseConfigurableItem
-import { updatePhaseConfigAction as defaultUpdatePhaseConfigAction } from "../../actions"; // Renamed default action
-import { Checkbox } from "@/components/ui/checkbox"; // Import Checkbox component
+import { PlusCircle, Trash2, GripVertical, GitFork, Save, X } from "lucide-react"; // Added Save and X icons
+import { BaseConfigurableItem } from "../../services/pathway-template-service";
+import { updatePhaseConfigAction as defaultUpdatePhaseConfigAction } from "../../actions";
+import { Checkbox } from "@/components/ui/checkbox";
 
 // Zod schema for a single decision outcome
 const decisionOutcomeSchema = z.object({
@@ -47,15 +47,15 @@ const decisionPhaseConfigSchema = z.object({
 });
 
 interface DecisionPhaseConfigProps {
-  phase: BaseConfigurableItem; // Changed from Phase to BaseConfigurableItem
-  parentId: string; // Renamed from pathwayTemplateId
+  phase: BaseConfigurableItem;
+  parentId: string;
   onConfigSaved: () => void;
+  onCancel: () => void; // Added onCancel prop
   canModify: boolean;
-  // Optional prop to override the default update action, now returns BaseConfigurableItem | null
   updatePhaseConfigAction?: (phaseId: string, parentId: string, configUpdates: Record<string, any>) => Promise<BaseConfigurableItem | null>;
 }
 
-export function DecisionPhaseConfig({ phase, parentId, onConfigSaved, canModify, updatePhaseConfigAction }: DecisionPhaseConfigProps) {
+export function DecisionPhaseConfig({ phase, parentId, onConfigSaved, onCancel, canModify, updatePhaseConfigAction }: DecisionPhaseConfigProps) {
   const form = useForm<z.infer<typeof decisionPhaseConfigSchema>>({
     resolver: zodResolver(decisionPhaseConfigSchema),
     defaultValues: {
@@ -175,7 +175,7 @@ export function DecisionPhaseConfig({ phase, parentId, onConfigSaved, canModify,
                         </FormDescription>
                       </div>
                       <FormControl>
-                        <Checkbox // Changed from Input type="checkbox" to Checkbox
+                        <Checkbox
                           checked={field.value}
                           onCheckedChange={field.onChange}
                           disabled={!canModify}
@@ -363,11 +363,16 @@ export function DecisionPhaseConfig({ phase, parentId, onConfigSaved, canModify,
               )}
             />
 
-            {canModify && (
-              <Button type="submit" className="w-full rounded-md text-label-large" disabled={form.formState.isSubmitting}>
-                {form.formState.isSubmitting ? "Saving..." : "Save Decision Configuration"}
+            <div className="flex justify-end space-x-2">
+              <Button type="button" variant="outlined" onClick={onCancel} className="rounded-md text-label-large">
+                <X className="mr-2 h-4 w-4" /> Cancel
               </Button>
-            )}
+              {canModify && (
+                <Button type="submit" className="w-full rounded-md text-label-large" disabled={form.formState.isSubmitting}>
+                  {form.formState.isSubmitting ? "Saving..." : <><Save className="mr-2 h-4 w-4" /> Save Decision Configuration</>}
+                </Button>
+              )}
+            </div>
           </form>
         </Form>
       </div>

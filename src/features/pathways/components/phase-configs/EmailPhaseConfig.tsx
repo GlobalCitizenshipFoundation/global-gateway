@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { useForm, useFieldArray } from "react-hook-form"; // Import useFieldArray
+import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { toast } from "sonner";
@@ -23,7 +23,7 @@ import { BaseConfigurableItem } from "../../services/pathway-template-service";
 import { updatePhaseConfigAction as defaultUpdatePhaseConfigAction } from "../../actions";
 import { getCommunicationTemplatesAction, CommunicationTemplate } from "@/features/communications";
 import { Skeleton } from "@/components/ui/skeleton";
-import { PlusCircle, Trash2, GitFork } from "lucide-react"; // Import GitFork for conditional logic
+import { PlusCircle, Trash2, GitFork, Save, X } from "lucide-react"; // Added Save and X icons
 
 // Zod schema for a single dynamic content block
 const dynamicContentBlockSchema = z.object({
@@ -46,11 +46,12 @@ interface EmailPhaseConfigProps {
   phase: BaseConfigurableItem;
   parentId: string;
   onConfigSaved: () => void;
+  onCancel: () => void; // Added onCancel prop
   canModify: boolean;
   updatePhaseConfigAction?: (phaseId: string, parentId: string, configUpdates: Record<string, any>) => Promise<BaseConfigurableItem | null>;
 }
 
-export function EmailPhaseConfig({ phase, parentId, onConfigSaved, canModify, updatePhaseConfigAction }: EmailPhaseConfigProps) {
+export function EmailPhaseConfig({ phase, parentId, onConfigSaved, onCancel, canModify, updatePhaseConfigAction }: EmailPhaseConfigProps) {
   const [communicationTemplates, setCommunicationTemplates] = useState<CommunicationTemplate[]>([]);
   const [isLoadingTemplates, setIsLoadingTemplates] = useState(true);
 
@@ -366,11 +367,16 @@ export function EmailPhaseConfig({ phase, parentId, onConfigSaved, canModify, up
               )}
             />
 
-            {canModify && (
-              <Button type="submit" className="w-full rounded-md text-label-large" disabled={form.formState.isSubmitting}>
-                {form.formState.isSubmitting ? "Saving..." : "Save Email Configuration"}
+            <div className="flex justify-end space-x-2">
+              <Button type="button" variant="outlined" onClick={onCancel} className="rounded-md text-label-large">
+                <X className="mr-2 h-4 w-4" /> Cancel
               </Button>
-            )}
+              {canModify && (
+                <Button type="submit" className="w-full rounded-md text-label-large" disabled={form.formState.isSubmitting}>
+                  {form.formState.isSubmitting ? "Saving..." : <><Save className="mr-2 h-4 w-4" /> Save Email Configuration</>}
+                </Button>
+              )}
+            </div>
           </form>
         </Form>
       </div>

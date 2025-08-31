@@ -20,7 +20,7 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Phase } from "../services/pathway-template-service";
 import { createPhaseAction, updatePhaseAction } from "../actions";
-// Removed unused Card imports as per previous instruction to remove outer Card elements
+import { Save, X } from "lucide-react"; // Import Save and X icons
 
 const phaseFormSchema = z.object({
   name: z.string().min(1, { message: "Phase name is required." }).max(100, { message: "Name cannot exceed 100 characters." }),
@@ -35,6 +35,7 @@ interface PhaseDetailsFormProps {
   onCancel: () => void;
   nextOrderIndex: number; // Only relevant for creation, but kept for consistency
   canModify: boolean;
+  isNewPhaseForm?: boolean; // New prop to distinguish creation form
 }
 
 export function PhaseDetailsForm({
@@ -44,6 +45,7 @@ export function PhaseDetailsForm({
   onCancel,
   nextOrderIndex,
   canModify,
+  isNewPhaseForm = false,
 }: PhaseDetailsFormProps) {
   const form = useForm<z.infer<typeof phaseFormSchema>>({
     resolver: zodResolver(phaseFormSchema),
@@ -82,6 +84,7 @@ export function PhaseDetailsForm({
       }
 
       if (result) {
+        toast.success(`Phase ${initialData ? "updated" : "created"} successfully!`);
         onPhaseSaved();
       }
     } catch (error: any) {
@@ -97,7 +100,7 @@ export function PhaseDetailsForm({
     { value: "Scheduling", label: "Scheduling" },
     { value: "Decision", label: "Decision" },
     { value: "Recommendation", label: "Recommendation" },
-    { value: "Screening", label: "Screening" }, // Added Screening phase type
+    { value: "Screening", label: "Screening" },
   ];
 
   return (
@@ -163,14 +166,14 @@ export function PhaseDetailsForm({
               />
               <div className="flex justify-end space-x-2">
                 <Button type="button" variant="outlined" onClick={onCancel} className="rounded-md text-label-large">
-                  Cancel
+                  <X className="mr-2 h-4 w-4" /> Cancel
                 </Button>
                 <Button type="submit" className="rounded-md text-label-large" disabled={form.formState.isSubmitting || !canModify}>
                   {form.formState.isSubmitting
                     ? "Saving..."
                     : initialData
-                    ? "Save Changes"
-                    : "Add Phase"}
+                    ? <><Save className="mr-2 h-4 w-4" /> Save Changes</>
+                    : <><Save className="mr-2 h-4 w-4" /> Add Phase</>}
                 </Button>
               </div>
             </form>

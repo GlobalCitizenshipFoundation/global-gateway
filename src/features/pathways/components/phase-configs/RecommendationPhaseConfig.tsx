@@ -8,7 +8,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch"; // Import Switch
+import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Form,
@@ -20,9 +20,9 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { PlusCircle, Trash2, GripVertical, Mail, Clock } from "lucide-react"; // Added Mail and Clock icons
-import { BaseConfigurableItem } from "../../services/pathway-template-service"; // Import BaseConfigurableItem
-import { updatePhaseConfigAction as defaultUpdatePhaseConfigAction } from "../../actions"; // Renamed default action
+import { PlusCircle, Trash2, GripVertical, Mail, Clock, Save, X } from "lucide-react"; // Added Save and X icons
+import { BaseConfigurableItem } from "../../services/pathway-template-service";
+import { updatePhaseConfigAction as defaultUpdatePhaseConfigAction } from "../../actions";
 
 // Zod schema for a single recommender information field
 const recommenderFieldSchema = z.object({
@@ -44,15 +44,15 @@ const recommendationPhaseConfigSchema = z.object({
 });
 
 interface RecommendationPhaseConfigProps {
-  phase: BaseConfigurableItem; // Changed from Phase to BaseConfigurableItem
-  parentId: string; // Renamed from pathwayTemplateId
+  phase: BaseConfigurableItem;
+  parentId: string;
   onConfigSaved: () => void;
+  onCancel: () => void; // Added onCancel prop
   canModify: boolean;
-  // Optional prop to override the default update action, now returns BaseConfigurableItem | null
   updatePhaseConfigAction?: (phaseId: string, parentId: string, configUpdates: Record<string, any>) => Promise<BaseConfigurableItem | null>;
 }
 
-export function RecommendationPhaseConfig({ phase, parentId, onConfigSaved, canModify, updatePhaseConfigAction }: RecommendationPhaseConfigProps) {
+export function RecommendationPhaseConfig({ phase, parentId, onConfigSaved, onCancel, canModify, updatePhaseConfigAction }: RecommendationPhaseConfigProps) {
   const form = useForm<z.infer<typeof recommendationPhaseConfigSchema>>({
     resolver: zodResolver(recommendationPhaseConfigSchema),
     defaultValues: {
@@ -84,7 +84,7 @@ export function RecommendationPhaseConfig({ phase, parentId, onConfigSaved, canM
     try {
       const updatedConfig = { ...phase.config, ...values };
       const action = updatePhaseConfigAction || defaultUpdatePhaseConfigAction;
-      const result = await action(phase.id, parentId, updatedConfig); // Use parentId here
+      const result = await action(phase.id, parentId, updatedConfig);
       if (result) {
         toast.success("Recommendation phase configuration updated successfully!");
         onConfigSaved();
@@ -380,11 +380,16 @@ export function RecommendationPhaseConfig({ phase, parentId, onConfigSaved, canM
               )}
             />
 
-            {canModify && (
-              <Button type="submit" className="w-full rounded-md text-label-large" disabled={form.formState.isSubmitting}>
-                {form.formState.isSubmitting ? "Saving..." : "Save Recommendation Configuration"}
+            <div className="flex justify-end space-x-2">
+              <Button type="button" variant="outlined" onClick={onCancel} className="rounded-md text-label-large">
+                <X className="mr-2 h-4 w-4" /> Cancel
               </Button>
-            )}
+              {canModify && (
+                <Button type="submit" className="w-full rounded-md text-label-large" disabled={form.formState.isSubmitting}>
+                  {form.formState.isSubmitting ? "Saving..." : <><Save className="mr-2 h-4 w-4" /> Save Recommendation Configuration</>}
+                </Button>
+              )}
+            </div>
           </form>
         </Form>
       </div>

@@ -12,11 +12,13 @@ import { DecisionPhaseConfig } from "@/features/pathways/components/phase-config
 import { RecommendationPhaseConfig } from "@/features/pathways/components/phase-configs/RecommendationPhaseConfig";
 import { updateCampaignPhaseConfigAction } from "../actions"; // Campaign-specific action
 import { BaseConfigurableItem } from "@/features/pathways/services/pathway-template-service"; // Import BaseConfigurableItem
+import { ScreeningPhaseConfig } from "@/features/pathways/components/phase-configs/ScreeningPhaseConfig"; // Import ScreeningPhaseConfig
 
 interface CampaignPhaseConfigurationPanelProps {
   phase: CampaignPhase;
   campaignId: string;
   onConfigSaved: () => void;
+  onCancel: () => void; // Added onCancel prop
   canModify: boolean;
 }
 
@@ -24,6 +26,7 @@ export function CampaignPhaseConfigurationPanel({
   phase,
   campaignId,
   onConfigSaved,
+  onCancel, // Destructure onCancel
   canModify,
 }: CampaignPhaseConfigurationPanelProps) {
   // Wrapper function to adapt the existing config components to use campaign-specific action
@@ -41,6 +44,7 @@ export function CampaignPhaseConfigurationPanel({
             phase={phase}
             parentId={campaignId} // Pass campaignId as parentId
             onConfigSaved={onConfigSaved}
+            onCancel={onCancel} // Pass onCancel
             canModify={canModify}
             // Override the default update action with the campaign-specific one
             updatePhaseConfigAction={handleConfigUpdate}
@@ -52,6 +56,7 @@ export function CampaignPhaseConfigurationPanel({
             phase={phase}
             parentId={campaignId}
             onConfigSaved={onConfigSaved}
+            onCancel={onCancel} // Pass onCancel
             canModify={canModify}
             updatePhaseConfigAction={handleConfigUpdate}
           />
@@ -62,6 +67,7 @@ export function CampaignPhaseConfigurationPanel({
             phase={phase}
             parentId={campaignId}
             onConfigSaved={onConfigSaved}
+            onCancel={onCancel} // Pass onCancel
             canModify={canModify}
             updatePhaseConfigAction={handleConfigUpdate}
           />
@@ -72,6 +78,7 @@ export function CampaignPhaseConfigurationPanel({
             phase={phase}
             parentId={campaignId}
             onConfigSaved={onConfigSaved}
+            onCancel={onCancel} // Pass onCancel
             canModify={canModify}
             updatePhaseConfigAction={handleConfigUpdate}
           />
@@ -82,6 +89,7 @@ export function CampaignPhaseConfigurationPanel({
             phase={phase}
             parentId={campaignId}
             onConfigSaved={onConfigSaved}
+            onCancel={onCancel} // Pass onCancel
             canModify={canModify}
             updatePhaseConfigAction={handleConfigUpdate}
           />
@@ -92,6 +100,18 @@ export function CampaignPhaseConfigurationPanel({
             phase={phase}
             parentId={campaignId}
             onConfigSaved={onConfigSaved}
+            onCancel={onCancel} // Pass onCancel
+            canModify={canModify}
+            updatePhaseConfigAction={handleConfigUpdate}
+          />
+        );
+      case "Screening": // Added ScreeningPhaseConfig
+        return (
+          <ScreeningPhaseConfig
+            phase={phase}
+            parentId={campaignId}
+            onConfigSaved={onConfigSaved}
+            onCancel={onCancel} // Pass onCancel
             canModify={canModify}
             updatePhaseConfigAction={handleConfigUpdate}
           />

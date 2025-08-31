@@ -19,7 +19,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { PlusCircle, Trash2, GripVertical, ListChecks } from "lucide-react"; // Added ListChecks icon
+import { PlusCircle, Trash2, GripVertical, ListChecks, Save, X } from "lucide-react"; // Added Save and X icons
 import { BaseConfigurableItem } from "../../services/pathway-template-service";
 import { updatePhaseConfigAction as defaultUpdatePhaseConfigAction } from "../../actions";
 import { cn } from "@/lib/utils";
@@ -43,11 +43,12 @@ interface ScreeningPhaseConfigProps {
   phase: BaseConfigurableItem;
   parentId: string;
   onConfigSaved: () => void;
+  onCancel: () => void; // Added onCancel prop
   canModify: boolean;
   updatePhaseConfigAction?: (phaseId: string, parentId: string, configUpdates: Record<string, any>) => Promise<BaseConfigurableItem | null>;
 }
 
-export function ScreeningPhaseConfig({ phase, parentId, onConfigSaved, canModify, updatePhaseConfigAction }: ScreeningPhaseConfigProps) {
+export function ScreeningPhaseConfig({ phase, parentId, onConfigSaved, onCancel, canModify, updatePhaseConfigAction }: ScreeningPhaseConfigProps) {
   const form = useForm<z.infer<typeof screeningPhaseConfigSchema>>({
     resolver: zodResolver(screeningPhaseConfigSchema),
     defaultValues: {
@@ -240,11 +241,16 @@ export function ScreeningPhaseConfig({ phase, parentId, onConfigSaved, canModify
               </Button>
             )}
 
-            {canModify && (
-              <Button type="submit" className="w-full rounded-md text-label-large" disabled={form.formState.isSubmitting}>
-                {form.formState.isSubmitting ? "Saving..." : "Save Screening Configuration"}
+            <div className="flex justify-end space-x-2">
+              <Button type="button" variant="outlined" onClick={onCancel} className="rounded-md text-label-large">
+                <X className="mr-2 h-4 w-4" /> Cancel
               </Button>
-            )}
+              {canModify && (
+                <Button type="submit" className="w-full rounded-md text-label-large" disabled={form.formState.isSubmitting}>
+                  {form.formState.isSubmitting ? "Saving..." : <><Save className="mr-2 h-4 w-4" /> Save Screening Configuration</>}
+                </Button>
+              )}
+            </div>
           </form>
         </Form>
       </div>

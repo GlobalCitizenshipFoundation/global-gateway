@@ -18,8 +18,9 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { BaseConfigurableItem } from "../../services/pathway-template-service"; // Import BaseConfigurableItem
-import { updatePhaseConfigAction as defaultUpdatePhaseConfigAction } from "../../actions"; // Renamed default action
+import { BaseConfigurableItem } from "../../services/pathway-template-service";
+import { updatePhaseConfigAction as defaultUpdatePhaseConfigAction } from "../../actions";
+import { Save, X } from "lucide-react"; // Added Save and X icons
 
 // Zod schema for the Scheduling Phase configuration
 const schedulingPhaseConfigSchema = z.object({
@@ -30,15 +31,15 @@ const schedulingPhaseConfigSchema = z.object({
 });
 
 interface SchedulingPhaseConfigProps {
-  phase: BaseConfigurableItem; // Changed from Phase to BaseConfigurableItem
-  parentId: string; // Renamed from pathwayTemplateId
+  phase: BaseConfigurableItem;
+  parentId: string;
   onConfigSaved: () => void;
+  onCancel: () => void; // Added onCancel prop
   canModify: boolean;
-  // Optional prop to override the default update action, now returns BaseConfigurableItem | null
   updatePhaseConfigAction?: (phaseId: string, parentId: string, configUpdates: Record<string, any>) => Promise<BaseConfigurableItem | null>;
 }
 
-export function SchedulingPhaseConfig({ phase, parentId, onConfigSaved, canModify, updatePhaseConfigAction }: SchedulingPhaseConfigProps) {
+export function SchedulingPhaseConfig({ phase, parentId, onConfigSaved, onCancel, canModify, updatePhaseConfigAction }: SchedulingPhaseConfigProps) {
   const form = useForm<z.infer<typeof schedulingPhaseConfigSchema>>({
     resolver: zodResolver(schedulingPhaseConfigSchema),
     defaultValues: {
@@ -164,11 +165,16 @@ export function SchedulingPhaseConfig({ phase, parentId, onConfigSaved, canModif
               )}
             />
 
-            {canModify && (
-              <Button type="submit" className="w-full rounded-md text-label-large" disabled={form.formState.isSubmitting}>
-                {form.formState.isSubmitting ? "Saving..." : "Save Scheduling Configuration"}
+            <div className="flex justify-end space-x-2">
+              <Button type="button" variant="outlined" onClick={onCancel} className="rounded-md text-label-large">
+                <X className="mr-2 h-4 w-4" /> Cancel
               </Button>
-            )}
+              {canModify && (
+                <Button type="submit" className="w-full rounded-md text-label-large" disabled={form.formState.isSubmitting}>
+                  {form.formState.isSubmitting ? "Saving..." : <><Save className="mr-2 h-4 w-4" /> Save Scheduling Configuration</>}
+                </Button>
+              )}
+            </div>
           </form>
         </Form>
       </div>

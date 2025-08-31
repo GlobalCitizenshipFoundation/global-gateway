@@ -8,15 +8,16 @@ import { EmailPhaseConfig } from "./phase-configs/EmailPhaseConfig";
 import { SchedulingPhaseConfig } from "./phase-configs/SchedulingPhaseConfig";
 import { DecisionPhaseConfig } from "./phase-configs/DecisionPhaseConfig";
 import { RecommendationPhaseConfig } from "./phase-configs/RecommendationPhaseConfig";
-import { ScreeningPhaseConfig } from "./phase-configs/ScreeningPhaseConfig"; // Import new ScreeningPhaseConfig
+import { ScreeningPhaseConfig } from "./phase-configs/ScreeningPhaseConfig";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { PhaseTaskManagementPanel } from "./PhaseTaskManagementPanel"; // Import new task panel
-import { Separator } from "@/components/ui/separator"; // Import Separator
+import { PhaseTaskManagementPanel } from "./PhaseTaskManagementPanel";
+import { Separator } from "@/components/ui/separator";
 
 interface PhaseConfigurationPanelProps {
   phase: BaseConfigurableItem;
   parentId: string; // This is pathwayTemplateId for pathway templates
   onConfigSaved: () => void;
+  onCancel: () => void; // Added onCancel prop
   canModify: boolean;
 }
 
@@ -24,6 +25,7 @@ export function PhaseConfigurationPanel({
   phase,
   parentId,
   onConfigSaved,
+  onCancel, // Destructure onCancel
   canModify,
 }: PhaseConfigurationPanelProps) {
   const renderConfigComponent = () => {
@@ -34,6 +36,7 @@ export function PhaseConfigurationPanel({
             phase={phase}
             parentId={parentId}
             onConfigSaved={onConfigSaved}
+            onCancel={onCancel}
             canModify={canModify}
           />
         );
@@ -43,6 +46,7 @@ export function PhaseConfigurationPanel({
             phase={phase}
             parentId={parentId}
             onConfigSaved={onConfigSaved}
+            onCancel={onCancel}
             canModify={canModify}
           />
         );
@@ -52,6 +56,7 @@ export function PhaseConfigurationPanel({
             phase={phase}
             parentId={parentId}
             onConfigSaved={onConfigSaved}
+            onCancel={onCancel}
             canModify={canModify}
           />
         );
@@ -61,6 +66,7 @@ export function PhaseConfigurationPanel({
             phase={phase}
             parentId={parentId}
             onConfigSaved={onConfigSaved}
+            onCancel={onCancel}
             canModify={canModify}
           />
         );
@@ -70,6 +76,7 @@ export function PhaseConfigurationPanel({
             phase={phase}
             parentId={parentId}
             onConfigSaved={onConfigSaved}
+            onCancel={onCancel}
             canModify={canModify}
           />
         );
@@ -79,15 +86,17 @@ export function PhaseConfigurationPanel({
             phase={phase}
             parentId={parentId}
             onConfigSaved={onConfigSaved}
+            onCancel={onCancel}
             canModify={canModify}
           />
         );
-      case "Screening": // New case for Screening phase
+      case "Screening":
         return (
           <ScreeningPhaseConfig
             phase={phase}
             parentId={parentId}
             onConfigSaved={onConfigSaved}
+            onCancel={onCancel}
             canModify={canModify}
           />
         );

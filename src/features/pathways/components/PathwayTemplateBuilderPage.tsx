@@ -8,12 +8,12 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { ArrowLeft, PlusCircle, Workflow, Lock, Globe, Edit, Copy, Save, CheckCircle, Clock, UserCircle2, CalendarDays, Info } from "lucide-react";
+import { ArrowLeft, PlusCircle, Workflow, Lock, Globe, Edit, Copy, Save, CheckCircle, Clock, UserCircle2, CalendarDays, Info, X } from "lucide-react"; // Added X icon
 import { PathwayTemplate, Phase } from "../services/pathway-template-service";
 import { toast } from "sonner";
 import { useSession } from "@/context/SessionContextProvider";
 import { Skeleton } from "@/components/ui/skeleton";
-import { getTemplateByIdAction, getPhasesAction, reorderPhasesAction, softDeletePhaseAction, createTemplateVersionAction, publishPathwayTemplateAction, updatePathwayTemplateStatusAction, updatePathwayTemplateAction, createPathwayTemplateAction } from "../actions";
+import { getTemplateByIdAction, getPhasesAction, reorderPhasesAction, softDeletePhaseAction, createTemplateVersionAction, publishPathwayTemplateAction, updatePathwayTemplateStatusAction, updatePathwayTemplateAction, createPathwayTemplateAction, createPhaseAction } from "../actions"; // Added createPhaseAction
 import { DragDropContext, Droppable, DropResult } from "@hello-pangea/dnd";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Input } from "@/components/ui/input";
@@ -37,8 +37,7 @@ import { PhaseBuilderCard } from "./PhaseBuilderCard";
 import { CloneTemplateDialog } from "./CloneTemplateDialog";
 import { TemplateVersionHistory } from "./TemplateVersionHistory";
 import { TemplateActivityLog } from "./TemplateActivityLog";
-import { PhaseCreationDialog } from "./PhaseCreationDialog";
-import { FloatingInspector } from "./FloatingInspector"; // Import FloatingInspector
+import { PhaseDetailsForm } from "./PhaseDetailsForm"; // Re-import PhaseDetailsForm for inline creation
 
 // Zod schema for the entire template builder page (template details + phases)
 const templateBuilderSchema = z.object({
@@ -49,6 +48,12 @@ const templateBuilderSchema = z.object({
   application_open_date: z.date().nullable().optional(),
   participation_deadline: z.date().nullable().optional(),
   general_instructions: z.string().max(5000, { message: "General instructions cannot exceed 5000 characters." }).nullable().optional(),
+});
+
+// Schema for the inline phase creation form
+const inlinePhaseCreationSchema = z.object({
+  name: z.string().min(1, { message: "Phase name is required." }).max(100, { message: "Name cannot exceed 100 characters." }),
+  type: z.string().min(1, { message: "Phase type is required." }),
 });
 
 interface PathwayTemplateBuilderPageProps {
@@ -65,11 +70,10 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
   const [isLoading, setIsLoading] = useState(true);
   const [isCloneDialogOpen, setIsCloneDialogOpen] = useState(false);
   const [templateToClone, setTemplateToClone] = useState<PathwayTemplate | null>(null);
-  const [isPhaseCreationDialogOpen, setIsPhaseCreationDialogOpen] = useState(false);
-  const [isInspectorOpen, setIsInspectorOpen] = useState(false); // State for FloatingInspector
-  const [selectedPhaseForInspector, setSelectedPhaseForInspector] = useState<Phase | null>(null); // State for phase being configured
+  const [isAddingNewPhase, setIsAddingNewPhase] = useState(false); // State for inline new phase form
+  const [expandedPhaseId, setExpandedPhaseId] = useState<string | null>(null); // State for expanded phase card
 
-  const form = useForm<z.infer<typeof templateBuilderSchema>>({
+  const templateForm = useForm<z.infer<typeof templateBuilderSchema>>({
     resolver: zodResolver(templateBuilderSchema),
     defaultValues: {
       name: initialTemplate?.name || "",
@@ -81,6 +85,14 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
       general_instructions: initialTemplate?.general_instructions || "",
     },
     mode: "onChange",
+  });
+
+  const inlinePhaseForm = useForm<z.infer<typeof inlinePhaseCreationSchema>>({
+    resolver: zodResolver(inlinePhaseCreationSchema),
+    defaultValues: {
+      name: "",
+      type: "",
+    },
   });
 
   const fetchTemplateAndPhases = useCallback(async () => {
@@ -97,7 +109,7 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
         return;
       }
       setTemplate(fetchedTemplate);
-      form.reset({
+      templateForm.reset({
         name: fetchedTemplate.name,
         description: fetchedTemplate.description,
         is_private: fetchedTemplate.is_private,
@@ -117,7 +129,7 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
     } finally {
       setIsLoading(false);
     }
-  }, [templateId, router, form]);
+  }, [templateId, router, templateForm]);
 
   useEffect(() => {
     if (!isSessionLoading && user) {
@@ -168,6 +180,8 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
 
   const handlePhaseUpdated = () => {
     fetchTemplateAndPhases(); // Re-fetch to update list and order indices
+    setExpandedPhaseId(null); // Collapse any expanded phase after update
+    setIsAddingNewPhase(false); // Hide inline creator after new phase is added
   };
 
   const handleDeletePhase = async (phaseId: string) => {
@@ -256,9 +270,33 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
     setIsCloneDialogOpen(true);
   };
 
-  const handleConfigurePhase = (phase: Phase) => {
-    setSelectedPhaseForInspector(phase);
-    setIsInspectorOpen(true);
+  const handleToggleExpandPhase = (phaseId: string) => {
+    setExpandedPhaseId(prevId => (prevId === phaseId ? null : phaseId));
+    setIsAddingNewPhase(false); // Hide inline creator if expanding a phase
+  };
+
+  const handleInlinePhaseCreate = async (values: z.infer<typeof inlinePhaseCreationSchema>) => {
+    if (!canModifyTemplate || !templateId) {
+      toast.error("You do not have permission to add phases.");
+      return;
+    }
+    try {
+      const formData = new FormData();
+      formData.append("name", values.name);
+      formData.append("type", values.type);
+      formData.append("description", ""); // Default empty description
+      formData.append("order_index", phases.length.toString()); // Append at the end
+
+      const result = await createPhaseAction(templateId, formData);
+      if (result) {
+        toast.success(`Phase "${result.name}" created successfully!`);
+        handlePhaseUpdated(); // This will re-fetch and hide the inline form
+        inlinePhaseForm.reset(); // Reset inline form fields
+      }
+    } catch (error: any) {
+      console.error("Inline phase creation error:", error);
+      toast.error(error.message || "Failed to create phase.");
+    }
   };
 
   if (isLoading || isSessionLoading || (!templateId && !user)) {
@@ -303,6 +341,16 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
     { value: "archived", label: "Archived" },
   ];
 
+  const phaseTypes = [
+    { value: "Form", label: "Form" },
+    { value: "Review", label: "Review" },
+    { value: "Email", label: "Email" },
+    { value: "Scheduling", label: "Scheduling" },
+    { value: "Decision", label: "Decision" },
+    { value: "Recommendation", label: "Recommendation" },
+    { value: "Screening", label: "Screening" },
+  ];
+
   return (
     <div className="container mx-auto py-8 px-4 space-y-8">
       <div className="flex items-center justify-between">
@@ -339,8 +387,8 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
         {isNewTemplate ? "Create New Pathway Template" : `Edit Pathway Template: ${currentTemplate.name}`}
       </h1>
 
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(handleTemplateDetailsSave)} className="space-y-8">
+      <Form {...templateForm}>
+        <form onSubmit={templateForm.handleSubmit(handleTemplateDetailsSave)} className="space-y-8">
           {/* Template Basics Card */}
           <Card className="rounded-xl shadow-lg p-6">
             <CardHeader className="p-0 mb-4">
@@ -374,7 +422,7 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
             </CardHeader>
             <CardContent className="p-0 space-y-6">
               <FormField
-                control={form.control}
+                control={templateForm.control}
                 name="name"
                 render={({ field }) => (
                   <FormItem>
@@ -390,7 +438,7 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
                 )}
               />
               <FormField
-                control={form.control}
+                control={templateForm.control}
                 name="description"
                 render={({ field }) => (
                   <FormItem>
@@ -412,7 +460,7 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
                 )}
               />
               <FormField
-                control={form.control}
+                control={templateForm.control}
                 name="is_private"
                 render={({ field }) => (
                   <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
@@ -436,7 +484,7 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
                 )}
               />
               <FormField
-                control={form.control}
+                control={templateForm.control}
                 name="status"
                 render={({ field }) => (
                   <FormItem>
@@ -478,7 +526,7 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
             <CardContent className="p-0 space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField
-                  control={form.control}
+                  control={templateForm.control}
                   name="application_open_date"
                   render={({ field }) => (
                     <FormItem className="flex flex-col">
@@ -519,7 +567,7 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
                   )}
                 />
                 <FormField
-                  control={form.control}
+                  control={templateForm.control}
                   name="participation_deadline"
                   render={({ field }) => (
                     <FormItem className="flex flex-col">
@@ -561,7 +609,7 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
                 />
               </div>
               <FormField
-                control={form.control}
+                control={templateForm.control}
                 name="general_instructions"
                 render={({ field }) => (
                   <FormItem>
@@ -587,8 +635,8 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
 
           {/* Save Template Details Button */}
           {canModifyTemplate && (
-            <Button type="submit" className="w-full rounded-md text-label-large" disabled={form.formState.isSubmitting}>
-              {form.formState.isSubmitting ? "Saving Template Details..." : "Save Template Details"}
+            <Button type="submit" className="w-full rounded-md text-label-large" disabled={templateForm.formState.isSubmitting}>
+              {templateForm.formState.isSubmitting ? "Saving Template Details..." : "Save Template Details"}
             </Button>
           )}
         </form>
@@ -598,20 +646,20 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
       <div className="flex justify-between items-center mt-8">
         <h2 className="text-headline-large font-bold text-foreground">Phases</h2>
         {templateId && canModifyTemplate && (
-          <Button onClick={() => setIsPhaseCreationDialogOpen(true)} className="rounded-full px-6 py-3 text-label-large">
+          <Button onClick={() => setIsAddingNewPhase(true)} className="rounded-full px-6 py-3 text-label-large">
             <PlusCircle className="mr-2 h-5 w-5" /> Add New Phase
           </Button>
         )}
       </div>
 
-      {phases.length === 0 ? (
+      {phases.length === 0 && !isAddingNewPhase ? (
         <Card className="rounded-xl shadow-md p-8 text-center">
           <CardTitle className="text-headline-small text-muted-foreground mb-4">No Phases Defined</CardTitle>
           <CardDescription className="text-body-medium text-muted-foreground">
             This template currently has no phases. Add phases to define its workflow.
           </CardDescription>
           {templateId && canModifyTemplate && (
-            <Button onClick={() => setIsPhaseCreationDialogOpen(true)} className="mt-6 rounded-full px-6 py-3 text-label-large">
+            <Button onClick={() => setIsAddingNewPhase(true)} className="mt-6 rounded-full px-6 py-3 text-label-large">
               <PlusCircle className="mr-2 h-5 w-5" /> Add First Phase
             </Button>
           )}
@@ -627,11 +675,69 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
                     phase={phase}
                     index={index}
                     onDelete={handleDeletePhase}
-                    onConfigure={handleConfigurePhase} // Pass the new handler
+                    onPhaseUpdated={handlePhaseUpdated}
                     canModify={canModifyTemplate}
+                    isExpanded={expandedPhaseId === phase.id}
+                    onToggleExpand={handleToggleExpandPhase}
                   />
                 ))}
                 {provided.placeholder}
+
+                {/* Inline Phase Creation Form */}
+                {isAddingNewPhase && templateId && canModifyTemplate && (
+                  <Card className="rounded-xl shadow-lg p-6 border-l-8 border-primary bg-primary-container/10">
+                    <h3 className="text-title-large font-bold text-foreground mb-4">New Phase Details</h3>
+                    <Form {...inlinePhaseForm}>
+                      <form onSubmit={inlinePhaseForm.handleSubmit(handleInlinePhaseCreate)} className="grid gap-4 py-4">
+                        <FormField
+                          control={inlinePhaseForm.control}
+                          name="name"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-label-large">Phase Name</FormLabel>
+                              <FormControl>
+                                <Input placeholder="e.g., Initial Application" {...field} className="rounded-md" />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={inlinePhaseForm.control}
+                          name="type"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-label-large">Phase Type</FormLabel>
+                              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <FormControl>
+                                  <SelectTrigger className="rounded-md">
+                                    <SelectValue placeholder="Select a phase type" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent className="rounded-md shadow-lg bg-card text-card-foreground border-border">
+                                  {phaseTypes.map((type) => (
+                                    <SelectItem key={type.value} value={type.value} className="text-body-medium hover:bg-muted hover:text-muted-foreground cursor-pointer">
+                                      {type.label}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <div className="flex justify-end space-x-2">
+                          <Button type="button" variant="outlined" onClick={() => setIsAddingNewPhase(false)} className="rounded-md text-label-large">
+                            <X className="mr-2 h-4 w-4" /> Cancel
+                          </Button>
+                          <Button type="submit" className="rounded-md text-label-large" disabled={inlinePhaseForm.formState.isSubmitting}>
+                            {inlinePhaseForm.formState.isSubmitting ? "Creating..." : <><PlusCircle className="mr-2 h-4 w-4" /> Create Phase</>}
+                          </Button>
+                        </div>
+                      </form>
+                    </Form>
+                  </Card>
+                )}
               </div>
             )}
           </Droppable>
@@ -644,7 +750,7 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
           <TemplateVersionHistory
             pathwayTemplateId={templateId}
             canModify={canModifyTemplate}
-            onTemplateRolledBack={fetchTemplateAndPhases}
+            onTemplateRolledBack={handlePhaseUpdated}
           />
           <TemplateActivityLog templateId={templateId} />
         </>
@@ -657,30 +763,6 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
           onClose={() => { setIsCloneDialogOpen(false); setTemplateToClone(null); fetchTemplateAndPhases(); }}
           templateId={templateToClone.id}
           originalTemplateName={templateToClone.name}
-        />
-      )}
-
-      {/* Phase Creation Dialog */}
-      {templateId && (
-        <PhaseCreationDialog
-          isOpen={isPhaseCreationDialogOpen}
-          onClose={() => setIsPhaseCreationDialogOpen(false)}
-          pathwayTemplateId={templateId}
-          onPhaseCreated={handlePhaseUpdated}
-          nextOrderIndex={phases.length}
-          canModify={canModifyTemplate}
-        />
-      )}
-
-      {/* Floating Inspector for Phase Configuration */}
-      {templateId && selectedPhaseForInspector && (
-        <FloatingInspector
-          isOpen={isInspectorOpen}
-          onClose={() => { setIsInspectorOpen(false); setSelectedPhaseForInspector(null); }}
-          phase={selectedPhaseForInspector}
-          pathwayTemplateId={templateId}
-          onConfigSaved={handlePhaseUpdated}
-          canModify={canModifyTemplate}
         />
       )}
 

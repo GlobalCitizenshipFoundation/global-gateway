@@ -3,29 +3,33 @@
 import React, { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Trash2, GripVertical, Settings, GitFork, FileText, Award, Mail, Calendar, MailCheck, Info, ExternalLink, ListChecks } from "lucide-react"; // Added ListChecks icon for Screening
+import { Trash2, GripVertical, Settings, GitFork, FileText, Award, Mail, Calendar, MailCheck, Info, ExternalLink, ListChecks, ChevronDown, ChevronUp } from "lucide-react"; // Added ListChecks, ChevronDown, ChevronUp icons
 import { Phase } from "../services/pathway-template-service";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Draggable } from "@hello-pangea/dnd";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
-// Removed imports for PhaseDetailsForm, PhaseConfigurationPanel, PhaseTaskManagementPanel, BranchingConfigForm
+import { PhaseDetailsForm } from "./PhaseDetailsForm"; // Import PhaseDetailsForm
+import { PhaseConfigurationPanel } from "./PhaseConfigurationPanel"; // Import PhaseConfigurationPanel
+import { PhaseTaskManagementPanel } from "./PhaseTaskManagementPanel"; // Import PhaseTaskManagementPanel
+import { BranchingConfigForm } from "./BranchingConfigForm"; // Import BranchingConfigForm
+import { Separator } from "@/components/ui/separator"; // Import Separator
 
 interface PhaseBuilderCardProps {
   phase: Phase;
   index: number;
   onDelete: (phaseId: string) => void;
-  onConfigure: (phase: Phase) => void; // New prop to open inspector
+  onPhaseUpdated: () => void; // Callback for when any internal form saves
   canModify: boolean;
+  isExpanded: boolean; // New prop to control expansion
+  onToggleExpand: (phaseId: string) => void; // New prop to toggle expansion
 }
 
-export function PhaseBuilderCard({ phase, index, onDelete, onConfigure, canModify }: PhaseBuilderCardProps) {
-  // Removed isExpanded state and related logic
-
+export function PhaseBuilderCard({ phase, index, onDelete, onPhaseUpdated, canModify, isExpanded, onToggleExpand }: PhaseBuilderCardProps) {
   // Determine icon based on phase type
   const getPhaseIcon = (type: string) => {
     switch (type) {
-      case "Form": return <FileText className="h-5 w-5" />; // Smaller icon for summary view
+      case "Form": return <FileText className="h-5 w-5" />;
       case "Review": return <Award className="h-5 w-5" />;
       case "Email": return <Mail className="h-5 w-5" />;
       case "Scheduling": return <Calendar className="h-5 w-5" />;
@@ -52,6 +56,7 @@ export function PhaseBuilderCard({ phase, index, onDelete, onConfigure, canModif
 
   // Basic check for incomplete configuration
   const isConfigIncomplete = Object.keys(phase.config || {}).length === 0;
+  const isConditional = phase.type === "Decision" || phase.type === "Review";
 
   return (
     <Draggable draggableId={phase.id} index={index}>
@@ -63,66 +68,122 @@ export function PhaseBuilderCard({ phase, index, onDelete, onConfigure, canModif
             "rounded-xl shadow-md transition-all duration-200 border-l-8",
             getPhaseColorClasses(phase.type),
             snapshot.isDragging ? "shadow-lg ring-2 ring-primary-container" : "hover:shadow-lg",
-            "flex items-center p-4" // Changed to flex-row layout
+            "flex flex-col" // Changed to flex-col to accommodate expandable content
           )}
         >
-          <div {...provided.dragHandleProps} className="cursor-grab p-2 -ml-2 mr-2 text-muted-foreground hover:text-foreground transition-colors">
-            <GripVertical className="h-5 w-5" />
-          </div>
-          <div className="flex-shrink-0 mr-4 text-primary">
-            {getPhaseIcon(phase.type)}
-          </div>
-          <CardHeader className="flex-grow p-0">
-            <CardTitle className="text-title-medium text-foreground flex items-center gap-2">
-              {phase.name}
-              <span className="text-body-small text-muted-foreground font-normal">({phase.type})</span>
-              {isConfigIncomplete && (
-                <Badge variant="outline" className="ml-2 bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">
-                  <Info className="h-3 w-3 mr-1" /> Config Incomplete
-                </Badge>
+          {/* Always visible header part */}
+          <div className="flex items-center p-4">
+            <div {...provided.dragHandleProps} className="cursor-grab p-2 -ml-2 mr-2 text-muted-foreground hover:text-foreground transition-colors">
+              <GripVertical className="h-5 w-5" />
+            </div>
+            <div className="flex-shrink-0 mr-4 text-primary">
+              {getPhaseIcon(phase.type)}
+            </div>
+            <CardHeader className="flex-grow p-0">
+              <CardTitle className="text-title-medium text-foreground flex items-center gap-2">
+                {phase.name}
+                <span className="text-body-small text-muted-foreground font-normal">({phase.type})</span>
+                {isConfigIncomplete && (
+                  <Badge variant="outline" className="ml-2 bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">
+                    <Info className="h-3 w-3 mr-1" /> Config Incomplete
+                  </Badge>
+                )}
+              </CardTitle>
+              {phase.description && (
+                <CardDescription className="text-body-small text-muted-foreground">
+                  {phase.description}
+                </CardDescription>
               )}
-            </CardTitle>
-            {phase.description && (
-              <CardDescription className="text-body-small text-muted-foreground">
-                {phase.description}
-              </CardDescription>
+            </CardHeader>
+            <CardContent className="flex-shrink-0 flex items-center space-x-2 p-0 pl-4">
+              {canModify && (
+                <>
+                  <Button variant="outlined" size="icon" className="rounded-md" onClick={(e) => { e.stopPropagation(); onToggleExpand(phase.id); }}>
+                    {isExpanded ? <ChevronUp className="h-4 w-4" /> : <Settings className="h-4 w-4" />}
+                    <span className="sr-only">{isExpanded ? "Collapse" : "Configure Phase"}</span>
+                  </Button>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="destructive" size="icon" className="rounded-md" onClick={(e) => e.stopPropagation()}>
+                        <Trash2 className="h-4 w-4" />
+                        <span className="sr-only">Delete Phase</span>
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent className="rounded-xl shadow-lg bg-card text-card-foreground border-border">
+                      <AlertDialogHeader>
+                        <AlertDialogTitle className="text-headline-small">Confirm Deletion</AlertDialogTitle>
+                        <AlertDialogDescription className="text-body-medium text-muted-foreground">
+                          Are you sure you want to soft-delete the phase &quot;{phase.name}&quot;? It can be restored later by an admin.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel className="rounded-md text-label-large">Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={() => onDelete(phase.id)}
+                          className="rounded-md text-label-large bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        >
+                          Soft-Delete
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </>
+              )}
+            </CardContent>
+          </div>
+
+          {/* Collapsible content for configuration */}
+          <div
+            className={cn(
+              "overflow-hidden transition-max-height duration-300 ease-in-out",
+              isExpanded ? "max-h-screen-content p-4 pt-0" : "max-h-0 p-0"
             )}
-          </CardHeader>
-          <CardContent className="flex-shrink-0 flex items-center space-x-2 p-0 pl-4">
-            {canModify && (
-              <>
-                <Button variant="outlined" size="icon" className="rounded-md" onClick={(e) => { e.stopPropagation(); onConfigure(phase); }}>
-                  <Settings className="h-4 w-4" />
-                  <span className="sr-only">Configure Phase</span>
-                </Button>
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button variant="destructive" size="icon" className="rounded-md" onClick={(e) => e.stopPropagation()}>
-                      <Trash2 className="h-4 w-4" />
-                      <span className="sr-only">Delete Phase</span>
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent className="rounded-xl shadow-lg bg-card text-card-foreground border-border">
-                    <AlertDialogHeader>
-                      <AlertDialogTitle className="text-headline-small">Confirm Deletion</AlertDialogTitle>
-                      <AlertDialogDescription className="text-body-medium text-muted-foreground">
-                        Are you sure you want to soft-delete the phase &quot;{phase.name}&quot;? It can be restored later by an admin.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel className="rounded-md text-label-large">Cancel</AlertDialogCancel>
-                      <AlertDialogAction
-                        onClick={() => onDelete(phase.id)}
-                        className="rounded-md text-label-large bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                      >
-                        Soft-Delete
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-              </>
+          >
+            {isExpanded && (
+              <div className="space-y-8">
+                <Separator className="my-4" />
+                <PhaseDetailsForm
+                  pathwayTemplateId={phase.pathway_template_id}
+                  initialData={phase}
+                  onPhaseSaved={onPhaseUpdated}
+                  onCancel={() => onToggleExpand(phase.id)} // Collapse on cancel
+                  nextOrderIndex={phase.order_index}
+                  canModify={canModify}
+                />
+
+                <Separator className="my-4" />
+
+                <PhaseConfigurationPanel
+                  phase={phase}
+                  parentId={phase.pathway_template_id}
+                  onConfigSaved={onPhaseUpdated}
+                  onCancel={() => onToggleExpand(phase.id)} // Collapse on cancel
+                  canModify={canModify}
+                />
+
+                <Separator className="my-4" />
+
+                <PhaseTaskManagementPanel
+                  phaseId={phase.id}
+                  pathwayTemplateId={phase.pathway_template_id}
+                  canModify={canModify}
+                />
+
+                {isConditional && (
+                  <>
+                    <Separator className="my-4" />
+                    <BranchingConfigForm
+                      pathwayTemplateId={phase.pathway_template_id}
+                      phase={phase}
+                      onConfigSaved={onPhaseUpdated}
+                      onCancel={() => onToggleExpand(phase.id)} // Collapse on cancel
+                      canModify={canModify}
+                    />
+                  </>
+                )}
+              </div>
             )}
-          </CardContent>
+          </div>
         </Card>
       )}
     </Draggable>

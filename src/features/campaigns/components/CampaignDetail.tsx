@@ -254,6 +254,7 @@ export function CampaignDetail({ campaignId }: CampaignDetailProps) {
           {canModifyCampaign && (
             <Button onClick={() => { setEditingPhase(undefined); setIsPhaseFormOpen(true); }} className="mt-6 rounded-full px-6 py-3 text-label-large">
               <PlusCircle className="mr-2 h-5 w-5" /> Add First Phase
+            </Link>
             </Button>
           )}
         </Card>
@@ -302,6 +303,7 @@ export function CampaignDetail({ campaignId }: CampaignDetailProps) {
               phase={configuringPhase}
               campaignId={campaignId}
               onConfigSaved={handleConfigSaved}
+              onCancel={() => setIsConfigDialogOpen(false)} {/* Pass onCancel here */}
               canModify={canModifyCampaign}
             />
           )}

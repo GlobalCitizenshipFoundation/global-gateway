@@ -22,7 +22,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { PlusCircle, Trash2, GripVertical } from "lucide-react";
+import { PlusCircle, Trash2, GripVertical, Save, X } from "lucide-react"; // Added Save and X icons
 import { BaseConfigurableItem } from "../../services/pathway-template-service";
 import { updatePhaseConfigAction as defaultUpdatePhaseConfigAction } from "../../actions";
 import { cn } from "@/lib/utils";
@@ -48,11 +48,12 @@ interface ReviewPhaseConfigProps {
   phase: BaseConfigurableItem;
   parentId: string;
   onConfigSaved: () => void;
+  onCancel: () => void; // Added onCancel prop
   canModify: boolean;
   updatePhaseConfigAction?: (phaseId: string, parentId: string, configUpdates: Record<string, any>) => Promise<BaseConfigurableItem | null>;
 }
 
-export function ReviewPhaseConfig({ phase, parentId, onConfigSaved, canModify, updatePhaseConfigAction }: ReviewPhaseConfigProps) {
+export function ReviewPhaseConfig({ phase, parentId, onConfigSaved, onCancel, canModify, updatePhaseConfigAction }: ReviewPhaseConfigProps) {
   const form = useForm<z.infer<typeof reviewPhaseConfigSchema>>({
     resolver: zodResolver(reviewPhaseConfigSchema),
     defaultValues: {
@@ -306,11 +307,16 @@ export function ReviewPhaseConfig({ phase, parentId, onConfigSaved, canModify, u
               </Button>
             )}
 
-            {canModify && (
-              <Button type="submit" className="w-full rounded-md text-label-large" disabled={form.formState.isSubmitting}>
-                {form.formState.isSubmitting ? "Saving..." : "Save Review Configuration"}
+            <div className="flex justify-end space-x-2">
+              <Button type="button" variant="outlined" onClick={onCancel} className="rounded-md text-label-large">
+                <X className="mr-2 h-4 w-4" /> Cancel
               </Button>
-            )}
+              {canModify && (
+                <Button type="submit" className="w-full rounded-md text-label-large" disabled={form.formState.isSubmitting}>
+                  {form.formState.isSubmitting ? "Saving..." : <><Save className="mr-2 h-4 w-4" /> Save Review Configuration</>}
+                </Button>
+              )}
+            </div>
           </form>
         </Form>
       </div>

@@ -18,7 +18,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Phase } from "../services/pathway-template-service";
 import { updatePhaseBranchingAction, getPhasesAction } from "../actions";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"; // Import Card components
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Save, X } from "lucide-react"; // Import Save and X icons
 
 const branchingFormSchema = z.object({
   next_phase_id_on_success: z.string().uuid("Invalid phase ID.").nullable().optional(),
@@ -29,6 +30,7 @@ interface BranchingConfigFormProps {
   pathwayTemplateId: string;
   phase: Phase; // The phase for which branching is being configured
   onConfigSaved: () => void;
+  onCancel: () => void; // Added onCancel prop
   canModify: boolean;
 }
 
@@ -36,6 +38,7 @@ export function BranchingConfigForm({
   pathwayTemplateId,
   phase,
   onConfigSaved,
+  onCancel, // Destructure onCancel
   canModify,
 }: BranchingConfigFormProps) {
   const [allPhases, setAllPhases] = useState<Phase[]>([]);
@@ -190,11 +193,11 @@ export function BranchingConfigForm({
             )}
           />
           <div className="flex justify-end space-x-2">
-            <Button type="button" variant="outlined" onClick={onConfigSaved} className="rounded-md text-label-large">
-              Cancel
+            <Button type="button" variant="outlined" onClick={onCancel} className="rounded-md text-label-large">
+              <X className="mr-2 h-4 w-4" /> Cancel
             </Button>
             <Button type="submit" className="rounded-md text-label-large" disabled={form.formState.isSubmitting || !canModify}>
-              {form.formState.isSubmitting ? "Saving..." : "Save Branching"}
+              {form.formState.isSubmitting ? "Saving..." : <><Save className="mr-2 h-4 w-4" /> Save Branching</>}
             </Button>
           </div>
         </form>
