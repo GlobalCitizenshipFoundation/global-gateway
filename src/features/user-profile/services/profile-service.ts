@@ -10,21 +10,32 @@ async function getSupabase() {
 
 export async function getProfileById(userId: string): Promise<Profile | null> {
   const supabase = await getSupabase();
-  const { data, error } = await supabase
+  
+  // Fetch profile data
+  const { data: profileData, error: profileError } = await supabase
     .from("profiles")
-    .select("*, auth.users(email)")
+    .select("*") // Select all columns from profiles table
     .eq("id", userId)
     .single();
 
-  if (error) {
-    console.error(`Error fetching profile for user ${userId}:`, error.message);
-    throw new Error(`Failed to load profile: ${error.message}`);
+  if (profileError) {
+    console.error(`Error fetching profile for user ${userId}:`, profileError.message);
+    throw new Error(`Failed to load profile: ${profileError.message}`);
   }
 
-  const profileData = data as unknown as Profile & { users: { email: string | null } };
+  // Fetch user's email from auth.users table
+  const { data: userData, error: userError } = await supabase.auth.admin.getUserById(userId);
+
+  if (userError) {
+    console.error(`Error fetching user email for user ${userId}:`, userError.message);
+    // Don't throw an error here, as profile might still be valid even if email fetch fails
+    // Or, handle it as a soft error, returning profile without email
+    return { ...profileData, email: null } as Profile;
+  }
+
   const flattenedProfile: Profile = {
     ...profileData,
-    email: profileData.users?.email || null,
+    email: userData?.user?.email || null,
   };
 
   return flattenedProfile;
@@ -39,7 +50,7 @@ export async function updateProfile(
     .from("profiles")
     .update({ ...updates, updated_at: new Date().toISOString() })
     .eq("id", userId)
-    .select("*, auth.users(email)")
+    .select("*") // Select all columns from profiles table
     .single();
 
   if (error) {
@@ -47,10 +58,17 @@ export async function updateProfile(
     throw new Error(`Failed to update profile: ${error.message}`);
   }
 
-  const profileData = data as unknown as Profile & { users: { email: string | null } };
+  // After updating, fetch the email again to return a complete Profile object
+  const { data: userData, error: userError } = await supabase.auth.admin.getUserById(userId);
+
+  if (userError) {
+    console.error(`Error fetching user email after update for user ${userId}:`, userError.message);
+    return { ...data, email: null } as Profile;
+  }
+
   const flattenedProfile: Profile = {
-    ...profileData,
-    email: profileData.users?.email || null,
+    ...data,
+    email: userData?.user?.email || null,
   };
 
   return flattenedProfile;
