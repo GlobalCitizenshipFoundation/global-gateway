@@ -14,6 +14,7 @@ import {
   deletePhase,
   clonePathwayTemplate,
   updatePhase as updatePhaseService, // Renamed to avoid conflict with local updatePhaseAction
+  updatePhaseBranchingConfig as updatePhaseBranchingConfigService, // Import new service function
 } from "./services/pathway-template-service";
 import { createClient } from "@/integrations/supabase/server";
 import { revalidatePath } from "next/cache";
@@ -278,6 +279,50 @@ export async function updatePhaseConfigAction(phaseId: string, pathwayTemplateId
     return updatedPhase;
   } catch (error: any) {
     console.error("Error in updatePhaseConfigAction:", error.message);
+    if (error.message === "UnauthorizedToModifyTemplate") {
+      redirect("/error/403");
+    } else if (error.message === "TemplateNotFound") {
+      redirect("/error/404");
+    } else if (error.message === "FailedToRetrieveTemplate") {
+      redirect("/error/500");
+    }
+    throw error; // Re-throw to be caught by client-side toast
+  }
+}
+
+// New Server Action for updating phase branching configuration
+export async function updatePhaseBranchingAction(phaseId: string, pathwayTemplateId: string, formData: FormData): Promise<Phase | null> {
+  try {
+    await authorizeTemplateAction(pathwayTemplateId, 'write'); // User must have write access to the parent template
+
+    const next_phase_id_on_success = formData.get("next_phase_id_on_success") as string | null;
+    const next_phase_id_on_failure = formData.get("next_phase_id_on_failure") as string | null;
+
+    // Basic validation: Ensure selected phases exist within the same template
+    if (next_phase_id_on_success) {
+      const successPhase = await getPhasesByPathwayTemplateId(pathwayTemplateId);
+      if (!successPhase?.some(p => p.id === next_phase_id_on_success)) {
+        throw new Error("Selected success phase does not exist in this template.");
+      }
+    }
+    if (next_phase_id_on_failure) {
+      const failurePhase = await getPhasesByPathwayTemplateId(pathwayTemplateId);
+      if (!failurePhase?.some(p => p.id === next_phase_id_on_failure)) {
+        throw new Error("Selected failure phase does not exist in this template.");
+      }
+    }
+
+    const configUpdates = {
+      next_phase_id_on_success: next_phase_id_on_success || null,
+      next_phase_id_on_failure: next_phase_id_on_failure || null,
+    };
+
+    const updatedPhase = await updatePhaseBranchingConfigService(phaseId, configUpdates);
+
+    revalidatePath(`/pathway-templates/${pathwayTemplateId}`);
+    return updatedPhase;
+  } catch (error: any) {
+    console.error("Error in updatePhaseBranchingAction:", error.message);
     if (error.message === "UnauthorizedToModifyTemplate") {
       redirect("/error/403");
     } else if (error.message === "TemplateNotFound") {

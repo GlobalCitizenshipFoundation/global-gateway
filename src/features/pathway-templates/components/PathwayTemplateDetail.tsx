@@ -5,19 +5,19 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, PlusCircle, Workflow, Lock, Globe, Edit, Copy } from "lucide-react";
+import { ArrowLeft, PlusCircle, Workflow, Lock, Globe, Edit, Copy } from "lucide-react"; // Import Copy icon
 import { PathwayTemplate, Phase } from "../services/pathway-template-service";
 import { toast } from "sonner";
 import { useSession } from "@/context/SessionContextProvider";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getTemplateByIdAction, getPhasesAction, reorderPhasesAction, deletePhaseAction } from "../actions";
 import { PhaseFormDialog } from "./PhaseFormDialog";
-import { PhaseCard } from "./PhaseCard";
-import { DragDropContext, Droppable, DropResult } from "@hello-pangea/dnd";
+import { WorkflowCanvas } from "./WorkflowCanvas"; // Import WorkflowCanvas
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { PhaseConfigurationPanel } from "./PhaseConfigurationPanel";
 import { CloneTemplateDialog } from "./CloneTemplateDialog";
+import { BranchingConfigDialog } from "./BranchingConfigDialog"; // Import BranchingConfigDialog
 
 interface PathwayTemplateDetailProps {
   templateId: string;
@@ -34,6 +34,8 @@ export function PathwayTemplateDetail({ templateId }: PathwayTemplateDetailProps
   const [isConfigDialogOpen, setIsConfigDialogOpen] = useState(false);
   const [configuringPhase, setConfiguringPhase, ] = useState<Phase | undefined>(undefined);
   const [isCloneDialogOpen, setIsCloneDialogOpen] = useState(false);
+  const [isBranchingDialogOpen, setIsBranchingDialogOpen] = useState(false); // State for branching dialog
+  const [branchingPhase, setBranchingPhase] = useState<Phase | undefined>(undefined); // State for phase being branched
 
   const fetchTemplateAndPhases = async () => {
     setIsLoading(true);
@@ -89,6 +91,17 @@ export function PathwayTemplateDetail({ templateId }: PathwayTemplateDetailProps
     setConfiguringPhase(undefined);
   };
 
+  const handleBranchingConfig = (phase: Phase) => {
+    setBranchingPhase(phase);
+    setIsBranchingDialogOpen(true);
+  };
+
+  const handleBranchingSaved = () => {
+    fetchTemplateAndPhases();
+    setIsBranchingDialogOpen(false);
+    setBranchingPhase(undefined);
+  };
+
   const handleDeletePhase = async (phaseId: string) => {
     try {
       const success = await deletePhaseAction(phaseId, templateId);
@@ -101,36 +114,18 @@ export function PathwayTemplateDetail({ templateId }: PathwayTemplateDetailProps
     }
   };
 
-  const onDragEnd = async (result: DropResult) => {
-    if (!result.destination) {
-      return;
-    }
-
-    const reorderedPhases = Array.from(phases);
-    const [removed] = reorderedPhases.splice(result.source.index, 1);
-    reorderedPhases.splice(result.destination.index, 0, removed);
-
-    const updatedPhases = reorderedPhases.map((phase, index) => ({
-      ...phase,
-      order_index: index,
-    }));
-
-    setPhases(updatedPhases);
-
+  const handleReorderPhases = async (reorderedPhases: { id: string; order_index: number }[]) => {
     try {
-      const success = await reorderPhasesAction(
-        templateId,
-        updatedPhases.map((p) => ({ id: p.id, order_index: p.order_index }))
-      );
+      const success = await reorderPhasesAction(templateId, reorderedPhases);
       if (!success) {
         toast.error("Failed to reorder phases. Reverting changes.");
-        fetchTemplateAndPhases();
+        fetchTemplateAndPhases(); // Revert on failure
       } else {
         toast.success("Phases reordered successfully!");
       }
     } catch (error: any) {
       toast.error(error.message || "Failed to reorder phases. Reverting changes.");
-      fetchTemplateAndPhases();
+      fetchTemplateAndPhases(); // Revert on failure
     }
   };
 
@@ -248,26 +243,15 @@ export function PathwayTemplateDetail({ templateId }: PathwayTemplateDetailProps
           )}
         </Card>
       ) : (
-        <DragDropContext onDragEnd={onDragEnd}>
-          <Droppable droppableId="phases">
-            {(provided) => (
-              <div {...provided.droppableProps} ref={provided.innerRef} className="space-y-4">
-                {phases.map((phase, index) => (
-                  <PhaseCard
-                    key={phase.id}
-                    phase={phase}
-                    index={index}
-                    onEdit={handleEditPhase}
-                    onDelete={handleDeletePhase}
-                    onConfigure={handleConfigurePhase}
-                    canEditOrDelete={canModifyTemplate}
-                  />
-                ))}
-                {provided.placeholder}
-              </div>
-            )}
-          </Droppable>
-        </DragDropContext>
+        <WorkflowCanvas
+          phases={phases}
+          onReorder={handleReorderPhases}
+          onEditPhase={handleEditPhase}
+          onDeletePhase={handleDeletePhase}
+          onConfigurePhase={handleConfigurePhase}
+          onConfigureBranching={handleBranchingConfig}
+          canModify={canModifyTemplate}
+        />
       )}
 
       <PhaseFormDialog
@@ -297,6 +281,18 @@ export function PathwayTemplateDetail({ templateId }: PathwayTemplateDetailProps
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Branching Configuration Dialog */}
+      {branchingPhase && (
+        <BranchingConfigDialog
+          isOpen={isBranchingDialogOpen}
+          onClose={() => setIsBranchingDialogOpen(false)}
+          pathwayTemplateId={templateId}
+          phase={branchingPhase}
+          onConfigSaved={handleBranchingSaved}
+          canModify={canModifyTemplate}
+        />
+      )}
 
       {/* Clone Template Dialog */}
       {template && (

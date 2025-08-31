@@ -179,6 +179,40 @@ export async function updatePhase(
   return data;
 }
 
+// New function to update only the branching configuration of a phase
+export async function updatePhaseBranchingConfig(
+  id: string,
+  configUpdates: Record<string, any>
+): Promise<Phase | null> {
+  const supabase = await getSupabase();
+  // Fetch current config to merge updates
+  const { data: currentPhase, error: fetchError } = await supabase
+    .from("phases")
+    .select("config")
+    .eq("id", id)
+    .single();
+
+  if (fetchError || !currentPhase) {
+    console.error(`Error fetching phase ${id} for config update:`, fetchError?.message);
+    return null;
+  }
+
+  const mergedConfig = { ...currentPhase.config, ...configUpdates };
+
+  const { data, error } = await supabase
+    .from("phases")
+    .update({ config: mergedConfig, updated_at: new Date().toISOString() })
+    .eq("id", id)
+    .select()
+    .single();
+
+  if (error) {
+    console.error(`Error updating phase branching config for ${id}:`, error.message);
+    return null;
+  }
+  return data;
+}
+
 export async function deletePhase(id: string): Promise<boolean> {
   const supabase = await getSupabase();
   const { error } = await supabase.from("phases").delete().eq("id", id);
