@@ -47,9 +47,7 @@ export async function createPathwayTemplate(
   application_open_date: string | null,
   participation_deadline: string | null,
   general_instructions: string | null,
-  applicant_instructions: string | null, // New field
-  manager_instructions: string | null, // New field
-  is_visible_to_applicants: boolean // New field
+  is_visible_to_applicants: boolean
 ): Promise<PathwayTemplate | null> {
   const supabase = await getSupabase();
   const { data, error } = await supabase
@@ -64,9 +62,7 @@ export async function createPathwayTemplate(
       application_open_date,
       participation_deadline,
       general_instructions,
-      applicant_instructions, // New field
-      manager_instructions, // New field
-      is_visible_to_applicants, // New field
+      is_visible_to_applicants,
     }])
     .select()
     .single();
@@ -140,11 +136,11 @@ export async function createPhase(
   description: string | null = null,
   config: Record<string, any> = {},
   creatorId: string,
-  phase_start_date: string | null, // New field
-  phase_end_date: string | null, // New field
-  applicant_instructions: string | null, // New field
-  manager_instructions: string | null, // New field
-  is_visible_to_applicants: boolean // New field
+  phase_start_date: string | null,
+  phase_end_date: string | null,
+  applicant_instructions: string | null,
+  manager_instructions: string | null,
+  is_visible_to_applicants: boolean
 ): Promise<Phase | null> {
   const supabase = await getSupabase();
   const { data, error } = await supabase
@@ -158,11 +154,11 @@ export async function createPhase(
         description,
         config,
         last_updated_by: creatorId,
-        phase_start_date, // New field
-        phase_end_date, // New field
-        applicant_instructions, // New field
-        manager_instructions, // New field
-        is_visible_to_applicants, // New field
+        phase_start_date,
+        phase_end_date,
+        applicant_instructions,
+        manager_instructions,
+        is_visible_to_applicants,
       },
     ])
     .select()
@@ -283,9 +279,7 @@ export async function clonePathwayTemplate(
         application_open_date: originalTemplate.application_open_date,
         participation_deadline: originalTemplate.participation_deadline,
         general_instructions: originalTemplate.general_instructions,
-        applicant_instructions: originalTemplate.applicant_instructions, // Copy new field
-        manager_instructions: originalTemplate.manager_instructions, // Copy new field
-        is_visible_to_applicants: originalTemplate.is_visible_to_applicants, // Copy new field
+        is_visible_to_applicants: originalTemplate.is_visible_to_applicants,
       },
     ])
     .select()
@@ -305,11 +299,11 @@ export async function clonePathwayTemplate(
     order_index: phase.order_index,
     config: phase.config,
     last_updated_by: lastUpdatedBy,
-    phase_start_date: phase.phase_start_date, // Copy new field
-    phase_end_date: phase.phase_end_date, // Copy new field
-    applicant_instructions: phase.applicant_instructions, // Copy new field
-    manager_instructions: phase.manager_instructions, // Copy new field
-    is_visible_to_applicants: phase.is_visible_to_applicants, // Copy new field
+    phase_start_date: phase.phase_start_date,
+    phase_end_date: phase.phase_end_date,
+    applicant_instructions: phase.applicant_instructions,
+    manager_instructions: phase.manager_instructions,
+    is_visible_to_applicants: phase.is_visible_to_applicants,
   }));
 
   if (newPhasesData.length > 0) {

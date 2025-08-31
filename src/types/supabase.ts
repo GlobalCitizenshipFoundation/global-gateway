@@ -33,8 +33,6 @@ export interface PathwayTemplate {
   application_open_date: string | null; // ISO date string
   participation_deadline: string | null; // ISO date string
   general_instructions: string | null; // Rich text content
-  applicant_instructions: string | null; // New field
-  manager_instructions: string | null; // New field
   is_visible_to_applicants: boolean; // New field
 }
 

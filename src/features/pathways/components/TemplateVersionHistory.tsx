@@ -4,7 +4,7 @@ import React, { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { History, RotateCcw, Eye, GitFork, Clock } from "lucide-react"; // Changed Rollback to RotateCcw, added Clock
+import { History, RotateCcw, Eye, GitFork, Clock, Archive } from "lucide-react"; // Changed Rollback to RotateCcw, added Clock, Archive
 import { useSession } from "@/context/SessionContextProvider";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PathwayTemplateVersion } from "../services/template-versioning-service";

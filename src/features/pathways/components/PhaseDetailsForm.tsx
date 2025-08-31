@@ -20,7 +20,7 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Phase } from "@/types/supabase"; // Import from types/supabase
 import { createPhaseAction, updatePhaseAction } from "../actions";
-import { Save, X, CalendarDays } from "lucide-react"; // Import Save, X, CalendarDays icons
+import { Save, X, CalendarDays, Archive } from "lucide-react"; // Import Save, X, CalendarDays icons, Archive icon
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
@@ -42,7 +42,7 @@ interface PhaseDetailsFormProps {
   pathwayTemplateId: string;
   initialData?: Phase; // Optional for creation
   onPhaseSaved: () => void;
-  onCancel: () => void;
+  onCancel: () => void; // Added onCancel prop
   nextOrderIndex: number; // Only relevant for creation, but kept for consistency
   canModify: boolean;
   isNewPhaseForm?: boolean; // New prop to distinguish creation form
@@ -152,7 +152,7 @@ export function PhaseDetailsForm({
             render={({ field }) => (
               <FormItem>
                 <FormLabel className="text-label-large">Phase Type</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value} disabled={!canModify || !!initialData}> {/* Disable type change on edit */}
+                <Select onValueChange={field.onChange} defaultValue={field.value} disabled={!canModify || !!initialData}>
                   <FormControl>
                     <SelectTrigger className="rounded-md">
                       <SelectValue placeholder="Select a phase type" />

@@ -130,9 +130,7 @@ export async function createPathwayTemplateAction(formData: FormData): Promise<P
   const application_open_date = formData.get("application_open_date") as string || null;
   const participation_deadline = formData.get("participation_deadline") as string || null;
   const general_instructions = formData.get("general_instructions") as string || null;
-  const applicant_instructions = formData.get("applicant_instructions") as string || null; // New field
-  const manager_instructions = formData.get("manager_instructions") as string || null; // New field
-  const is_visible_to_applicants = formData.get("is_visible_to_applicants") === "on"; // New field
+  const is_visible_to_applicants = formData.get("is_visible_to_applicants") === "on";
 
 
   if (!name) {
@@ -150,9 +148,7 @@ export async function createPathwayTemplateAction(formData: FormData): Promise<P
       application_open_date,
       participation_deadline,
       general_instructions,
-      applicant_instructions, // New field
-      manager_instructions, // New field
-      is_visible_to_applicants // New field
+      is_visible_to_applicants
     );
 
     if (newTemplate) {
@@ -180,9 +176,8 @@ export async function updatePathwayTemplateAction(id: string, formData: FormData
     const application_open_date = formData.get("application_open_date") as string || null;
     const participation_deadline = formData.get("participation_deadline") as string || null;
     const general_instructions = formData.get("general_instructions") as string || null;
-    const applicant_instructions = formData.get("applicant_instructions") as string || null; // New field
-    const manager_instructions = formData.get("manager_instructions") as string || null; // New field
-    const is_visible_to_applicants = formData.get("is_visible_to_applicants") === "on"; // New field
+    const is_visible_to_applicants = formData.get("is_visible_to_applicants") === "on";
+
 
     if (!name) {
       throw new Error("Template name is required.");
@@ -195,9 +190,7 @@ export async function updatePathwayTemplateAction(id: string, formData: FormData
       application_open_date: template.application_open_date,
       participation_deadline: template.participation_deadline,
       general_instructions: template.general_instructions,
-      applicant_instructions: template.applicant_instructions, // New field
-      manager_instructions: template.manager_instructions, // New field
-      is_visible_to_applicants: template.is_visible_to_applicants, // New field
+      is_visible_to_applicants: template.is_visible_to_applicants,
     };
     const newValues = {
       name,
@@ -206,8 +199,6 @@ export async function updatePathwayTemplateAction(id: string, formData: FormData
       application_open_date,
       participation_deadline,
       general_instructions,
-      applicant_instructions,
-      manager_instructions,
       is_visible_to_applicants,
     };
 
@@ -220,8 +211,6 @@ export async function updatePathwayTemplateAction(id: string, formData: FormData
         application_open_date,
         participation_deadline,
         general_instructions,
-        applicant_instructions,
-        manager_instructions,
         is_visible_to_applicants,
       },
       user.id
@@ -353,7 +342,7 @@ export async function getPhasesAction(pathwayTemplateId: string): Promise<Phase[
     console.error("Error in getPhasesAction:", error.message);
     if (error.message === "UnauthorizedAccessToPrivateTemplate") {
       redirect("/error/403");
-    } else if (error.message === "TemplateNotFound") {
+    } else if (error.message === "TemplateNotFound" || error.message === "PhaseNotFound") {
       redirect("/error/404");
     } else if (error.message === "FailedToRetrieveTemplate") {
       redirect("/error/500");
@@ -373,11 +362,11 @@ export async function createPhaseAction(pathwayTemplateId: string, formData: For
     const type = formData.get("type") as string;
     const description = formData.get("description") as string | null;
     const order_index = parseInt(formData.get("order_index") as string);
-    const phase_start_date = formData.get("phase_start_date") as string || null; // New field
-    const phase_end_date = formData.get("phase_end_date") as string || null; // New field
-    const applicant_instructions = formData.get("applicant_instructions") as string || null; // New field
-    const manager_instructions = formData.get("manager_instructions") as string || null; // New field
-    const is_visible_to_applicants = formData.get("is_visible_to_applicants") === "on"; // New field
+    const phase_start_date = formData.get("phase_start_date") as string || null;
+    const phase_end_date = formData.get("phase_end_date") as string || null;
+    const applicant_instructions = formData.get("applicant_instructions") as string || null;
+    const manager_instructions = formData.get("manager_instructions") as string || null;
+    const is_visible_to_applicants = formData.get("is_visible_to_applicants") === "on";
 
 
     if (!name || !type || isNaN(order_index)) {
@@ -392,11 +381,11 @@ export async function createPhaseAction(pathwayTemplateId: string, formData: For
       description,
       {}, // Initial empty config
       user.id, // Pass creatorId for last_updated_by
-      phase_start_date, // New field
-      phase_end_date, // New field
-      applicant_instructions, // New field
-      manager_instructions, // New field
-      is_visible_to_applicants // New field
+      phase_start_date,
+      phase_end_date,
+      applicant_instructions,
+      manager_instructions,
+      is_visible_to_applicants
     );
 
     if (newPhase) {
@@ -428,11 +417,11 @@ export async function updatePhaseAction(phaseId: string, pathwayTemplateId: stri
     const name = formData.get("name") as string;
     const type = formData.get("type") as string;
     const description = formData.get("description") as string | null;
-    const phase_start_date = formData.get("phase_start_date") as string || null; // New field
-    const phase_end_date = formData.get("phase_end_date") as string || null; // New field
-    const applicant_instructions = formData.get("applicant_instructions") as string || null; // New field
-    const manager_instructions = formData.get("manager_instructions") as string || null; // New field
-    const is_visible_to_applicants = formData.get("is_visible_to_applicants") === "on"; // New field
+    const phase_start_date = formData.get("phase_start_date") as string || null;
+    const phase_end_date = formData.get("phase_end_date") as string || null;
+    const applicant_instructions = formData.get("applicant_instructions") as string || null;
+    const manager_instructions = formData.get("manager_instructions") as string || null;
+    const is_visible_to_applicants = formData.get("is_visible_to_applicants") === "on";
 
 
     if (!name || !type) {
@@ -760,7 +749,13 @@ async function authorizePhaseTaskAction(taskId: string | null, phaseId: string, 
   const isAdmin = userRole === 'admin';
 
   // First, authorize access to the parent phase's template
-  const { template } = await authorizeTemplateAction(pathwayTemplateId, 'read');
+  const supabaseAnon = await createClient(); // Use anon client for initial phase fetch to avoid RLS issues if template is private
+  const { data: phaseData, error: phaseError } = await supabaseAnon.from('phases').select('pathway_template_id').eq('id', phaseId).single();
+  if (phaseError || !phaseData) {
+    throw new Error("PhaseNotFound");
+  }
+  await authorizeTemplateAction(phaseData.pathway_template_id, 'read');
+  const { template } = await authorizeTemplateAction(pathwayTemplateId, 'read'); // Re-fetch template with full auth
   if (!template) {
     throw new Error("ParentTemplateNotFound");
   }

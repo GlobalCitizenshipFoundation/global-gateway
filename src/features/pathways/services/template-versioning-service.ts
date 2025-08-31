@@ -123,8 +123,6 @@ export async function rollbackTemplateToVersion(
       application_open_date: snapshotTemplate.application_open_date,
       participation_deadline: snapshotTemplate.participation_deadline,
       general_instructions: snapshotTemplate.general_instructions,
-      applicant_instructions: snapshotTemplate.applicant_instructions,
-      manager_instructions: snapshotTemplate.manager_instructions,
       is_visible_to_applicants: snapshotTemplate.is_visible_to_applicants,
     },
     updaterId // Pass updaterId

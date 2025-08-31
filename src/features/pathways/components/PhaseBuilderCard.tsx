@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Trash2, GripVertical, Settings, GitFork, FileText, Award, Mail, Calendar, MailCheck, Info, ExternalLink, ListChecks, ChevronDown, ChevronUp, CalendarDays } from "lucide-react"; // Added CalendarDays icon
+import { Trash2, GripVertical, Settings, GitFork, FileText, Award, Mail, Calendar, MailCheck, Info, ExternalLink, ListChecks, ChevronDown, ChevronUp, CalendarDays, Archive } from "lucide-react"; // Added CalendarDays icon, Archive icon
 import { Phase } from "@/types/supabase"; // Import from types/supabase
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Draggable } from "@hello-pangea/dnd";
