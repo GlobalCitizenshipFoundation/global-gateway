@@ -42,7 +42,7 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
 
 
   return (
-    <div className="flex flex-row h-full w-full">
+    <div className="flex flex-row w-full"> {/* Removed redundant h-full */}
       {/* Desktop Sidebar */}
       {!isMobile && (
         <Sidebar
