@@ -831,10 +831,10 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-label-large">Phase Type</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
+                    <Select key={field.name} onValueChange={field.onChange} value={field.value || ""} disabled={!canModifyTemplate}>
                       <FormControl>
-                        <SelectTrigger className="rounded-md" onBlur={field.onBlur}> {/* Added onBlur here */}
-                          <SelectValue placeholder={field.value ? undefined : "Select a phase type"} />
+                        <SelectTrigger className="rounded-md" onBlur={field.onBlur}>
+                          <SelectValue placeholder="Select a phase type" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent className="rounded-md shadow-lg bg-card text-card-foreground border-border">
