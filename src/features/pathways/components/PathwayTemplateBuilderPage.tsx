@@ -116,6 +116,17 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
     mode: "onChange", // Ensure validation runs on change
   });
 
+  // Effect to reset and validate inlinePhaseForm when it becomes visible
+  useEffect(() => {
+    if (isAddingNewPhase) {
+      inlinePhaseForm.reset({
+        name: "",
+        type: "",
+      });
+      inlinePhaseForm.trigger(); // Trigger validation after reset
+    }
+  }, [isAddingNewPhase, inlinePhaseForm]);
+
   const fetchTemplateAndPhases = useCallback(async () => {
     console.log("[PathwayTemplateBuilderPage] fetchTemplateAndPhases called. templateId:", templateId, "user:", user?.id);
     if (!templateId) {
@@ -217,7 +228,7 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
     }
 
     const currentUser = user!; // Safe due to earlier redirect
-    const isAdmin = currentUser.user_metadata?.role === 'admin';
+    const isAdmin = (currentUser.user_metadata?.role || '') === 'admin'; // Fixed: Added parentheses for correct precedence
     const canModify = template ? (template.creator_id === currentUser.id || isAdmin) : true; // For new templates, assume can modify.
 
     if (!canModify) {
@@ -408,6 +419,7 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
     if (!inlinePhaseForm.formState.isValid) {
       console.error("[PathwayTemplateBuilderPage] Form is invalid, preventing API call. Forcing trigger to show errors.");
       inlinePhaseForm.trigger(); // Force validation to display messages
+      console.log("[PathwayTemplateBuilderPage] Errors after trigger:", inlinePhaseForm.formState.errors); // NEW LOG
       toast.error("Please correct the errors in the new phase form.");
       return;
     }
@@ -800,7 +812,7 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
               <FormField
                 control={inlinePhaseForm.control}
                 name="name"
-                render={({ field, fieldState }) => ( // Added fieldState
+                render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-label-large">Phase Name</FormLabel>
                     <FormControl>
@@ -816,7 +828,7 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
               <FormField
                 control={inlinePhaseForm.control}
                 name="type"
-                render={({ field, fieldState }) => ( // Added fieldState
+                render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-label-large">Phase Type</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
