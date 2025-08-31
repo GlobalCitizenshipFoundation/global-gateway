@@ -72,6 +72,10 @@ export function PhaseDetailsForm({
   });
 
   useEffect(() => {
+    console.log(`[PhaseDetailsForm] Rendered for phase: ${initialData?.id || 'new'}`);
+    console.log("[PhaseDetailsForm] Form state errors on render:", form.formState.errors);
+    console.log("[PhaseDetailsForm] Form state isValid on render:", form.formState.isValid);
+
     form.reset({
       name: initialData?.name || "",
       type: initialData?.type || "",
@@ -85,6 +89,10 @@ export function PhaseDetailsForm({
   }, [initialData, form]);
 
   const onSubmit = async (values: z.infer<typeof phaseFormSchema>) => {
+    console.log("[PhaseDetailsForm] onSubmit called with values:", values);
+    console.log("[PhaseDetailsForm] Form state errors on submit:", form.formState.errors);
+    console.log("[PhaseDetailsForm] Form state isValid on submit:", form.formState.isValid);
+
     if (!canModify) {
       toast.error("You do not have permission to modify phases.");
       return;
@@ -292,7 +300,7 @@ export function PhaseDetailsForm({
                       />
                     </FormControl>
                     <FormDescription className="text-body-small">
-                      These instructions will be visible to applicants in their portal.
+                        These instructions will be visible to applicants in their portal.
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -315,7 +323,7 @@ export function PhaseDetailsForm({
                       />
                     </FormControl>
                     <FormDescription className="text-body-small">
-                      These instructions are for internal staff only (e.g., hiring managers, recruiters).
+                        These instructions are for internal staff only (e.g., hiring managers, recruiters).
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
