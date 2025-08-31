@@ -133,6 +133,12 @@ export default {
                     container: 'hsl(var(--phase-recommendation-container))',
                     'on-container': 'hsl(var(--on-phase-recommendation-container))',
                 },
+                screening: { // New screening phase colors
+                    DEFAULT: 'hsl(var(--phase-screening))',
+                    foreground: 'hsl(var(--on-phase-screening))',
+                    container: 'hsl(var(--phase-screening-container))',
+                    'on-container': 'hsl(var(--on-phase-screening-container))',
+                },
             }
   		},
   		borderRadius: {

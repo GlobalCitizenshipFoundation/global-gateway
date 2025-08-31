@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Trash2, GripVertical, Settings, GitFork, FileText, Award, Mail, Calendar, MailCheck, Info, ExternalLink } from "lucide-react";
+import { Trash2, GripVertical, Settings, GitFork, FileText, Award, Mail, Calendar, MailCheck, Info, ExternalLink, ListChecks } from "lucide-react"; // Added ListChecks icon for Screening
 import { Phase } from "../services/pathway-template-service";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Draggable } from "@hello-pangea/dnd";
@@ -35,6 +35,7 @@ export function PhaseBuilderCard({ phase, index, onDelete, onPhaseUpdated, canMo
       case "Scheduling": return <Calendar className="h-8 w-8" />;
       case "Decision": return <GitFork className="h-8 w-8" />;
       case "Recommendation": return <MailCheck className="h-8 w-8" />;
+      case "Screening": return <ListChecks className="h-8 w-8" />; // Icon for Screening phase
       default: return <Info className="h-8 w-8" />;
     }
   };
@@ -48,6 +49,7 @@ export function PhaseBuilderCard({ phase, index, onDelete, onPhaseUpdated, canMo
       case "Scheduling": return "border-phase-scheduling bg-phase-scheduling-container text-on-phase-scheduling-container";
       case "Decision": return "border-phase-decision bg-phase-decision-container text-on-phase-decision-container";
       case "Recommendation": return "border-phase-recommendation bg-phase-recommendation-container text-on-phase-recommendation-container";
+      case "Screening": return "border-phase-screening bg-phase-screening-container text-on-phase-screening-container"; // Colors for Screening phase
       default: return "border-muted bg-muted/30 text-muted-foreground";
     }
   };

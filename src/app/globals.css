@@ -88,6 +88,11 @@
     --phase-recommendation-container: 160 100% 90%;
     --on-phase-recommendation-container: 160 100% 10%;
 
+    --phase-screening: 290 70% 40%; /* Purple 40 */
+    --on-phase-screening: 0 0% 100%;
+    --phase-screening-container: 290 100% 90%;
+    --on-phase-screening-container: 290 100% 10%;
+
     --radius: 0.5rem; /* Default border radius */
 
     /* Chart colors - using a diverse set */
@@ -184,6 +189,13 @@
     --on-phase-recommendation: 160 100% 10%;
     --phase-recommendation-container: 160 100% 20%;
     --on-phase-recommendation-container: 160 100% 90%;
+
+    --phase-screening: 290 100% 70%; /* Purple 80 */
+    --on-phase-screening: 290 100% 10%;
+    --phase-screening-container: 290 100% 20%;
+    --on-phase-screening-container: 290 100% 90%;
+
+    --radius: 0.5rem; /* Default border radius */
 
     /* Chart colors */
     --chart-1: 339 100% 70%; /* Primary */
