@@ -8,7 +8,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { ArrowLeft, PlusCircle, Workflow, Lock, Globe, Edit, Copy, Save, CheckCircle, Clock, UserCircle2, CalendarDays, Info, X, Trash2 } from "lucide-react";
+import { ArrowLeft, PlusCircle, Workflow, Lock, Globe, Edit, Copy, Save, CheckCircle, Clock, UserCircle2, CalendarDays, Info, X, Trash2, ChevronDown, ChevronUp } from "lucide-react"; // Added ChevronDown, ChevronUp
 import { PathwayTemplate, Phase } from "@/types/supabase";
 import { toast } from "sonner";
 import { useSession } from "@/context/SessionContextProvider";
@@ -75,7 +75,7 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
   const [isCloneDialogOpen, setIsCloneDialogOpen] = useState(false);
   const [templateToClone, setTemplateToClone] = useState<PathwayTemplate | null>(null);
   const [isAddingNewPhase, setIsAddingNewPhase] = useState(false);
-  const [expandedPhaseId, setExpandedPhaseId] = useState<string | null>(null);
+  const [expandedPhaseIds, setExpandedPhaseIds] = useState<Set<string>>(new Set()); // Changed to Set for multiple expanded phases
 
   const templateForm = useForm<z.infer<typeof templateBuilderSchema>>({
     resolver: zodResolver(templateBuilderSchema),
@@ -203,7 +203,7 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
 
   const handlePhaseUpdated = () => {
     fetchTemplateAndPhases();
-    setExpandedPhaseId(null);
+    // No longer collapsing all phases, just ensuring data is fresh
     setIsAddingNewPhase(false);
   };
 
@@ -213,6 +213,11 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
       if (success) {
         toast.success("Phase deleted successfully!");
         fetchTemplateAndPhases();
+        setExpandedPhaseIds(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(phaseId);
+          return newSet;
+        });
       }
     } catch (error: any) {
       toast.error(error.message || "Failed to delete phase.");
@@ -307,7 +312,26 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
   };
 
   const handleToggleExpandPhase = (phaseId: string) => {
-    setExpandedPhaseId(prevId => (prevId === phaseId ? null : phaseId));
+    setExpandedPhaseIds(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(phaseId)) {
+        newSet.delete(phaseId);
+      } else {
+        newSet.add(phaseId);
+      }
+      return newSet;
+    });
+    setIsAddingNewPhase(false); // Hide inline creator if expanding/collapsing a phase
+  };
+
+  const handleExpandAllPhases = () => {
+    const allPhaseIds = new Set(phases.map(p => p.id));
+    setExpandedPhaseIds(allPhaseIds);
+    setIsAddingNewPhase(false);
+  };
+
+  const handleCollapseAllPhases = () => {
+    setExpandedPhaseIds(new Set());
     setIsAddingNewPhase(false);
   };
 
@@ -775,13 +799,31 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
       </Form>
 
       {/* Phases Section */}
-      <div className="flex justify-between items-center mt-8">
+      <div className="flex flex-col md:flex-row justify-between items-center mt-8 gap-4">
         <h2 className="text-headline-large font-bold text-foreground">Phases</h2>
-        {templateId && canModifyTemplate && (
-          <Button onClick={() => setIsAddingNewPhase(true)} className="rounded-full px-6 py-3 text-label-large">
-            <PlusCircle className="mr-2 h-5 w-5" /> Add New Phase
-          </Button>
-        )}
+        <div className="flex space-x-2">
+          {templateId && canModifyTemplate && (
+            <>
+              <Button
+                variant="outlined"
+                className="rounded-full px-6 py-3 text-label-large"
+                onClick={handleExpandAllPhases}
+              >
+                <ChevronDown className="mr-2 h-5 w-5" /> Expand All
+              </Button>
+              <Button
+                variant="outlined"
+                className="rounded-full px-6 py-3 text-label-large"
+                onClick={handleCollapseAllPhases}
+              >
+                <ChevronUp className="mr-2 h-5 w-5" /> Collapse All
+              </Button>
+              <Button onClick={() => setIsAddingNewPhase(true)} className="rounded-full px-6 py-3 text-label-large">
+                <PlusCircle className="mr-2 h-5 w-5" /> Add New Phase
+              </Button>
+            </>
+          )}
+        </div>
       </div>
 
       {phases.length === 0 && !isAddingNewPhase ? (
@@ -809,7 +851,7 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
                     onDelete={handleDeletePhase}
                     onPhaseUpdated={handlePhaseUpdated}
                     canModify={canModifyTemplate}
-                    isExpanded={expandedPhaseId === phase.id}
+                    isExpanded={expandedPhaseIds.has(phase.id)} // Use the Set here
                     onToggleExpand={handleToggleExpandPhase}
                   />
                 ))}
