@@ -43,6 +43,7 @@ export function InspectorPanel({
   const [creatorProfile, setCreatorProfile] = useState<Profile | null>(null);
   const [lastUpdaterProfile, setLastUpdaterProfile] = useState<Profile | null>(null);
   const [isLoadingProfiles, setIsLoadingProfiles] = useState(true);
+  const [defaultActiveTab, setDefaultActiveTab] = useState("details"); // State for dynamic default tab
 
   useEffect(() => {
     const fetchProfiles = async () => {
@@ -77,6 +78,28 @@ export function InspectorPanel({
     ? undefined // For new phase creation
     : phases.find(p => p.id === selectedPhaseId);
 
+  // Determine default active tab dynamically
+  useEffect(() => {
+    if (isEditingTemplateDetails) {
+      setDefaultActiveTab("details");
+    } else if (selectedPhase) {
+      switch (selectedPhase.type) {
+        case "Form":
+        case "Review":
+        case "Email":
+        case "Scheduling":
+        case "Decision":
+        case "Recommendation":
+          setDefaultActiveTab("config"); // For configurable phases, default to config
+          break;
+        default:
+          setDefaultActiveTab("details"); // Fallback to details
+      }
+    } else {
+      setDefaultActiveTab("details"); // Default if nothing selected
+    }
+  }, [selectedPhase, isEditingTemplateDetails]);
+
   const nextOrderIndex = phases.length;
 
   const renderContent = () => {
@@ -102,7 +125,7 @@ export function InspectorPanel({
 
     if (selectedPhaseId) {
       return (
-        <Tabs defaultValue="details" className="h-full flex flex-col">
+        <Tabs defaultValue={defaultActiveTab} className="h-full flex flex-col">
           <TabsList className="grid w-full grid-cols-5 h-auto rounded-xl shadow-md bg-card text-card-foreground border-border p-1 mb-4">
             <TabsTrigger value="details" className="text-label-large data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm rounded-lg">
               Details
