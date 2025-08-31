@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { createClient } from '@/integrations/supabase/server';
 
 export async function middleware(request: NextRequest) {
-  console.log(`[Dyad Middleware] Request for: ${request.nextUrl.pathname}`);
+  console.log(`[Dyad Middleware] RAW Pathname: ${request.nextUrl.pathname}`); // Added raw pathname log
 
   const { pathname } = request.nextUrl;
 
