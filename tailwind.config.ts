@@ -45,7 +45,7 @@ export default {
   			},
   			primary: {
   				DEFAULT: 'hsl(var(--primary))',
-  				foreground: 'hsl(var(--primary-foreground))',
+  				foreground: 'hsl(var(--on-primary))', // Corrected to use on-primary
                 container: 'hsl(var(--primary-container))',
                 'on-container': 'hsl(var(--on-primary-container))'
   			},
