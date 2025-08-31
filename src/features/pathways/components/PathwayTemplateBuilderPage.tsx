@@ -8,7 +8,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { ArrowLeft, PlusCircle, Workflow, Lock, Globe, Edit, Copy, Save, CheckCircle, Clock, UserCircle2, CalendarDays, Info, X, Trash2, ChevronDown, ChevronUp, Archive, History, Activity } from "lucide-react"; // Added History and Activity icons
+import { ArrowLeft, PlusCircle, Workflow, Lock, Globe, Edit, Copy, Save, CheckCircle, Clock, UserCircle2, CalendarDays, Info, X, Trash2, ChevronDown, ChevronUp, Archive, History, Activity, RotateCcw } from "lucide-react"; // Added RotateCcw for unarchive
 import { PathwayTemplate, Phase } from "@/types/supabase";
 import { toast } from "sonner";
 import { useSession } from "@/context/SessionContextProvider";
@@ -696,12 +696,6 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
               </CardContent>
             </Card>
           )}
-
-          {canModifyTemplate && (
-            <Button type="submit" className="w-full rounded-md text-label-large" disabled={templateForm.formState.isSubmitting}>
-              {templateForm.formState.isSubmitting ? "Saving Draft..." : "Save Draft"}
-            </Button>
-          )}
         </form>
       </Form>
 
@@ -859,6 +853,9 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
 
       {template && canModifyTemplate && (
         <div className="flex flex-wrap justify-end items-center gap-2 mt-8 pt-6 border-t border-border">
+          <Button type="submit" className="rounded-full px-6 py-3 text-label-large" disabled={templateForm.formState.isSubmitting}>
+            {templateForm.formState.isSubmitting ? "Saving Draft..." : <><Save className="mr-2 h-5 w-5" /> Save Draft</>}
+          </Button>
           <Button variant="outlined" className="rounded-full px-6 py-3 text-label-large" onClick={() => handleClone(template)}>
             <Copy className="mr-2 h-5 w-5" /> Clone Template
           </Button>
@@ -871,9 +868,13 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
               <CheckCircle className="mr-2 h-5 w-5" /> Publish Template
             </Button>
           )}
-          {currentTemplate.status !== 'archived' && (
+          {currentTemplate.status === 'archived' ? (
+            <Button variant="tonal" className="rounded-full px-6 py-3 text-label-large" onClick={() => handleUpdateStatus('draft')}>
+              <RotateCcw className="mr-2 h-5 w-5" /> Unarchive
+            </Button>
+          ) : (
             <Button variant="outlined" className="rounded-full px-6 py-3 text-label-large" onClick={() => handleUpdateStatus('archived')}>
-              <Clock className="mr-2 h-5 w-5" /> Archive Template
+              <Archive className="mr-2 h-5 w-5" /> Archive Template
             </Button>
           )}
           <AlertDialog>
