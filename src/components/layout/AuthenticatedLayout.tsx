@@ -40,17 +40,9 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
     }
   }, [session, isLoading, router]);
 
-  // Determine sidebar width for desktop grid
-  const sidebarWidth = isSidebarCollapsed ? "var(--sidebar-desktop-collapsed-width)" : "var(--sidebar-desktop-width)";
 
   return (
-    <div
-      className={cn(
-        "h-full w-full bg-background text-foreground",
-        !isMobile && "grid", // Apply grid only on desktop
-      )}
-      style={!isMobile ? { gridTemplateColumns: `${sidebarWidth} 1fr` } : {}} // Apply gridTemplateColumns style dynamically
-    >
+    <div className="flex flex-row h-full w-full">
       {/* Desktop Sidebar */}
       {!isMobile && (
         <Sidebar
@@ -83,8 +75,7 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
 
       <main
         className={cn(
-          "p-8 overflow-y-auto min-h-0 h-full", // Removed bg-background and text-foreground as it's on parent
-          isMobile && "w-full" // On mobile, main takes full width
+          "flex-1 p-8 overflow-y-auto bg-background text-foreground transition-all duration-300 min-h-0 h-full"
         )}
       >
         {/* Render children directly. The middleware ensures authentication. */}
