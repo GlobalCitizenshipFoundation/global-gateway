@@ -111,7 +111,7 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
     resolver: zodResolver(inlinePhaseCreationSchema),
     defaultValues: {
       name: "",
-      type: "",
+      type: undefined, // Default to undefined for Select to correctly trigger min(1)
     },
     mode: "onChange", // Ensure validation runs on change
   });
@@ -121,9 +121,9 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
     if (isAddingNewPhase) {
       inlinePhaseForm.reset({
         name: "",
-        type: "",
-      });
-      inlinePhaseForm.trigger(); // Trigger validation after reset
+        type: undefined, // Reset to undefined
+      }); // Removed shouldValidate: true
+      inlinePhaseForm.trigger(); // Force validation after reset
     }
   }, [isAddingNewPhase, inlinePhaseForm]);
 
@@ -831,11 +831,11 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-label-large">Phase Type</FormLabel>
-                    <Select key={field.name} onValueChange={field.onChange} value={field.value || ""} disabled={!canModifyTemplate}>
+                    <Select key={field.name} onValueChange={field.onChange} value={field.value} disabled={!canModifyTemplate}>
                       <FormControl>
                         <SelectTrigger className="rounded-md" onBlur={field.onBlur}>
-                          <SelectValue>
-                            {field.value ? phaseTypes.find(t => t.value === field.value)?.label : "Select a phase type"}
+                          <SelectValue placeholder="Select a phase type">
+                            {field.value ? phaseTypes.find(t => t.value === field.value)?.label : undefined}
                           </SelectValue>
                         </SelectTrigger>
                       </FormControl>
