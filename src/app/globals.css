@@ -223,8 +223,8 @@
   .max-h-0 {
     max-height: 0;
   }
-  .max-h-screen-content { /* A large enough value for content to expand */
-    max-height: 100vh; /* Or a larger fixed value like 2000px if content can exceed viewport height */
+  .max-h-full-content { /* A very large value to ensure content expands fully */
+    max-height: 9999px; 
   }
   .transition-max-height {
     transition-property: max-height;
