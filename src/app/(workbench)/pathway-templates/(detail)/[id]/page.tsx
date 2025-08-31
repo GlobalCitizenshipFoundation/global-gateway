@@ -1,7 +1,7 @@
 import React from "react";
 import { PathwayTemplateDetail } from "@/features/pathway-templates/components/PathwayTemplateDetail";
 import { getTemplateByIdAction } from "@/features/pathway-templates/actions";
-import { notFound, redirect } from "next/navigation"; // Import redirect
+import { notFound } from "next/navigation"; // Removed redirect as 'create' is now a static route
 
 interface PathwayTemplateDetailPageProps {
   params: {
@@ -13,16 +13,11 @@ interface PathwayTemplateDetailPageProps {
 export default async function PathwayTemplateDetailPage({ params }: PathwayTemplateDetailPageProps) {
   const { id } = params;
 
-  // Explicitly handle the 'create' case to ensure it's routed to the correct page
-  if (id === 'create') {
-    redirect("/workbench/pathway-templates/create");
-  }
-
   // Validate if 'id' is a UUID before proceeding to fetch
   // This helps prevent unnecessary database calls with invalid IDs
   const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
   if (!isUUID) {
-    notFound(); // If it's not 'create' and not a valid UUID, it's a 404
+    notFound(); // If it's not a valid UUID, it's a 404
   }
 
   // Fetch template to ensure user has read access before rendering the client component
