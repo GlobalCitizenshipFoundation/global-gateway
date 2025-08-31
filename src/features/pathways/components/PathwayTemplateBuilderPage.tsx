@@ -113,6 +113,7 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
       name: "",
       type: "",
     },
+    mode: "onChange", // Ensure validation runs on change
   });
 
   const fetchTemplateAndPhases = useCallback(async () => {
@@ -401,8 +402,15 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
 
   const handleInlinePhaseCreate = async (values: z.infer<typeof inlinePhaseCreationSchema>) => {
     console.log("[PathwayTemplateBuilderPage] handleInlinePhaseCreate called with values:", values);
-    console.log("[PathwayTemplateBuilderPage] inlinePhaseForm state errors on submit:", inlinePhaseForm.formState.errors);
-    console.log("[PathwayTemplateBuilderPage] inlinePhaseForm state isValid on submit:", inlinePhaseForm.formState.isValid);
+    console.log("[PathwayTemplateBuilderPage] inlinePhaseForm state errors on submit (inside handler):", inlinePhaseForm.formState.errors);
+    console.log("[PathwayTemplateBuilderPage] inlinePhaseForm state isValid on submit (inside handler):", inlinePhaseForm.formState.isValid);
+
+    if (!inlinePhaseForm.formState.isValid) {
+      console.error("[PathwayTemplateBuilderPage] Form is invalid, preventing API call. Forcing trigger to show errors.");
+      inlinePhaseForm.trigger(); // Force validation to display messages
+      toast.error("Please correct the errors in the new phase form.");
+      return;
+    }
 
     if (!canModifyTemplate || !templateId) {
       toast.error("You do not have permission to add phases.");
@@ -792,12 +800,15 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
               <FormField
                 control={inlinePhaseForm.control}
                 name="name"
-                render={({ field }) => (
+                render={({ field, fieldState }) => ( // Added fieldState
                   <FormItem>
                     <FormLabel className="text-label-large">Phase Name</FormLabel>
                     <FormControl>
                       <Input placeholder="e.g., Initial Application" {...field} className="rounded-md" />
                     </FormControl>
+                    <FormDescription className="text-body-small">
+                      A unique and descriptive name for your phase.
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -805,7 +816,7 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
               <FormField
                 control={inlinePhaseForm.control}
                 name="type"
-                render={({ field }) => (
+                render={({ field, fieldState }) => ( // Added fieldState
                   <FormItem>
                     <FormLabel className="text-label-large">Phase Type</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
@@ -822,6 +833,9 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
                         ))}
                       </SelectContent>
                     </Select>
+                    <FormDescription className="text-body-small">
+                      The type of actions or steps involved in this phase.
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
