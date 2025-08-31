@@ -1,7 +1,7 @@
-"use server"; // Changed to server-only
+"use server";
 
-import { createClient } from "@/integrations/supabase/server"; // Changed to server-side client
-import { toast } from "sonner"; // Keep toast for client-side calls, but remove from server-only functions
+import { createClient } from "@/integrations/supabase/server";
+// import { toast } from "sonner"; // Removed client-side import
 
 export interface CommunicationTemplate {
   id: string;
@@ -30,7 +30,6 @@ export const communicationService = {
 
     if (error) {
       console.error("Error fetching communication templates:", error.message);
-      // toast.error("Failed to load communication templates."); // Cannot use toast in server-only service
       return null;
     }
     return data;
@@ -46,7 +45,6 @@ export const communicationService = {
 
     if (error) {
       console.error(`Error fetching communication template ${id}:`, error.message);
-      // toast.error(`Failed to load communication template ${id}.`); // Cannot use toast in server-only service
       return null;
     }
     return data;
@@ -69,10 +67,8 @@ export const communicationService = {
 
     if (error) {
       console.error("Error creating communication template:", error.message);
-      // toast.error("Failed to create communication template."); // Cannot use toast in server-only service
       return null;
     }
-    // toast.success("Communication template created successfully!"); // Cannot use toast in server-only service
     return data;
   },
 
@@ -90,10 +86,8 @@ export const communicationService = {
 
     if (error) {
       console.error(`Error updating communication template ${id}:`, error.message);
-      // toast.error("Failed to update communication template."); // Cannot use toast in server-only service
       return null;
     }
-    // toast.success("Communication template updated successfully!"); // Cannot use toast in server-only service
     return data;
   },
 
@@ -106,10 +100,8 @@ export const communicationService = {
 
     if (error) {
       console.error(`Error deleting communication template ${id}:`, error.message);
-      // toast.error("Failed to delete communication template."); // Cannot use toast in server-only service
       return false;
     }
-    // toast.success("Communication template deleted successfully!"); // Cannot use toast in server-only service
     return true;
   },
 };

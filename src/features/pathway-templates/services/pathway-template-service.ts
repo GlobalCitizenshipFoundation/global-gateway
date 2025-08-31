@@ -1,7 +1,7 @@
-"use server"; // Changed to server-only
+"use server";
 
-import { createClient } from "@/integrations/supabase/server"; // Changed to server-side client
-import { toast } from "sonner";
+import { createClient } from "@/integrations/supabase/server";
+// import { toast } from "sonner"; // Removed client-side import
 
 // New base interface for configurable items (phases)
 export interface BaseConfigurableItem {
@@ -45,7 +45,6 @@ export const pathwayTemplateService = {
 
     if (error) {
       console.error("Error fetching pathway templates:", error.message);
-      // toast.error("Failed to load pathway templates."); // Cannot use toast in server-only service
       return null;
     }
     return data;
@@ -61,7 +60,6 @@ export const pathwayTemplateService = {
 
     if (error) {
       console.error(`Error fetching pathway template ${id}:`, error.message);
-      // toast.error(`Failed to load pathway template ${id}.`); // Cannot use toast in server-only service
       return null;
     }
     return data;
@@ -76,16 +74,14 @@ export const pathwayTemplateService = {
     const supabase = await this.getSupabase();
     const { data, error } = await supabase
       .from("pathway_templates")
-      .insert([{ name, description, is_private, creator_id }]) // Included is_private
+      .insert([{ name, description, is_private, creator_id }])
       .select()
       .single();
 
     if (error) {
       console.error("Error creating pathway template:", error.message);
-      // toast.error("Failed to create pathway template."); // Cannot use toast in server-only service
       return null;
     }
-    // toast.success("Pathway template created successfully!"); // Cannot use toast in server-only service
     return data;
   },
 
@@ -103,10 +99,8 @@ export const pathwayTemplateService = {
 
     if (error) {
       console.error(`Error updating pathway template ${id}:`, error.message);
-      // toast.error("Failed to update pathway template."); // Cannot use toast in server-only service
       return null;
     }
-    // toast.success("Pathway template updated successfully!"); // Cannot use toast in server-only service
     return data;
   },
 
@@ -119,10 +113,8 @@ export const pathwayTemplateService = {
 
     if (error) {
       console.error(`Error deleting pathway template ${id}:`, error.message);
-      // toast.error("Failed to delete pathway template."); // Cannot use toast in server-only service
       return false;
     }
-    // toast.success("Pathway template deleted successfully!"); // Cannot use toast in server-only service
     return true;
   },
 
@@ -141,7 +133,6 @@ export const pathwayTemplateService = {
         `Error fetching phases for template ${pathwayTemplateId}:`,
         error.message
       );
-      // toast.error("Failed to load phases."); // Cannot use toast in server-only service
       return null;
     }
     return data;
@@ -166,10 +157,8 @@ export const pathwayTemplateService = {
 
     if (error) {
       console.error("Error creating phase:", error.message);
-      // toast.error("Failed to create phase."); // Cannot use toast in server-only service
       return null;
     }
-    // toast.success("Phase created successfully!"); // Cannot use toast in server-only service
     return data;
   },
 
@@ -187,10 +176,8 @@ export const pathwayTemplateService = {
 
     if (error) {
       console.error(`Error updating phase ${id}:`, error.message);
-      // toast.error("Failed to update phase."); // Cannot use toast in server-only service
       return null;
     }
-    // toast.success("Phase updated successfully!"); // Cannot use toast in server-only service
     return data;
   },
 
@@ -200,10 +187,8 @@ export const pathwayTemplateService = {
 
     if (error) {
       console.error(`Error deleting phase ${id}:`, error.message);
-      // toast.error("Failed to delete phase."); // Cannot use toast in server-only service
       return false;
     }
-    // toast.success("Phase deleted successfully!"); // Cannot use toast in server-only service
     return true;
   },
 
@@ -221,7 +206,6 @@ export const pathwayTemplateService = {
 
     if (templateError || !originalTemplate) {
       console.error("Error fetching original template for cloning:", templateError?.message);
-      // toast.error("Failed to find original template for cloning."); // Cannot use toast in server-only service
       return null;
     }
 
@@ -233,7 +217,6 @@ export const pathwayTemplateService = {
 
     if (phasesError) {
       console.error("Error fetching original phases for cloning:", phasesError.message);
-      // toast.error("Failed to find original phases for cloning."); // Cannot use toast in server-only service
       return null;
     }
 
@@ -253,7 +236,6 @@ export const pathwayTemplateService = {
 
     if (newTemplateError || !newTemplate) {
       console.error("Error creating new template during cloning:", newTemplateError?.message);
-      // toast.error("Failed to create new template during cloning."); // Cannot use toast in server-only service
       return null;
     }
 
@@ -274,14 +256,11 @@ export const pathwayTemplateService = {
 
       if (newPhasesError) {
         console.error("Error creating new phases during cloning:", newPhasesError.message);
-        // toast.error("Failed to create phases for the cloned template."); // Cannot use toast in server-only service
         // Optionally, delete the newly created template if phase creation fails
         await supabase.from("pathway_templates").delete().eq("id", newTemplate.id);
         return null;
       }
     }
-
-    // toast.success(`Pathway template "${newName}" cloned successfully!`); // Cannot use toast in server-only service
     return newTemplate;
   },
 };

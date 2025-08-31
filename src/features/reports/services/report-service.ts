@@ -1,7 +1,7 @@
-"use server"; // Changed to server-only
+"use server";
 
-import { createClient } from "@/integrations/supabase/server"; // Changed to server-side client
-import { toast } from "sonner"; // Keep toast for client-side calls, but remove from server-only functions
+import { createClient } from "@/integrations/supabase/server";
+// import { toast } from "sonner"; // Removed client-side import
 
 export interface ApplicationOverviewReport {
   totalApplications: number;
@@ -100,7 +100,6 @@ export const reportService = {
       };
     } catch (error: any) {
       console.error("Error fetching application overview report:", error.message);
-      // toast.error("Failed to load application overview report."); // Cannot use toast in server-only service
       return null;
     }
   },

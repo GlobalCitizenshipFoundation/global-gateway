@@ -1,7 +1,7 @@
-"use server"; // Changed to server-only
+"use server";
 
-import { createClient } from "@/integrations/supabase/server"; // Changed to server-side client
-import { toast } from "sonner"; // Keep toast for client-side calls, but remove from server-only functions
+import { createClient } from "@/integrations/supabase/server";
+// import { toast } from "sonner"; // Removed client-side import
 import { Program } from "@/features/campaigns/services/campaign-service"; // Reusing Program interface from campaign-service
 
 export const programService = {
@@ -19,7 +19,6 @@ export const programService = {
 
     if (error) {
       console.error("Error fetching programs:", error.message);
-      // toast.error("Failed to load programs."); // Cannot use toast in server-only service
       return null;
     }
     return data;
@@ -35,7 +34,6 @@ export const programService = {
 
     if (error) {
       console.error(`Error fetching program ${id}:`, error.message);
-      // toast.error(`Failed to load program ${id}.`); // Cannot use toast in server-only service
       return null;
     }
     return data;
@@ -58,10 +56,8 @@ export const programService = {
 
     if (error) {
       console.error("Error creating program:", error.message);
-      // toast.error("Failed to create program."); // Cannot use toast in server-only service
       return null;
     }
-    // toast.success("Program created successfully!"); // Cannot use toast in server-only service
     return data;
   },
 
@@ -79,10 +75,8 @@ export const programService = {
 
     if (error) {
       console.error(`Error updating program ${id}:`, error.message);
-      // toast.error("Failed to update program."); // Cannot use toast in server-only service
       return null;
     }
-    // toast.success("Program updated successfully!"); // Cannot use toast in server-only service
     return data;
   },
 
@@ -95,10 +89,8 @@ export const programService = {
 
     if (error) {
       console.error(`Error deleting program ${id}:`, error.message);
-      // toast.error("Failed to delete program."); // Cannot use toast in server-only service
       return false;
     }
-    // toast.success("Program deleted successfully!"); // Cannot use toast in server-only service
     return true;
   },
 };

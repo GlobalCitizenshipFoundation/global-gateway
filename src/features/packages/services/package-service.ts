@@ -1,7 +1,7 @@
-"use server"; // Changed to server-only
+"use server";
 
-import { createClient } from "@/integrations/supabase/server"; // Changed to server-side client
-import { toast } from "sonner"; // Keep toast for client-side calls, but remove from server-only functions
+import { createClient } from "@/integrations/supabase/server";
+// import { toast } from "sonner"; // Removed client-side import
 import { Campaign } from "@/features/campaigns/services/campaign-service";
 import { PathwayTemplate } from "@/features/pathway-templates/services/pathway-template-service";
 
@@ -43,7 +43,6 @@ export const packageService = {
 
     if (error) {
       console.error("Error fetching packages:", error.message);
-      // toast.error("Failed to load packages."); // Cannot use toast in server-only service
       return null;
     }
     return data;
@@ -59,7 +58,6 @@ export const packageService = {
 
     if (error) {
       console.error(`Error fetching package ${id}:`, error.message);
-      // toast.error(`Failed to load package ${id}.`); // Cannot use toast in server-only service
       return null;
     }
     return data;
@@ -80,10 +78,8 @@ export const packageService = {
 
     if (error) {
       console.error("Error creating package:", error.message);
-      // toast.error("Failed to create package."); // Cannot use toast in server-only service
       return null;
     }
-    // toast.success("Package created successfully!"); // Cannot use toast in server-only service
     return data;
   },
 
@@ -101,10 +97,8 @@ export const packageService = {
 
     if (error) {
       console.error(`Error updating package ${id}:`, error.message);
-      // toast.error("Failed to update package."); // Cannot use toast in server-only service
       return null;
     }
-    // toast.success("Package updated successfully!"); // Cannot use toast in server-only service
     return data;
   },
 
@@ -117,10 +111,8 @@ export const packageService = {
 
     if (error) {
       console.error(`Error deleting package ${id}:`, error.message);
-      // toast.error("Failed to delete package."); // Cannot use toast in server-only service
       return false;
     }
-    // toast.success("Package deleted successfully!"); // Cannot use toast in server-only service
     return true;
   },
 
@@ -136,7 +128,6 @@ export const packageService = {
 
     if (error) {
       console.error(`Error fetching package items for package ${packageId}:`, error.message);
-      // toast.error("Failed to load package items."); // Cannot use toast in server-only service
       return null;
     }
     return data as PackageItem[];
@@ -157,10 +148,8 @@ export const packageService = {
 
     if (error) {
       console.error("Error adding package item:", error.message);
-      // toast.error("Failed to add package item."); // Cannot use toast in server-only service
       return null;
     }
-    // toast.success("Package item added successfully!"); // Cannot use toast in server-only service
     return data as PackageItem;
   },
 
@@ -178,7 +167,6 @@ export const packageService = {
 
     if (error) {
       console.error(`Error updating package item order ${id}:`, error.message);
-      // toast.error("Failed to update package item order."); // Cannot use toast in server-only service
       return null;
     }
     return data as PackageItem;
@@ -193,10 +181,8 @@ export const packageService = {
 
     if (error) {
       console.error(`Error removing package item ${id}:`, error.message);
-      // toast.error("Failed to remove package item."); // Cannot use toast in server-only service
       return false;
     }
-    // toast.success("Package item removed successfully!"); // Cannot use toast in server-only service
     return true;
   },
 };

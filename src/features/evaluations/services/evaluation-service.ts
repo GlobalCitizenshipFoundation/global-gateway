@@ -1,7 +1,7 @@
-"use server"; // Changed to server-only
+"use server";
 
-import { createClient } from "@/integrations/supabase/server"; // Changed to server-side client
-import { toast } from "sonner"; // Keep toast for client-side calls, but remove from server-only functions
+import { createClient } from "@/integrations/supabase/server";
+// import { toast } from "sonner"; // Removed client-side import
 import { Application } from "@/features/applications/services/application-service";
 import { CampaignPhase } from "@/features/campaigns/services/campaign-service";
 import { Profile } from "@/types/supabase";
@@ -76,7 +76,6 @@ export const evaluationService = {
 
     if (error) {
       console.error("Error fetching reviewer assignments:", error.message);
-      // toast.error("Failed to load reviewer assignments."); // Cannot use toast in server-only service
       return null;
     }
     return data as ReviewerAssignment[];
@@ -97,10 +96,8 @@ export const evaluationService = {
 
     if (error) {
       console.error("Error creating reviewer assignment:", error.message);
-      // toast.error("Failed to create reviewer assignment."); // Cannot use toast in server-only service
       return null;
     }
-    // toast.success("Reviewer assigned successfully!"); // Cannot use toast in server-only service
     return data as ReviewerAssignment;
   },
 
@@ -118,10 +115,8 @@ export const evaluationService = {
 
     if (error) {
       console.error(`Error updating reviewer assignment ${id}:`, error.message);
-      // toast.error("Failed to update reviewer assignment."); // Cannot use toast in server-only service
       return null;
     }
-    // toast.success("Reviewer assignment updated successfully!"); // Cannot use toast in server-only service
     return data as ReviewerAssignment;
   },
 
@@ -134,10 +129,8 @@ export const evaluationService = {
 
     if (error) {
       console.error(`Error deleting reviewer assignment ${id}:`, error.message);
-      // toast.error("Failed to delete reviewer assignment."); // Cannot use toast in server-only service
       return false;
     }
-    // toast.success("Reviewer assignment deleted successfully!"); // Cannot use toast in server-only service
     return true;
   },
 
@@ -163,7 +156,6 @@ export const evaluationService = {
 
     if (error) {
       console.error("Error fetching reviews:", error.message);
-      // toast.error("Failed to load reviews."); // Cannot use toast in server-only service
       return null;
     }
     return data as Review[];
@@ -186,10 +178,8 @@ export const evaluationService = {
 
     if (error) {
       console.error("Error creating review:", error.message);
-      // toast.error("Failed to create review."); // Cannot use toast in server-only service
       return null;
     }
-    // toast.success("Review created successfully!"); // Cannot use toast in server-only service
     return data as Review;
   },
 
@@ -207,10 +197,8 @@ export const evaluationService = {
 
     if (error) {
       console.error(`Error updating review ${id}:`, error.message);
-      // toast.error("Failed to update review."); // Cannot use toast in server-only service
       return null;
     }
-    // toast.success("Review updated successfully!"); // Cannot use toast in server-only service
     return data as Review;
   },
 
@@ -223,10 +211,8 @@ export const evaluationService = {
 
     if (error) {
       console.error(`Error deleting review ${id}:`, error.message);
-      // toast.error("Failed to delete review."); // Cannot use toast in server-only service
       return false;
     }
-    // toast.success("Review deleted successfully!"); // Cannot use toast in server-only service
     return true;
   },
 
@@ -249,7 +235,6 @@ export const evaluationService = {
 
     if (error) {
       console.error("Error fetching decisions:", error.message);
-      // toast.error("Failed to load decisions."); // Cannot use toast in server-only service
       return null;
     }
     return data as Decision[];
@@ -272,10 +257,8 @@ export const evaluationService = {
 
     if (error) {
       console.error("Error creating decision:", error.message);
-      // toast.error("Failed to create decision."); // Cannot use toast in server-only service
       return null;
     }
-    // toast.success("Decision recorded successfully!"); // Cannot use toast in server-only service
     return data as Decision;
   },
 
@@ -293,10 +276,8 @@ export const evaluationService = {
 
     if (error) {
       console.error(`Error updating decision ${id}:`, error.message);
-      // toast.error("Failed to update decision."); // Cannot use toast in server-only service
       return null;
     }
-    // toast.success("Decision updated successfully!"); // Cannot use toast in server-only service
     return data as Decision;
   },
 
@@ -309,10 +290,8 @@ export const evaluationService = {
 
     if (error) {
       console.error(`Error deleting decision ${id}:`, error.message);
-      // toast.error("Failed to delete decision."); // Cannot use toast in server-only service
       return false;
     }
-    // toast.success("Decision deleted successfully!"); // Cannot use toast in server-only service
     return true;
   },
 };

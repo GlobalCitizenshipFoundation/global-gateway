@@ -1,7 +1,7 @@
-"use server"; // Changed to server-only
+"use server";
 
-import { createClient } from "@/integrations/supabase/server"; // Changed to server-side client
-import { toast } from "sonner"; // Keep toast for client-side calls, but remove from server-only functions
+import { createClient } from "@/integrations/supabase/server";
+// import { toast } from "sonner"; // Removed client-side import
 import { Campaign } from "@/features/campaigns/services/campaign-service";
 import { BaseConfigurableItem } from "@/features/pathway-templates/services/pathway-template-service";
 
@@ -51,7 +51,6 @@ export const applicationService = {
 
     if (error) {
       console.error("Error fetching applications:", error.message);
-      // toast.error("Failed to load applications."); // Cannot use toast in server-only service
       return null;
     }
     return data as Application[];
@@ -67,7 +66,6 @@ export const applicationService = {
 
     if (error) {
       console.error(`Error fetching application ${id}:`, error.message);
-      // toast.error(`Failed to load application ${id}.`); // Cannot use toast in server-only service
       return null;
     }
     return data as Application;
@@ -95,10 +93,8 @@ export const applicationService = {
 
     if (error) {
       console.error("Error creating application:", error.message);
-      // toast.error("Failed to create application."); // Cannot use toast in server-only service
       return null;
     }
-    // toast.success("Application created successfully!"); // Cannot use toast in server-only service
     return data as Application;
   },
 
@@ -116,10 +112,8 @@ export const applicationService = {
 
     if (error) {
       console.error(`Error updating application ${id}:`, error.message);
-      // toast.error("Failed to update application."); // Cannot use toast in server-only service
       return null;
     }
-    // toast.success("Application updated successfully!"); // Cannot use toast in server-only service
     return data as Application;
   },
 
@@ -132,10 +126,8 @@ export const applicationService = {
 
     if (error) {
       console.error(`Error deleting application ${id}:`, error.message);
-      // toast.error("Failed to delete application."); // Cannot use toast in server-only service
       return false;
     }
-    // toast.success("Application deleted successfully!"); // Cannot use toast in server-only service
     return true;
   },
 
@@ -151,7 +143,6 @@ export const applicationService = {
 
     if (error) {
       console.error(`Error fetching notes for application ${applicationId}:`, error.message);
-      // toast.error("Failed to load collaborative notes."); // Cannot use toast in server-only service
       return null;
     }
     return data as ApplicationNote[];
@@ -171,10 +162,8 @@ export const applicationService = {
 
     if (error) {
       console.error("Error creating application note:", error.message);
-      // toast.error("Failed to add note."); // Cannot use toast in server-only service
       return null;
     }
-    // toast.success("Note added successfully!"); // Cannot use toast in server-only service
     return data as ApplicationNote;
   },
 
@@ -192,10 +181,8 @@ export const applicationService = {
 
     if (error) {
       console.error(`Error updating note ${noteId}:`, error.message);
-      // toast.error("Failed to update note."); // Cannot use toast in server-only service
       return null;
     }
-    // toast.success("Note updated successfully!"); // Cannot use toast in server-only service
     return data as ApplicationNote;
   },
 
@@ -208,10 +195,8 @@ export const applicationService = {
 
     if (error) {
       console.error(`Error deleting note ${noteId}:`, error.message);
-      // toast.error("Failed to delete note."); // Cannot use toast in server-only service
       return false;
     }
-    // toast.success("Note deleted successfully!"); // Cannot use toast in server-only service
     return true;
   },
 };

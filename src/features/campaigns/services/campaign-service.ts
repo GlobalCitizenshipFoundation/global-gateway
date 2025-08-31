@@ -1,7 +1,7 @@
-"use server"; // Changed to server-only
+"use server";
 
-import { createClient } from "@/integrations/supabase/server"; // Changed to server-side client
-import { toast } from "sonner"; // Keep toast for client-side calls, but remove from server-only functions
+import { createClient } from "@/integrations/supabase/server";
+// import { toast } from "sonner"; // Removed client-side import
 import { PathwayTemplate, BaseConfigurableItem, Phase as TemplatePhase } from "@/features/pathway-templates/services/pathway-template-service";
 
 // New interface for Program
@@ -56,7 +56,6 @@ export const campaignService = {
 
     if (error) {
       console.error("Error fetching campaigns:", error.message);
-      // toast.error("Failed to load campaigns."); // Cannot use toast in server-only service
       return null;
     }
     return data as Campaign[];
@@ -72,7 +71,6 @@ export const campaignService = {
 
     if (error) {
       console.error(`Error fetching campaign ${id}:`, error.message);
-      // toast.error(`Failed to load campaign ${id}.`); // Cannot use toast in server-only service
       return null;
     }
     return data as Campaign;
@@ -99,10 +97,8 @@ export const campaignService = {
 
     if (error) {
       console.error("Error creating campaign:", error.message);
-      // toast.error("Failed to create campaign."); // Cannot use toast in server-only service
       return null;
     }
-    // toast.success("Campaign created successfully!"); // Cannot use toast in server-only service
     return data as Campaign;
   },
 
@@ -120,10 +116,8 @@ export const campaignService = {
 
     if (error) {
       console.error(`Error updating campaign ${id}:`, error.message);
-      // toast.error("Failed to update campaign."); // Cannot use toast in server-only service
       return null;
     }
-    // toast.success("Campaign updated successfully!"); // Cannot use toast in server-only service
     return data as Campaign;
   },
 
@@ -136,10 +130,8 @@ export const campaignService = {
 
     if (error) {
       console.error(`Error deleting campaign ${id}:`, error.message);
-      // toast.error("Failed to delete campaign."); // Cannot use toast in server-only service
       return false;
     }
-    // toast.success("Campaign deleted successfully!"); // Cannot use toast in server-only service
     return true;
   },
 
@@ -155,7 +147,6 @@ export const campaignService = {
 
     if (error) {
       console.error(`Error fetching campaign phases for campaign ${campaignId}:`, error.message);
-      // toast.error("Failed to load campaign phases."); // Cannot use toast in server-only service
       return null;
     }
     return data;
@@ -181,10 +172,8 @@ export const campaignService = {
 
     if (error) {
       console.error("Error creating campaign phase:", error.message);
-      // toast.error("Failed to create campaign phase."); // Cannot use toast in server-only service
       return null;
     }
-    // toast.success("Campaign phase created successfully!"); // Cannot use toast in server-only service
     return data;
   },
 
@@ -202,10 +191,8 @@ export const campaignService = {
 
     if (error) {
       console.error(`Error updating campaign phase ${id}:`, error.message);
-      // toast.error("Failed to update campaign phase."); // Cannot use toast in server-only service
       return null;
     }
-    // toast.success("Campaign phase updated successfully!"); // Cannot use toast in server-only service
     return data;
   },
 
@@ -218,10 +205,8 @@ export const campaignService = {
 
     if (error) {
       console.error(`Error deleting campaign phase ${id}:`, error.message);
-      // toast.error("Failed to delete campaign phase."); // Cannot use toast in server-only service
       return false;
     }
-    // toast.success("Campaign phase deleted successfully!"); // Cannot use toast in server-only service
     return true;
   },
 

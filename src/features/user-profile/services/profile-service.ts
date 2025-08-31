@@ -1,7 +1,8 @@
-"use server"; // Changed to server-only
+"use server";
 
 import { createClient } from "@/integrations/supabase/server";
 import { Profile } from "@/types/supabase";
+// import { toast } from "sonner"; // Removed client-side import
 
 export const profileService = {
   // Supabase client is now created on demand for server-side operations
