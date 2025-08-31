@@ -13,9 +13,10 @@ import { Badge } from "@/components/ui/badge";
 
 interface TemplateActivityLogProps {
   templateId: string;
+  refreshTrigger: number; // New prop to trigger refresh
 }
 
-export function TemplateActivityLog({ templateId }: TemplateActivityLogProps) {
+export function TemplateActivityLog({ templateId, refreshTrigger }: TemplateActivityLogProps) {
   const { user, isLoading: isSessionLoading } = useSession();
   const [activityLogs, setActivityLogs] = useState<TemplateActivityLogType[]>([]);
   const [isLoadingLogs, setIsLoadingLogs] = useState(true);
@@ -39,7 +40,7 @@ export function TemplateActivityLog({ templateId }: TemplateActivityLogProps) {
     if (!isSessionLoading && user) {
       fetchActivityLogs();
     }
-  }, [user, isSessionLoading, templateId]);
+  }, [user, isSessionLoading, templateId, refreshTrigger]); // Added refreshTrigger to dependencies
 
   const getUserInitials = (firstName: string | null | undefined, lastName: string | null | undefined) => {
     const firstInitial = firstName ? firstName.charAt(0) : '';

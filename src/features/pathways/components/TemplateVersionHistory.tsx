@@ -24,9 +24,10 @@ interface TemplateVersionHistoryProps {
   pathwayTemplateId: string;
   canModify: boolean; // Can create new versions or rollback
   onTemplateRolledBack: () => void;
+  refreshTrigger: number; // New prop to trigger refresh
 }
 
-export function TemplateVersionHistory({ pathwayTemplateId, canModify, onTemplateRolledBack }: TemplateVersionHistoryProps) {
+export function TemplateVersionHistory({ pathwayTemplateId, canModify, onTemplateRolledBack, refreshTrigger }: TemplateVersionHistoryProps) {
   const { user, isLoading: isSessionLoading } = useSession();
   const [versions, setVersions] = useState<PathwayTemplateVersion[]>([]);
   const [isLoadingVersions, setIsLoadingVersions] = useState(true);
@@ -51,7 +52,7 @@ export function TemplateVersionHistory({ pathwayTemplateId, canModify, onTemplat
     if (!isSessionLoading && user) {
       fetchVersions();
     }
-  }, [user, isSessionLoading, pathwayTemplateId]);
+  }, [user, isSessionLoading, pathwayTemplateId, refreshTrigger]); // Added refreshTrigger to dependencies
 
   const handleRollback = async (versionId: string, versionNumber: number) => {
     try {

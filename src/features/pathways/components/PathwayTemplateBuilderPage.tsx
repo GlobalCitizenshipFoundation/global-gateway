@@ -91,6 +91,7 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
   const [isActivityLogOpen, setIsActivityLogOpen] = useState(false); // State for Activity Log dialog
   const [creatorProfile, setCreatorProfile] = useState<Profile | null>(null); // State for creator's profile
   const [lastUpdaterProfile, setLastUpdaterProfile] = useState<Profile | null>(null); // State for last updater's profile
+  const [refreshTrigger, setRefreshTrigger] = useState(0); // New state to trigger refreshes
 
   const templateForm = useForm<z.infer<typeof templateBuilderSchema>>({
     resolver: zodResolver(templateBuilderSchema),
@@ -150,6 +151,7 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
       if (fetchedPhases) {
         setPhases(fetchedPhases);
       }
+      setRefreshTrigger(prev => prev + 1); // Increment trigger to refresh children
     } catch (error: any) {
       toast.error(error.message || "Failed to load pathway template details.");
       router.push("/pathways");
@@ -847,6 +849,7 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
                 pathwayTemplateId={template.id}
                 canModify={canModifyTemplate}
                 onTemplateRolledBack={fetchTemplateAndPhases}
+                refreshTrigger={refreshTrigger}
               />
             </DialogContent>
           </Dialog>
@@ -860,7 +863,7 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
                   A chronological record of all changes and events for this template.
                 </DialogDescription>
               </DialogHeader>
-              <TemplateActivityLog templateId={template.id} />
+              <TemplateActivityLog templateId={template.id} refreshTrigger={refreshTrigger} />
             </DialogContent>
           </Dialog>
         </>
