@@ -81,7 +81,7 @@ export function CampaignPhaseFormDialog({
 
       let result: CampaignPhase | null;
       if (initialData) {
-        result = await updateCampaignPhaseAction(initialData!.id, campaignId, formData);
+        result = await updateCampaignPhaseAction(initialData.id!, campaignId, formData);
       } else {
         formData.append("order_index", nextOrderIndex.toString());
         result = await createCampaignPhaseAction(campaignId, formData);
