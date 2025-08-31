@@ -136,7 +136,7 @@ export function PhaseBuilderCard({ phase, index, onDelete, onPhaseUpdated, canMo
           <div
             className={cn(
               "overflow-hidden transition-max-height duration-300 ease-in-out",
-              isExpanded ? "max-h-screen-content p-4 pt-0" : "max-h-0 p-0"
+              isExpanded ? "max-h-[600px] overflow-y-auto p-4 pt-0" : "max-h-0 p-0" // Added max-h and overflow-y-auto
             )}
           >
             {isExpanded && (
