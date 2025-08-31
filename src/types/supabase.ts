@@ -62,4 +62,20 @@ export interface Phase extends BaseConfigurableItem {
   pathway_template_id: string;
 }
 
+// Define PhaseTask here as well for central typing
+export interface PhaseTask {
+  id: string;
+  phase_id: string;
+  name: string;
+  description: string | null;
+  assigned_to_role: string | null;
+  assigned_to_user_id: string | null;
+  due_date: string | null;
+  status: 'pending' | 'completed';
+  order_index: number;
+  created_at: string;
+  updated_at: string;
+  profiles?: Profile; // Joined profile data for the assigned user
+}
+
 // You can add more interfaces here as needed for other Supabase tables.

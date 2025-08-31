@@ -318,7 +318,7 @@ export async function publishPathwayTemplateAction(id: string): Promise<PathwayT
 
     // Then, create a new version snapshot
     const phases = await getPhasesByPathwayTemplateId(id);
-    const snapshot = { template: updatedTemplate, phases: phases || [] };
+    const snapshot = { template, phases: phases || [] };
 
     const newVersion = await createTemplateVersion(id, snapshot, user.id);
 
