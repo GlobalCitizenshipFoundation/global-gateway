@@ -937,32 +937,6 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
         </div>
       )}
 
-      {templateToClone && (
-        <CloneTemplateDialog
-          isOpen={isCloneDialogOpen}
-          onClose={() => { setIsCloneDialogOpen(false); setTemplateToClone(null); fetchTemplateAndPhases(); }}
-          templateId={templateToClone.id}
-          originalTemplateName={templateToClone.name}
-        />
-      )}
-
-      <AlertDialog open={showUnsavedChangesWarning} onOpenChange={setShowUnsavedChangesWarning}>
-        <AlertDialogContent className="rounded-xl shadow-lg bg-card text-card-foreground border-border">
-          <AlertDialogHeader>
-            <AlertDialogTitle className="text-headline-small">Unsaved Changes</AlertDialogTitle>
-            <AlertDialogDescription className="text-body-medium text-muted-foreground">
-              You have unsaved changes. Are you sure you want to leave? Your changes will be lost.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={handleStayOnPage} className="rounded-md text-label-large">Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDiscardChanges} className="rounded-md text-label-large bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              Leave Page
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
       {template && (
         <CardFooter className="flex flex-col md:flex-row md:justify-between md:items-center text-body-small text-muted-foreground border-t border-border pt-6 mt-8">
           <div className="flex flex-col items-start mb-4 md:mb-0">
