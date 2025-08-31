@@ -1,16 +1,17 @@
-import React from "react";
+import { notFound } from "next/navigation";
 import { PathwayTemplateDetail } from "@/features/pathway-templates/components/PathwayTemplateDetail";
 import { getTemplateByIdAction } from "@/features/pathway-templates/actions";
-import { notFound } from "next/navigation"; // No redirect needed here anymore
+import React from "react";
 
-interface PathwayTemplateDetailPageProps {
-  params: {
-    id: string;
-  };
-  searchParams?: Record<string, string | string[] | undefined>;
-}
+// Removed the explicit interface PathwayTemplateDetailPageProps
 
-export default async function PathwayTemplateDetailPage({ params }: PathwayTemplateDetailPageProps) {
+export default async function PathwayTemplateDetailPage({ 
+  params, 
+  searchParams 
+}: { 
+  params: { id: string }; // Directly define the type for params
+  searchParams: { [key: string]: string | string[] | undefined }; // Directly define the type for searchParams
+}) {
   const { id } = params;
 
   // Validate if 'id' is a UUID before proceeding to fetch
