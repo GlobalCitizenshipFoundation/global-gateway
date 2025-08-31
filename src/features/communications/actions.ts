@@ -1,6 +1,13 @@
 "use server";
 
-import { communicationService, CommunicationTemplate } from "./services/communication-service";
+import {
+  CommunicationTemplate,
+  getCommunicationTemplates,
+  getCommunicationTemplateById,
+  createCommunicationTemplate,
+  updateCommunicationTemplate,
+  deleteCommunicationTemplate,
+} from "./services/communication-service";
 import { createClient } from "@/integrations/supabase/server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -19,20 +26,11 @@ async function authorizeCommunicationTemplateAction(templateId: string, action: 
 
   let template: CommunicationTemplate | null = null;
   if (templateId) {
-    const { data, error } = await supabase
-      .from("communication_templates")
-      .select("*")
-      .eq("id", templateId)
-      .single();
-
-    if (error) {
-      if (error.code === 'PGRST116') { // No rows found for eq filter
-        throw new Error("CommunicationTemplateNotFound");
-      }
-      console.error(`Error fetching communication template ${templateId} for authorization:`, error.message);
-      throw new Error("FailedToRetrieveCommunicationTemplate");
+    // Use the service function to fetch the template
+    template = await getCommunicationTemplateById(templateId);
+    if (!template) {
+      throw new Error("CommunicationTemplateNotFound");
     }
-    template = data;
   }
 
   if (!template && templateId) {
@@ -63,13 +61,9 @@ export async function getCommunicationTemplatesAction(): Promise<CommunicationTe
   const userRole: string = user.user_metadata?.role || '';
   const isAdmin = userRole === 'admin';
 
-  const { data, error } = await supabase
-    .from("communication_templates")
-    .select("*")
-    .order("created_at", { ascending: false });
+  const data = await getCommunicationTemplates(); // Use the service function
 
-  if (error) {
-    console.error("Error fetching communication templates:", error.message);
+  if (!data) {
     return null;
   }
 
@@ -113,7 +107,7 @@ export async function createCommunicationTemplateAction(formData: FormData): Pro
   }
 
   try {
-    const newTemplate = await communicationService.createCommunicationTemplate(
+    const newTemplate = await createCommunicationTemplate( // Use the service function
       name,
       subject,
       body,
@@ -144,7 +138,7 @@ export async function updateCommunicationTemplateAction(id: string, formData: Fo
       throw new Error("Template name, subject, body, and type are required.");
     }
 
-    const updatedTemplate = await communicationService.updateCommunicationTemplate(
+    const updatedTemplate = await updateCommunicationTemplate( // Use the service function
       id,
       { name, subject, body, type, is_public }
     );
@@ -169,7 +163,7 @@ export async function deleteCommunicationTemplateAction(id: string): Promise<boo
   try {
     await authorizeCommunicationTemplateAction(id, 'write'); // Authorize before delete
 
-    const success = await communicationService.deleteCommunicationTemplate(id);
+    const success = await deleteCommunicationTemplate(id); // Use the service function
 
     revalidatePath("/workbench/communications/templates");
     return success;

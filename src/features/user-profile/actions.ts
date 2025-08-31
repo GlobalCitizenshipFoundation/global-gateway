@@ -1,10 +1,13 @@
 "use server";
 
-import { profileService } from "./services/profile-service";
+import {
+  getProfileById,
+  updateProfile,
+} from "./services/profile-service";
+import { Profile } from "@/types/supabase"; // Import Profile from its source of truth
 import { createClient } from "@/integrations/supabase/server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { Profile } from "@/types/supabase";
 
 // Helper function to check user authorization for a profile
 async function authorizeProfileAccess(profileId: string, action: 'read' | 'write'): Promise<{ user: any; profile: Profile | null; isAdmin: boolean }> {
@@ -21,7 +24,7 @@ async function authorizeProfileAccess(profileId: string, action: 'read' | 'write
   let profile: Profile | null = null;
   if (profileId) {
     try {
-      profile = await profileService.getProfileById(profileId);
+      profile = await getProfileById(profileId); // Use the service function
     } catch (serviceError: any) {
       console.error(`Error fetching profile ${profileId} in authorizeProfileAccess:`, serviceError.message);
       throw new Error("ProfileNotFound"); // Treat any service error during fetch as not found for security
@@ -85,7 +88,7 @@ export async function updateProfileDetailsAction(formData: FormData): Promise<Pr
       avatar_url: formData.get("avatar_url") as string || null, // Allow updating avatar URL
     };
 
-    const updatedProfile = await profileService.updateProfile(userId, updates);
+    const updatedProfile = await updateProfile(userId, updates); // Use the service function
 
     revalidatePath("/portal/profile");
     return updatedProfile;

@@ -1,11 +1,23 @@
 "use server";
 
-import { packageService, Package, PackageItem } from "@/features/packages/services/package-service";
+import {
+  Package,
+  PackageItem,
+  getPackages,
+  getPackageById,
+  createPackage,
+  updatePackage,
+  deletePackage,
+  getPackageItemsByPackageId,
+  addPackageItem,
+  updatePackageItemOrder,
+  removePackageItem,
+} from "@/features/packages/services/package-service";
 import { createClient } from "@/integrations/supabase/server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { campaignService } from "@/features/campaigns/services/campaign-service";
-import { pathwayTemplateService } from "@/features/pathway-templates/services/pathway-template-service";
+import { getCampaignById } from "@/features/campaigns/services/campaign-service"; // Import specific function
+import { getPathwayTemplateById } from "@/features/pathway-templates/services/pathway-template-service"; // Import specific function
 
 // Helper function to check user authorization for a package
 async function authorizePackageAction(packageId: string | null, action: 'read' | 'write'): Promise<{ user: any; package: Package | null; isAdmin: boolean }> {
@@ -21,20 +33,11 @@ async function authorizePackageAction(packageId: string | null, action: 'read' |
 
   let pkg: Package | null = null;
   if (packageId) {
-    const { data, error } = await supabase
-      .from("packages")
-      .select("*")
-      .eq("id", packageId)
-      .single();
-
-    if (error) {
-      if (error.code === 'PGRST116') { // No rows found for eq filter
-        throw new Error("PackageNotFound");
-      }
-      console.error(`Error fetching package ${packageId} for authorization:`, error.message);
-      throw new Error("FailedToRetrievePackage");
+    // Use the service function to fetch the package
+    pkg = await getPackageById(packageId);
+    if (!pkg) {
+      throw new Error("PackageNotFound");
     }
-    pkg = data;
   }
 
   if (!pkg && packageId) {
@@ -65,13 +68,9 @@ export async function getPackagesAction(): Promise<Package[] | null> {
   const userRole: string = user.user_metadata?.role || '';
   const isAdmin = userRole === 'admin';
 
-  const { data, error } = await supabase
-    .from("packages")
-    .select("*")
-    .order("created_at", { ascending: false });
+  const data = await getPackages(); // Use the service function
 
-  if (error) {
-    console.error("Error fetching packages:", error.message);
+  if (!data) {
     return null;
   }
 
@@ -113,7 +112,7 @@ export async function createPackageAction(formData: FormData): Promise<Package |
   }
 
   try {
-    const newPackage = await packageService.createPackage(
+    const newPackage = await createPackage( // Use the service function
       name,
       description,
       is_public,
@@ -140,7 +139,7 @@ export async function updatePackageAction(id: string, formData: FormData): Promi
       throw new Error("Package name is required.");
     }
 
-    const updatedPackage = await packageService.updatePackage(
+    const updatedPackage = await updatePackage( // Use the service function
       id,
       { name, description, is_public }
     );
@@ -165,7 +164,7 @@ export async function deletePackageAction(id: string): Promise<boolean> {
   try {
     await authorizePackageAction(id, 'write'); // Authorize before delete
 
-    const success = await packageService.deletePackage(id);
+    const success = await deletePackage(id); // Use the service function
 
     revalidatePath("/workbench/packages");
     return success;
@@ -187,7 +186,7 @@ export async function deletePackageAction(id: string): Promise<boolean> {
 export async function getPackageItemsAction(packageId: string): Promise<PackageItem[] | null> {
   try {
     await authorizePackageAction(packageId, 'read'); // User must have read access to the parent package
-    const items = await packageService.getPackageItemsByPackageId(packageId);
+    const items = await getPackageItemsByPackageId(packageId); // Use the service function
     return items;
   } catch (error: any) {
     console.error("Error in getPackageItemsAction:", error.message);
@@ -216,14 +215,14 @@ export async function addPackageItemAction(packageId: string, formData: FormData
 
     // Optional: Further validation to ensure item_id actually exists and is accessible
     if (item_type === 'campaign') {
-      const campaign = await campaignService.getCampaignById(item_id);
+      const campaign = await getCampaignById(item_id); // Use the service function
       if (!campaign) throw new Error("Campaign not found or unauthorized.");
     } else if (item_type === 'pathway_template') {
-      const template = await pathwayTemplateService.getPathwayTemplateById(item_id);
+      const template = await getPathwayTemplateById(item_id); // Use the service function
       if (!template) throw new Error("Pathway Template not found or unauthorized.");
     }
 
-    const newItem = await packageService.addPackageItem(
+    const newItem = await addPackageItem( // Use the service function
       packageId,
       item_type,
       item_id,
@@ -250,7 +249,7 @@ export async function updatePackageItemOrderAction(packageId: string, items: { i
     await authorizePackageAction(packageId, 'write'); // User must have write access to the parent package
 
     for (const item of items) {
-      await packageService.updatePackageItemOrder(item.id, item.order_index);
+      await updatePackageItemOrder(item.id, item.order_index); // Use the service function
     }
 
     revalidatePath(`/workbench/packages/${packageId}`);
@@ -272,7 +271,7 @@ export async function removePackageItemAction(itemId: string, packageId: string)
   try {
     await authorizePackageAction(packageId, 'write'); // User must have write access to the parent package
 
-    const success = await packageService.removePackageItem(itemId);
+    const success = await removePackageItem(itemId); // Use the service function
 
     revalidatePath(`/workbench/packages/${packageId}`);
     return success;

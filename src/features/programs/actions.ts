@@ -1,10 +1,16 @@
 "use server";
 
-import { programService } from "./services/program-service";
+import {
+  getPrograms,
+  getProgramById,
+  createProgram,
+  updateProgram,
+  deleteProgram,
+} from "./services/program-service";
+import { Program } from "@/features/campaigns/services/campaign-service"; // Import Program from its source of truth
 import { createClient } from "@/integrations/supabase/server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { Program } from "@/features/campaigns/services/campaign-service"; // Corrected import path for Program
 
 // Helper function to check user authorization for a program
 async function authorizeProgramAction(programId: string, action: 'read' | 'write'): Promise<{ user: any; program: Program | null; isAdmin: boolean }> {
@@ -20,20 +26,11 @@ async function authorizeProgramAction(programId: string, action: 'read' | 'write
 
   let program: Program | null = null;
   if (programId) {
-    const { data, error } = await supabase
-      .from("programs")
-      .select("*")
-      .eq("id", programId)
-      .single();
-
-    if (error) {
-      if (error.code === 'PGRST116') { // No rows found for eq filter
-        throw new Error("ProgramNotFound");
-      }
-      console.error(`Error fetching program ${programId} for authorization:`, error.message);
-      throw new Error("FailedToRetrieveProgram");
+    // Use the service function to fetch the program
+    program = await getProgramById(programId);
+    if (!program) {
+      throw new Error("ProgramNotFound");
     }
-    program = data;
   }
 
   if (!program && programId) {
@@ -66,13 +63,9 @@ export async function getProgramsAction(): Promise<Program[] | null> {
   const userRole: string = user.user_metadata?.role || '';
   const isAdmin = userRole === 'admin';
 
-  const { data, error } = await supabase
-    .from("programs")
-    .select("*")
-    .order("created_at", { ascending: false });
+  const data = await getPrograms(); // Use the service function
 
-  if (error) {
-    console.error("Error fetching programs:", error.message);
+  if (!data) {
     return null;
   }
 
@@ -117,7 +110,7 @@ export async function createProgramAction(formData: FormData): Promise<Program |
   }
 
   try {
-    const newProgram = await programService.createProgram(
+    const newProgram = await createProgram( // Use the service function
       name,
       description,
       start_date,
@@ -148,7 +141,7 @@ export async function updateProgramAction(id: string, formData: FormData): Promi
       throw new Error("Program name and status are required.");
     }
 
-    const updatedProgram = await programService.updateProgram(
+    const updatedProgram = await updateProgram( // Use the service function
       id,
       { name, description, start_date, end_date, status }
     );
@@ -173,7 +166,7 @@ export async function deleteProgramAction(id: string): Promise<boolean> {
   try {
     await authorizeProgramAction(id, 'write'); // Authorize before delete
 
-    const success = await programService.deleteProgram(id);
+    const success = await deleteProgram(id); // Use the service function
 
     revalidatePath("/workbench/programs");
     return success;

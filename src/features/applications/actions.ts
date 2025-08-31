@@ -1,6 +1,19 @@
 "use server";
 
-import { applicationService, Application, ApplicationNote } from "@/features/applications/services/application-service";
+import {
+  Application,
+  ApplicationNote,
+  getApplications,
+  getApplicationById,
+  createApplication,
+  updateApplication,
+  deleteApplication,
+  getApplicationNotes,
+  getApplicationNoteById, // Import the new function
+  createApplicationNote,
+  updateApplicationNote,
+  deleteApplicationNote,
+} from "@/features/applications/services/application-service";
 import { createClient } from "@/integrations/supabase/server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -19,20 +32,11 @@ async function authorizeApplicationAction(applicationId: string, action: 'read' 
 
   let application: Application | null = null;
   if (applicationId) {
-    const { data, error } = await supabase
-      .from("applications")
-      .select("*, campaigns(creator_id, is_public)") // Fetch campaign creator_id and is_public for authorization
-      .eq("id", applicationId)
-      .single();
-
-    if (error) {
-      if (error.code === 'PGRST116') { // No rows found for eq filter
-        throw new Error("ApplicationNotFound");
-      }
-      console.error(`Error fetching application ${applicationId} for authorization:`, error.message);
-      throw new Error("FailedToRetrieveApplication");
+    // Use the service function to fetch the application
+    application = await getApplicationById(applicationId);
+    if (!application) {
+      throw new Error("ApplicationNotFound");
     }
-    application = data;
   }
 
   if (!application && applicationId) {
@@ -70,17 +74,12 @@ export async function getApplicationsAction(): Promise<Application[] | null> {
   const userRole: string = user.user_metadata?.role || '';
   const isAdmin = userRole === 'admin';
 
-  const { data, error } = await supabase
-    .from("applications")
-    .select("*, campaigns(id, name, creator_id, is_public), profiles(first_name, last_name, avatar_url), current_campaign_phases(id, name, type, order_index)")
-    .order("created_at", { ascending: false });
+  const data = await getApplications(); // Use the service function
 
-  if (error) {
-    console.error("Error fetching applications:", error.message);
+  if (!data) {
     return null;
   }
 
-  // Client-side filtering for non-admin users to ensure they only see relevant applications
   const filteredData = data.filter(app =>
     isAdmin ||
     app.applicant_id === user.id || // Applicant can see their own
@@ -124,7 +123,7 @@ export async function createApplicationAction(campaignId: string, formData: Form
   const screening_status = formData.get("screening_status") as Application['screening_status'] || 'Pending';
 
   try {
-    const newApplication = await applicationService.createApplication(
+    const newApplication = await createApplication( // Use the service function
       campaignId,
       applicantId,
       initialData,
@@ -170,7 +169,7 @@ export async function updateApplicationAction(id: string, formData: FormData): P
       console.warn("Applicant attempted to update current_campaign_phase_id, action ignored.");
     }
 
-    const updatedApplication = await applicationService.updateApplication(id, updates);
+    const updatedApplication = await updateApplication(id, updates); // Use the service function
 
     revalidatePath(`/portal/my-applications`);
     revalidatePath(`/workbench/applications`);
@@ -193,7 +192,7 @@ export async function deleteApplicationAction(id: string): Promise<boolean> {
   try {
     await authorizeApplicationAction(id, 'write'); // Only campaign creator/admin can delete applications
 
-    const success = await applicationService.deleteApplication(id);
+    const success = await deleteApplication(id); // Use the service function
 
     revalidatePath("/portal/my-applications");
     revalidatePath("/workbench/applications");
@@ -226,20 +225,11 @@ async function authorizeNoteAction(noteId: string, action: 'read' | 'write'): Pr
 
   let note: ApplicationNote | null = null;
   if (noteId) {
-    const { data, error } = await supabase
-      .from("application_notes")
-      .select("*, applications(campaign_id, applicant_id, campaigns(creator_id, is_public))")
-      .eq("id", noteId)
-      .single();
-
-    if (error) {
-      if (error.code === 'PGRST116') {
-        throw new Error("NoteNotFound");
-      }
-      console.error(`Error fetching note ${noteId} for authorization:`, error.message);
-      throw new Error("FailedToRetrieveNote");
+    // Fetch note using the new service function
+    note = await getApplicationNoteById(noteId); 
+    if (!note) {
+      throw new Error("NoteNotFound");
     }
-    note = data;
   }
 
   if (!note && noteId) {
@@ -247,8 +237,8 @@ async function authorizeNoteAction(noteId: string, action: 'read' | 'write'): Pr
   }
 
   // Check if user has read/write access to the parent application
-  const hasApplicationReadAccess = await authorizeApplicationAction(note?.application_id!, 'read');
-  if (!hasApplicationReadAccess.application) {
+  const { application: parentApplication } = await authorizeApplicationAction(note?.application_id!, 'read');
+  if (!parentApplication) {
     throw new Error("UnauthorizedAccessToParentApplication");
   }
 
@@ -268,7 +258,7 @@ export async function getApplicationNotesAction(applicationId: string): Promise<
   try {
     // Ensure user has read access to the parent application
     await authorizeApplicationAction(applicationId, 'read');
-    const notes = await applicationService.getApplicationNotes(applicationId);
+    const notes = await getApplicationNotes(applicationId); // Use the service function
     return notes;
   } catch (error: any) {
     console.error("Error in getApplicationNotesAction:", error.message);
@@ -303,7 +293,7 @@ export async function createApplicationNoteAction(applicationId: string, formDat
   }
 
   try {
-    const newNote = await applicationService.createApplicationNote(applicationId, user.id, content);
+    const newNote = await createApplicationNote(applicationId, user.id, content); // Use the service function
     revalidatePath(`/workbench/applications/${applicationId}`);
     return newNote;
   } catch (error: any) {
@@ -324,7 +314,7 @@ export async function updateApplicationNoteAction(noteId: string, formData: Form
       throw new Error("Note content cannot be empty.");
     }
 
-    const updatedNote = await applicationService.updateApplicationNote(noteId, { content });
+    const updatedNote = await updateApplicationNote(noteId, { content }); // Use the service function
     revalidatePath(`/workbench/applications/${note.application_id}`);
     return updatedNote;
   } catch (error: any) {
@@ -347,7 +337,7 @@ export async function deleteApplicationNoteAction(noteId: string): Promise<boole
       throw new Error("NoteNotFound");
     }
 
-    const success = await applicationService.deleteApplicationNote(noteId);
+    const success = await deleteApplicationNote(noteId); // Use the service function
     revalidatePath(`/workbench/applications/${note.application_id}`);
     return success;
   } catch (error: any) {

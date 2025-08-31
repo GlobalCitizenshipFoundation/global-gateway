@@ -1,10 +1,25 @@
 "use server";
 
-import { campaignService, Campaign, CampaignPhase } from "@/features/campaigns/services/campaign-service";
+import {
+  Campaign,
+  CampaignPhase,
+  getCampaigns,
+  getCampaignById,
+  createCampaign,
+  updateCampaign,
+  deleteCampaign,
+  getCampaignPhasesByCampaignId,
+  createCampaignPhase,
+  updateCampaignPhase,
+  deleteCampaignPhase,
+  deepCopyPhasesFromTemplate,
+  updateCampaignPhase as updateCampaignPhaseService, // Renamed to avoid conflict
+} from "@/features/campaigns/services/campaign-service";
 import { createClient } from "@/integrations/supabase/server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { programService } from "@/features/programs/services/program-service"; // Import programService
+import { getProgramById } from "@/features/programs/services/program-service"; // Import specific function directly
+import { getPathwayTemplateById } from "@/features/pathway-templates/services/pathway-template-service"; // Import specific function
 
 // Helper function to check user authorization for a campaign
 async function authorizeCampaignAction(campaignId: string, action: 'read' | 'write'): Promise<{ user: any; campaign: Campaign | null; isAdmin: boolean }> {
@@ -20,20 +35,11 @@ async function authorizeCampaignAction(campaignId: string, action: 'read' | 'wri
 
   let campaign: Campaign | null = null;
   if (campaignId) {
-    const { data, error } = await supabase
-      .from("campaigns")
-      .select("*, programs(creator_id)") // Fetch program creator_id for authorization
-      .eq("id", campaignId)
-      .single();
-
-    if (error) {
-      if (error.code === 'PGRST116') { // No rows found for eq filter
-        throw new Error("CampaignNotFound");
-      }
-      console.error(`Error fetching campaign ${campaignId} for authorization:`, error.message);
-      throw new Error("FailedToRetrieveCampaign");
+    // Use the service function to fetch the campaign
+    campaign = await getCampaignById(campaignId);
+    if (!campaign) {
+      throw new Error("CampaignNotFound");
     }
-    campaign = data;
   }
 
   if (!campaign && campaignId) {
@@ -69,13 +75,9 @@ export async function getCampaignsAction(): Promise<Campaign[] | null> {
   const userRole: string = user.user_metadata?.role || '';
   const isAdmin = userRole === 'admin';
 
-  const { data, error } = await supabase
-    .from("campaigns")
-    .select("*, pathway_templates(id, name, description, is_private), programs(id, name, creator_id)") // Select program data
-    .order("created_at", { ascending: false });
+  const data = await getCampaigns(); // Use the service function
 
-  if (error) {
-    console.error("Error fetching campaigns:", error.message);
+  if (!data) {
     return null;
   }
 
@@ -131,7 +133,7 @@ export async function createCampaignAction(formData: FormData): Promise<Campaign
   if (program_id) {
     const userRole: string = user.user_metadata?.role || '';
     const isAdmin = userRole === 'admin';
-    const program = await programService.getProgramById(program_id);
+    const program = await getProgramById(program_id); // Use direct function call
 
     if (!program) {
       throw new Error("Linked program not found.");
@@ -143,7 +145,7 @@ export async function createCampaignAction(formData: FormData): Promise<Campaign
 
   let newCampaign: Campaign | null = null;
   try {
-    newCampaign = await campaignService.createCampaign(
+    newCampaign = await createCampaign( // Use the service function
       name,
       description,
       pathway_template_id,
@@ -153,12 +155,12 @@ export async function createCampaignAction(formData: FormData): Promise<Campaign
       status,
       config,
       user.id,
-      program_id // Pass program_id to service
+      program_id
     );
 
     // If a pathway template was selected, deep copy its phases to campaign_phases
     if (newCampaign && pathway_template_id) {
-      await campaignService.deepCopyPhasesFromTemplate(newCampaign.id, pathway_template_id);
+      await deepCopyPhasesFromTemplate(newCampaign.id, pathway_template_id); // Use the service function
     }
 
     revalidatePath("/workbench/campaigns");
@@ -203,7 +205,7 @@ export async function updateCampaignAction(id: string, formData: FormData): Prom
     // Additional authorization check if program_id is being changed or set
     if (program_id !== campaign.program_id) {
       if (program_id) { // If linking to a new program
-        const program = await programService.getProgramById(program_id);
+        const program = await getProgramById(program_id); // Use direct function call
         if (!program) {
           throw new Error("Linked program not found.");
         }
@@ -215,9 +217,9 @@ export async function updateCampaignAction(id: string, formData: FormData): Prom
       }
     }
 
-    const updatedCampaign = await campaignService.updateCampaign(
+    const updatedCampaign = await updateCampaign( // Use the service function
       id,
-      { name, description, pathway_template_id, start_date, end_date, is_public, status, config, program_id } // Pass program_id to service
+      { name, description, pathway_template_id, start_date, end_date, is_public, status, config, program_id }
     );
 
     revalidatePath("/workbench/campaigns");
@@ -235,7 +237,7 @@ export async function updateCampaignAction(id: string, formData: FormData): Prom
       redirect("/error/403");
     } else if (error.message === "CampaignNotFound") {
       redirect("/error/404");
-    } else if (error.message === "FailedToRetrieveCampaign") { // Corrected this line
+    } else if (error.message === "FailedToRetrieveCampaign") {
       redirect("/error/500");
     }
     redirect("/login"); // Fallback for unauthenticated or other critical errors
@@ -250,7 +252,7 @@ export async function deleteCampaignAction(id: string): Promise<boolean> {
       throw new Error("CampaignNotFound");
     }
 
-    const success = await campaignService.deleteCampaign(id);
+    const success = await deleteCampaign(id); // Use the service function
 
     revalidatePath("/workbench/campaigns");
     if (campaign.program_id) {
@@ -275,7 +277,7 @@ export async function deleteCampaignAction(id: string): Promise<boolean> {
 export async function getCampaignPhasesAction(campaignId: string): Promise<CampaignPhase[] | null> {
   try {
     await authorizeCampaignAction(campaignId, 'read'); // User must have read access to the parent campaign
-    const phases = await campaignService.getCampaignPhasesByCampaignId(campaignId);
+    const phases = await getCampaignPhasesByCampaignId(campaignId); // Use the service function
     return phases;
   } catch (error: any) {
     console.error("Error in getCampaignPhasesAction:", error.message);
@@ -305,7 +307,7 @@ export async function createCampaignPhaseAction(campaignId: string, formData: Fo
       throw new Error("Campaign phase name, type, and order index are required.");
     }
 
-    const newPhase = await campaignService.createCampaignPhase(
+    const newPhase = await createCampaignPhase( // Use the service function
       campaignId,
       name,
       type,
@@ -343,7 +345,7 @@ export async function updateCampaignPhaseAction(phaseId: string, campaignId: str
       throw new Error("Campaign phase name and type are required.");
     }
 
-    const updatedPhase = await campaignService.updateCampaignPhase(
+    const updatedPhase = await updateCampaignPhase( // Use the service function
       phaseId,
       { name, type, description, config }
     );
@@ -367,7 +369,7 @@ export async function updateCampaignPhaseConfigAction(phaseId: string, campaignI
   try {
     await authorizeCampaignAction(campaignId, 'write'); // User must have write access to the parent campaign
 
-    const updatedPhase = await campaignService.updateCampaignPhase(
+    const updatedPhase = await updateCampaignPhaseService( // Use the service function (renamed import)
       phaseId,
       { config: configUpdates }
     );
@@ -391,7 +393,7 @@ export async function deleteCampaignPhaseAction(phaseId: string, campaignId: str
   try {
     await authorizeCampaignAction(campaignId, 'write'); // User must have write access to the parent campaign
 
-    const success = await campaignService.deleteCampaignPhase(phaseId);
+    const success = await deleteCampaignPhase(phaseId); // Use the service function
 
     revalidatePath(`/workbench/campaigns/${campaignId}`);
     return success;
@@ -414,7 +416,7 @@ export async function reorderCampaignPhasesAction(campaignId: string, phases: { 
 
     // Perform updates in a transaction if possible, or sequentially
     for (const phase of phases) {
-      await campaignService.updateCampaignPhase(phase.id, { order_index: phase.order_index });
+      await updateCampaignPhaseService(phase.id, { order_index: phase.order_index }); // Use the service function (renamed import)
     }
 
     revalidatePath(`/workbench/campaigns/${campaignId}`);

@@ -1,15 +1,31 @@
 "use server";
 
-import { evaluationService, Review, ReviewerAssignment, Decision } from "./services/evaluation-service";
+import {
+  Review,
+  ReviewerAssignment,
+  Decision,
+  getReviewerAssignments,
+  createReviewerAssignment,
+  updateReviewerAssignment,
+  deleteReviewerAssignment,
+  getReviews,
+  createReview,
+  updateReview,
+  deleteReview,
+  getDecisions,
+  createDecision,
+  updateDecision,
+  deleteDecision,
+} from "./services/evaluation-service";
 import { createClient } from "@/integrations/supabase/server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { Application } from "@/features/applications/services/application-service"; // For authorization checks
+import { getApplicationById } from "@/features/applications/services/application-service"; // For authorization checks
 
 // --- Helper Functions for Authorization ---
 
 // Fetches application and checks user's role/ownership for access
-async function authorizeApplicationAccessForEvaluation(applicationId: string, action: 'read' | 'write'): Promise<{ user: any; application: Application | null; isAdmin: boolean; isCampaignCreator: boolean }> {
+async function authorizeApplicationAccessForEvaluation(applicationId: string, action: 'read' | 'write'): Promise<{ user: any; application: any | null; isAdmin: boolean; isCampaignCreator: boolean }> {
   const supabase = await createClient();
   const { data: { user }, error: userError } = await supabase.auth.getUser();
 
@@ -20,22 +36,13 @@ async function authorizeApplicationAccessForEvaluation(applicationId: string, ac
   const userRole: string = user.user_metadata?.role || '';
   const isAdmin = userRole === 'admin';
 
-  let application: Application | null = null;
+  let application: any | null = null;
   if (applicationId) {
-    const { data, error } = await supabase
-      .from("applications")
-      .select("*, campaigns(creator_id, is_public)")
-      .eq("id", applicationId)
-      .single();
-
-    if (error) {
-      if (error.code === 'PGRST116') {
-        throw new Error("ApplicationNotFound");
-      }
-      console.error(`Error fetching application ${applicationId} for authorization:`, error.message);
-      throw new Error("FailedToRetrieveApplication");
+    // Use the service function to fetch the application
+    application = await getApplicationById(applicationId);
+    if (!application) {
+      throw new Error("ApplicationNotFound");
     }
-    application = data;
   }
 
   if (!application && applicationId) {
@@ -72,7 +79,7 @@ export async function getReviewerAssignmentsAction(campaignPhaseId?: string, rev
   // RLS policies on `reviewer_assignments` table handle the primary authorization.
   // This action primarily serves to fetch data for the authenticated user.
   try {
-    const assignments = await evaluationService.getReviewerAssignments(campaignPhaseId, reviewerId);
+    const assignments = await getReviewerAssignments(campaignPhaseId, reviewerId); // Use the service function
     return assignments;
   } catch (error: any) {
     console.error("Error in getReviewerAssignmentsAction:", error.message);
@@ -94,7 +101,7 @@ export async function createReviewerAssignmentAction(formData: FormData): Promis
     // Authorize: Only admin or campaign creator can create assignments
     await authorizeApplicationAccessForEvaluation(applicationId, 'write');
 
-    const newAssignment = await evaluationService.createReviewerAssignment(
+    const newAssignment = await createReviewerAssignment( // Use the service function
       applicationId,
       reviewerId,
       campaignPhaseId,
@@ -125,13 +132,10 @@ export async function updateReviewerAssignmentAction(id: string, formData: FormD
     }
 
     // Fetch assignment to get application_id for authorization
-    const { data: assignment, error: fetchError } = await supabase
-      .from("reviewer_assignments")
-      .select("application_id, reviewer_id")
-      .eq("id", id)
-      .single();
+    const assignments = await getReviewerAssignments(undefined, undefined); // Fetch all to find by ID
+    const assignment = assignments?.find(a => a.id === id);
 
-    if (fetchError || !assignment) {
+    if (!assignment) {
       throw new Error("ReviewerAssignmentNotFound");
     }
 
@@ -148,7 +152,7 @@ export async function updateReviewerAssignmentAction(id: string, formData: FormD
       updates.completed_at = completed_at;
     }
 
-    const updatedAssignment = await evaluationService.updateReviewerAssignment(id, updates);
+    const updatedAssignment = await updateReviewerAssignment(id, updates); // Use the service function
     revalidatePath(`/workbench/applications/${assignment.application_id}`);
     revalidatePath(`/workbench/evaluations/assignments`);
     return updatedAssignment;
@@ -167,20 +171,17 @@ export async function deleteReviewerAssignmentAction(id: string): Promise<boolea
     }
 
     // Fetch assignment to get application_id for authorization
-    const { data: assignment, error: fetchError } = await supabase
-      .from("reviewer_assignments")
-      .select("application_id")
-      .eq("id", id)
-      .single();
+    const assignments = await getReviewerAssignments(undefined, undefined); // Fetch all to find by ID
+    const assignment = assignments?.find(a => a.id === id);
 
-    if (fetchError || !assignment) {
+    if (!assignment) {
       throw new Error("ReviewerAssignmentNotFound");
     }
 
     // Authorize: Only admin or campaign creator can delete assignments
     await authorizeApplicationAccessForEvaluation(assignment.application_id, 'write');
 
-    const success = await evaluationService.deleteReviewerAssignment(id);
+    const success = await deleteReviewerAssignment(id); // Use the service function
     revalidatePath(`/workbench/applications/${assignment.application_id}`);
     revalidatePath(`/workbench/evaluations/assignments`);
     return success;
@@ -202,7 +203,7 @@ export async function getReviewsAction(applicationId?: string, reviewerId?: stri
 
   // RLS policies on `reviews` table handle the primary authorization.
   try {
-    const reviews = await evaluationService.getReviews(applicationId, reviewerId, campaignPhaseId);
+    const reviews = await getReviews(applicationId, reviewerId, campaignPhaseId); // Use the service function
     return reviews;
   } catch (error: any) {
     console.error("Error in getReviewsAction:", error.message);
@@ -235,7 +236,7 @@ export async function createReviewAction(formData: FormData): Promise<Review | n
       throw new Error("UnauthorizedToCreateReview");
     }
 
-    const newReview = await evaluationService.createReview(
+    const newReview = await createReview( // Use the service function
       applicationId,
       reviewerId,
       campaignPhaseId,
@@ -265,13 +266,10 @@ export async function updateReviewAction(id: string, formData: FormData): Promis
     }
 
     // Fetch review to get reviewer_id and application_id for authorization
-    const { data: review, error: fetchError } = await supabase
-      .from("reviews")
-      .select("reviewer_id, application_id")
-      .eq("id", id)
-      .single();
+    const reviews = await getReviews(undefined, undefined, undefined); // Fetch all to find by ID
+    const review = reviews?.find(r => r.id === id);
 
-    if (fetchError || !review) {
+    if (!review) {
       throw new Error("ReviewNotFound");
     }
 
@@ -285,7 +283,7 @@ export async function updateReviewAction(id: string, formData: FormData): Promis
     if (comments !== undefined) updates.comments = comments;
     if (status !== undefined) updates.status = status;
 
-    const updatedReview = await evaluationService.updateReview(id, updates);
+    const updatedReview = await updateReview(id, updates); // Use the service function
     revalidatePath(`/workbench/applications/${review.application_id}`);
     revalidatePath(`/workbench/evaluations/my-reviews`);
     return updatedReview;
@@ -304,13 +302,10 @@ export async function deleteReviewAction(id: string): Promise<boolean> {
     }
 
     // Fetch review to get reviewer_id and application_id for authorization
-    const { data: review, error: fetchError } = await supabase
-      .from("reviews")
-      .select("reviewer_id, application_id")
-      .eq("id", id)
-      .single();
+    const reviews = await getReviews(undefined, undefined, undefined); // Fetch all to find by ID
+    const review = reviews?.find(r => r.id === id);
 
-    if (fetchError || !review) {
+    if (!review) {
       throw new Error("ReviewNotFound");
     }
 
@@ -319,7 +314,7 @@ export async function deleteReviewAction(id: string): Promise<boolean> {
       throw new Error("UnauthorizedToDeleteReview");
     }
 
-    const success = await evaluationService.deleteReview(id);
+    const success = await deleteReview(id); // Use the service function
     revalidatePath(`/workbench/applications/${review.application_id}`);
     revalidatePath(`/workbench/evaluations/my-reviews`);
     return success;
@@ -341,7 +336,7 @@ export async function getDecisionsAction(applicationId?: string, campaignPhaseId
 
   // RLS policies on `decisions` table handle the primary authorization.
   try {
-    const decisions = await evaluationService.getDecisions(applicationId, campaignPhaseId);
+    const decisions = await getDecisions(applicationId, campaignPhaseId); // Use the service function
     return decisions;
   } catch (error: any) {
     console.error("Error in getDecisionsAction:", error.message);
@@ -365,7 +360,7 @@ export async function createDecisionAction(formData: FormData): Promise<Decision
     // Authorize: Only admin or campaign creator can create decisions
     await authorizeApplicationAccessForEvaluation(applicationId, 'write');
 
-    const newDecision = await evaluationService.createDecision(
+    const newDecision = await createDecision( // Use the service function
       applicationId,
       campaignPhaseId,
       deciderId,
@@ -395,13 +390,10 @@ export async function updateDecisionAction(id: string, formData: FormData): Prom
     }
 
     // Fetch decision to get application_id for authorization
-    const { data: decision, error: fetchError } = await supabase
-      .from("decisions")
-      .select("application_id")
-      .eq("id", id)
-      .single();
+    const decisions = await getDecisions(undefined, undefined); // Fetch all to find by ID
+    const decision = decisions?.find(d => d.id === id);
 
-    if (fetchError || !decision) {
+    if (!decision) {
       throw new Error("DecisionNotFound");
     }
 
@@ -413,7 +405,7 @@ export async function updateDecisionAction(id: string, formData: FormData): Prom
     if (notes !== undefined) updates.notes = notes;
     if (isFinal !== undefined) updates.is_final = isFinal;
 
-    const updatedDecision = await evaluationService.updateDecision(id, updates);
+    const updatedDecision = await updateDecision(id, updates); // Use the service function
     revalidatePath(`/workbench/applications/${decision.application_id}`);
     revalidatePath(`/workbench/evaluations/decisions`);
     return updatedDecision;
@@ -432,20 +424,17 @@ export async function deleteDecisionAction(id: string): Promise<boolean> {
     }
 
     // Fetch decision to get application_id for authorization
-    const { data: decision, error: fetchError } = await supabase
-      .from("decisions")
-      .select("application_id")
-      .eq("id", id)
-      .single();
+    const decisions = await getDecisions(undefined, undefined); // Fetch all to find by ID
+    const decision = decisions?.find(d => d.id === id);
 
-    if (fetchError || !decision) {
+    if (!decision) {
       throw new Error("DecisionNotFound");
     }
 
     // Authorize: Only admin or campaign creator can delete decisions
     await authorizeApplicationAccessForEvaluation(decision.application_id, 'write');
 
-    const success = await evaluationService.deleteDecision(id);
+    const success = await deleteDecision(id); // Use the service function
     revalidatePath(`/workbench/applications/${decision.application_id}`);
     revalidatePath(`/workbench/evaluations/decisions`);
     return success;

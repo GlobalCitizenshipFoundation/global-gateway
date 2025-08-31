@@ -1,6 +1,4 @@
-// This file serves as the entry point for the packages feature module.
 // It can be used to export components, services, or types related to packages.
-export { packageService } from "@/features/packages/services/package-service";
 export type { Package, PackageItem } from "@/features/packages/services/package-service";
 export { getPackagesAction, getPackageByIdAction, createPackageAction, updatePackageAction, deletePackageAction, addPackageItemAction, updatePackageItemOrderAction, removePackageItemAction } from "@/features/packages/actions";
 export { PackageForm } from "@/features/packages/components/PackageForm";

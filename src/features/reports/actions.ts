@@ -1,6 +1,9 @@
 "use server";
 
-import { reportService, type ApplicationOverviewReport } from "./services/report-service";
+import {
+  ApplicationOverviewReport,
+  getApplicationOverviewReport,
+} from "./services/report-service";
 import { createClient } from "@/integrations/supabase/server";
 import { redirect } from "next/navigation";
 
@@ -28,7 +31,7 @@ export async function getApplicationOverviewReportAction(): Promise<ApplicationO
   try {
     await authorizeReportAccess(); // Authorize access
 
-    const report = await reportService.getApplicationOverviewReport();
+    const report = await getApplicationOverviewReport(); // Use the service function
     return report;
   } catch (error: any) {
     console.error("Error in getApplicationOverviewReportAction:", error.message);

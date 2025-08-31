@@ -1,7 +1,6 @@
 "use server";
 
 import { createClient } from "@/integrations/supabase/server";
-// import { toast } from "sonner"; // Removed client-side import
 import { Campaign } from "@/features/campaigns/services/campaign-service";
 import { BaseConfigurableItem } from "@/features/pathway-templates/services/pathway-template-service";
 
@@ -36,167 +35,181 @@ export interface ApplicationNote {
   profiles?: { first_name: string; last_name: string; avatar_url: string | null }; // For joining with author profile
 }
 
-export const applicationService = {
-  // Supabase client is now created on demand for server-side operations
-  async getSupabase() {
-    return await createClient();
-  },
+// Internal helper to get Supabase client
+async function getSupabase() {
+  return await createClient();
+}
 
-  async getApplications(): Promise<Application[] | null> {
-    const supabase = await this.getSupabase();
-    const { data, error } = await supabase
-      .from("applications")
-      .select("*, campaigns(*), profiles(first_name, last_name, avatar_url), current_campaign_phases(*)")
-      .order("created_at", { ascending: false });
+export async function getApplications(): Promise<Application[] | null> {
+  const supabase = await getSupabase();
+  const { data, error } = await supabase
+    .from("applications")
+    .select("*, campaigns(*), profiles(first_name, last_name, avatar_url), current_campaign_phases(*)")
+    .order("created_at", { ascending: false });
 
-    if (error) {
-      console.error("Error fetching applications:", error.message);
-      return null;
-    }
-    return data as Application[];
-  },
+  if (error) {
+    console.error("Error fetching applications:", error.message);
+    return null;
+  }
+  return data as Application[];
+}
 
-  async getApplicationById(id: string): Promise<Application | null> {
-    const supabase = await this.getSupabase();
-    const { data, error } = await supabase
-      .from("applications")
-      .select("*, campaigns(*), profiles(first_name, last_name, avatar_url), current_campaign_phases(*)")
-      .eq("id", id)
-      .single();
+export async function getApplicationById(id: string): Promise<Application | null> {
+  const supabase = await getSupabase();
+  const { data, error } = await supabase
+    .from("applications")
+    .select("*, campaigns(*), profiles(first_name, last_name, avatar_url), current_campaign_phases(*)")
+    .eq("id", id)
+    .single();
 
-    if (error) {
-      console.error(`Error fetching application ${id}:`, error.message);
-      return null;
-    }
-    return data as Application;
-  },
+  if (error) {
+    console.error(`Error fetching application ${id}:`, error.message);
+    return null;
+  }
+  return data as Application;
+}
 
-  async createApplication(
-    campaignId: string,
-    applicantId: string,
-    initialData: Record<string, any> = {},
-    initialStatus: Application['status'] = 'draft',
-    initialScreeningStatus: Application['screening_status'] = 'Pending'
-  ): Promise<Application | null> {
-    const supabase = await this.getSupabase();
-    const { data, error } = await supabase
-      .from("applications")
-      .insert([{
-        campaign_id: campaignId,
-        applicant_id: applicantId,
-        data: initialData,
-        status: initialStatus,
-        screening_status: initialScreeningStatus,
-      }])
-      .select("*, campaigns(*), profiles(first_name, last_name, avatar_url), current_campaign_phases(*)")
-      .single();
+export async function createApplication(
+  campaignId: string,
+  applicantId: string,
+  initialData: Record<string, any> = {},
+  initialStatus: Application['status'] = 'draft',
+  initialScreeningStatus: Application['screening_status'] = 'Pending'
+): Promise<Application | null> {
+  const supabase = await getSupabase();
+  const { data, error } = await supabase
+    .from("applications")
+    .insert([{
+      campaign_id: campaignId,
+      applicant_id: applicantId,
+      data: initialData,
+      status: initialStatus,
+      screening_status: initialScreeningStatus,
+    }])
+    .select("*, campaigns(*), profiles(first_name, last_name, avatar_url), current_campaign_phases(*)")
+    .single();
 
-    if (error) {
-      console.error("Error creating application:", error.message);
-      return null;
-    }
-    return data as Application;
-  },
+  if (error) {
+    console.error("Error creating application:", error.message);
+    return null;
+  }
+  return data as Application;
+}
 
-  async updateApplication(
-    id: string,
-    updates: Partial<Omit<Application, "id" | "applicant_id" | "campaign_id" | "created_at">>
-  ): Promise<Application | null> {
-    const supabase = await this.getSupabase();
-    const { data, error } = await supabase
-      .from("applications")
-      .update({ ...updates, updated_at: new Date().toISOString() })
-      .eq("id", id)
-      .select("*, campaigns(*), profiles(first_name, last_name, avatar_url), current_campaign_phases(*)")
-      .single();
+export async function updateApplication(
+  id: string,
+  updates: Partial<Omit<Application, "id" | "applicant_id" | "campaign_id" | "created_at">>
+): Promise<Application | null> {
+  const supabase = await getSupabase();
+  const { data, error } = await supabase
+    .from("applications")
+    .update({ ...updates, updated_at: new Date().toISOString() })
+    .eq("id", id)
+    .select("*, campaigns(*), profiles(first_name, last_name, avatar_url), current_campaign_phases(*)")
+    .single();
 
-    if (error) {
-      console.error(`Error updating application ${id}:`, error.message);
-      return null;
-    }
-    return data as Application;
-  },
+  if (error) {
+    console.error(`Error updating application ${id}:`, error.message);
+    return null;
+  }
+  return data as Application;
+}
 
-  async deleteApplication(id: string): Promise<boolean> {
-    const supabase = await this.getSupabase();
-    const { error } = await supabase
-      .from("applications")
-      .delete()
-      .eq("id", id);
+export async function deleteApplication(id: string): Promise<boolean> {
+  const supabase = await getSupabase();
+  const { error } = await supabase
+    .from("applications")
+    .delete()
+    .eq("id", id);
 
-    if (error) {
-      console.error(`Error deleting application ${id}:`, error.message);
-      return false;
-    }
-    return true;
-  },
+  if (error) {
+    console.error(`Error deleting application ${id}:`, error.message);
+    return false;
+  }
+  return true;
+}
 
-  // --- Collaborative Notes Management ---
+// --- Collaborative Notes Management ---
 
-  async getApplicationNotes(applicationId: string): Promise<ApplicationNote[] | null> {
-    const supabase = await this.getSupabase();
-    const { data, error } = await supabase
-      .from("application_notes")
-      .select("*, profiles(first_name, last_name, avatar_url)")
-      .eq("application_id", applicationId)
-      .order("created_at", { ascending: true });
+export async function getApplicationNotes(applicationId: string): Promise<ApplicationNote[] | null> {
+  const supabase = await getSupabase();
+  const { data, error } = await supabase
+    .from("application_notes")
+    .select("*, profiles(first_name, last_name, avatar_url)")
+    .eq("application_id", applicationId)
+    .order("created_at", { ascending: true });
 
-    if (error) {
-      console.error(`Error fetching notes for application ${applicationId}:`, error.message);
-      return null;
-    }
-    return data as ApplicationNote[];
-  },
+  if (error) {
+    console.error(`Error fetching notes for application ${applicationId}:`, error.message);
+    return null;
+  }
+  return data as ApplicationNote[];
+}
 
-  async createApplicationNote(
-    applicationId: string,
-    authorId: string,
-    content: string
-  ): Promise<ApplicationNote | null> {
-    const supabase = await this.getSupabase();
-    const { data, error } = await supabase
-      .from("application_notes")
-      .insert([{ application_id: applicationId, author_id: authorId, content }])
-      .select("*, profiles(first_name, last_name, avatar_url)")
-      .single();
+// New function to get a single note by its ID
+export async function getApplicationNoteById(noteId: string): Promise<ApplicationNote | null> {
+  const supabase = await getSupabase();
+  const { data, error } = await supabase
+    .from("application_notes")
+    .select("*, profiles(first_name, last_name, avatar_url)")
+    .eq("id", noteId)
+    .single();
 
-    if (error) {
-      console.error("Error creating application note:", error.message);
-      return null;
-    }
-    return data as ApplicationNote;
-  },
+  if (error) {
+    console.error(`Error fetching application note ${noteId}:`, error.message);
+    return null;
+  }
+  return data as ApplicationNote;
+}
 
-  async updateApplicationNote(
-    noteId: string,
-    updates: Partial<Omit<ApplicationNote, "id" | "application_id" | "author_id" | "created_at">>
-  ): Promise<ApplicationNote | null> {
-    const supabase = await this.getSupabase();
-    const { data, error } = await supabase
-      .from("application_notes")
-      .update({ ...updates, updated_at: new Date().toISOString() })
-      .eq("id", noteId)
-      .select("*, profiles(first_name, last_name, avatar_url)")
-      .single();
+export async function createApplicationNote(
+  applicationId: string,
+  authorId: string,
+  content: string
+): Promise<ApplicationNote | null> {
+  const supabase = await getSupabase();
+  const { data, error } = await supabase
+    .from("application_notes")
+    .insert([{ application_id: applicationId, author_id: authorId, content }])
+    .select("*, profiles(first_name, last_name, avatar_url)")
+    .single();
 
-    if (error) {
-      console.error(`Error updating note ${noteId}:`, error.message);
-      return null;
-    }
-    return data as ApplicationNote;
-  },
+  if (error) {
+    console.error("Error creating application note:", error.message);
+    return null;
+  }
+  return data as ApplicationNote;
+}
 
-  async deleteApplicationNote(noteId: string): Promise<boolean> {
-    const supabase = await this.getSupabase();
-    const { error } = await supabase
-      .from("application_notes")
-      .delete()
-      .eq("id", noteId);
+export async function updateApplicationNote(
+  noteId: string,
+  updates: Partial<Omit<ApplicationNote, "id" | "application_id" | "author_id" | "created_at">>
+): Promise<ApplicationNote | null> {
+  const supabase = await getSupabase();
+  const { data, error } = await supabase
+    .from("application_notes")
+    .update({ ...updates, updated_at: new Date().toISOString() })
+    .eq("id", noteId)
+    .select("*, profiles(first_name, last_name, avatar_url)")
+    .single();
 
-    if (error) {
-      console.error(`Error deleting note ${noteId}:`, error.message);
-      return false;
-    }
-    return true;
-  },
-};
+  if (error) {
+    console.error(`Error updating note ${noteId}:`, error.message);
+    return null;
+  }
+  return data as ApplicationNote;
+}
+
+export async function deleteApplicationNote(noteId: string): Promise<boolean> {
+  const supabase = await getSupabase();
+  const { error } = await supabase
+    .from("application_notes")
+    .delete()
+    .eq("id", noteId);
+
+  if (error) {
+    console.error(`Error deleting note ${noteId}:`, error.message);
+    return false;
+  }
+  return true;
+}

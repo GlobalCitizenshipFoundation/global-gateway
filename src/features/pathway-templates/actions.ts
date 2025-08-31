@@ -1,6 +1,20 @@
 "use server";
 
-import { pathwayTemplateService, PathwayTemplate, Phase } from "./services/pathway-template-service";
+import {
+  PathwayTemplate,
+  Phase,
+  getPathwayTemplates,
+  getPathwayTemplateById,
+  createPathwayTemplate,
+  updatePathwayTemplate,
+  deletePathwayTemplate,
+  getPhasesByPathwayTemplateId,
+  createPhase,
+  updatePhase,
+  deletePhase,
+  clonePathwayTemplate,
+  updatePhase as updatePhaseService, // Renamed to avoid conflict with local updatePhaseAction
+} from "./services/pathway-template-service";
 import { createClient } from "@/integrations/supabase/server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -19,20 +33,11 @@ async function authorizeTemplateAction(templateId: string, action: 'read' | 'wri
 
   let template: PathwayTemplate | null = null;
   if (templateId) {
-    const { data, error } = await supabase
-      .from("pathway_templates")
-      .select("*")
-      .eq("id", templateId)
-      .single();
-
-    if (error) {
-      if (error.code === 'PGRST116') { // No rows found for eq filter
-        throw new Error("TemplateNotFound");
-      }
-      console.error(`Error fetching template ${templateId} for authorization:`, error.message);
-      throw new Error("FailedToRetrieveTemplate");
+    // Use the service function to fetch the template
+    template = await getPathwayTemplateById(templateId);
+    if (!template) {
+      throw new Error("TemplateNotFound");
     }
-    template = data;
   }
 
   if (!template && templateId) {
@@ -63,13 +68,9 @@ export async function getTemplatesAction(): Promise<PathwayTemplate[] | null> {
   const userRole: string = user.user_metadata?.role || '';
   const isAdmin = userRole === 'admin';
 
-  const { data, error } = await supabase
-    .from("pathway_templates")
-    .select("*")
-    .order("created_at", { ascending: false });
+  const data = await getPathwayTemplates(); // Use the service function
 
-  if (error) {
-    console.error("Error fetching pathway templates:", error.message);
+  if (!data) {
     return null;
   }
 
@@ -110,7 +111,7 @@ export async function createPathwayTemplateAction(formData: FormData): Promise<P
     throw new Error("Template name is required.");
   }
 
-  const newTemplate = await pathwayTemplateService.createPathwayTemplate(
+  const newTemplate = await createPathwayTemplate( // Use the service function
     name,
     description,
     is_private,
@@ -133,7 +134,7 @@ export async function updatePathwayTemplateAction(id: string, formData: FormData
       throw new Error("Template name is required.");
     }
 
-    const updatedTemplate = await pathwayTemplateService.updatePathwayTemplate(
+    const updatedTemplate = await updatePathwayTemplate( // Use the service function
       id,
       { name, description, is_private }
     );
@@ -158,7 +159,7 @@ export async function deletePathwayTemplateAction(id: string): Promise<boolean> 
   try {
     await authorizeTemplateAction(id, 'write'); // Authorize before delete
 
-    const success = await pathwayTemplateService.deletePathwayTemplate(id);
+    const success = await deletePathwayTemplate(id); // Use the service function
 
     revalidatePath("/workbench/pathway-templates");
     return success;
@@ -180,7 +181,7 @@ export async function deletePathwayTemplateAction(id: string): Promise<boolean> 
 export async function getPhasesAction(pathwayTemplateId: string): Promise<Phase[] | null> {
   try {
     await authorizeTemplateAction(pathwayTemplateId, 'read'); // User must have read access to the parent template
-    const phases = await pathwayTemplateService.getPhasesByPathwayTemplateId(pathwayTemplateId);
+    const phases = await getPhasesByPathwayTemplateId(pathwayTemplateId); // Use the service function
     return phases;
   } catch (error: any) {
     console.error("Error in getPhasesAction:", error.message);
@@ -208,7 +209,7 @@ export async function createPhaseAction(pathwayTemplateId: string, formData: For
       throw new Error("Phase name, type, and order index are required.");
     }
 
-    const newPhase = await pathwayTemplateService.createPhase(
+    const newPhase = await createPhase( // Use the service function
       pathwayTemplateId,
       name,
       type,
@@ -244,7 +245,7 @@ export async function updatePhaseAction(phaseId: string, pathwayTemplateId: stri
       throw new Error("Phase name and type are required.");
     }
 
-    const updatedPhase = await pathwayTemplateService.updatePhase(
+    const updatedPhase = await updatePhase( // Use the service function
       phaseId,
       { name, type, description }
     );
@@ -268,7 +269,7 @@ export async function updatePhaseConfigAction(phaseId: string, pathwayTemplateId
   try {
     await authorizeTemplateAction(pathwayTemplateId, 'write'); // User must have write access to the parent template
 
-    const updatedPhase = await pathwayTemplateService.updatePhase(
+    const updatedPhase = await updatePhaseService( // Use the service function (renamed import)
       phaseId,
       { config: configUpdates }
     );
@@ -292,7 +293,7 @@ export async function deletePhaseAction(phaseId: string, pathwayTemplateId: stri
   try {
     await authorizeTemplateAction(pathwayTemplateId, 'write'); // User must have write access to the parent template
 
-    const success = await pathwayTemplateService.deletePhase(phaseId);
+    const success = await deletePhase(phaseId); // Use the service function
 
     revalidatePath(`/workbench/pathway-templates/${pathwayTemplateId}`);
     return success;
@@ -315,7 +316,7 @@ export async function reorderPhasesAction(pathwayTemplateId: string, phases: { i
 
     // Perform updates in a transaction if possible, or sequentially
     for (const phase of phases) {
-      await pathwayTemplateService.updatePhase(phase.id, { order_index: phase.order_index });
+      await updatePhaseService(phase.id, { order_index: phase.order_index }); // Use the service function (renamed import)
     }
 
     revalidatePath(`/workbench/pathway-templates/${pathwayTemplateId}`);
@@ -364,7 +365,7 @@ export async function clonePathwayTemplateAction(templateId: string, newName: st
   }
 
   try {
-    const clonedTemplate = await pathwayTemplateService.clonePathwayTemplate(
+    const clonedTemplate = await clonePathwayTemplate( // Use the service function
       templateId,
       newName,
       user.id // The new template will be owned by the current user
