@@ -116,6 +116,7 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
   });
 
   const fetchTemplateAndPhases = useCallback(async () => {
+    console.log("[PathwayTemplateBuilderPage] fetchTemplateAndPhases called. templateId:", templateId, "user:", user?.id);
     if (!templateId) {
       setIsLoading(false);
       return;
@@ -158,7 +159,7 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
     } finally {
       setIsLoading(false);
     }
-  }, [templateId, router, templateForm]);
+  }, [templateId, router, templateForm, user]);
 
   useEffect(() => {
     if (!isSessionLoading && user) {
@@ -399,6 +400,10 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
   };
 
   const handleInlinePhaseCreate = async (values: z.infer<typeof inlinePhaseCreationSchema>) => {
+    console.log("[PathwayTemplateBuilderPage] handleInlinePhaseCreate called with values:", values);
+    console.log("[PathwayTemplateBuilderPage] inlinePhaseForm state errors on submit:", inlinePhaseForm.formState.errors);
+    console.log("[PathwayTemplateBuilderPage] inlinePhaseForm state isValid on submit:", inlinePhaseForm.formState.isValid);
+
     if (!canModifyTemplate || !templateId) {
       toast.error("You do not have permission to add phases.");
       return;
