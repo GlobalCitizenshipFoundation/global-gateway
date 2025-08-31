@@ -97,6 +97,7 @@ export function PhaseDetailsForm({
     { value: "Scheduling", label: "Scheduling" },
     { value: "Decision", label: "Decision" },
     { value: "Recommendation", label: "Recommendation" },
+    { value: "Screening", label: "Screening" }, // Added Screening phase type
   ];
 
   return (

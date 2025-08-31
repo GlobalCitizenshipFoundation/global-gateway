@@ -8,6 +8,7 @@ import { EmailPhaseConfig } from "./phase-configs/EmailPhaseConfig";
 import { SchedulingPhaseConfig } from "./phase-configs/SchedulingPhaseConfig";
 import { DecisionPhaseConfig } from "./phase-configs/DecisionPhaseConfig";
 import { RecommendationPhaseConfig } from "./phase-configs/RecommendationPhaseConfig";
+import { ScreeningPhaseConfig } from "./phase-configs/ScreeningPhaseConfig"; // Import new ScreeningPhaseConfig
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { PhaseTaskManagementPanel } from "./PhaseTaskManagementPanel"; // Import new task panel
 import { Separator } from "@/components/ui/separator"; // Import Separator
@@ -75,6 +76,15 @@ export function PhaseConfigurationPanel({
       case "Recommendation":
         return (
           <RecommendationPhaseConfig
+            phase={phase}
+            parentId={parentId}
+            onConfigSaved={onConfigSaved}
+            canModify={canModify}
+          />
+        );
+      case "Screening": // New case for Screening phase
+        return (
+          <ScreeningPhaseConfig
             phase={phase}
             parentId={parentId}
             onConfigSaved={onConfigSaved}
