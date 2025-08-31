@@ -8,7 +8,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { ArrowLeft, PlusCircle, Workflow, Lock, Globe, Edit, Copy, Save, CheckCircle, Clock, UserCircle2, CalendarDays, Info, X, Trash2, ChevronDown, ChevronUp, Archive } from "lucide-react"; // Added Archive
+import { ArrowLeft, PlusCircle, Workflow, Lock, Globe, Edit, Copy, Save, CheckCircle, Clock, UserCircle2, CalendarDays, Info, X, Trash2, ChevronDown, ChevronUp, Archive, History, Activity } from "lucide-react"; // Added History and Activity icons
 import { PathwayTemplate, Phase } from "@/types/supabase";
 import { toast } from "sonner";
 import { useSession } from "@/context/SessionContextProvider";
@@ -40,6 +40,7 @@ import { TemplateActivityLog } from "./TemplateActivityLog";
 import { PhaseDetailsForm } from "./PhaseDetailsForm";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"; // Import Dialog components
 
 // Zod schema for the entire template builder page (template details + phases)
 const templateBuilderSchema = z.object({
@@ -76,6 +77,8 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
   const [expandedPhaseIds, setExpandedPhaseIds] = useState<Set<string>>(new Set());
   const [showUnsavedChangesWarning, setShowUnsavedChangesWarning] = useState(false); // State for unsaved changes warning
   const [nextPath, setNextPath] = useState<string | null>(null); // Path to navigate to if changes are discarded
+  const [isVersionHistoryOpen, setIsVersionHistoryOpen] = useState(false); // State for Version History dialog
+  const [isActivityLogOpen, setIsActivityLogOpen] = useState(false); // State for Activity Log dialog
 
   const templateForm = useForm<z.infer<typeof templateBuilderSchema>>({
     resolver: zodResolver(templateBuilderSchema),
@@ -721,11 +724,6 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
           <CardDescription className="text-body-medium text-muted-foreground">
             This template currently has no phases. Add phases to define its workflow.
           </CardDescription>
-          {canModifyTemplate && (
-            <Button onClick={() => setIsAddingNewPhase(true)} className="mt-6 rounded-full px-6 py-3 text-label-large">
-              <PlusCircle className="mr-2 h-5 w-5" /> Add First Phase
-            </Button>
-          )}
         </Card>
       ) : (
         <DragDropContext onDragEnd={handleReorderPhases}>
@@ -816,12 +814,46 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
 
       {template && (
         <>
-          <TemplateVersionHistory
-            pathwayTemplateId={template.id}
-            canModify={canModifyTemplate}
-            onTemplateRolledBack={handlePhaseUpdated}
-          />
-          <TemplateActivityLog templateId={template.id} />
+          <div className="flex flex-wrap justify-end items-center gap-2 mt-8 pt-6 border-t border-border">
+            {/* Version History Trigger */}
+            <Button variant="outlined" className="rounded-full px-6 py-3 text-label-large" onClick={() => setIsVersionHistoryOpen(true)}>
+              <History className="mr-2 h-5 w-5" /> Version History
+            </Button>
+            {/* Activity Log Trigger */}
+            <Button variant="outlined" className="rounded-full px-6 py-3 text-label-large" onClick={() => setIsActivityLogOpen(true)}>
+              <Activity className="mr-2 h-5 w-5" /> Activity Log
+            </Button>
+          </div>
+
+          {/* Version History Dialog */}
+          <Dialog open={isVersionHistoryOpen} onOpenChange={setIsVersionHistoryOpen}>
+            <DialogContent className="sm:max-w-[900px] rounded-xl shadow-lg bg-card text-card-foreground border-border max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle className="text-headline-small">Template Version History</DialogTitle>
+                <DialogDescription className="text-body-medium text-muted-foreground">
+                  Review and manage past versions of this pathway template.
+                </DialogDescription>
+              </DialogHeader>
+              <TemplateVersionHistory
+                pathwayTemplateId={template.id}
+                canModify={canModifyTemplate}
+                onTemplateRolledBack={fetchTemplateAndPhases}
+              />
+            </DialogContent>
+          </Dialog>
+
+          {/* Activity Log Dialog */}
+          <Dialog open={isActivityLogOpen} onOpenChange={setIsActivityLogOpen}>
+            <DialogContent className="sm:max-w-[900px] rounded-xl shadow-lg bg-card text-card-foreground border-border max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle className="text-headline-small">Template Activity Log</DialogTitle>
+                <DialogDescription className="text-body-medium text-muted-foreground">
+                  A chronological record of all changes and events for this template.
+                </DialogDescription>
+              </DialogHeader>
+              <TemplateActivityLog templateId={template.id} />
+            </DialogContent>
+          </Dialog>
         </>
       )}
 
