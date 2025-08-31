@@ -8,7 +8,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { ArrowLeft, PlusCircle, Workflow, Lock, Globe, Edit, Copy, Save, CheckCircle, Clock, UserCircle2, CalendarDays, Info, X, Trash2, ChevronDown, ChevronUp, Archive, History, Activity, RotateCcw } from "lucide-react"; // Added RotateCcw for unarchive
+import { ArrowLeft, PlusCircle, Workflow, Lock, Globe, Edit, Copy, Save, CheckCircle, Clock, UserCircle2, CalendarDays, Info, X, Trash2, ChevronDown, ChevronUp, Archive, History, Activity, RotateCcw, MoreVertical } from "lucide-react"; // Added MoreVertical for overflow menu
 import { PathwayTemplate, Phase } from "@/types/supabase";
 import { toast } from "sonner";
 import { useSession } from "@/context/SessionContextProvider";
@@ -41,6 +41,15 @@ import { PhaseDetailsForm } from "./PhaseDetailsForm";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"; // Import Dialog components
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+
 
 // Zod schema for the entire template builder page (template details + phases)
 const templateBuilderSchema = z.object({
@@ -854,58 +863,72 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
       {template && canModifyTemplate && (
         <div className="flex flex-wrap justify-end items-center gap-2 mt-8 pt-6 border-t border-border">
           {/* Save Draft */}
-          <Button type="submit" variant="secondary" className="rounded-full px-6 py-3 text-label-large" disabled={templateForm.formState.isSubmitting}>
+          <Button type="submit" variant="tonal" className="rounded-full px-6 py-3 text-label-large" disabled={templateForm.formState.isSubmitting}>
             {templateForm.formState.isSubmitting ? "Saving Draft..." : <><Save className="mr-2 h-5 w-5" /> Save Draft</>}
           </Button>
 
           {/* Publish Template */}
-          {currentTemplate.status !== 'published' && (
-            <Button variant="filled" className="rounded-full px-6 py-3 text-label-large" onClick={handlePublishTemplate}>
-              <CheckCircle className="mr-2 h-5 w-5" /> Publish Template
-            </Button>
-          )}
-
-          {/* Clone Template */}
-          <Button variant="outline" className="rounded-full px-6 py-3 text-label-large" onClick={() => handleClone(template)}>
-            <Copy className="mr-2 h-5 w-5" /> Clone Template
+          <Button variant="filled" className="rounded-full px-6 py-3 text-label-large" onClick={handlePublishTemplate} disabled={currentTemplate.status === 'published'}>
+            <CheckCircle className="mr-2 h-5 w-5" /> {currentTemplate.status === 'published' ? "Published" : "Publish Template"}
           </Button>
 
-          {/* Archive / Unarchive Template */}
-          {currentTemplate.status === 'archived' ? (
-            <Button variant="tonal" className="rounded-full px-6 py-3 text-label-large" onClick={() => handleUpdateStatus('draft')}>
-              <RotateCcw className="mr-2 h-5 w-5" /> Unarchive
-            </Button>
-          ) : (
-            <Button variant="destructive" className="rounded-full px-6 py-3 text-label-large" onClick={() => handleUpdateStatus('archived')}>
-              <Archive className="mr-2 h-5 w-5" /> Archive Template
-            </Button>
-          )}
-
-          {/* Delete Template */}
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button variant="ghost" className="rounded-full px-6 py-3 text-label-large text-destructive hover:bg-destructive-container hover:text-destructive">
-                <Trash2 className="mr-2 h-5 w-5" /> Delete Template
+          {/* More Actions Dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outlined" size="icon" className="rounded-full">
+                <MoreVertical className="h-5 w-5" />
+                <span className="sr-only">More actions</span>
               </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent className="rounded-xl shadow-lg bg-card text-card-foreground border-border">
-              <AlertDialogHeader>
-                <AlertDialogTitle className="text-headline-small">Confirm Permanent Deletion</AlertDialogTitle>
-                <AlertDialogDescription className="text-body-medium text-muted-foreground">
-                  Are you sure you want to permanently delete the &quot;{template.name}&quot; pathway template? This action cannot be undone and will remove all associated phases and data.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel className="rounded-md text-label-large">Cancel</AlertDialogCancel>
-                <AlertDialogAction
-                  onClick={handleDeleteTemplate}
-                  className="rounded-md text-label-large bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                >
-                  Delete Permanently
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="rounded-md shadow-lg bg-card text-card-foreground border-border">
+              <DropdownMenuLabel className="text-body-medium">More Actions</DropdownMenuLabel>
+              <DropdownMenuSeparator className="bg-border" />
+
+              {/* Clone Template */}
+              <DropdownMenuItem onSelect={() => handleClone(template)} className="text-body-medium hover:bg-muted hover:text-muted-foreground cursor-pointer">
+                <Copy className="mr-2 h-4 w-4" /> Clone Template
+              </DropdownMenuItem>
+
+              {/* Archive / Unarchive Template */}
+              {currentTemplate.status === 'archived' ? (
+                <DropdownMenuItem onSelect={() => handleUpdateStatus('draft')} className="text-body-medium hover:bg-muted hover:text-muted-foreground cursor-pointer">
+                  <RotateCcw className="mr-2 h-4 w-4" /> Unarchive
+                </DropdownMenuItem>
+              ) : (
+                <DropdownMenuItem onSelect={() => handleUpdateStatus('archived')} className="text-body-medium text-destructive hover:bg-destructive-container hover:text-destructive cursor-pointer">
+                  <Archive className="mr-2 h-4 w-4" /> Archive Template
+                </DropdownMenuItem>
+              )}
+
+              <DropdownMenuSeparator className="bg-border" />
+
+              {/* Delete Template */}
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-body-medium text-destructive hover:bg-destructive-container hover:text-destructive cursor-pointer">
+                    <Trash2 className="mr-2 h-4 w-4" /> Delete Template
+                  </DropdownMenuItem>
+                </AlertDialogTrigger>
+                <AlertDialogContent className="rounded-xl shadow-lg bg-card text-card-foreground border-border">
+                  <AlertDialogHeader>
+                    <AlertDialogTitle className="text-headline-small">Confirm Permanent Deletion</AlertDialogTitle>
+                    <AlertDialogDescription className="text-body-medium text-muted-foreground">
+                      Are you sure you want to permanently delete the &quot;{template.name}&quot; pathway template? This action cannot be undone and will remove all associated phases and data.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel className="rounded-md text-label-large">Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={handleDeleteTemplate}
+                      className="rounded-md text-label-large bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    >
+                      Delete Permanently
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       )}
 
