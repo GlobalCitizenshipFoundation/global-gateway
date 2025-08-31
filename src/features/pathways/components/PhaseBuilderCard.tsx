@@ -3,17 +3,18 @@
 import React, { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Trash2, GripVertical, Settings, GitFork, FileText, Award, Mail, Calendar, MailCheck, Info, ExternalLink, ListChecks, ChevronDown, ChevronUp } from "lucide-react"; // Added ListChecks, ChevronDown, ChevronUp icons
-import { Phase } from "../services/pathway-template-service";
+import { Trash2, GripVertical, Settings, GitFork, FileText, Award, Mail, Calendar, MailCheck, Info, ExternalLink, ListChecks, ChevronDown, ChevronUp, CalendarDays } from "lucide-react"; // Added CalendarDays icon
+import { Phase } from "@/types/supabase"; // Import from types/supabase
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Draggable } from "@hello-pangea/dnd";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
-import { PhaseDetailsForm } from "./PhaseDetailsForm"; // Import PhaseDetailsForm
-import { PhaseConfigurationPanel } from "./PhaseConfigurationPanel"; // Import PhaseConfigurationPanel
-import { PhaseTaskManagementPanel } from "./PhaseTaskManagementPanel"; // Import PhaseTaskManagementPanel
-import { BranchingConfigForm } from "./BranchingConfigForm"; // Import BranchingConfigForm
-import { Separator } from "@/components/ui/separator"; // Import Separator
+import { PhaseDetailsForm } from "./PhaseDetailsForm";
+import { PhaseConfigurationPanel } from "./PhaseConfigurationPanel";
+import { PhaseTaskManagementPanel } from "./PhaseTaskManagementPanel";
+import { BranchingConfigForm } from "./BranchingConfigForm";
+import { Separator } from "@/components/ui/separator";
+import { format } from "date-fns"; // Import format
 
 interface PhaseBuilderCardProps {
   phase: Phase;
@@ -68,7 +69,7 @@ export function PhaseBuilderCard({ phase, index, onDelete, onPhaseUpdated, canMo
             "rounded-xl shadow-md transition-all duration-200 border-l-8",
             getPhaseColorClasses(phase.type),
             snapshot.isDragging ? "shadow-lg ring-2 ring-primary-container" : "hover:shadow-lg",
-            "flex flex-col" // Changed to flex-col to accommodate expandable content
+            "flex flex-col"
           )}
         >
           {/* Always visible header part */}
@@ -94,6 +95,13 @@ export function PhaseBuilderCard({ phase, index, onDelete, onPhaseUpdated, canMo
                   {phase.description}
                 </CardDescription>
               )}
+              {(phase.phase_start_date || phase.phase_end_date) && (
+                <p className="text-body-small text-muted-foreground flex items-center gap-1 mt-1">
+                  <CalendarDays className="h-4 w-4" />
+                  {phase.phase_start_date ? format(new Date(phase.phase_start_date), "PPP") : "N/A"} -{" "}
+                  {phase.phase_end_date ? format(new Date(phase.phase_end_date), "PPP") : "N/A"}
+                </p>
+              )}
             </CardHeader>
             <CardContent className="flex-shrink-0 flex items-center space-x-2 p-0 pl-4">
               {canModify && (
@@ -113,7 +121,7 @@ export function PhaseBuilderCard({ phase, index, onDelete, onPhaseUpdated, canMo
                       <AlertDialogHeader>
                         <AlertDialogTitle className="text-headline-small">Confirm Deletion</AlertDialogTitle>
                         <AlertDialogDescription className="text-body-medium text-muted-foreground">
-                          Are you sure you want to soft-delete the phase &quot;{phase.name}&quot;? It can be restored later by an admin.
+                          Are you sure you want to permanently delete the phase &quot;{phase.name}&quot;? This action cannot be undone.
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
@@ -122,7 +130,7 @@ export function PhaseBuilderCard({ phase, index, onDelete, onPhaseUpdated, canMo
                           onClick={() => onDelete(phase.id)}
                           className="rounded-md text-label-large bg-destructive text-destructive-foreground hover:bg-destructive/90"
                         >
-                          Soft-Delete
+                          Delete
                         </AlertDialogAction>
                       </AlertDialogFooter>
                     </AlertDialogContent>
@@ -136,7 +144,7 @@ export function PhaseBuilderCard({ phase, index, onDelete, onPhaseUpdated, canMo
           <div
             className={cn(
               "overflow-hidden transition-max-height duration-300 ease-in-out",
-              isExpanded ? "max-h-[600px] overflow-y-auto p-4 pt-0" : "max-h-0 p-0" // Added max-h and overflow-y-auto
+              isExpanded ? "max-h-[1200px] overflow-y-auto p-4 pt-0" : "max-h-0 p-0" // Increased max-h
             )}
           >
             {isExpanded && (

@@ -10,16 +10,16 @@ import {
   deleteCampaign,
   getCampaignPhasesByCampaignId,
   createCampaignPhase,
-  updateCampaignPhase,
+  updateCampaignPhase as updateCampaignPhaseService, // Renamed to avoid conflict
   deleteCampaignPhase,
   deepCopyPhasesFromTemplate,
-  updateCampaignPhase as updateCampaignPhaseService, // Renamed to avoid conflict
 } from "@/features/campaigns/services/campaign-service";
 import { createClient } from "@/integrations/supabase/server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getProgramById } from "@/features/programs/services/program-service"; // Import specific function directly
 import { getPathwayTemplateById } from "@/features/pathways/services/pathway-template-service"; // Import specific function
+import { BaseConfigurableItem } from "@/types/supabase"; // Import BaseConfigurableItem
 
 // Helper function to check user authorization for a campaign
 async function authorizeCampaignAction(campaignId: string, action: 'read' | 'write'): Promise<{ user: any; campaign: Campaign | null; isAdmin: boolean }> {
@@ -340,14 +340,32 @@ export async function updateCampaignPhaseAction(phaseId: string, campaignId: str
     const type = formData.get("type") as string;
     const description = formData.get("description") as string | null;
     const config = JSON.parse(formData.get("config") as string || '{}');
+    const phase_start_date = formData.get("phase_start_date") as string || null;
+    const phase_end_date = formData.get("phase_end_date") as string || null;
+    const applicant_instructions = formData.get("applicant_instructions") as string || null;
+    const manager_instructions = formData.get("manager_instructions") as string || null;
+    const is_visible_to_applicants = formData.get("is_visible_to_applicants") === "on";
+
 
     if (!name || !type) {
       throw new Error("Campaign phase name and type are required.");
     }
 
+    const updates: Partial<CampaignPhase> = { // Changed type to Partial<CampaignPhase>
+      name,
+      type,
+      description,
+      config,
+      phase_start_date,
+      phase_end_date,
+      applicant_instructions,
+      manager_instructions,
+      is_visible_to_applicants,
+    };
+
     const updatedPhase = await updateCampaignPhaseService( // Use the service function (renamed import)
       phaseId,
-      { name, type, description, config }
+      updates
     );
 
     revalidatePath(`/campaigns/${campaignId}`);
@@ -369,9 +387,13 @@ export async function updateCampaignPhaseConfigAction(phaseId: string, campaignI
   try {
     await authorizeCampaignAction(campaignId, 'write'); // User must have write access to the parent campaign
 
+    const updates: Partial<CampaignPhase> = { // Changed type to Partial<CampaignPhase>
+      config: configUpdates,
+    };
+
     const updatedPhase = await updateCampaignPhaseService( // Use the service function (renamed import)
       phaseId,
-      { config: configUpdates }
+      updates
     );
 
     revalidatePath(`/campaigns/${campaignId}`);
@@ -416,7 +438,10 @@ export async function reorderCampaignPhasesAction(campaignId: string, phases: { 
 
     // Perform updates in a transaction if possible, or sequentially
     for (const phase of phases) {
-      await updateCampaignPhaseService(phase.id, { order_index: phase.order_index }); // Use the service function (renamed import)
+      const updates: Partial<CampaignPhase> = { // Changed type to Partial<CampaignPhase>
+        order_index: phase.order_index,
+      };
+      await updateCampaignPhaseService(phase.id, updates); // Use the service function (renamed import)
     }
 
     revalidatePath(`/campaigns/${campaignId}`);

@@ -1,7 +1,7 @@
 "use server";
 
 import { createClient } from "@/integrations/supabase/server";
-import { PathwayTemplate, BaseConfigurableItem, Phase as TemplatePhase } from "@/features/pathways/services/pathway-template-service";
+import { PathwayTemplate, BaseConfigurableItem, Phase as TemplatePhase } from "@/types/supabase"; // Corrected import path for PathwayTemplate, BaseConfigurableItem, Phase
 
 // New interface for Program
 export interface Program {
@@ -147,7 +147,7 @@ export async function getCampaignPhasesByCampaignId(campaignId: string): Promise
     console.error(`Error fetching campaign phases for campaign ${campaignId}:`, error.message);
     return null;
   }
-  return data;
+  return data as CampaignPhase[];
 }
 
 export async function createCampaignPhase(
@@ -172,7 +172,7 @@ export async function createCampaignPhase(
     console.error("Error creating campaign phase:", error.message);
     return null;
   }
-  return data;
+  return data as CampaignPhase;
 }
 
 export async function updateCampaignPhase(
@@ -191,7 +191,7 @@ export async function updateCampaignPhase(
     console.error(`Error updating campaign phase ${id}:`, error.message);
     return null;
   }
-  return data;
+  return data as CampaignPhase;
 }
 
 export async function deleteCampaignPhase(id: string): Promise<boolean> {
@@ -251,5 +251,5 @@ export async function deepCopyPhasesFromTemplate(
     throw new Error("Failed to insert deep-copied campaign phases.");
   }
 
-  return newCampaignPhases;
+  return newCampaignPhases as CampaignPhase[];
 }

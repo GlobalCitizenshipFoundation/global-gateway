@@ -1,39 +1,35 @@
 "use server";
 
 import {
-  PathwayTemplate,
-  Phase,
+  PathwayTemplate, // Corrected import path
+  Phase, // Corrected import path
   getPathwayTemplates,
   getPathwayTemplateById,
   createPathwayTemplate,
-  updatePathwayTemplate,
-  softDeletePathwayTemplate, // Changed to soft delete
-  hardDeletePathwayTemplate, // New hard delete
+  updatePathwayTemplate as updatePathwayTemplateService,
+  deletePathwayTemplate, // Changed to hard delete
   getPhasesByPathwayTemplateId,
   createPhase,
-  updatePhase as updatePhaseService, // Renamed to avoid conflict with local updatePhaseAction
-  updatePhaseBranchingConfig as updatePhaseBranchingConfigService, // Import new service function
-  softDeletePhase, // Changed to soft delete
-  hardDeletePhase, // New hard delete
+  updatePhase as updatePhaseService,
+  updatePhaseBranchingConfig as updatePhaseBranchingConfigService,
+  deletePhase, // Changed to hard delete
   clonePathwayTemplate,
-  updatePathwayTemplate as updatePathwayTemplateService, // Renamed to avoid conflict
-  updatePhase as updatePhaseServiceForReorder, // Renamed for reorder
 } from "./services/pathway-template-service";
 import {
-  PhaseTask,
+  PhaseTask, // Corrected import path
   getPhaseTasksByPhaseId,
   createPhaseTask,
   updatePhaseTask,
   deletePhaseTask,
-} from "./services/phase-task-service"; // Import new phase task service
+} from "./services/phase-task-service";
 import {
   PathwayTemplateVersion,
   createTemplateVersion,
   getTemplateVersions,
   getTemplateVersion,
-  rollbackTemplateToVersion, // Corrected import path
-} from "./services/template-versioning-service"; // Import new versioning service
-import { createActivityLog } from "./services/template-activity-log-service"; // Import new activity log service
+  rollbackTemplateToVersion,
+} from "./services/template-versioning-service";
+import { createActivityLog } from "./services/template-activity-log-service";
 import { createClient } from "@/integrations/supabase/server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -129,10 +125,12 @@ export async function createPathwayTemplateAction(formData: FormData): Promise<P
   const name = formData.get("name") as string;
   const description = formData.get("description") as string | null;
   const is_private = formData.get("is_private") === "on";
-  // New fields
   const application_open_date = formData.get("application_open_date") as string || null;
   const participation_deadline = formData.get("participation_deadline") as string || null;
   const general_instructions = formData.get("general_instructions") as string || null;
+  const applicant_instructions = formData.get("applicant_instructions") as string || null; // New field
+  const manager_instructions = formData.get("manager_instructions") as string || null; // New field
+  const is_visible_to_applicants = formData.get("is_visible_to_applicants") === "on"; // New field
 
 
   if (!name) {
@@ -147,9 +145,12 @@ export async function createPathwayTemplateAction(formData: FormData): Promise<P
       user.id,
       'draft', // New templates start as draft
       user.id, // Set last_updated_by
-      application_open_date, // New field
-      participation_deadline, // New field
-      general_instructions // New field
+      application_open_date,
+      participation_deadline,
+      general_instructions,
+      applicant_instructions, // New field
+      manager_instructions, // New field
+      is_visible_to_applicants // New field
     );
 
     if (newTemplate) {
@@ -174,10 +175,12 @@ export async function updatePathwayTemplateAction(id: string, formData: FormData
     const name = formData.get("name") as string;
     const description = formData.get("description") as string | null;
     const is_private = formData.get("is_private") === "on";
-    // New fields
     const application_open_date = formData.get("application_open_date") as string || null;
     const participation_deadline = formData.get("participation_deadline") as string || null;
     const general_instructions = formData.get("general_instructions") as string || null;
+    const applicant_instructions = formData.get("applicant_instructions") as string || null; // New field
+    const manager_instructions = formData.get("manager_instructions") as string || null; // New field
+    const is_visible_to_applicants = formData.get("is_visible_to_applicants") === "on"; // New field
 
     if (!name) {
       throw new Error("Template name is required.");
@@ -190,6 +193,9 @@ export async function updatePathwayTemplateAction(id: string, formData: FormData
       application_open_date: template.application_open_date,
       participation_deadline: template.participation_deadline,
       general_instructions: template.general_instructions,
+      applicant_instructions: template.applicant_instructions, // New field
+      manager_instructions: template.manager_instructions, // New field
+      is_visible_to_applicants: template.is_visible_to_applicants, // New field
     };
     const newValues = {
       name,
@@ -198,6 +204,9 @@ export async function updatePathwayTemplateAction(id: string, formData: FormData
       application_open_date,
       participation_deadline,
       general_instructions,
+      applicant_instructions, // New field
+      manager_instructions, // New field
+      is_visible_to_applicants, // New field
     };
 
     const updatedTemplate = await updatePathwayTemplateService(
@@ -209,8 +218,11 @@ export async function updatePathwayTemplateAction(id: string, formData: FormData
         application_open_date,
         participation_deadline,
         general_instructions,
+        applicant_instructions, // New field
+        manager_instructions, // New field
+        is_visible_to_applicants, // New field
       },
-      user.id // Pass updaterId
+      user.id
     );
 
     if (updatedTemplate) {
@@ -233,87 +245,24 @@ export async function updatePathwayTemplateAction(id: string, formData: FormData
   }
 }
 
-export async function softDeletePathwayTemplateAction(id: string): Promise<boolean> {
+export async function deletePathwayTemplateAction(id: string): Promise<boolean> {
   try {
-    const { user, template } = await authorizeTemplateAction(id, 'write');
+    const { user, template } = await authorizeTemplateAction(id, 'write'); // Use 'write' for hard delete
     if (!template) {
       throw new Error("TemplateNotFound");
     }
 
-    const success = await softDeletePathwayTemplate(id, user.id);
+    const success = await deletePathwayTemplate(id); // Call the hard delete service
 
     if (success) {
-      await createActivityLog(id, user.id, 'soft_deleted', `Soft-deleted pathway template "${template.name}".`);
+      await createActivityLog(id, user.id, 'deleted', `Deleted pathway template "${template.name}".`);
     }
 
     revalidatePath("/pathways");
     return success;
   } catch (error: any) {
-    console.error("Error in softDeletePathwayTemplateAction:", error.message);
+    console.error("Error in deletePathwayTemplateAction:", error.message);
     if (error.message === "UnauthorizedToModifyTemplate") {
-      redirect("/error/403");
-    } else if (error.message === "TemplateNotFound") {
-      redirect("/error/404");
-    }
-    throw error;
-  }
-}
-
-export async function hardDeletePathwayTemplateAction(id: string): Promise<boolean> {
-  try {
-    const { user, template } = await authorizeTemplateAction(id, 'admin_only'); // Only admin can hard delete
-    if (!template) {
-      throw new Error("TemplateNotFound");
-    }
-
-    const success = await hardDeletePathwayTemplate(id);
-
-    if (success) {
-      await createActivityLog(id, user.id, 'hard_deleted', `Hard-deleted pathway template "${template.name}".`);
-    }
-
-    revalidatePath("/pathways");
-    return success;
-  } catch (error: any) {
-    console.error("Error in hardDeletePathwayTemplateAction:", error.message);
-    if (error.message === "UnauthorizedAccessAdminOnly") {
-      redirect("/error/403");
-    } else if (error.message === "TemplateNotFound") {
-      redirect("/error/404");
-    }
-    throw error;
-  }
-}
-
-export async function restorePathwayTemplateAction(id: string): Promise<boolean> {
-  try {
-    const { user, template } = await authorizeTemplateAction(id, 'admin_only'); // Only admin can restore
-    if (!template) {
-      throw new Error("TemplateNotFound");
-    }
-
-    const supabase = await createClient();
-    const { data, error } = await supabase
-      .from("pathway_templates")
-      .update({ is_deleted: false, updated_at: new Date().toISOString(), last_updated_by: user.id })
-      .eq("id", id)
-      .select()
-      .single();
-
-    if (error) {
-      console.error(`Error restoring pathway template ${id}:`, error.message);
-      throw new Error("Failed to restore template.");
-    }
-
-    if (data) {
-      await createActivityLog(id, user.id, 'restored', `Restored pathway template "${data.name}".`);
-    }
-
-    revalidatePath("/pathways");
-    return true;
-  } catch (error: any) {
-    console.error("Error in restorePathwayTemplateAction:", error.message);
-    if (error.message === "UnauthorizedAccessAdminOnly") {
       redirect("/error/403");
     } else if (error.message === "TemplateNotFound") {
       redirect("/error/404");
@@ -422,6 +371,12 @@ export async function createPhaseAction(pathwayTemplateId: string, formData: For
     const type = formData.get("type") as string;
     const description = formData.get("description") as string | null;
     const order_index = parseInt(formData.get("order_index") as string);
+    const phase_start_date = formData.get("phase_start_date") as string || null; // New field
+    const phase_end_date = formData.get("phase_end_date") as string || null; // New field
+    const applicant_instructions = formData.get("applicant_instructions") as string || null; // New field
+    const manager_instructions = formData.get("manager_instructions") as string || null; // New field
+    const is_visible_to_applicants = formData.get("is_visible_to_applicants") === "on"; // New field
+
 
     if (!name || !type || isNaN(order_index)) {
       throw new Error("Phase name, type, and order index are required.");
@@ -434,7 +389,12 @@ export async function createPhaseAction(pathwayTemplateId: string, formData: For
       order_index,
       description,
       {}, // Initial empty config
-      user.id // Pass creatorId for last_updated_by
+      user.id, // Pass creatorId for last_updated_by
+      phase_start_date, // New field
+      phase_end_date, // New field
+      applicant_instructions, // New field
+      manager_instructions, // New field
+      is_visible_to_applicants // New field
     );
 
     if (newPhase) {
@@ -466,6 +426,12 @@ export async function updatePhaseAction(phaseId: string, pathwayTemplateId: stri
     const name = formData.get("name") as string;
     const type = formData.get("type") as string;
     const description = formData.get("description") as string | null;
+    const phase_start_date = formData.get("phase_start_date") as string || null; // New field
+    const phase_end_date = formData.get("phase_end_date") as string || null; // New field
+    const applicant_instructions = formData.get("applicant_instructions") as string || null; // New field
+    const manager_instructions = formData.get("manager_instructions") as string || null; // New field
+    const is_visible_to_applicants = formData.get("is_visible_to_applicants") === "on"; // New field
+
 
     if (!name || !type) {
       throw new Error("Phase name and type are required.");
@@ -473,8 +439,17 @@ export async function updatePhaseAction(phaseId: string, pathwayTemplateId: stri
 
     const updatedPhase = await updatePhaseService(
       phaseId,
-      { name, type, description },
-      user.id // Pass updaterId
+      {
+        name,
+        type,
+        description,
+        phase_start_date, // New field
+        phase_end_date, // New field
+        applicant_instructions, // New field
+        manager_instructions, // New field
+        is_visible_to_applicants, // New field
+      },
+      user.id
     );
 
     if (updatedPhase) {
@@ -506,7 +481,7 @@ export async function updatePhaseConfigAction(phaseId: string, pathwayTemplateId
     const updatedPhase = await updatePhaseService(
       phaseId,
       { config: configUpdates },
-      user.id // Pass updaterId
+      user.id
     );
 
     if (updatedPhase) {
@@ -573,87 +548,24 @@ export async function updatePhaseBranchingAction(phaseId: string, pathwayTemplat
   }
 }
 
-export async function softDeletePhaseAction(phaseId: string, pathwayTemplateId: string): Promise<boolean> {
+export async function deletePhaseAction(phaseId: string, pathwayTemplateId: string): Promise<boolean> {
   try {
-    const { user, template } = await authorizeTemplateAction(pathwayTemplateId, 'write');
+    const { user, template } = await authorizeTemplateAction(pathwayTemplateId, 'write'); // Reusing authorizeTemplateAction for template auth
     if (!template) {
       throw new Error("TemplateNotFound");
     }
 
-    const success = await softDeletePhase(phaseId, user.id);
+    const success = await deletePhase(phaseId); // Call the hard delete service
 
     if (success) {
-      await createActivityLog(pathwayTemplateId, user.id, 'phase_soft_deleted', `Soft-deleted phase "${phaseId}" from template "${template.name}".`, { phaseId });
+      await createActivityLog(pathwayTemplateId, user.id, 'phase_deleted', `Deleted phase "${phaseId}" from template "${template?.name}".`, { phaseId });
     }
 
     revalidatePath(`/pathways/${pathwayTemplateId}`);
     return success;
   } catch (error: any) {
-    console.error("Error in softDeletePhaseAction:", error.message);
-    if (error.message === "UnauthorizedToModifyTemplate") {
-      redirect("/error/403");
-    } else if (error.message === "TemplateNotFound") {
-      redirect("/error/404");
-    }
-    throw error;
-  }
-}
-
-export async function hardDeletePhaseAction(phaseId: string, pathwayTemplateId: string): Promise<boolean> {
-  try {
-    const { user, template } = await authorizeTemplateAction(pathwayTemplateId, 'admin_only');
-    if (!template) {
-      throw new Error("TemplateNotFound");
-    }
-
-    const success = await hardDeletePhase(phaseId);
-
-    if (success) {
-      await createActivityLog(pathwayTemplateId, user.id, 'phase_hard_deleted', `Hard-deleted phase "${phaseId}" from template "${template.name}".`, { phaseId });
-    }
-
-    revalidatePath(`/pathways/${pathwayTemplateId}`);
-    return success;
-  } catch (error: any) {
-    console.error("Error in hardDeletePhaseAction:", error.message);
-    if (error.message === "UnauthorizedAccessAdminOnly") {
-      redirect("/error/403");
-    } else if (error.message === "TemplateNotFound") {
-      redirect("/error/404");
-    }
-    throw error;
-  }
-}
-
-export async function restorePhaseAction(phaseId: string, pathwayTemplateId: string): Promise<boolean> {
-  try {
-    const { user, template } = await authorizeTemplateAction(pathwayTemplateId, 'admin_only');
-    if (!template) {
-      throw new Error("TemplateNotFound");
-    }
-
-    const supabase = await createClient();
-    const { data, error } = await supabase
-      .from("phases")
-      .update({ is_deleted: false, updated_at: new Date().toISOString(), last_updated_by: user.id })
-      .eq("id", phaseId)
-      .select()
-      .single();
-
-    if (error) {
-      console.error(`Error restoring phase ${phaseId}:`, error.message);
-      throw new Error("Failed to restore phase.");
-    }
-
-    if (data) {
-      await createActivityLog(pathwayTemplateId, user.id, 'phase_restored', `Restored phase "${data.name}" in template "${template.name}".`, { phaseId: data.id });
-    }
-
-    revalidatePath(`/pathways/${pathwayTemplateId}`);
-    return true;
-  } catch (error: any) {
-    console.error("Error in restorePhaseAction:", error.message);
-    if (error.message === "UnauthorizedAccessAdminOnly") {
+    console.error("Error in deletePhaseAction:", error.message);
+    if (error.message === "UnauthorizedToModifyTemplate") { // Error message from authorizeTemplateAction
       redirect("/error/403");
     } else if (error.message === "TemplateNotFound") {
       redirect("/error/404");
@@ -670,7 +582,7 @@ export async function reorderPhasesAction(pathwayTemplateId: string, phases: { i
     }
 
     for (const phase of phases) {
-      await updatePhaseServiceForReorder(phase.id, { order_index: phase.order_index }, user.id);
+      await updatePhaseService(phase.id, { order_index: phase.order_index }, user.id);
     }
 
     await createActivityLog(pathwayTemplateId, user.id, 'phases_reordered', `Reordered phases in template "${template.name}".`, { newOrder: phases.map(p => ({ id: p.id, order_index: p.order_index })) });
@@ -811,7 +723,7 @@ export async function rollbackTemplateToVersionAction(pathwayTemplateId: string,
       throw new Error("TemplateNotFound");
     }
 
-    const rolledBackTemplate = await rollbackTemplateToVersion(pathwayTemplateId, versionId, user.id); // Pass user.id as updaterId
+    const rolledBackTemplate = await rollbackTemplateToVersion(pathwayTemplateId, versionId, user.id);
 
     if (rolledBackTemplate) {
       await createActivityLog(pathwayTemplateId, user.id, 'rolled_back', `Rolled back template "${template.name}" to version "${versionId}".`, { versionId });
@@ -874,7 +786,7 @@ async function authorizePhaseTaskAction(taskId: string | null, phaseId: string, 
     }
   }
 
-  return { user, task, isAdmin, isPhaseCreator, isAssignedUser, template }; // RETURN template
+  return { user, task, isAdmin, isPhaseCreator, isAssignedUser, template };
 }
 
 export async function getPhaseTasksAction(phaseId: string): Promise<PhaseTask[] | null> {

@@ -2,7 +2,7 @@
 
 import { createClient } from "@/integrations/supabase/server";
 import { Campaign } from "@/features/campaigns/services/campaign-service";
-import { PathwayTemplate } from "@/features/pathways/services/pathway-template-service";
+import { PathwayTemplate } from "@/types/supabase"; // Corrected import path for PathwayTemplate
 
 export interface Package {
   id: string;

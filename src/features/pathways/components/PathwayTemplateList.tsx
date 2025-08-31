@@ -5,11 +5,11 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { PlusCircle, Edit, Trash2, Workflow, Lock, Globe, Copy } from "lucide-react"; // Import Copy icon
-import { PathwayTemplate } from "../services/pathway-template-service";
+import { PathwayTemplate } from "@/types/supabase"; // Import from types/supabase
 import { toast } from "sonner";
 import { useSession } from "@/context/SessionContextProvider";
 import { Skeleton } from "@/components/ui/skeleton";
-import { getTemplatesAction, softDeletePathwayTemplateAction } from "../actions"; // Changed deletePathwayTemplateAction to softDeletePathwayTemplateAction
+import { getTemplatesAction, deletePathwayTemplateAction } from "../actions"; // Changed softDeletePathwayTemplateAction to deletePathwayTemplateAction
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
@@ -74,7 +74,7 @@ export function PathwayTemplateList() {
 
   const handleDelete = async (id: string) => {
     try {
-      const success = await softDeletePathwayTemplateAction(id); // Use softDeletePathwayTemplateAction
+      const success = await deletePathwayTemplateAction(id); // Use deletePathwayTemplateAction
       if (success) {
         toast.success("Pathway template deleted successfully!");
         fetchTemplates(); // Refresh the list

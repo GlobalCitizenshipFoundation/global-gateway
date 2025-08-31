@@ -1,42 +1,7 @@
 "use server";
 
 import { createClient } from "@/integrations/supabase/server";
-
-// New base interface for configurable items (phases)
-export interface BaseConfigurableItem {
-  id: string;
-  name: string;
-  type: string; // e.g., 'Form', 'Review', 'Email', 'Scheduling', 'Decision', 'Recommendation'
-  description: string | null;
-  order_index: number;
-  config: Record<string, any>; // JSONB field for phase-specific configuration
-  created_at: string;
-  updated_at: string;
-  last_updated_by: string | null; // Added last_updated_by
-  is_deleted: boolean; // Added is_deleted for soft deletes
-}
-
-export interface PathwayTemplate {
-  id: string;
-  creator_id: string;
-  name: string;
-  description: string | null;
-  is_private: boolean;
-  status: 'draft' | 'pending_review' | 'published' | 'archived'; // Added status
-  created_at: string;
-  updated_at: string;
-  last_updated_by: string | null; // Added last_updated_by
-  is_deleted: boolean; // Added is_deleted for soft deletes
-  // New fields for template-level essential information
-  application_open_date: string | null; // ISO date string
-  participation_deadline: string | null; // ISO date string
-  general_instructions: string | null; // Rich text content
-}
-
-// Phase now extends BaseConfigurableItem
-export interface Phase extends BaseConfigurableItem {
-  pathway_template_id: string;
-}
+import { PathwayTemplate, Phase, BaseConfigurableItem } from "@/types/supabase"; // Import from types/supabase
 
 // Internal helper to get Supabase client
 async function getSupabase() {
@@ -48,7 +13,6 @@ export async function getPathwayTemplates(): Promise<PathwayTemplate[] | null> {
   const { data, error } = await supabase
     .from("pathway_templates")
     .select("*")
-    .eq("is_deleted", false) // Filter out soft-deleted templates
     .order("created_at", { ascending: false });
 
   if (error) {
@@ -64,7 +28,6 @@ export async function getPathwayTemplateById(id: string): Promise<PathwayTemplat
     .from("pathway_templates")
     .select("*")
     .eq("id", id)
-    .eq("is_deleted", false) // Filter out soft-deleted templates
     .single();
 
   if (error) {
@@ -79,12 +42,14 @@ export async function createPathwayTemplate(
   description: string | null,
   is_private: boolean,
   creator_id: string,
-  status: PathwayTemplate['status'] = 'draft', // Default status to draft
+  status: PathwayTemplate['status'] = 'draft',
   last_updated_by: string,
-  // New parameters for creation
   application_open_date: string | null,
   participation_deadline: string | null,
-  general_instructions: string | null
+  general_instructions: string | null,
+  applicant_instructions: string | null, // New field
+  manager_instructions: string | null, // New field
+  is_visible_to_applicants: boolean // New field
 ): Promise<PathwayTemplate | null> {
   const supabase = await getSupabase();
   const { data, error } = await supabase
@@ -96,9 +61,12 @@ export async function createPathwayTemplate(
       creator_id,
       status,
       last_updated_by,
-      application_open_date, // New field
-      participation_deadline, // New field
-      general_instructions, // New field
+      application_open_date,
+      participation_deadline,
+      general_instructions,
+      applicant_instructions, // New field
+      manager_instructions, // New field
+      is_visible_to_applicants, // New field
     }])
     .select()
     .single();
@@ -112,15 +80,14 @@ export async function createPathwayTemplate(
 
 export async function updatePathwayTemplate(
   id: string,
-  updates: Partial<Omit<PathwayTemplate, "id" | "creator_id" | "created_at" | "is_deleted">>,
-  updaterId: string // Pass updaterId for last_updated_by
+  updates: Partial<Omit<PathwayTemplate, "id" | "creator_id" | "created_at">>,
+  updaterId: string
 ): Promise<PathwayTemplate | null> {
   const supabase = await getSupabase();
   const { data, error } = await supabase
     .from("pathway_templates")
     .update({ ...updates, updated_at: new Date().toISOString(), last_updated_by: updaterId })
     .eq("id", id)
-    .eq("is_deleted", false) // Ensure we don't update deleted templates
     .select()
     .single();
 
@@ -131,22 +98,7 @@ export async function updatePathwayTemplate(
   return data;
 }
 
-export async function softDeletePathwayTemplate(id: string, updaterId: string): Promise<boolean> {
-  const supabase = await getSupabase();
-  const { error } = await supabase
-    .from("pathway_templates")
-    .update({ is_deleted: true, updated_at: new Date().toISOString(), last_updated_by: updaterId })
-    .eq("id", id);
-
-  if (error) {
-    console.error(`Error soft deleting pathway template ${id}:`, error.message);
-    return false;
-  }
-  return true;
-}
-
-// Hard delete function (for admin-only, if soft delete is not desired or for permanent removal)
-export async function hardDeletePathwayTemplate(id: string): Promise<boolean> {
+export async function deletePathwayTemplate(id: string): Promise<boolean> {
   const supabase = await getSupabase();
   const { error } = await supabase
     .from("pathway_templates")
@@ -154,7 +106,7 @@ export async function hardDeletePathwayTemplate(id: string): Promise<boolean> {
     .eq("id", id);
 
   if (error) {
-    console.error(`Error hard deleting pathway template ${id}:`, error.message);
+    console.error(`Error deleting pathway template ${id}:`, error.message);
     return false;
   }
   return true;
@@ -168,7 +120,6 @@ export async function getPhasesByPathwayTemplateId(
     .from("phases")
     .select("*")
     .eq("pathway_template_id", pathwayTemplateId)
-    .eq("is_deleted", false) // Filter out soft-deleted phases
     .order("order_index", { ascending: true });
 
   if (error) {
@@ -188,13 +139,31 @@ export async function createPhase(
   order_index: number,
   description: string | null = null,
   config: Record<string, any> = {},
-  creatorId: string // Pass creatorId for last_updated_by
+  creatorId: string,
+  phase_start_date: string | null, // New field
+  phase_end_date: string | null, // New field
+  applicant_instructions: string | null, // New field
+  manager_instructions: string | null, // New field
+  is_visible_to_applicants: boolean // New field
 ): Promise<Phase | null> {
   const supabase = await getSupabase();
   const { data, error } = await supabase
     .from("phases")
     .insert([
-      { pathway_template_id: pathwayTemplateId, name, type, order_index, description, config, last_updated_by: creatorId },
+      {
+        pathway_template_id: pathwayTemplateId,
+        name,
+        type,
+        order_index,
+        description,
+        config,
+        last_updated_by: creatorId,
+        phase_start_date, // New field
+        phase_end_date, // New field
+        applicant_instructions, // New field
+        manager_instructions, // New field
+        is_visible_to_applicants, // New field
+      },
     ])
     .select()
     .single();
@@ -208,15 +177,14 @@ export async function createPhase(
 
 export async function updatePhase(
   id: string,
-  updates: Partial<Omit<Phase, "id" | "pathway_template_id" | "created_at" | "is_deleted">>,
-  updaterId: string // Pass updaterId for last_updated_by
+  updates: Partial<Omit<Phase, "id" | "pathway_template_id" | "created_at">>,
+  updaterId: string
 ): Promise<Phase | null> {
   const supabase = await getSupabase();
   const { data, error } = await supabase
     .from("phases")
     .update({ ...updates, updated_at: new Date().toISOString(), last_updated_by: updaterId })
     .eq("id", id)
-    .eq("is_deleted", false) // Ensure we don't update deleted phases
     .select()
     .single();
 
@@ -227,11 +195,10 @@ export async function updatePhase(
   return data;
 }
 
-// New function to update only the branching configuration of a phase
 export async function updatePhaseBranchingConfig(
   id: string,
   configUpdates: Record<string, any>,
-  updaterId: string // Pass updaterId for last_updated_by
+  updaterId: string
 ): Promise<Phase | null> {
   const supabase = await getSupabase();
   // Fetch current config to merge updates
@@ -239,7 +206,6 @@ export async function updatePhaseBranchingConfig(
     .from("phases")
     .select("config")
     .eq("id", id)
-    .eq("is_deleted", false)
     .single();
 
   if (fetchError || !currentPhase) {
@@ -253,7 +219,6 @@ export async function updatePhaseBranchingConfig(
     .from("phases")
     .update({ config: mergedConfig, updated_at: new Date().toISOString(), last_updated_by: updaterId })
     .eq("id", id)
-    .eq("is_deleted", false)
     .select()
     .single();
 
@@ -264,27 +229,12 @@ export async function updatePhaseBranchingConfig(
   return data;
 }
 
-export async function softDeletePhase(id: string, updaterId: string): Promise<boolean> {
-  const supabase = await getSupabase();
-  const { error } = await supabase
-    .from("phases")
-    .update({ is_deleted: true, updated_at: new Date().toISOString(), last_updated_by: updaterId })
-    .eq("id", id);
-
-  if (error) {
-    console.error(`Error soft deleting phase ${id}:`, error.message);
-    return false;
-  }
-  return true;
-}
-
-// Hard delete function (for admin-only, if soft delete is not desired or for permanent removal)
-export async function hardDeletePhase(id: string): Promise<boolean> {
+export async function deletePhase(id: string): Promise<boolean> {
   const supabase = await getSupabase();
   const { error } = await supabase.from("phases").delete().eq("id", id);
 
   if (error) {
-    console.error(`Error hard deleting phase ${id}:`, error.message);
+    console.error(`Error deleting phase ${id}:`, error.message);
     return false;
   }
   return true;
@@ -294,14 +244,13 @@ export async function clonePathwayTemplate(
   templateId: string,
   newName: string,
   creatorId: string,
-  lastUpdatedBy: string // Pass lastUpdatedBy for new template and phases
+  lastUpdatedBy: string
 ): Promise<PathwayTemplate | null> {
   const supabase = await getSupabase();
   const { data: originalTemplate, error: templateError } = await supabase
     .from("pathway_templates")
     .select("*")
     .eq("id", templateId)
-    .eq("is_deleted", false) // Only clone non-deleted templates
     .single();
 
   if (templateError || !originalTemplate) {
@@ -313,7 +262,6 @@ export async function clonePathwayTemplate(
     .from("phases")
     .select("*")
     .eq("pathway_template_id", templateId)
-    .eq("is_deleted", false) // Only clone non-deleted phases
     .order("order_index", { ascending: true });
 
   if (phasesError) {
@@ -332,9 +280,12 @@ export async function clonePathwayTemplate(
         status: 'draft', // Cloned template starts as draft
         creator_id: creatorId,
         last_updated_by: lastUpdatedBy,
-        application_open_date: originalTemplate.application_open_date, // Copy new field
-        participation_deadline: originalTemplate.participation_deadline, // Copy new field
-        general_instructions: originalTemplate.general_instructions, // Copy new field
+        application_open_date: originalTemplate.application_open_date,
+        participation_deadline: originalTemplate.participation_deadline,
+        general_instructions: originalTemplate.general_instructions,
+        applicant_instructions: originalTemplate.applicant_instructions, // Copy new field
+        manager_instructions: originalTemplate.manager_instructions, // Copy new field
+        is_visible_to_applicants: originalTemplate.is_visible_to_applicants, // Copy new field
       },
     ])
     .select()
@@ -353,7 +304,12 @@ export async function clonePathwayTemplate(
     description: phase.description,
     order_index: phase.order_index,
     config: phase.config,
-    last_updated_by: lastUpdatedBy, // Set last_updated_by for cloned phases
+    last_updated_by: lastUpdatedBy,
+    phase_start_date: phase.phase_start_date, // Copy new field
+    phase_end_date: phase.phase_end_date, // Copy new field
+    applicant_instructions: phase.applicant_instructions, // Copy new field
+    manager_instructions: phase.manager_instructions, // Copy new field
+    is_visible_to_applicants: phase.is_visible_to_applicants, // Copy new field
   }));
 
   if (newPhasesData.length > 0) {

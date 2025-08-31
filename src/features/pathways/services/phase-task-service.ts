@@ -1,22 +1,7 @@
 "use server";
 
 import { createClient } from "@/integrations/supabase/server";
-import { Profile } from "@/types/supabase"; // Assuming Profile interface is available
-
-export interface PhaseTask {
-  id: string;
-  phase_id: string;
-  name: string;
-  description: string | null;
-  assigned_to_role: string | null;
-  assigned_to_user_id: string | null;
-  due_date: string | null;
-  status: 'pending' | 'completed';
-  order_index: number;
-  created_at: string;
-  updated_at: string;
-  profiles?: Profile; // For joining with assigned user's profile
-}
+import { Profile, PhaseTask } from "@/types/supabase"; // Corrected import path for PhaseTask
 
 // Internal helper to get Supabase client
 async function getSupabase() {

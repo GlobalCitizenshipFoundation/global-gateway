@@ -22,7 +22,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { getCampaignsAction } from "@/features/campaigns/actions";
 import { getTemplatesAction } from "@/features/pathways/actions";
 import { Campaign } from "@/features/campaigns/services/campaign-service";
-import { PathwayTemplate } from "@/features/pathways/services/pathway-template-service";
+import { PathwayTemplate } from "@/types/supabase"; // Corrected import path for PathwayTemplate
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useRouter } from "next/navigation"; // Added this import
 
@@ -190,6 +190,7 @@ export function PackageDetail({ packageId }: PackageDetailProps) {
                 <Skeleton className="h-4 w-1/2" />
               </div>
               <Skeleton className="h-8 w-8 rounded-md ml-4" />
+              <Skeleton className="h-8 w-8 rounded-md ml-2" />
             </Card>
           ))}
         </div>
@@ -277,8 +278,10 @@ export function PackageDetail({ packageId }: PackageDetailProps) {
             {canModifyPackage ? "Add campaigns or pathway templates to this package." : "This package currently contains no items."}
           </CardDescription>
           {canModifyPackage && (
-            <Button onClick={() => setIsAddItemDialogOpen(true)} className="mt-6 rounded-full px-6 py-3 text-label-large">
-              <PlusCircle className="mr-2 h-5 w-5" /> Add First Item
+            <Button asChild className="mt-6 rounded-full px-6 py-3 text-label-large">
+              <Link href="#" onClick={() => setIsAddItemDialogOpen(true)}> {/* Fixed JSX here */}
+                <PlusCircle className="mr-2 h-5 w-5" /> Add First Item
+              </Link>
             </Button>
           )}
         </Card>

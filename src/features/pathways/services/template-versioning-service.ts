@@ -1,7 +1,8 @@
 "use server";
 
 import { createClient } from "@/integrations/supabase/server";
-import { PathwayTemplate, Phase, getPathwayTemplateById, getPhasesByPathwayTemplateId, updatePathwayTemplate, updatePhase } from "./pathway-template-service";
+import { PathwayTemplate, Phase } from "@/types/supabase"; // Corrected import path for PathwayTemplate, Phase
+import { getPathwayTemplateById, getPhasesByPathwayTemplateId, updatePathwayTemplate, updatePhase } from "./pathway-template-service";
 import { Profile } from "@/types/supabase";
 
 export interface PathwayTemplateVersion {
@@ -119,6 +120,12 @@ export async function rollbackTemplateToVersion(
       description: snapshotTemplate.description,
       is_private: snapshotTemplate.is_private,
       status: snapshotTemplate.status, // Include status in rollback
+      application_open_date: snapshotTemplate.application_open_date,
+      participation_deadline: snapshotTemplate.participation_deadline,
+      general_instructions: snapshotTemplate.general_instructions,
+      applicant_instructions: snapshotTemplate.applicant_instructions,
+      manager_instructions: snapshotTemplate.manager_instructions,
+      is_visible_to_applicants: snapshotTemplate.is_visible_to_applicants,
     },
     updaterId // Pass updaterId
   );
@@ -149,6 +156,11 @@ export async function rollbackTemplateToVersion(
       order_index: phase.order_index,
       config: phase.config,
       last_updated_by: updaterId, // Set updaterId for restored phases
+      phase_start_date: phase.phase_start_date,
+      phase_end_date: phase.phase_end_date,
+      applicant_instructions: phase.applicant_instructions,
+      manager_instructions: phase.manager_instructions,
+      is_visible_to_applicants: phase.is_visible_to_applicants,
     }));
 
     const { error: insertPhasesError } = await supabase

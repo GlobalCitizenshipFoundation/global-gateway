@@ -8,12 +8,12 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { ArrowLeft, PlusCircle, Workflow, Lock, Globe, Edit, Copy, Save, CheckCircle, Clock, UserCircle2, CalendarDays, Info, X } from "lucide-react"; // Added X icon
-import { PathwayTemplate, Phase } from "../services/pathway-template-service";
+import { ArrowLeft, PlusCircle, Workflow, Lock, Globe, Edit, Copy, Save, CheckCircle, Clock, UserCircle2, CalendarDays, Info, X } from "lucide-react";
+import { PathwayTemplate, Phase } from "@/types/supabase"; // Import from types/supabase
 import { toast } from "sonner";
 import { useSession } from "@/context/SessionContextProvider";
 import { Skeleton } from "@/components/ui/skeleton";
-import { getTemplateByIdAction, getPhasesAction, reorderPhasesAction, softDeletePhaseAction, createTemplateVersionAction, publishPathwayTemplateAction, updatePathwayTemplateStatusAction, updatePathwayTemplateAction, createPathwayTemplateAction, createPhaseAction } from "../actions"; // Added createPhaseAction
+import { getTemplateByIdAction, getPhasesAction, reorderPhasesAction, deletePhaseAction, createTemplateVersionAction, publishPathwayTemplateAction, updatePathwayTemplateStatusAction, updatePathwayTemplateAction, createPathwayTemplateAction, createPhaseAction, deletePathwayTemplateAction } from "../actions"; // Updated delete actions
 import { DragDropContext, Droppable, DropResult } from "@hello-pangea/dnd";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Input } from "@/components/ui/input";
@@ -37,7 +37,7 @@ import { PhaseBuilderCard } from "./PhaseBuilderCard";
 import { CloneTemplateDialog } from "./CloneTemplateDialog";
 import { TemplateVersionHistory } from "./TemplateVersionHistory";
 import { TemplateActivityLog } from "./TemplateActivityLog";
-import { PhaseDetailsForm } from "./PhaseDetailsForm"; // Re-import PhaseDetailsForm for inline creation
+import { PhaseDetailsForm } from "./PhaseDetailsForm";
 
 // Zod schema for the entire template builder page (template details + phases)
 const templateBuilderSchema = z.object({
@@ -48,6 +48,9 @@ const templateBuilderSchema = z.object({
   application_open_date: z.date().nullable().optional(),
   participation_deadline: z.date().nullable().optional(),
   general_instructions: z.string().max(5000, { message: "General instructions cannot exceed 5000 characters." }).nullable().optional(),
+  applicant_instructions: z.string().max(5000, { message: "Applicant instructions cannot exceed 5000 characters." }).nullable().optional(), // New field
+  manager_instructions: z.string().max(5000, { message: "Manager instructions cannot exceed 5000 characters." }).nullable().optional(), // New field
+  is_visible_to_applicants: z.boolean().optional(), // New field
 });
 
 // Schema for the inline phase creation form
@@ -83,6 +86,9 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
       application_open_date: initialTemplate?.application_open_date ? new Date(initialTemplate.application_open_date) : null,
       participation_deadline: initialTemplate?.participation_deadline ? new Date(initialTemplate.participation_deadline) : null,
       general_instructions: initialTemplate?.general_instructions || "",
+      applicant_instructions: initialTemplate?.applicant_instructions || "", // New field
+      manager_instructions: initialTemplate?.manager_instructions || "", // New field
+      is_visible_to_applicants: initialTemplate?.is_visible_to_applicants ?? true, // New field
     },
     mode: "onChange",
   });
@@ -117,6 +123,9 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
         application_open_date: fetchedTemplate.application_open_date ? new Date(fetchedTemplate.application_open_date) : null,
         participation_deadline: fetchedTemplate.participation_deadline ? new Date(fetchedTemplate.participation_deadline) : null,
         general_instructions: fetchedTemplate.general_instructions || "",
+        applicant_instructions: fetchedTemplate.applicant_instructions || "", // New field
+        manager_instructions: fetchedTemplate.manager_instructions || "", // New field
+        is_visible_to_applicants: fetchedTemplate.is_visible_to_applicants ?? true, // New field
       });
 
       const fetchedPhases = await getPhasesAction(templateId);
@@ -153,15 +162,31 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
       formData.append("application_open_date", values.application_open_date ? values.application_open_date.toISOString() : "");
       formData.append("participation_deadline", values.participation_deadline ? values.participation_deadline.toISOString() : "");
       formData.append("general_instructions", values.general_instructions || "");
+      formData.append("applicant_instructions", values.applicant_instructions || ""); // New field
+      formData.append("manager_instructions", values.manager_instructions || ""); // New field
+      formData.append("is_visible_to_applicants", values.is_visible_to_applicants ? "on" : "off"); // New field
+
 
       let result: PathwayTemplate | null;
       if (templateId) {
         result = await updatePathwayTemplateAction(templateId, formData);
         if (template?.status !== values.status) {
+          // If status changed, call the status update action
           await updatePathwayTemplateStatusAction(templateId, values.status);
+          // If status changed to 'published', also create a version
+          if (values.status === 'published') {
+            await createTemplateVersionAction(templateId);
+          }
         }
       } else {
+        // For new templates, create and then potentially publish/version if status is not draft
         result = await createPathwayTemplateAction(formData);
+        if (result && values.status !== 'draft') {
+          await updatePathwayTemplateStatusAction(result.id, values.status);
+          if (values.status === 'published') {
+            await createTemplateVersionAction(result.id);
+          }
+        }
       }
 
       if (result) {
@@ -186,9 +211,9 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
 
   const handleDeletePhase = async (phaseId: string) => {
     try {
-      const success = await softDeletePhaseAction(phaseId, templateId!);
+      const success = await deletePhaseAction(phaseId, templateId!); // Use hard delete
       if (success) {
-        toast.success("Phase soft-deleted successfully!");
+        toast.success("Phase deleted successfully!");
         fetchTemplateAndPhases(); // Re-fetch to update list and order indices
       }
     } catch (error: any) {
@@ -253,15 +278,15 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
     }
   };
 
-  const handleUpdateStatus = async (newStatus: PathwayTemplate['status']) => {
+  const handleDeleteTemplate = async () => {
     try {
-      const updatedTemplate = await updatePathwayTemplateStatusAction(templateId!, newStatus);
-      if (updatedTemplate) {
-        toast.success(`Template status updated to '${newStatus}'!`);
-        fetchTemplateAndPhases();
+      const success = await deletePathwayTemplateAction(templateId!); // Use hard delete
+      if (success) {
+        toast.success("Template permanently deleted!");
+        router.push("/pathways");
       }
     } catch (error: any) {
-      toast.error(error.message || "Failed to update template status.");
+      toast.error(error.message || "Failed to delete template.");
     }
   };
 
@@ -286,6 +311,11 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
       formData.append("type", values.type);
       formData.append("description", ""); // Default empty description
       formData.append("order_index", phases.length.toString()); // Append at the end
+      formData.append("phase_start_date", ""); // Default empty
+      formData.append("phase_end_date", ""); // Default empty
+      formData.append("applicant_instructions", ""); // Default empty
+      formData.append("manager_instructions", ""); // Default empty
+      formData.append("is_visible_to_applicants", "on"); // Default true
 
       const result = await createPhaseAction(templateId, formData);
       if (result) {
@@ -378,6 +408,30 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
                   <Clock className="mr-2 h-5 w-5" /> Archive Template
                 </Button>
               )}
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="destructive" className="rounded-full px-6 py-3 text-label-large">
+                    <Trash2 className="mr-2 h-5 w-5" /> Delete Template
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent className="rounded-xl shadow-lg bg-card text-card-foreground border-border">
+                  <AlertDialogHeader>
+                    <AlertDialogTitle className="text-headline-small">Confirm Permanent Deletion</AlertDialogTitle>
+                    <AlertDialogDescription className="text-body-medium text-muted-foreground">
+                      Are you sure you want to permanently delete the &quot;{currentTemplate.name}&quot; pathway template? This action cannot be undone and will remove all associated phases and data.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel className="rounded-md text-label-large">Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={handleDeleteTemplate}
+                      className="rounded-md text-label-large bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    >
+                      Delete Permanently
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </>
           )}
         </div>
@@ -393,7 +447,7 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
           <Card className="rounded-xl shadow-lg p-6">
             <CardHeader className="p-0 mb-4">
               <CardTitle className="text-headline-large font-bold text-foreground flex items-center gap-2">
-                Template Basics {/* Removed Workflow icon */}
+                Template Basics
                 <TooltipProvider>
                   {currentTemplate.is_private ? (
                     <Tooltip>
@@ -442,7 +496,7 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
                 name="description"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-label-large">Description</FormLabel>
+                    <FormLabel className="text-label-large">Template Description</FormLabel>
                     <FormControl>
                       <Textarea
                         placeholder="Provide a brief overview of this pathway template's purpose."
@@ -516,8 +570,8 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
           {/* Essential Information Card */}
           <Card className="rounded-xl shadow-lg p-6">
             <CardHeader className="p-0 mb-4">
-              <CardTitle className="text-headline-large font-bold text-foreground flex items-center gap-2">
-                Essential Information {/* Removed Info icon */}
+              <CardTitle className="text-headline-large font-bold text-foreground">
+                Essential Information
               </CardTitle>
               <CardDescription className="text-body-large text-muted-foreground">
                 Key dates and general instructions for applicants.
@@ -630,6 +684,73 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
                   </FormItem>
                 )}
               />
+              <FormField
+                control={templateForm.control}
+                name="applicant_instructions"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-label-large">Applicant Instructions (Optional)</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="Instructions specifically for applicants regarding the entire template."
+                        className="resize-y min-h-[80px] rounded-md"
+                        {...field}
+                        value={field.value || ""}
+                        disabled={!canModifyTemplate}
+                      />
+                    </FormControl>
+                    <FormDescription className="text-body-small">
+                      These instructions are visible to applicants in their portal for the overall template.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={templateForm.control}
+                name="manager_instructions"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-label-large">Manager Instructions (Optional)</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="Instructions specifically for managers/recruiters regarding the entire template."
+                        className="resize-y min-h-[80px] rounded-md"
+                        {...field}
+                        value={field.value || ""}
+                        disabled={!canModifyTemplate}
+                      />
+                    </FormControl>
+                    <FormDescription className="text-body-small">
+                      These instructions are for internal staff only (e.g., hiring managers, recruiters) for the overall template.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={templateForm.control}
+                name="is_visible_to_applicants"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-label-large">Visible to Applicants (Overall Template)</FormLabel>
+                      <FormDescription className="text-body-small">
+                        Control whether this entire template is visible to applicants in their portal.
+                      </FormDescription>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                        className="data-[state=checked]:bg-primary data-[state=unchecked]:bg-muted-foreground"
+                        disabled={!canModifyTemplate}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </CardContent>
           </Card>
 
@@ -731,7 +852,7 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
                             <X className="mr-2 h-4 w-4" /> Cancel
                           </Button>
                           <Button type="submit" className="rounded-md text-label-large" disabled={inlinePhaseForm.formState.isSubmitting}>
-                            {inlinePhaseForm.formState.isSubmitting ? "Creating..." : <><PlusCircle className="mr-2 h-4 w-4" /> Create Phase</>}
+                            {inlinePhaseForm.formState.isSubmitting ? "Creating..." : <><PlusCircle className="mr-2 h-5 w-5" /> Create Phase</>}
                           </Button>
                         </div>
                       </form>
