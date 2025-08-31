@@ -9,7 +9,7 @@ import * as z from "zod";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { ArrowLeft, PlusCircle, Workflow, Lock, Globe, Edit, Copy, Save, CheckCircle, Clock, UserCircle2, CalendarDays, Info, X, Trash2, ChevronDown, ChevronUp, Archive, History, Activity, RotateCcw, MoreVertical } from "lucide-react"; // Added MoreVertical for overflow menu
-import { PathwayTemplate, Phase } from "@/types/supabase";
+import { PathwayTemplate, Phase, Profile } from "@/types/supabase"; // Import Profile type
 import { toast } from "sonner";
 import { useSession } from "@/context/SessionContextProvider";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -49,6 +49,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { getProfileByIdAction } from "@/features/user-profile/actions"; // Import getProfileByIdAction
 
 
 // Zod schema for the entire template builder page (template details + phases)
@@ -88,6 +89,8 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
   const [nextPath, setNextPath] = useState<string | null>(null); // Path to navigate to if changes are discarded
   const [isVersionHistoryOpen, setIsVersionHistoryOpen] = useState(false); // State for Version History dialog
   const [isActivityLogOpen, setIsActivityLogOpen] = useState(false); // State for Activity Log dialog
+  const [creatorProfile, setCreatorProfile] = useState<Profile | null>(null); // State for creator's profile
+  const [lastUpdaterProfile, setLastUpdaterProfile] = useState<Profile | null>(null); // State for last updater's profile
 
   const templateForm = useForm<z.infer<typeof templateBuilderSchema>>({
     resolver: zodResolver(templateBuilderSchema),
@@ -134,6 +137,14 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
         general_instructions: fetchedTemplate.general_instructions || "",
         is_visible_to_applicants: fetchedTemplate.is_visible_to_applicants ?? true,
       });
+
+      // Fetch creator and last updater profiles
+      const [creatorProfileData, lastUpdaterProfileData] = await Promise.all([
+        fetchedTemplate.creator_id ? getProfileByIdAction(fetchedTemplate.creator_id) : Promise.resolve(null),
+        fetchedTemplate.last_updated_by ? getProfileByIdAction(fetchedTemplate.last_updated_by) : Promise.resolve(null),
+      ]);
+      setCreatorProfile(creatorProfileData);
+      setLastUpdaterProfile(lastUpdaterProfileData);
 
       const fetchedPhases = await getPhasesAction(templateId);
       if (fetchedPhases) {
@@ -470,6 +481,11 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
     }
   };
 
+  const getProfileDisplayName = (profile: Profile | null) => {
+    if (!profile) return "Unknown User";
+    return `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || "Unknown User";
+  };
+
   return (
     <div className="container mx-auto py-8 px-4 space-y-8">
       <div className="flex items-center justify-between">
@@ -753,8 +769,8 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
       )}
 
       {templateId && canModifyTemplate && (
-        <div className="mt-6 flex justify-center"> {/* Added flex justify-center */}
-          <Button onClick={() => setIsAddingNewPhase(true)} className="w-fit rounded-md text-label-large"> {/* Changed w-full to w-fit */}
+        <div className="mt-6 flex justify-center">
+          <Button variant="secondary" onClick={() => setIsAddingNewPhase(true)} className="w-fit rounded-md text-label-large">
             <PlusCircle className="mr-2 h-5 w-5" /> Add New Phase
           </Button>
         </div>
@@ -950,8 +966,20 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
       {template && (
         <CardFooter className="flex flex-col md:flex-row md:justify-between md:items-center text-body-small text-muted-foreground border-t border-border pt-6 mt-8">
           <div className="flex flex-col items-start mb-4 md:mb-0">
-            <p>Created by {template.creator_id} on {new Date(template.created_at).toLocaleDateString()}</p>
-            <p>Last updated by {template.last_updated_by} on {new Date(template.updated_at).toLocaleDateString()}</p>
+            <p>
+              Created by{" "}
+              <span className="font-medium">
+                {getProfileDisplayName(creatorProfile)}
+              </span>{" "}
+              on {format(new Date(template.created_at), "MMM dd, yyyy 'at' HH:mm:ss (zzz)")}
+            </p>
+            <p>
+              Last updated by{" "}
+              <span className="font-medium">
+                {getProfileDisplayName(lastUpdaterProfile)}
+              </span>{" "}
+              on {format(new Date(template.updated_at), "MMM dd, yyyy 'at' HH:mm:ss (zzz)")}
+            </p>
           </div>
           <div className="flex flex-wrap justify-end items-center gap-2">
             {/* Version History Trigger */}
