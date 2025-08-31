@@ -30,7 +30,7 @@ const phaseFormSchema = z.object({
 
 interface PhaseDetailsFormProps {
   pathwayTemplateId: string;
-  initialData?: Phase;
+  initialData?: Phase; // Optional for creation
   onPhaseSaved: () => void;
   onCancel: () => void;
   nextOrderIndex: number; // Only relevant for creation, but kept for consistency

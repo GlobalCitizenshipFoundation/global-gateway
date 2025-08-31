@@ -14,16 +14,15 @@ import { PhaseConfigurationPanel } from "./PhaseConfigurationPanel";
 import { PhaseTaskManagementPanel } from "./PhaseTaskManagementPanel";
 import { BranchingConfigForm } from "./BranchingConfigForm";
 
-interface PhaseCardProps {
+interface PhaseBuilderCardProps {
   phase: Phase;
   index: number;
   onDelete: (phaseId: string) => void;
   onPhaseUpdated: () => void; // Callback to refresh parent data
-  onPopOutToInspector: (phaseId: string) => void; // New prop for pop-out
   canModify: boolean;
 }
 
-export function PhaseCard({ phase, index, onDelete, onPhaseUpdated, onPopOutToInspector, canModify }: PhaseCardProps) {
+export function PhaseBuilderCard({ phase, index, onDelete, onPhaseUpdated, canModify }: PhaseBuilderCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const isConditional = phase.type === "Decision" || phase.type === "Review";
 
@@ -63,12 +62,7 @@ export function PhaseCard({ phase, index, onDelete, onPhaseUpdated, onPopOutToIn
 
   const handleCancelAndCollapse = () => {
     setIsExpanded(false); // Collapse the card without saving
-  };
-
-  const handlePopOut = (e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent card from collapsing
-    onPopOutToInspector(phase.id);
-    setIsExpanded(false); // Collapse inline view when popping out
+    onPhaseUpdated(); // Re-fetch to revert any unsaved changes in the UI
   };
 
   return (
@@ -149,14 +143,6 @@ export function PhaseCard({ phase, index, onDelete, onPhaseUpdated, onPopOutToIn
           >
             {isExpanded && ( // Only render content when expanded to avoid unnecessary component lifecycle
               <div className="space-y-6 p-4 border border-border rounded-lg bg-background shadow-inner">
-                <div className="flex justify-end">
-                  {canModify && (
-                    <Button variant="outlined" size="sm" onClick={handlePopOut} className="rounded-md text-label-small">
-                      <ExternalLink className="mr-2 h-4 w-4" /> Pop Out to Inspector
-                    </Button>
-                  )}
-                </div>
-
                 {/* Phase Details Form */}
                 <PhaseDetailsForm
                   pathwayTemplateId={phase.pathway_template_id}

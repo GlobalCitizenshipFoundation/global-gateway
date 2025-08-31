@@ -33,11 +33,11 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { PhaseCard } from "./PhaseCard";
+import { PhaseBuilderCard } from "./PhaseBuilderCard"; // Changed from PhaseCard
 import { CloneTemplateDialog } from "./CloneTemplateDialog";
 import { TemplateVersionHistory } from "./TemplateVersionHistory";
 import { TemplateActivityLog } from "./TemplateActivityLog";
-// Removed: import { FloatingInspector } from "./FloatingInspector";
+import { PhaseCreationDialog } from "./PhaseCreationDialog"; // Added import
 
 // Zod schema for the entire template builder page (template details + phases)
 const templateBuilderSchema = z.object({
@@ -64,8 +64,7 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
   const [isLoading, setIsLoading] = useState(true);
   const [isCloneDialogOpen, setIsCloneDialogOpen] = useState(false);
   const [templateToClone, setTemplateToClone] = useState<PathwayTemplate | null>(null);
-  // Removed: const [phaseForInspector, setPhaseForInspector] = useState<Phase | undefined>(undefined);
-  // Removed: const [isInspectorOpen, setIsInspectorOpen] = useState(false);
+  const [isPhaseCreationDialogOpen, setIsPhaseCreationDialogOpen] = useState(false); // State for new phase dialog
 
   const form = useForm<z.infer<typeof templateBuilderSchema>>({
     resolver: zodResolver(templateBuilderSchema),
@@ -166,8 +165,6 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
 
   const handlePhaseUpdated = () => {
     fetchTemplateAndPhases(); // Re-fetch to update list and order indices
-    // Removed: setIsInspectorOpen(false);
-    // Removed: setPhaseForInspector(undefined);
   };
 
   const handleDeletePhase = async (phaseId: string) => {
@@ -254,25 +251,6 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
   const handleClone = (templateToClone: PathwayTemplate) => {
     setTemplateToClone(templateToClone);
     setIsCloneDialogOpen(true);
-  };
-
-  const handleOpenNewPhaseDialog = () => {
-    // Removed: setPhaseForInspector(undefined);
-    // Removed: setIsInspectorOpen(true);
-    // For now, this button will just trigger a toast as inline phase creation is not yet implemented.
-    toast.info("Adding new phases directly in the builder is coming soon!");
-  };
-
-  const handlePopOutToInspector = (phaseId: string) => {
-    // Removed: const phase = phases.find(p => p.id === phaseId);
-    // Removed: if (phase) {
-    // Removed:   setPhaseForInspector(phase);
-    // Removed:   setIsInspectorOpen(true);
-    // Removed: } else {
-    // Removed:   toast.error("Phase not found for inspector.");
-    // Removed: }
-    // For now, this button will just trigger a toast as inline phase editing is the new approach.
-    toast.info("Inline phase editing is the new approach. Pop-out inspector is no longer used.");
   };
 
   if (isLoading || isSessionLoading || (!templateId && !user)) {
@@ -612,7 +590,7 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
       <div className="flex justify-between items-center mt-8">
         <h2 className="text-headline-large font-bold text-foreground">Phases</h2>
         {templateId && canModifyTemplate && (
-          <Button onClick={handleOpenNewPhaseDialog} className="rounded-full px-6 py-3 text-label-large">
+          <Button onClick={() => setIsPhaseCreationDialogOpen(true)} className="rounded-full px-6 py-3 text-label-large">
             <PlusCircle className="mr-2 h-5 w-5" /> Add New Phase
           </Button>
         )}
@@ -625,7 +603,7 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
             This template currently has no phases. Add phases to define its workflow.
           </CardDescription>
           {templateId && canModifyTemplate && (
-            <Button onClick={handleOpenNewPhaseDialog} className="mt-6 rounded-full px-6 py-3 text-label-large">
+            <Button onClick={() => setIsPhaseCreationDialogOpen(true)} className="mt-6 rounded-full px-6 py-3 text-label-large">
               <PlusCircle className="mr-2 h-5 w-5" /> Add First Phase
             </Button>
           )}
@@ -636,13 +614,12 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
             {(provided) => (
               <div {...provided.droppableProps} ref={provided.innerRef} className="space-y-4">
                 {phases.map((phase: Phase, index: number) => (
-                  <PhaseCard
+                  <PhaseBuilderCard // Changed from PhaseCard
                     key={phase.id}
                     phase={phase}
                     index={index}
                     onDelete={handleDeletePhase}
                     onPhaseUpdated={handlePhaseUpdated}
-                    onPopOutToInspector={handlePopOutToInspector}
                     canModify={canModifyTemplate}
                   />
                 ))}
@@ -675,8 +652,17 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
         />
       )}
 
-      {/* Floating Inspector (for new phase creation or pop-out editing) */}
-      {/* Removed FloatingInspector JSX */}
+      {/* Phase Creation Dialog */}
+      {templateId && (
+        <PhaseCreationDialog
+          isOpen={isPhaseCreationDialogOpen}
+          onClose={() => setIsPhaseCreationDialogOpen(false)}
+          pathwayTemplateId={templateId}
+          onPhaseCreated={handlePhaseUpdated}
+          nextOrderIndex={phases.length}
+          canModify={canModifyTemplate}
+        />
+      )}
 
       {/* Footer Metadata */}
       {templateId && (
