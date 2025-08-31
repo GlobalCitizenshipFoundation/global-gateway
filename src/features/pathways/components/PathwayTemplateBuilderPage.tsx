@@ -111,7 +111,7 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
     resolver: zodResolver(inlinePhaseCreationSchema),
     defaultValues: {
       name: "",
-      type: undefined, // Default to undefined for Select to correctly trigger min(1)
+      type: "", // Initialize with empty string
     },
     mode: "onChange", // Ensure validation runs on change
   });
@@ -121,8 +121,8 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
     if (isAddingNewPhase) {
       inlinePhaseForm.reset({
         name: "",
-        type: undefined, // Reset to undefined
-      }); // Removed shouldValidate: true
+        type: "", // Reset to empty string
+      });
       inlinePhaseForm.trigger(); // Force validation after reset
     }
   }, [isAddingNewPhase, inlinePhaseForm]);
