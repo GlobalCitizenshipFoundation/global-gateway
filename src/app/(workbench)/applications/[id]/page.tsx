@@ -4,14 +4,14 @@ import { ApplicationDetail } from "@/features/applications/components/Applicatio
 import { getApplicationByIdAction } from "@/features/applications/actions";
 
 interface ApplicationDetailPageProps {
-  params: {
-    id: string;
-  };
+  params: Promise<{ id: string }>; // Adjusted type for Next.js type checker
   searchParams?: Record<string, string | string[] | undefined>;
 }
 
-export default async function ApplicationDetailPage({ params }: ApplicationDetailPageProps) {
-  const { id } = params;
+export default async function ApplicationDetailPage(props: ApplicationDetailPageProps) {
+  const { params } = props;
+  const resolvedParams = await params; // Await params to resolve proxy
+  const { id } = resolvedParams;
   // Fetch application to ensure user has read access before rendering the client component
   const application = await getApplicationByIdAction(id);
 

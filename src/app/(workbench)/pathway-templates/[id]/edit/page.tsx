@@ -4,14 +4,13 @@ import { PathwayTemplateForm } from "@/features/pathway-templates/components/Pat
 import { getTemplateByIdAction } from "@/features/pathway-templates/actions";
 
 interface EditPathwayTemplatePageProps {
-  params: {
-    id: string;
-  };
+  params: Promise<{ id: string }>; // Adjusted type for Next.js type checker
 }
 
-export default async function EditPathwayTemplatePage(props: any) {
-  const params = props.params as { id: string };
-  const { id } = params;
+export default async function EditPathwayTemplatePage(props: EditPathwayTemplatePageProps) {
+  const { params } = props;
+  const resolvedParams = await params; // Await params to resolve proxy
+  const { id } = resolvedParams;
 
   // Validate if 'id' is a UUID before proceeding to fetch
   const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);

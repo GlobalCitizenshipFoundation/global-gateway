@@ -6,13 +6,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { MailCheck, XCircle } from "lucide-react";
 
 interface RecommenderPageProps {
-  params: {
-    token: string;
-  };
+  params: Promise<{ token: string }>; // Adjusted type for Next.js type checker
 }
 
-export default async function RecommenderPage({ params }: RecommenderPageProps) {
-  const { token } = params;
+export default async function RecommenderPage(props: RecommenderPageProps) {
+  const { params } = props;
+  const resolvedParams = await params; // Await params to resolve proxy
+  const { token } = resolvedParams;
 
   const request = await getRecommendationRequestByTokenAction(token);
 

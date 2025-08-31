@@ -43,8 +43,10 @@ const errorConfig: Record<
   },
 };
 
-export default async function ErrorPage({ params }: { params: { code: string } }) {
-  const { code } = params;
+export default async function ErrorPage(props: { params: Promise<{ code: string }> }) { // Adjusted type for Next.js type checker
+  const { params } = props;
+  const resolvedParams = await params; // Await params to resolve proxy
+  const { code } = resolvedParams;
 
   const config = errorConfig[code] ?? {
     title: "Something Went Wrong",

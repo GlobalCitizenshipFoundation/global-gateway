@@ -4,14 +4,14 @@ import { PackageForm } from "@/features/packages/components/PackageForm";
 import { getPackageByIdAction } from "@/features/packages/actions";
 
 interface EditPackagePageProps {
-  params: {
-    id: string;
-  };
+  params: Promise<{ id: string }>; // Adjusted type for Next.js type checker
   searchParams?: Record<string, string | string[] | undefined>;
 }
 
-export default async function EditPackagePage({ params }: EditPackagePageProps) {
-  const { id } = params;
+export default async function EditPackagePage(props: EditPackagePageProps) {
+  const { params } = props;
+  const resolvedParams = await params; // Await params to resolve proxy
+  const { id } = resolvedParams;
   const pkg = await getPackageByIdAction(id);
 
   if (!pkg) {
