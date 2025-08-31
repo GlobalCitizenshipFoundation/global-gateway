@@ -104,7 +104,7 @@ export function PackageList() {
       <div className="flex flex-col md:flex-row justify-between items-center gap-4">
         <h1 className="text-display-small font-bold text-foreground">Packages</h1>
         <Button asChild className="rounded-full px-6 py-3 text-label-large">
-          <Link href="/workbench/packages/new">
+          <Link href="/packages/new"> {/* Corrected link */}
             <PlusCircle className="mr-2 h-5 w-5" /> Create New Package
           </Link>
         </Button>
@@ -139,7 +139,7 @@ export function PackageList() {
           </CardDescription>
           {!searchTerm && (
             <Button asChild className="mt-6 rounded-full px-6 py-3 text-label-large">
-              <Link href="/workbench/packages/new">
+              <Link href="/packages/new"> {/* Corrected link */}
                 <PlusCircle className="mr-2 h-5 w-5" /> Create Package Now
               </Link>
             </Button>
@@ -185,7 +185,7 @@ export function PackageList() {
                   </CardContent>
                   <div className="flex justify-end p-4 pt-0 space-x-2">
                     <Button asChild variant="outlined" size="icon" className="rounded-md">
-                      <Link href={`/workbench/packages/${pkg.id}`}>
+                      <Link href={`/packages/${pkg.id}`}> {/* Corrected link */}
                         <Edit className="h-4 w-4" />
                         <span className="sr-only">Edit</span>
                       </Link>

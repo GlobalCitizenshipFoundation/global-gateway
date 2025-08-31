@@ -29,13 +29,13 @@ export function ProgramDetail({ programId }: ProgramDetailProps) {
       const fetchedProgram = await getProgramByIdAction(programId);
       if (!fetchedProgram) {
         toast.error("Program not found or unauthorized.");
-        router.push("/workbench/programs");
+        router.push("/programs"); // Corrected redirect
         return;
       }
       setProgram(fetchedProgram);
     } catch (error: any) {
       toast.error(error.message || "Failed to load program details.");
-      router.push("/workbench/programs");
+      router.push("/programs"); // Corrected redirect
     } finally {
       setIsLoading(false);
     }
@@ -84,14 +84,14 @@ export function ProgramDetail({ programId }: ProgramDetailProps) {
     <div className="space-y-8">
       <div className="flex items-center justify-between">
         <Button asChild variant="ghost" className="rounded-full px-4 py-2 text-label-large">
-          <Link href="/workbench/programs">
+          <Link href="/programs"> {/* Corrected link */}
             <ArrowLeft className="mr-2 h-5 w-5" /> Back to Programs
           </Link>
         </Button>
         <div className="flex space-x-2">
           {canModifyProgram && (
             <Button asChild className="rounded-full px-6 py-3 text-label-large">
-              <Link href={`/workbench/programs/${currentProgram.id}/edit`}>
+              <Link href={`/programs/${currentProgram.id}/edit`}> {/* Corrected link */}
                 <Edit className="mr-2 h-5 w-5" /> Edit Program Details
               </Link>
             </Button>
@@ -127,7 +127,7 @@ export function ProgramDetail({ programId }: ProgramDetailProps) {
         <h2 className="text-headline-large font-bold text-foreground">Campaigns in this Program</h2>
         {canModifyProgram && (
           <Button asChild className="rounded-full px-6 py-3 text-label-large">
-            <Link href={`/workbench/campaigns/new?programId=${currentProgram.id}`}>
+            <Link href={`/campaigns/new?programId=${currentProgram.id}`}> {/* Corrected link */}
               <PlusCircle className="mr-2 h-5 w-5" /> Add New Campaign
             </Link>
           </Button>

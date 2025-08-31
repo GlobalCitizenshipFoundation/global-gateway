@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -25,6 +24,7 @@ import { getTemplatesAction } from "@/features/pathway-templates/actions";
 import { Campaign } from "@/features/campaigns/services/campaign-service";
 import { PathwayTemplate } from "@/features/pathway-templates/services/pathway-template-service";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { useRouter } from "next/navigation"; // Added this import
 
 const addItemFormSchema = z.object({
   itemType: z.enum(["campaign", "pathway_template"], { message: "Item type is required." }),
@@ -60,7 +60,7 @@ export function PackageDetail({ packageId }: PackageDetailProps) {
       const fetchedPackage = await getPackageByIdAction(packageId);
       if (!fetchedPackage) {
         toast.error("Package not found or unauthorized.");
-        router.push("/workbench/packages");
+        router.push("/packages");
         return;
       }
       setPkg(fetchedPackage);
@@ -71,7 +71,7 @@ export function PackageDetail({ packageId }: PackageDetailProps) {
       }
     } catch (error: any) {
       toast.error(error.message || "Failed to load package details.");
-      router.push("/workbench/packages");
+      router.push("/packages");
     } finally {
       setIsLoading(false);
     }
@@ -210,14 +210,14 @@ export function PackageDetail({ packageId }: PackageDetailProps) {
     <div className="space-y-8">
       <div className="flex items-center justify-between">
         <Button asChild variant="ghost" className="rounded-full px-4 py-2 text-label-large">
-          <Link href="/workbench/packages">
+          <Link href="/packages">
             <ArrowLeft className="mr-2 h-5 w-5" /> Back to Packages
           </Link>
         </Button>
         <div className="flex space-x-2">
           {canModifyPackage && (
             <Button asChild className="rounded-full px-6 py-3 text-label-large">
-              <Link href={`/workbench/packages/${currentPackage.id}/edit`}>
+              <Link href={`/packages/${currentPackage.id}/edit`}>
                 <Edit className="mr-2 h-5 w-5" /> Edit Package Details
               </Link>
             </Button>
@@ -373,7 +373,7 @@ export function PackageDetail({ packageId }: PackageDetailProps) {
                     <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isItemsLoading}>
                       <FormControl>
                         <SelectTrigger className="rounded-md">
-                          <SelectValue placeholder="Select item type" />
+                          <SelectValue placeholder={isItemsLoading ? "Loading items..." : `Select a ${selectedItemType}`} />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent className="rounded-md shadow-lg bg-card text-card-foreground border-border">
@@ -402,7 +402,7 @@ export function PackageDetail({ packageId }: PackageDetailProps) {
                           availableCampaigns.length === 0 ? (
                             <SelectItem value="no-campaigns" disabled className="text-body-medium text-muted-foreground">No campaigns available.</SelectItem>
                           ) : (
-                            availableCampaigns.map((campaign) => (
+                            availableCampaigns.map((campaign: Campaign) => (
                               <SelectItem key={campaign.id} value={campaign.id} className="text-body-medium hover:bg-muted hover:text-muted-foreground cursor-pointer">
                                 {campaign.name}
                               </SelectItem>
@@ -412,7 +412,7 @@ export function PackageDetail({ packageId }: PackageDetailProps) {
                           availableTemplates.length === 0 ? (
                             <SelectItem value="no-templates" disabled className="text-body-medium text-muted-foreground">No pathway templates available.</SelectItem>
                           ) : (
-                            availableTemplates.map((template) => (
+                            availableTemplates.map((template: PathwayTemplate) => (
                               <SelectItem key={template.id} value={template.id} className="text-body-medium hover:bg-muted hover:text-muted-foreground cursor-pointer">
                                 {template.name}
                               </SelectItem>

@@ -44,7 +44,7 @@ export function ApplicationDetail({ applicationId }: ApplicationDetailProps) {
       const fetchedApplication = await getApplicationByIdAction(applicationId);
       if (!fetchedApplication) {
         toast.error("Application not found or unauthorized.");
-        router.push("/workbench/applications/screening");
+        router.push("/applications/screening"); // Corrected redirect
         return;
       }
       setApplication(fetchedApplication);
@@ -62,7 +62,7 @@ export function ApplicationDetail({ applicationId }: ApplicationDetailProps) {
       }
     } catch (error: any) {
       toast.error(error.message || "Failed to load application details.");
-      router.push("/workbench/applications/screening");
+      router.push("/applications/screening"); // Corrected redirect
     } finally {
       setIsLoading(false);
     }
@@ -158,7 +158,7 @@ export function ApplicationDetail({ applicationId }: ApplicationDetailProps) {
     <div className="space-y-8">
       <div className="flex items-center justify-between">
         <Button asChild variant="ghost" className="rounded-full px-4 py-2 text-label-large">
-          <Link href="/workbench/applications/screening">
+          <Link href="/applications/screening"> {/* Corrected link */}
             <ArrowLeft className="mr-2 h-5 w-5" /> Back to Screening
           </Link>
         </Button>

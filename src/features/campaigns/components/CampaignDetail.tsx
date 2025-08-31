@@ -31,7 +31,7 @@ export function CampaignDetail({ campaignId }: CampaignDetailProps) {
   const [isPhaseFormOpen, setIsPhaseFormOpen] = useState(false);
   const [editingPhase, setEditingPhase] = useState<CampaignPhase | undefined>(undefined);
   const [isConfigDialogOpen, setIsConfigDialogOpen] = useState(false);
-  const [configuringPhase, setConfiguringPhase] = useState<CampaignPhase | undefined>(undefined);
+  const [configuringPhase, setConfiguringPhase, ] = useState<CampaignPhase | undefined>(undefined);
 
   const fetchCampaignAndPhases = async () => {
     setIsLoading(true);
@@ -39,7 +39,7 @@ export function CampaignDetail({ campaignId }: CampaignDetailProps) {
       const fetchedCampaign = await getCampaignByIdAction(campaignId);
       if (!fetchedCampaign) {
         toast.error("Campaign not found or unauthorized.");
-        router.push("/workbench/campaigns");
+        router.push("/campaigns"); // Corrected redirect
         return;
       }
       setCampaign(fetchedCampaign);
@@ -50,7 +50,7 @@ export function CampaignDetail({ campaignId }: CampaignDetailProps) {
       }
     } catch (error: any) {
       toast.error(error.message || "Failed to load campaign details.");
-      router.push("/workbench/campaigns");
+      router.push("/campaigns"); // Corrected redirect
     } finally {
       setIsLoading(false);
     }
@@ -170,14 +170,14 @@ export function CampaignDetail({ campaignId }: CampaignDetailProps) {
     <div className="space-y-8">
       <div className="flex items-center justify-between">
         <Button asChild variant="ghost" className="rounded-full px-4 py-2 text-label-large">
-          <Link href="/workbench/campaigns">
+          <Link href="/campaigns"> {/* Corrected link */}
             <ArrowLeft className="mr-2 h-5 w-5" /> Back to Campaigns
           </Link>
         </Button>
         <div className="flex space-x-2">
           {canModifyCampaign && (
             <Button asChild className="rounded-full px-6 py-3 text-label-large">
-              <Link href={`/workbench/campaigns/${currentCampaign.id}/edit`}>
+              <Link href={`/campaigns/${currentCampaign.id}/edit`}> {/* Corrected link */}
                 <Edit className="mr-2 h-5 w-5" /> Edit Campaign Details
               </Link>
             </Button>
@@ -219,7 +219,7 @@ export function CampaignDetail({ campaignId }: CampaignDetailProps) {
           {currentCampaign.pathway_template_id && currentCampaign.pathway_templates?.name && (
             <p className="flex items-center gap-1">
               <Workflow className="h-4 w-4" />
-              Template: <Link href={`/workbench/pathway-templates/${currentCampaign.pathway_template_id}`} className="text-primary hover:underline">
+              Template: <Link href={`/pathway-templates/${currentCampaign.pathway_template_id}`} className="text-primary hover:underline"> {/* Corrected link */}
                 {currentCampaign.pathway_templates.name}
               </Link>
             </p>

@@ -118,7 +118,7 @@ export function CommunicationTemplateList() {
       <div className="flex flex-col md:flex-row justify-between items-center gap-4">
         <h1 className="text-display-small font-bold text-foreground">Communication Templates</h1>
         <Button asChild className="rounded-full px-6 py-3 text-label-large">
-          <Link href="/workbench/communications/templates/new">
+          <Link href="/communications/templates/new"> {/* Corrected link */}
             <PlusCircle className="mr-2 h-5 w-5" /> Create New Template
           </Link>
         </Button>
@@ -166,7 +166,7 @@ export function CommunicationTemplateList() {
           </CardDescription>
           {!searchTerm && typeFilter === "all" && filter === "all" && (
             <Button asChild className="mt-6 rounded-full px-6 py-3 text-label-large">
-              <Link href="/workbench/communications/templates/new">
+              <Link href="/communications/templates/new"> {/* Corrected link */}
                 <PlusCircle className="mr-2 h-5 w-5" /> Create Template Now
               </Link>
             </Button>
@@ -214,7 +214,7 @@ export function CommunicationTemplateList() {
                   </CardContent>
                   <div className="flex justify-end p-4 pt-0 space-x-2">
                     <Button asChild variant="outlined" size="icon" className="rounded-md">
-                      <Link href={`/workbench/communications/templates/${template.id}/edit`}>
+                      <Link href={`/communications/templates/${template.id}/edit`}> {/* Corrected link */}
                         <Edit className="h-4 w-4" />
                         <span className="sr-only">Edit</span>
                       </Link>

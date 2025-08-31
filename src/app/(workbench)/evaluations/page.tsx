@@ -21,7 +21,7 @@ export default function EvaluationsDashboardPage() {
           <p className="mt-2">Coming soon: Metrics, reviewer workload, and assignment management tools.</p>
           <div className="mt-6">
             <Button asChild variant="tonal" className="rounded-md">
-              <Link href="/evaluations/my-reviews">Go to My Reviews</Link>
+              <Link href="/evaluations/my-reviews">Go to My Reviews</Link> {/* Corrected link */}
             </Button>
           </div>
         </CardContent>

@@ -235,7 +235,7 @@ export function ReviewerDashboard() {
                   </div>
                   <div className="flex flex-col space-y-2">
                     <Button asChild variant="outlined" size="sm" className="rounded-md text-label-small">
-                      <Link href={`/workbench/applications/${assignment.application_id}`}>
+                      <Link href={`/applications/${assignment.application_id}`}> {/* Corrected link */}
                         <Eye className="mr-1 h-3 w-3" /> View App
                       </Link>
                     </Button>
@@ -319,7 +319,7 @@ export function ReviewerDashboard() {
                   </div>
                   <div className="flex flex-col space-y-2">
                     <Button asChild variant="outlined" size="sm" className="rounded-md text-label-small">
-                      <Link href={`/workbench/applications/${review.application_id}`}>
+                      <Link href={`/applications/${review.application_id}`}> {/* Corrected link */}
                         <Eye className="mr-1 h-3 w-3" /> View App
                       </Link>
                     </Button>

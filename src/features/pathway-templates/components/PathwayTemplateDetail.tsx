@@ -41,7 +41,7 @@ export function PathwayTemplateDetail({ templateId }: PathwayTemplateDetailProps
       const fetchedTemplate = await getTemplateByIdAction(templateId);
       if (!fetchedTemplate) {
         toast.error("Pathway template not found or unauthorized.");
-        router.push("/workbench/pathway-templates");
+        router.push("/pathway-templates"); // Corrected redirect
         return;
       }
       setTemplate(fetchedTemplate);
@@ -52,7 +52,7 @@ export function PathwayTemplateDetail({ templateId }: PathwayTemplateDetailProps
       }
     } catch (error: any) {
       toast.error(error.message || "Failed to load template details.");
-      router.push("/workbench/pathway-templates");
+      router.push("/pathway-templates"); // Corrected redirect
     } finally {
       setIsLoading(false);
     }
@@ -172,7 +172,7 @@ export function PathwayTemplateDetail({ templateId }: PathwayTemplateDetailProps
     <div className="space-y-8">
       <div className="flex items-center justify-between">
         <Button asChild variant="ghost" className="rounded-full px-4 py-2 text-label-large">
-          <Link href="/workbench/pathway-templates">
+          <Link href="/pathway-templates"> {/* Corrected link */}
             <ArrowLeft className="mr-2 h-5 w-5" /> Back to Templates
           </Link>
         </Button>
@@ -182,7 +182,7 @@ export function PathwayTemplateDetail({ templateId }: PathwayTemplateDetailProps
           </Button>
           {canModifyTemplate && (
             <Button asChild className="rounded-full px-6 py-3 text-label-large">
-              <Link href={`/workbench/pathway-templates/${currentTemplate.id}/edit`}>
+              <Link href={`/pathway-templates/${currentTemplate.id}/edit`}> {/* Corrected link */}
                 <Edit className="mr-2 h-5 w-5" /> Edit Template Details
               </Link>
             </Button>

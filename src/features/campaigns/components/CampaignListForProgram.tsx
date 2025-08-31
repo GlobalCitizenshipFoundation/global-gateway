@@ -89,7 +89,7 @@ export function CampaignListForProgram({ programId, canModifyProgram }: Campaign
           </CardDescription>
           {canModifyProgram && (
             <Button asChild className="mt-6 rounded-full px-6 py-3 text-label-large">
-              <Link href={`/workbench/campaigns/new?programId=${programId}`}>
+              <Link href={`/campaigns/new?programId=${programId}`}> {/* Corrected link */}
                 <PlusCircle className="mr-2 h-5 w-5" /> Add Campaign Now
               </Link>
             </Button>
@@ -132,7 +132,7 @@ export function CampaignListForProgram({ programId, canModifyProgram }: Campaign
                     {campaign.pathway_template_id && campaign.pathway_templates?.name && (
                       <p className="text-body-small text-muted-foreground flex items-center gap-1 mt-2">
                         <Workflow className="h-4 w-4" />
-                        Template: <Link href={`/workbench/pathway-templates/${campaign.pathway_template_id}`} className="text-primary hover:underline">
+                        Template: <Link href={`/pathway-templates/${campaign.pathway_template_id}`} className="text-primary hover:underline"> {/* Corrected link */}
                           {campaign.pathway_templates.name}
                         </Link>
                       </p>
@@ -151,7 +151,7 @@ export function CampaignListForProgram({ programId, canModifyProgram }: Campaign
                   </CardContent>
                   <div className="flex justify-end p-4 pt-0 space-x-2">
                     <Button asChild variant="outlined" size="icon" className="rounded-md">
-                      <Link href={`/workbench/campaigns/${campaign.id}/edit`}>
+                      <Link href={`/campaigns/${campaign.id}/edit`}> {/* Corrected link */}
                         <Edit className="h-4 w-4" />
                         <span className="sr-only">Edit</span>
                       </Link>

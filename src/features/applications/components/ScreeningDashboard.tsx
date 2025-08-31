@@ -238,7 +238,7 @@ export function ScreeningDashboard() {
               </CardContent>
               <div className="flex justify-end p-4 pt-0 space-x-2">
                 <Button asChild variant="outlined" className="rounded-md text-label-large">
-                  <Link href={`/workbench/applications/${app.id}`}>View Application</Link>
+                  <Link href={`/applications/${app.id}`}>View Application</Link> {/* Corrected link */}
                 </Button>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>

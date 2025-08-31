@@ -111,7 +111,7 @@ export function Sidebar({ isCollapsed, toggleCollapsed, isMobile, isOpen, closeS
       items: [
         { href: "/desk", icon: LayoutDashboard, label: "Desk" },
         { href: "/programs", icon: Briefcase, label: "Programs" },
-        { href: "/packages", icon: Package, label: "Packages" }, // Added Packages link
+        { href: "/packages", icon: Package, label: "Packages" },
         { href: "/pathway-templates", icon: Workflow, label: "Pathway Templates" },
         { href: "/campaigns", icon: Briefcase, label: "Campaigns" },
         { href: "/applications/screening", icon: FileText, label: "Applications Screening" },
