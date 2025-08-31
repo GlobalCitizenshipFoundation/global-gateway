@@ -170,14 +170,14 @@ export function CampaignDetail({ campaignId }: CampaignDetailProps) {
     <div className="space-y-8">
       <div className="flex items-center justify-between">
         <Button asChild variant="ghost" className="rounded-full px-4 py-2 text-label-large">
-          <Link href="/campaigns"> {/* Corrected link */}
+          <Link href="/campaigns">
             <ArrowLeft className="mr-2 h-5 w-5" /> Back to Campaigns
           </Link>
         </Button>
         <div className="flex space-x-2">
           {canModifyCampaign && (
             <Button asChild className="rounded-full px-6 py-3 text-label-large">
-              <Link href={`/campaigns/${currentCampaign.id}/edit`}> {/* Corrected link */}
+              <Link href={`/campaigns/${currentCampaign.id}/edit`}>
                 <Edit className="mr-2 h-5 w-5" /> Edit Campaign Details
               </Link>
             </Button>
@@ -219,7 +219,7 @@ export function CampaignDetail({ campaignId }: CampaignDetailProps) {
           {currentCampaign.pathway_template_id && currentCampaign.pathway_templates?.name && (
             <p className="flex items-center gap-1">
               <Workflow className="h-4 w-4" />
-              Template: <Link href={`/pathways/${currentCampaign.pathway_template_id}`} className="text-primary hover:underline"> {/* Corrected link */}
+              Template: <Link href={`/pathways/${currentCampaign.pathway_template_id}`} className="text-primary hover:underline">
                 {currentCampaign.pathway_templates.name}
               </Link>
             </p>
@@ -254,7 +254,6 @@ export function CampaignDetail({ campaignId }: CampaignDetailProps) {
           {canModifyCampaign && (
             <Button onClick={() => { setEditingPhase(undefined); setIsPhaseFormOpen(true); }} className="mt-6 rounded-full px-6 py-3 text-label-large">
               <PlusCircle className="mr-2 h-5 w-5" /> Add First Phase
-            </Link>
             </Button>
           )}
         </Card>
@@ -303,7 +302,7 @@ export function CampaignDetail({ campaignId }: CampaignDetailProps) {
               phase={configuringPhase}
               campaignId={campaignId}
               onConfigSaved={handleConfigSaved}
-              onCancel={() => setIsConfigDialogOpen(false)} {/* Pass onCancel here */}
+              onCancel={() => setIsConfigDialogOpen(false)}
               canModify={canModifyCampaign}
             />
           )}
