@@ -1,0 +1,359 @@
+"use client";
+
+import React, { useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { CalendarIcon, Clock, UserCircle2, CheckCircle, XCircle, Video } from "lucide-react";
+import { useSession } from "@/context/SessionContextProvider";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { format, isSameDay, parseISO } from "date-fns";
+import { Calendar } from "@/components/ui/calendar";
+import { cn } from "@/lib/utils";
+import { HostAvailability, ScheduledInterview } from "../services/scheduling-service";
+import { getAvailableSlotsAction, bookInterviewAction, getScheduledInterviewsAction, cancelInterviewAction } from "../actions";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+
+const bookInterviewSchema = z.object({
+  selectedDate: z.date({ required_error: "Please select a date." }),
+  selectedSlotId: z.string().uuid("Please select a valid time slot."),
+});
+
+interface ApplicantInterviewSchedulerProps {
+  applicationId: string;
+  campaignPhaseId: string;
+}
+
+export function ApplicantInterviewScheduler({ applicationId, campaignPhaseId }: ApplicantInterviewSchedulerProps) {
+  const { user, isLoading: isSessionLoading } = useSession();
+  const [availableSlots, setAvailableSlots] = useState<HostAvailability[]>([]);
+  const [scheduledInterviews, setScheduledInterviews] = useState<ScheduledInterview[]>([]);
+  const [isLoadingSlots, setIsLoadingSlots] = useState(true);
+  const [isLoadingInterviews, setIsLoadingInterviews] = useState(true);
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
+
+  const form = useForm<z.infer<typeof bookInterviewSchema>>({
+    resolver: zodResolver(bookInterviewSchema),
+    defaultValues: {
+      selectedDate: new Date(),
+      selectedSlotId: "",
+    },
+  });
+
+  const fetchAvailableSlots = async (date: Date) => {
+    setIsLoadingSlots(true);
+    try {
+      const fetchedSlots = await getAvailableSlotsAction(campaignPhaseId, date.toISOString());
+      if (fetchedSlots) {
+        setAvailableSlots(fetchedSlots);
+      }
+    } catch (error: any) {
+      toast.error(error.message || "Failed to load available slots.");
+    } finally {
+      setIsLoadingSlots(false);
+    }
+  };
+
+  const fetchScheduledInterviews = async () => {
+    setIsLoadingInterviews(true);
+    try {
+      if (!user?.id) {
+        toast.error("User not authenticated.");
+        return;
+      }
+      const fetchedInterviews = await getScheduledInterviewsAction(applicationId, undefined, user.id);
+      if (fetchedInterviews) {
+        setScheduledInterviews(fetchedInterviews);
+      }
+    } catch (error: any) {
+      toast.error(error.message || "Failed to load your scheduled interviews.");
+    } finally {
+      setIsLoadingInterviews(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!isSessionLoading && user) {
+      fetchScheduledInterviews();
+      if (selectedDate) {
+        fetchAvailableSlots(selectedDate);
+      }
+    }
+  }, [user, isSessionLoading, applicationId, campaignPhaseId, selectedDate]);
+
+  const handleDateSelect = (date: Date | undefined) => {
+    setSelectedDate(date);
+    form.setValue("selectedDate", date || new Date());
+    form.setValue("selectedSlotId", ""); // Reset selected slot when date changes
+    if (date) {
+      fetchAvailableSlots(date);
+    } else {
+      setAvailableSlots([]);
+    }
+  };
+
+  const onSubmit = async (values: z.infer<typeof bookInterviewSchema>) => {
+    if (!user?.id) {
+      toast.error("You must be logged in to book an interview.");
+      return;
+    }
+
+    const selectedSlot = availableSlots.find(slot => slot.id === values.selectedSlotId);
+    if (!selectedSlot) {
+      toast.error("Selected slot not found or no longer available.");
+      return;
+    }
+
+    try {
+      const formData = new FormData();
+      formData.append("application_id", applicationId);
+      formData.append("campaign_phase_id", campaignPhaseId);
+      formData.append("host_id", selectedSlot.user_id);
+      formData.append("start_time", selectedSlot.start_time);
+      formData.append("end_time", selectedSlot.end_time);
+      // meeting_link can be generated by the server action
+
+      const result = await bookInterviewAction(formData);
+      if (result) {
+        toast.success("Interview booked successfully!");
+        form.reset({ selectedDate: values.selectedDate, selectedSlotId: "" });
+        fetchScheduledInterviews();
+        if (values.selectedDate) {
+          fetchAvailableSlots(values.selectedDate);
+        }
+      }
+    } catch (error: any) {
+      console.error("Interview booking error:", error);
+      toast.error(error.message || "Failed to book interview.");
+    }
+  };
+
+  const handleCancelInterview = async (interviewId: string) => {
+    try {
+      const success = await cancelInterviewAction(interviewId);
+      if (success) {
+        toast.success("Interview canceled successfully!");
+        fetchScheduledInterviews();
+        if (selectedDate) {
+          fetchAvailableSlots(selectedDate);
+        }
+      }
+    } catch (error: any) {
+      toast.error(error.message || "Failed to cancel interview.");
+    }
+  };
+
+  const getUserInitials = (firstName: string | null | undefined, lastName: string | null | undefined) => {
+    const firstInitial = firstName ? firstName.charAt(0) : '';
+    const lastInitial = lastName ? lastName.charAt(0) : '';
+    return `${firstInitial}${lastInitial}`.toUpperCase();
+  };
+
+  const hasBookedInterview = scheduledInterviews.some(interview => interview.status === 'booked');
+
+  return (
+    <div className="space-y-8">
+      <Card className="rounded-xl shadow-lg p-6">
+        <CardHeader className="p-0 mb-4">
+          <CardTitle className="text-headline-small font-bold text-foreground">Schedule Your Interview</CardTitle>
+          <CardDescription className="text-body-medium text-muted-foreground">
+            Select an available date and time slot for your interview.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="p-0">
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              <FormField
+                control={form.control}
+                name="selectedDate"
+                render={({ field }) => (
+                  <FormItem className="flex flex-col">
+                    <FormLabel className="text-label-large">Select Date</FormLabel>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <FormControl>
+                          <Button
+                            variant="outlined"
+                            className={cn(
+                              "w-full pl-3 text-left font-normal rounded-md",
+                              !field.value && "text-muted-foreground"
+                            )}
+                          >
+                            {field.value ? (
+                              format(field.value, "PPP")
+                            ) : (
+                              <span>Pick a date</span>
+                            )}
+                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                          </Button>
+                        </FormControl>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0 rounded-xl shadow-lg bg-card text-card-foreground border-border" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={field.value || undefined}
+                          onSelect={handleDateSelect}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="selectedSlotId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-label-large">Available Time Slots ({selectedDate ? format(selectedDate, "PPP") : "No Date Selected"})</FormLabel>
+                    <FormControl>
+                      <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto p-2 border rounded-md bg-muted/20">
+                        {isLoadingSlots ? (
+                          <div className="col-span-2 text-center text-body-medium text-muted-foreground">
+                            <Skeleton className="h-8 w-full mb-2" />
+                            <Skeleton className="h-8 w-full" />
+                          </div>
+                        ) : availableSlots.length === 0 ? (
+                          <p className="col-span-2 text-center text-body-medium text-muted-foreground">No slots available for this date.</p>
+                        ) : (
+                          availableSlots.map((slot) => (
+                            <Button
+                              key={slot.id}
+                              type="button"
+                              variant={field.value === slot.id ? "filled" : "outlined"}
+                              onClick={() => field.onChange(slot.id)}
+                              className="rounded-md text-label-large"
+                              disabled={hasBookedInterview} // Disable if an interview is already booked
+                            >
+                              <Clock className="h-4 w-4 mr-2" />
+                              {format(parseISO(slot.start_time), "p")} - {format(parseISO(slot.end_time), "p")}
+                            </Button>
+                          ))
+                        )}
+                      </div>
+                    </FormControl>
+                    <FormDescription className="text-body-small">
+                      Select a time slot. You can only book one interview at a time.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <Button type="submit" className="w-full rounded-md text-label-large" disabled={form.formState.isSubmitting || !form.watch("selectedSlotId") || hasBookedInterview}>
+                {form.formState.isSubmitting ? "Booking..." : "Book Interview"}
+                <CheckCircle className="ml-2 h-4 w-4" />
+              </Button>
+            </form>
+          </Form>
+        </CardContent>
+      </Card>
+
+      <Card className="rounded-xl shadow-lg p-6 mt-8">
+        <CardHeader className="p-0 mb-4">
+          <CardTitle className="text-headline-small font-bold text-foreground">Your Scheduled Interviews</CardTitle>
+          <CardDescription className="text-body-medium text-muted-foreground">
+            View and manage your upcoming and past interviews.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="p-0 space-y-4">
+          {isLoadingInterviews ? (
+            <div className="space-y-4">
+              {[...Array(2)].map((_, i) => (
+                <Skeleton key={i} className="h-24 w-full rounded-lg" />
+              ))}
+            </div>
+          ) : scheduledInterviews.length === 0 ? (
+            <p className="text-body-medium text-muted-foreground text-center">You have no scheduled interviews.</p>
+          ) : (
+            <div className="space-y-4 max-h-96 overflow-y-auto pr-2">
+              {scheduledInterviews.map((interview) => (
+                <Card key={interview.id} className="rounded-lg border p-4 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Avatar className="h-8 w-8">
+                        <AvatarImage src={interview.profiles?.avatar_url || ""} alt={interview.profiles?.first_name || "Host"} />
+                        <AvatarFallback className="bg-primary-container text-on-primary-container text-label-small">
+                          {getUserInitials(interview.profiles?.first_name, interview.profiles?.last_name)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <h4 className="text-title-medium font-medium text-foreground">
+                        Interview with {interview.profiles?.first_name} {interview.profiles?.last_name}
+                      </h4>
+                    </div>
+                    <span className={cn(
+                      "px-2 py-1 rounded-full text-body-small font-medium capitalize",
+                      interview.status === 'booked' && "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
+                      interview.status === 'canceled' && "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200",
+                      interview.status === 'completed' && "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
+                    )}>
+                      {interview.status}
+                    </span>
+                  </div>
+                  <p className="text-body-medium text-muted-foreground ml-10">
+                    For: {interview.applications?.campaigns?.name || "N/A Campaign"}
+                  </p>
+                  <p className="text-body-medium text-muted-foreground ml-10 flex items-center gap-1">
+                    <CalendarIcon className="h-4 w-4" />
+                    {format(parseISO(interview.start_time), "PPP p")} - {format(parseISO(interview.end_time), "p")}
+                  </p>
+                  {interview.meeting_link && (
+                    <p className="text-body-medium text-muted-foreground ml-10 flex items-center gap-1">
+                      <Video className="h-4 w-4" />
+                      Meeting Link: <a href={interview.meeting_link} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Join Meeting</a>
+                    </p>
+                  )}
+                  {interview.status === 'booked' && (
+                    <div className="flex justify-end mt-2">
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="destructive" size="sm" className="rounded-md text-label-small">
+                            <XCircle className="mr-1 h-3 w-3" /> Cancel Interview
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent className="rounded-xl shadow-lg bg-card text-card-foreground border-border">
+                          <AlertDialogHeader>
+                            <AlertDialogTitle className="text-headline-small">Confirm Cancellation</AlertDialogTitle>
+                            <AlertDialogDescription className="text-body-medium text-muted-foreground">
+                              Are you sure you want to cancel this interview? This action cannot be undone.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel className="rounded-md text-label-large">Keep</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => handleCancelInterview(interview.id)}
+                              className="rounded-md text-label-large bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            >
+                              Cancel
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
+                  )}
+                </Card>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}

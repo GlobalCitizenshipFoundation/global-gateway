@@ -18,7 +18,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { PlusCircle, Trash2, GripVertical } from "lucide-react";
+import { PlusCircle, Trash2, GripVertical, GitFork } from "lucide-react"; // Import GitFork for rules
 import { BaseConfigurableItem } from "../../services/pathway-template-service"; // Import BaseConfigurableItem
 import { updatePhaseConfigAction as defaultUpdatePhaseConfigAction } from "../../actions"; // Renamed default action
 
@@ -29,9 +29,18 @@ const decisionOutcomeSchema = z.object({
   isFinal: z.boolean(),
 });
 
+// Zod schema for a single decision rule
+const decisionRuleSchema = z.object({
+  id: z.string().uuid().optional(),
+  condition: z.string().min(1, "Condition is required."),
+  outcome: z.string().min(1, "Outcome is required."),
+  priority: z.coerce.number().min(1, "Priority must be at least 1.").optional(),
+});
+
 // Zod schema for the Decision Phase configuration
 const decisionPhaseConfigSchema = z.object({
   decisionOutcomes: z.array(decisionOutcomeSchema).min(1, "At least one decision outcome is required."),
+  decisionRules: z.array(decisionRuleSchema).optional(), // New field for decision rules
   associatedEmailTemplate: z.string().nullable().optional(),
   automatedNextStep: z.string().nullable().optional(),
 });
@@ -50,15 +59,22 @@ export function DecisionPhaseConfig({ phase, parentId, onConfigSaved, canModify,
     resolver: zodResolver(decisionPhaseConfigSchema),
     defaultValues: {
       decisionOutcomes: (phase.config?.decisionOutcomes as z.infer<typeof decisionOutcomeSchema>[]) || [],
+      decisionRules: (phase.config?.decisionRules as z.infer<typeof decisionRuleSchema>[]) || [], // Default for new field
       associatedEmailTemplate: phase.config?.associatedEmailTemplate || "",
       automatedNextStep: phase.config?.automatedNextStep || "",
     },
     mode: "onChange",
   });
 
-  const { fields, append, remove } = useFieldArray({
+  const { fields: outcomeFields, append: appendOutcome, remove: removeOutcome } = useFieldArray({
     control: form.control,
     name: "decisionOutcomes",
+    keyName: "arrayId",
+  });
+
+  const { fields: ruleFields, append: appendRule, remove: removeRule } = useFieldArray({
+    control: form.control,
+    name: "decisionRules",
     keyName: "arrayId",
   });
 
@@ -92,6 +108,8 @@ export function DecisionPhaseConfig({ phase, parentId, onConfigSaved, canModify,
     { value: "move_to_onboarding", label: "Move to Onboarding" },
     { value: "archive_application", label: "Archive Application" },
     { value: "send_follow_up", label: "Send Follow-up Email" },
+    { value: "initiate_sub_workflow", label: "Initiate Sub-Workflow" }, // New advanced action
+    { value: "update_crm", label: "Update External CRM" }, // New advanced action
   ];
 
   return (
@@ -106,10 +124,10 @@ export function DecisionPhaseConfig({ phase, parentId, onConfigSaved, canModify,
             <h3 className="text-title-large font-bold text-foreground mt-8">Decision Outcomes</h3>
             <p className="text-body-medium text-muted-foreground">Define the possible results for applications in this phase (e.g., Accepted, Rejected).</p>
 
-            {fields.length === 0 && (
+            {outcomeFields.length === 0 && (
               <p className="text-body-medium text-muted-foreground text-center">No decision outcomes added yet. Click "Add Outcome" to start.</p>
             )}
-            {fields.map((outcome, index) => (
+            {outcomeFields.map((outcome, index) => (
               <Card key={outcome.arrayId} className="rounded-lg border p-4 space-y-4 relative">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
@@ -122,7 +140,7 @@ export function DecisionPhaseConfig({ phase, parentId, onConfigSaved, canModify,
                       variant="destructive"
                       size="icon"
                       className="rounded-md"
-                      onClick={() => remove(index)}
+                      onClick={() => removeOutcome(index)}
                     >
                       <Trash2 className="h-4 w-4" />
                       <span className="sr-only">Remove Outcome</span>
@@ -169,10 +187,118 @@ export function DecisionPhaseConfig({ phase, parentId, onConfigSaved, canModify,
               <Button
                 type="button"
                 variant="outlined"
-                onClick={() => append({ id: crypto.randomUUID(), label: "", isFinal: false })}
+                onClick={() => appendOutcome({ id: crypto.randomUUID(), label: "", isFinal: false })}
                 className="w-full rounded-md text-label-large"
               >
                 <PlusCircle className="mr-2 h-5 w-5" /> Add Outcome
+              </Button>
+            )}
+
+            <h3 className="text-title-large font-bold text-foreground mt-8">Decision Rules</h3>
+            <p className="text-body-medium text-muted-foreground">Define rules to automatically set an outcome based on application data.</p>
+
+            {ruleFields.length === 0 && (
+              <p className="text-body-medium text-muted-foreground text-center">No decision rules added yet. Click "Add Rule" to start.</p>
+            )}
+            {ruleFields.map((rule, index) => (
+              <Card key={rule.arrayId} className="rounded-lg border p-4 space-y-4 relative">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <GitFork className="h-5 w-5 text-muted-foreground" />
+                    <h4 className="text-title-medium text-foreground">Rule #{index + 1}</h4>
+                  </div>
+                  {canModify && (
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="icon"
+                      className="rounded-md"
+                      onClick={() => removeRule(index)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      <span className="sr-only">Remove Rule</span>
+                    </Button>
+                  )}
+                </div>
+
+                <FormField
+                  control={form.control}
+                  name={`decisionRules.${index}.condition`}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-label-large">Condition</FormLabel>
+                      <FormControl>
+                        <Input {...field} placeholder="e.g., average_review_score > 4" className="rounded-md" disabled={!canModify} />
+                      </FormControl>
+                      <FormDescription className="text-body-small">
+                        Define a condition (e.g., `application.data.gpa &gt; 3.5` or `average_review_score &gt; 4`).
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name={`decisionRules.${index}.outcome`}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-label-large">Outcome</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value} disabled={!canModify}>
+                        <FormControl>
+                          <SelectTrigger className="rounded-md">
+                            <SelectValue placeholder="Select an outcome" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent className="rounded-md shadow-lg bg-card text-card-foreground border-border">
+                          {outcomeFields.length === 0 ? (
+                            <SelectItem value="no-outcomes" disabled className="text-body-medium text-muted-foreground">
+                              No outcomes defined.
+                            </SelectItem>
+                          ) : (
+                            outcomeFields.map((outcome) => (
+                              <SelectItem key={outcome.id} value={outcome.label} className="text-body-medium hover:bg-muted hover:text-muted-foreground cursor-pointer">
+                                {outcome.label}
+                              </SelectItem>
+                            ))
+                          )}
+                        </SelectContent>
+                      </Select>
+                      <FormDescription className="text-body-small">
+                        The outcome to apply if this condition is met.
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name={`decisionRules.${index}.priority`}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-label-large">Priority (Optional)</FormLabel>
+                      <FormControl>
+                        <Input type="number" {...field} placeholder="e.g., 1" className="rounded-md" disabled={!canModify} value={field.value ?? ""} />
+                      </FormControl>
+                      <FormDescription className="text-body-small">
+                        Rules with higher priority will be evaluated first.
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </Card>
+            ))}
+
+            {canModify && (
+              <Button
+                type="button"
+                variant="outlined"
+                onClick={() => appendRule({ id: crypto.randomUUID(), condition: "", outcome: "", priority: 1 })}
+                className="w-full rounded-md text-label-large"
+              >
+                <PlusCircle className="mr-2 h-5 w-5" /> Add Rule
               </Button>
             )}
 

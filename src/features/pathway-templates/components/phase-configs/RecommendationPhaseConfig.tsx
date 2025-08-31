@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch"; // Import Switch
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Form,
@@ -19,7 +20,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { PlusCircle, Trash2, GripVertical } from "lucide-react";
+import { PlusCircle, Trash2, GripVertical, Mail, Clock } from "lucide-react"; // Added Mail and Clock icons
 import { BaseConfigurableItem } from "../../services/pathway-template-service"; // Import BaseConfigurableItem
 import { updatePhaseConfigAction as defaultUpdatePhaseConfigAction } from "../../actions"; // Renamed default action
 
@@ -27,8 +28,10 @@ import { updatePhaseConfigAction as defaultUpdatePhaseConfigAction } from "../..
 const recommenderFieldSchema = z.object({
   id: z.string().uuid().optional(),
   label: z.string().min(1, "Field label is required."),
-  type: z.enum(["Text", "Email", "Phone", "Organization", "Relationship"]),
+  type: z.enum(["Text", "Email", "Phone", "Organization", "Relationship", "Rich Text Area", "Date", "Checkbox", "Radio Group"]), // Expanded types
   required: z.boolean(),
+  helperText: z.string().nullable().optional(), // Added helperText
+  options: z.array(z.string().min(1, "Option cannot be empty.")).optional(), // For Select, Radio, Checkbox
 });
 
 // Zod schema for the Recommendation Phase configuration
@@ -36,6 +39,8 @@ const recommendationPhaseConfigSchema = z.object({
   numRecommendersRequired: z.coerce.number().min(1, "At least 1 recommender is required.").max(5, "Cannot require more than 5 recommenders."),
   recommenderInformationFields: z.array(recommenderFieldSchema),
   reminderSchedule: z.string().min(1, "Reminder schedule is required."),
+  automatedRequestSending: z.boolean(), // New field for automated request sending
+  requestEmailTemplateId: z.string().uuid("Invalid email template ID.").nullable().optional(), // New field for email template
 });
 
 interface RecommendationPhaseConfigProps {
@@ -52,8 +57,15 @@ export function RecommendationPhaseConfig({ phase, parentId, onConfigSaved, canM
     resolver: zodResolver(recommendationPhaseConfigSchema),
     defaultValues: {
       numRecommendersRequired: phase.config?.numRecommendersRequired || 1,
-      recommenderInformationFields: (phase.config?.recommenderInformationFields as z.infer<typeof recommenderFieldSchema>[]) || [],
+      recommenderInformationFields: (phase.config?.recommenderInformationFields as z.infer<typeof recommenderFieldSchema>[])?.map(field => ({
+        ...field,
+        required: field.required ?? false,
+        helperText: field.helperText ?? null,
+        options: field.options ?? [],
+      })) || [],
       reminderSchedule: phase.config?.reminderSchedule || "weekly",
+      automatedRequestSending: phase.config?.automatedRequestSending ?? false, // Default to false
+      requestEmailTemplateId: phase.config?.requestEmailTemplateId || null,
     },
     mode: "onChange",
   });
@@ -89,6 +101,10 @@ export function RecommendationPhaseConfig({ phase, parentId, onConfigSaved, canM
     { value: "Phone", label: "Phone Number" },
     { value: "Organization", label: "Organization Name" },
     { value: "Relationship", label: "Relationship to Applicant" },
+    { value: "Rich Text Area", label: "Rich Text Area" }, // New type
+    { value: "Date", label: "Date Picker" }, // New type
+    { value: "Checkbox", label: "Checkbox" }, // New type
+    { value: "Radio Group", label: "Radio Group" }, // New type
   ];
 
   const reminderScheduleOptions = [
@@ -96,6 +112,12 @@ export function RecommendationPhaseConfig({ phase, parentId, onConfigSaved, canM
     { value: "daily", label: "Daily" },
     { value: "weekly", label: "Weekly" },
     { value: "bi-weekly", label: "Bi-Weekly" },
+  ];
+
+  // Placeholder for fetching actual email templates
+  const emailTemplateOptions = [
+    { id: "template_1", name: "Recommendation Request Email" },
+    { id: "template_2", name: "Recommendation Reminder Email" },
   ];
 
   return (
@@ -125,7 +147,7 @@ export function RecommendationPhaseConfig({ phase, parentId, onConfigSaved, canM
             />
 
             <h3 className="text-title-large font-bold text-foreground mt-8">Recommender Information Fields</h3>
-            <p className="text-body-medium text-muted-foreground">Define the information applicants must provide about their recommenders.</p>
+            <p className="text-body-medium text-muted-foreground">Define the information applicants must provide about their recommenders, and the fields recommenders will fill out.</p>
 
             {fields.length === 0 && (
               <p className="text-body-medium text-muted-foreground text-center">No recommender fields added yet. Click "Add Field" to start.</p>
@@ -190,6 +212,33 @@ export function RecommendationPhaseConfig({ phase, parentId, onConfigSaved, canM
                   )}
                 />
 
+                {/* Conditional fields for options */}
+                {(form.watch(`recommenderInformationFields.${index}.type`) === "Radio Group" || form.watch(`recommenderInformationFields.${index}.type`) === "Checkbox") && (
+                  <FormField
+                    control={form.control}
+                    name={`recommenderInformationFields.${index}.options`}
+                    render={({ field: optionsField }) => (
+                      <FormItem>
+                        <FormLabel className="text-label-large">Options (one per line)</FormLabel>
+                        <FormControl>
+                          <Textarea
+                            {...optionsField}
+                            value={optionsField.value?.join("\n") || ""}
+                            onChange={(e) => optionsField.onChange(e.target.value.split("\n").map(s => s.trim()).filter(Boolean))}
+                            placeholder="Option 1\nOption 2\nOption 3"
+                            className="resize-y min-h-[80px] rounded-md"
+                            disabled={!canModify}
+                          />
+                        </FormControl>
+                        <FormDescription className="text-body-small">
+                          Enter each option on a new line.
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
+
                 <FormField
                   control={form.control}
                   name={`recommenderInformationFields.${index}.required`}
@@ -202,8 +251,30 @@ export function RecommendationPhaseConfig({ phase, parentId, onConfigSaved, canM
                         </FormDescription>
                       </div>
                       <FormControl>
-                        <Input type="checkbox" checked={field.value} onChange={field.onChange} disabled={!canModify} />
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                          className="data-[state=checked]:bg-primary data-[state=unchecked]:bg-muted-foreground"
+                          disabled={!canModify}
+                        />
                       </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name={`recommenderInformationFields.${index}.helperText`}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-label-large">Helper Text (Optional)</FormLabel>
+                      <FormControl>
+                        <Input {...field} placeholder="e.g., Provide details about your relationship" className="rounded-md" disabled={!canModify} value={field.value || ""} />
+                      </FormControl>
+                      <FormDescription className="text-body-small">
+                        Optional: Short text to guide the recommender.
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -215,11 +286,70 @@ export function RecommendationPhaseConfig({ phase, parentId, onConfigSaved, canM
               <Button
                 type="button"
                 variant="outlined"
-                onClick={() => append({ id: crypto.randomUUID(), label: "", type: "Text", required: true })}
+                onClick={() => append({ id: crypto.randomUUID(), label: "", type: "Text", required: true, helperText: null, options: [] })}
                 className="w-full rounded-md text-label-large"
               >
                 <PlusCircle className="mr-2 h-5 w-5" /> Add Field
               </Button>
+            )}
+
+            <FormField
+              control={form.control}
+              name="automatedRequestSending"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                  <div className="space-y-0.5">
+                    <FormLabel className="text-label-large">Automated Request Sending</FormLabel>
+                    <FormDescription className="text-body-small">
+                      If enabled, recommendation requests will be automatically sent to recommenders.
+                    </FormDescription>
+                  </div>
+                  <FormControl>
+                    <Switch
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                      className="data-[state=checked]:bg-primary data-[state=unchecked]:bg-muted-foreground"
+                      disabled={!canModify}
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+
+            {form.watch("automatedRequestSending") && (
+              <FormField
+                control={form.control}
+                name="requestEmailTemplateId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-label-large">Request Email Template</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value || ""} disabled={!canModify}>
+                      <FormControl>
+                        <SelectTrigger className="rounded-md">
+                          <SelectValue placeholder="Select an email template" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent className="rounded-md shadow-lg bg-card text-card-foreground border-border">
+                        {emailTemplateOptions.length === 0 ? (
+                          <SelectItem value="no-templates" disabled className="text-body-medium text-muted-foreground">
+                            No email templates available.
+                          </SelectItem>
+                        ) : (
+                          emailTemplateOptions.map((template) => (
+                            <SelectItem key={template.id} value={template.id} className="text-body-medium hover:bg-muted hover:text-muted-foreground cursor-pointer">
+                              {template.name}
+                            </SelectItem>
+                          ))
+                        )}
+                      </SelectContent>
+                    </Select>
+                    <FormDescription className="text-body-small">
+                      The email template to use for sending recommendation requests.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             )}
 
             <FormField

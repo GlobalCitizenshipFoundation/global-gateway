@@ -15,6 +15,8 @@ import { ReviewerAssignment, Review } from "../services/evaluation-service";
 import { getReviewerAssignmentsAction, getReviewsAction, updateReviewerAssignmentAction } from "../actions";
 import { cn } from "@/lib/utils";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"; // Import Dialog components
+import { ReviewForm } from "./ReviewForm"; // Import ReviewForm
 
 export function ReviewerDashboard() {
   const { user, isLoading: isSessionLoading } = useSession();
@@ -24,6 +26,10 @@ export function ReviewerDashboard() {
   const [searchTerm, setSearchTerm] = useState("");
   const [assignmentStatusFilter, setAssignmentStatusFilter] = useState<string>("all");
   const [reviewStatusFilter, setReviewStatusFilter] = useState<string>("all");
+  const [isReviewFormOpen, setIsReviewFormOpen] = useState(false); // State for ReviewForm dialog
+  const [currentReviewForForm, setCurrentReviewForForm] = useState<Review | undefined>(undefined); // Review being edited
+  const [currentApplicationIdForReview, setCurrentApplicationIdForReview] = useState<string>(""); // Application ID for the review form
+  const [currentCampaignPhaseIdForReview, setCurrentCampaignPhaseIdForReview] = useState<string>(""); // Campaign Phase ID for the review form
 
   const fetchReviewerData = async () => {
     setIsLoading(true);
@@ -76,6 +82,21 @@ export function ReviewerDashboard() {
     } catch (error: any) {
       toast.error(error.message || "Failed to update assignment status.");
     }
+  };
+
+  const handleOpenReviewForm = (applicationId: string, campaignPhaseId: string, review?: Review) => {
+    setCurrentApplicationIdForReview(applicationId);
+    setCurrentCampaignPhaseIdForReview(campaignPhaseId);
+    setCurrentReviewForForm(review);
+    setIsReviewFormOpen(true);
+  };
+
+  const handleReviewSaved = () => {
+    setIsReviewFormOpen(false);
+    setCurrentReviewForForm(undefined);
+    setCurrentApplicationIdForReview("");
+    setCurrentCampaignPhaseIdForReview("");
+    fetchReviewerData(); // Re-fetch to update review status
   };
 
   const getAssignmentStatusIcon = (status: ReviewerAssignment['status']) => {
@@ -324,7 +345,12 @@ export function ReviewerDashboard() {
                       </Link>
                     </Button>
                     {review.status !== 'submitted' && (
-                      <Button variant="tonal" size="sm" className="rounded-md text-label-small">
+                      <Button
+                        variant="tonal"
+                        size="sm"
+                        className="rounded-md text-label-small"
+                        onClick={() => handleOpenReviewForm(review.application_id, review.campaign_phase_id, review)}
+                      >
                         <Edit className="mr-1 h-3 w-3" /> Start/Edit Review
                       </Button>
                     )}
@@ -335,6 +361,26 @@ export function ReviewerDashboard() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Review Form Dialog */}
+      {isReviewFormOpen && (
+        <Dialog open={isReviewFormOpen} onOpenChange={setIsReviewFormOpen}>
+          <DialogContent className="sm:max-w-[800px] rounded-xl shadow-lg bg-card text-card-foreground border-border max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="text-headline-small">
+                {currentReviewForForm ? "Edit Your Review" : "Submit Your Review"}
+              </DialogTitle>
+            </DialogHeader>
+            <ReviewForm
+              applicationId={currentApplicationIdForReview}
+              campaignPhaseId={currentCampaignPhaseIdForReview}
+              initialReview={currentReviewForForm}
+              onReviewSaved={handleReviewSaved}
+              onCancel={() => setIsReviewFormOpen(false)}
+            />
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }

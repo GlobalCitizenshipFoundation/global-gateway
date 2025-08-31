@@ -3,7 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Award, LayoutDashboard, Users, Workflow, Settings, Briefcase, FileText, Calendar, Mail, BarChart3, UserCircle2, ChevronLeft, ChevronRight, X, Package } from "lucide-react"; // Import Package icon
+import { Award, LayoutDashboard, Users, Workflow, Settings, Briefcase, FileText, Calendar, Mail, BarChart3, UserCircle2, ChevronLeft, ChevronRight, X, Package, CalendarCheck, Globe } from "lucide-react"; // Import Globe icon for Global Settings
 import { cn } from "@/lib/utils";
 import { useSession } from "@/context/SessionContextProvider";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -103,6 +103,7 @@ export function Sidebar({ isCollapsed, toggleCollapsed, isMobile, isOpen, closeS
         { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
         { href: "/users", icon: Users, label: "User Management" },
         { href: "/settings", icon: Settings, label: "System Settings" },
+        { href: "/settings/global", icon: Globe, label: "Global Settings" }, // New link
       ],
       roles: ['admin'],
     },
@@ -121,16 +122,17 @@ export function Sidebar({ isCollapsed, toggleCollapsed, isMobile, isOpen, closeS
         { href: "/communications/templates", icon: Mail, label: "Communication Templates" },
         { href: "/reports", icon: BarChart3, label: "Reports" },
       ],
-      roles: ['admin', 'coordinator', 'evaluator', 'screener', 'reviewer'],
+      roles: ['admin', 'coordinator', 'evaluator', 'screener', 'reviewer', 'host'],
     },
     {
       title: "Portal Tools",
       items: [
         { href: "/home", icon: LayoutDashboard, label: "Home" },
         { href: "/my-applications", icon: FileText, label: "My Applications" },
+        { href: "/my-interviews", icon: CalendarCheck, label: "My Interviews" },
         { href: "/profile", icon: UserCircle2, label: "Profile" },
       ],
-      roles: ['admin', 'coordinator', 'evaluator', 'screener', 'applicant', 'reviewer'],
+      roles: ['admin', 'coordinator', 'evaluator', 'screener', 'applicant', 'reviewer', 'host'],
     },
   ];
 

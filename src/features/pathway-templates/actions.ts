@@ -23,12 +23,19 @@ import {
   updatePhaseTask,
   deletePhaseTask,
 } from "./services/phase-task-service"; // Import new phase task service
+import {
+  PathwayTemplateVersion,
+  createTemplateVersion,
+  getTemplateVersions,
+  getTemplateVersion,
+  rollbackTemplateToVersion,
+} from "./services/template-versioning-service"; // Import new versioning service
 import { createClient } from "@/integrations/supabase/server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 // Helper function to check user authorization for a template
-async function authorizeTemplateAction(templateId: string, action: 'read' | 'write'): Promise<{ user: any; template: PathwayTemplate | null; isAdmin: boolean }> {
+async function authorizeTemplateAction(templateId: string, action: 'read' | 'write' | 'version'): Promise<{ user: any; template: PathwayTemplate | null; isAdmin: boolean }> {
   const supabase = await createClient();
   const { data: { user }, error: userError } = await supabase.auth.getUser();
 
@@ -56,7 +63,7 @@ async function authorizeTemplateAction(templateId: string, action: 'read' | 'wri
     if (!isAdmin && template && template.is_private && template.creator_id !== user.id) {
       throw new Error("UnauthorizedAccessToPrivateTemplate");
     }
-  } else if (action === 'write') { // For 'write' actions (update, delete, create phase, reorder phases)
+  } else if (action === 'write' || action === 'version') { // For 'write' actions (update, delete, create phase, reorder phases) and versioning
     if (!isAdmin && template && template.creator_id !== user.id) {
       throw new Error("UnauthorizedToModifyTemplate");
     }
@@ -253,7 +260,7 @@ export async function updatePhaseAction(phaseId: string, pathwayTemplateId: stri
       throw new Error("Phase name and type are required.");
     }
 
-    const updatedPhase = await updatePhase( // Use the service function
+    const updatedPhase = await updatePhaseService( // Use the service function (renamed import)
       phaseId,
       { name, type, description }
     );
@@ -307,14 +314,14 @@ export async function updatePhaseBranchingAction(phaseId: string, pathwayTemplat
 
     // Basic validation: Ensure selected phases exist within the same template
     if (next_phase_id_on_success) {
-      const successPhase = await getPhasesByPathwayTemplateId(pathwayTemplateId);
-      if (!successPhase?.some(p => p.id === next_phase_id_on_success)) {
+      const successPhases = await getPhasesByPathwayTemplateId(pathwayTemplateId);
+      if (!successPhases?.some(p => p.id === next_phase_id_on_success)) {
         throw new Error("Selected success phase does not exist in this template.");
       }
     }
     if (next_phase_id_on_failure) {
-      const failurePhase = await getPhasesByPathwayTemplateId(pathwayTemplateId);
-      if (!failurePhase?.some(p => p.id === next_phase_id_on_failure)) {
+      const failurePhases = await getPhasesByPathwayTemplateId(pathwayTemplateId);
+      if (!failurePhases?.some(p => p.id === next_phase_id_on_failure)) {
         throw new Error("Selected failure phase does not exist in this template.");
       }
     }
@@ -594,5 +601,130 @@ export async function deletePhaseTaskAction(taskId: string, phaseId: string): Pr
       redirect("/error/404");
     }
     throw error; // Re-throw for client-side toast
+  }
+}
+
+export async function clonePathwayTemplateAction(templateId: string, newName: string): Promise<PathwayTemplate | null> {
+  const supabase = await createClient();
+  const { data: { user }, error: userError } = await supabase.auth.getUser();
+
+  if (userError || !user) {
+    redirect("/login");
+  }
+
+  // Authorization check: User must have read access to the original template to clone it.
+  // The service function will handle fetching the template, so we just need to ensure the user is authenticated.
+  // The RLS on pathway_templates will ensure they can only read public or their own templates.
+  // If they are an admin, they can clone any template.
+  try {
+    await authorizeTemplateAction(templateId, 'read');
+  } catch (error: any) {
+    console.error("Error in clonePathwayTemplateAction authorization:", error.message);
+    if (error.message === "UnauthorizedAccessToPrivateTemplate") {
+      redirect("/error/403");
+    } else if (error.message === "TemplateNotFound") {
+      redirect("/error/404");
+    } else if (error.message === "FailedToRetrieveTemplate") {
+      redirect("/error/500");
+    }
+    redirect("/login"); // Fallback for unauthenticated or other critical errors
+  }
+
+  if (!newName) {
+    throw new Error("New template name is required.");
+  }
+
+  try {
+    const clonedTemplate = await clonePathwayTemplate( // Use the service function
+      templateId,
+      newName,
+      user.id // The new template will be owned by the current user
+    );
+    revalidatePath("/pathway-templates");
+    return clonedTemplate;
+  } catch (error: any) {
+    console.error("Error in clonePathwayTemplateAction:", error.message);
+    throw error; // Re-throw to be caught by client-side toast
+  }
+}
+
+// --- Template Versioning Server Actions ---
+
+export async function createTemplateVersionAction(pathwayTemplateId: string): Promise<PathwayTemplateVersion | null> {
+  try {
+    const { user, template } = await authorizeTemplateAction(pathwayTemplateId, 'version');
+    if (!template) {
+      throw new Error("TemplateNotFound");
+    }
+
+    const phases = await getPhasesByPathwayTemplateId(pathwayTemplateId);
+    const snapshot = { template, phases: phases || [] };
+
+    const newVersion = await createTemplateVersion(pathwayTemplateId, snapshot, user.id);
+
+    revalidatePath(`/pathway-templates/${pathwayTemplateId}`);
+    return newVersion;
+  } catch (error: any) {
+    console.error("Error in createTemplateVersionAction:", error.message);
+    if (error.message === "UnauthorizedToModifyTemplate") {
+      redirect("/error/403");
+    } else if (error.message === "TemplateNotFound") {
+      redirect("/error/404");
+    }
+    throw error;
+  }
+}
+
+export async function getTemplateVersionsAction(pathwayTemplateId: string): Promise<PathwayTemplateVersion[] | null> {
+  try {
+    await authorizeTemplateAction(pathwayTemplateId, 'read');
+    const versions = await getTemplateVersions(pathwayTemplateId);
+    return versions;
+  } catch (error: any) {
+    console.error("Error in getTemplateVersionsAction:", error.message);
+    if (error.message === "UnauthorizedAccessToPrivateTemplate") {
+      redirect("/error/403");
+    } else if (error.message === "TemplateNotFound") {
+      redirect("/error/404");
+    }
+    throw error;
+  }
+}
+
+export async function getTemplateVersionAction(versionId: string): Promise<PathwayTemplateVersion | null> {
+  try {
+    const version = await getTemplateVersion(versionId);
+    if (!version) {
+      throw new Error("TemplateVersionNotFound");
+    }
+    await authorizeTemplateAction(version.pathway_template_id, 'read'); // Authorize access to parent template
+    return version;
+  } catch (error: any) {
+    console.error("Error in getTemplateVersionAction:", error.message);
+    if (error.message === "UnauthorizedAccessToPrivateTemplate") {
+      redirect("/error/403");
+    } else if (error.message === "TemplateVersionNotFound") {
+      redirect("/error/404");
+    }
+    throw error;
+  }
+}
+
+export async function rollbackTemplateToVersionAction(pathwayTemplateId: string, versionId: string): Promise<PathwayTemplate | null> {
+  try {
+    await authorizeTemplateAction(pathwayTemplateId, 'write'); // User must have write access to the template
+
+    const rolledBackTemplate = await rollbackTemplateToVersion(pathwayTemplateId, versionId);
+
+    revalidatePath(`/pathway-templates/${pathwayTemplateId}`);
+    return rolledBackTemplate;
+  } catch (error: any) {
+    console.error("Error in rollbackTemplateToVersionAction:", error.message);
+    if (error.message === "UnauthorizedToModifyTemplate") {
+      redirect("/error/403");
+    } else if (error.message === "TemplateNotFound" || error.message === "TemplateVersionNotFound") {
+      redirect("/error/404");
+    }
+    throw error;
   }
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useFieldArray } from "react-hook-form"; // Import useFieldArray
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { toast } from "sonner";
@@ -21,8 +21,16 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BaseConfigurableItem } from "../../services/pathway-template-service";
 import { updatePhaseConfigAction as defaultUpdatePhaseConfigAction } from "../../actions";
-import { getCommunicationTemplatesAction, CommunicationTemplate } from "@/features/communications"; // Updated import to barrel file
+import { getCommunicationTemplatesAction, CommunicationTemplate } from "@/features/communications";
 import { Skeleton } from "@/components/ui/skeleton";
+import { PlusCircle, Trash2, GitFork } from "lucide-react"; // Import GitFork for conditional logic
+
+// Zod schema for a single dynamic content block
+const dynamicContentBlockSchema = z.object({
+  id: z.string().uuid().optional(),
+  condition: z.string().min(1, "Condition is required for dynamic block."),
+  content: z.string().min(1, "Content is required for dynamic block."),
+});
 
 // Zod schema for the Email Phase configuration
 const emailPhaseConfigSchema = z.object({
@@ -31,6 +39,7 @@ const emailPhaseConfigSchema = z.object({
   recipientRoles: z.array(z.string()).min(1, "At least one recipient role is required."),
   triggerEvent: z.string().min(1, "A trigger event is required."),
   selectedTemplateId: z.string().uuid("Invalid template ID.").nullable().optional(),
+  dynamicContentBlocks: z.array(dynamicContentBlockSchema).optional(), // New field for dynamic content
 });
 
 interface EmailPhaseConfigProps {
@@ -53,8 +62,15 @@ export function EmailPhaseConfig({ phase, parentId, onConfigSaved, canModify, up
       recipientRoles: phase.config?.recipientRoles || [],
       triggerEvent: phase.config?.triggerEvent || "",
       selectedTemplateId: phase.config?.selectedTemplateId || null,
+      dynamicContentBlocks: (phase.config?.dynamicContentBlocks as z.infer<typeof dynamicContentBlockSchema>[]) || [],
     },
     mode: "onChange",
+  });
+
+  const { fields, append, remove } = useFieldArray({
+    control: form.control,
+    name: "dynamicContentBlocks",
+    keyName: "arrayId",
   });
 
   useEffect(() => {
@@ -118,6 +134,7 @@ export function EmailPhaseConfig({ phase, parentId, onConfigSaved, canModify, up
     { value: "application_submitted", label: "Application Submitted" },
     { value: "phase_complete", label: "Phase Completed" },
     { value: "decision_made", label: "Decision Made" },
+    { value: "task_completed", label: "Task Completed" }, // New trigger
     { value: "custom_event", label: "Custom Event" },
   ];
 
@@ -205,6 +222,85 @@ export function EmailPhaseConfig({ phase, parentId, onConfigSaved, canModify, up
                 </FormItem>
               )}
             />
+
+            <h3 className="text-title-large font-bold text-foreground mt-8">Dynamic Content Blocks</h3>
+            <p className="text-body-medium text-muted-foreground">Add conditional content that appears based on specific criteria.</p>
+
+            {fields.length === 0 && (
+              <p className="text-body-medium text-muted-foreground text-center">No dynamic content blocks added yet.</p>
+            )}
+            {fields.map((block, index) => (
+              <Card key={block.arrayId} className="rounded-lg border p-4 space-y-4 relative">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <GitFork className="h-5 w-5 text-muted-foreground" />
+                    <h4 className="text-title-medium text-foreground">Conditional Block #{index + 1}</h4>
+                  </div>
+                  {canModify && (
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="icon"
+                      className="rounded-md"
+                      onClick={() => remove(index)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      <span className="sr-only">Remove Block</span>
+                    </Button>
+                  )}
+                </div>
+
+                <FormField
+                  control={form.control}
+                  name={`dynamicContentBlocks.${index}.condition`}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-label-large">Condition</FormLabel>
+                      <FormControl>
+                        <Input {...field} placeholder="e.g., application.status === 'accepted'" className="rounded-md" disabled={!canModify} />
+                      </FormControl>
+                      <FormDescription className="text-body-small">
+                        Define a condition (e.g., `application.status === 'accepted'`) for this content to appear.
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name={`dynamicContentBlocks.${index}.content`}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-label-large">Content</FormLabel>
+                      <FormControl>
+                        <Textarea
+                          {...field}
+                          placeholder="e.g., Congratulations! You have been accepted into the program."
+                          className="resize-y min-h-[100px] rounded-md"
+                          disabled={!canModify}
+                        />
+                      </FormControl>
+                      <FormDescription className="text-body-small">
+                        The content to display if the condition is met. Supports dynamic placeholders.
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </Card>
+            ))}
+
+            {canModify && (
+              <Button
+                type="button"
+                variant="outlined"
+                onClick={() => append({ id: crypto.randomUUID(), condition: "", content: "" })}
+                className="w-full rounded-md text-label-large"
+              >
+                <PlusCircle className="mr-2 h-5 w-5" /> Add Dynamic Content Block
+              </Button>
+            )}
 
             <FormField
               control={form.control}

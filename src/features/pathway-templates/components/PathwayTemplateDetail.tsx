@@ -5,19 +5,21 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, PlusCircle, Workflow, Lock, Globe, Edit, Copy } from "lucide-react"; // Import Copy icon
+import { ArrowLeft, PlusCircle, Workflow, Lock, Globe, Edit, Copy, Save } from "lucide-react"; // Import Save icon
 import { PathwayTemplate, Phase } from "../services/pathway-template-service";
 import { toast } from "sonner";
 import { useSession } from "@/context/SessionContextProvider";
 import { Skeleton } from "@/components/ui/skeleton";
-import { getTemplateByIdAction, getPhasesAction, reorderPhasesAction, deletePhaseAction } from "../actions";
+import { getTemplateByIdAction, getPhasesAction, reorderPhasesAction, deletePhaseAction, createTemplateVersionAction } from "../actions"; // Import createTemplateVersionAction
 import { PhaseFormDialog } from "./PhaseFormDialog";
-import { WorkflowCanvas } from "./WorkflowCanvas"; // Import WorkflowCanvas
+import { WorkflowCanvas } from "./WorkflowCanvas";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { PhaseConfigurationPanel } from "./PhaseConfigurationPanel";
 import { CloneTemplateDialog } from "./CloneTemplateDialog";
-import { BranchingConfigDialog } from "./BranchingConfigDialog"; // Import BranchingConfigDialog
+import { BranchingConfigDialog } from "./BranchingConfigDialog";
+import { TemplateVersionHistory } from "./TemplateVersionHistory"; // Import TemplateVersionHistory
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"; // Import Tabs components
 
 interface PathwayTemplateDetailProps {
   templateId: string;
@@ -34,8 +36,8 @@ export function PathwayTemplateDetail({ templateId }: PathwayTemplateDetailProps
   const [isConfigDialogOpen, setIsConfigDialogOpen] = useState(false);
   const [configuringPhase, setConfiguringPhase, ] = useState<Phase | undefined>(undefined);
   const [isCloneDialogOpen, setIsCloneDialogOpen] = useState(false);
-  const [isBranchingDialogOpen, setIsBranchingDialogOpen] = useState(false); // State for branching dialog
-  const [branchingPhase, setBranchingPhase] = useState<Phase | undefined>(undefined); // State for phase being branched
+  const [isBranchingDialogOpen, setIsBranchingDialogOpen] = useState(false);
+  const [branchingPhase, setBranchingPhase] = useState<Phase | undefined>(undefined);
 
   const fetchTemplateAndPhases = async () => {
     setIsLoading(true);
@@ -43,7 +45,7 @@ export function PathwayTemplateDetail({ templateId }: PathwayTemplateDetailProps
       const fetchedTemplate = await getTemplateByIdAction(templateId);
       if (!fetchedTemplate) {
         toast.error("Pathway template not found or unauthorized.");
-        router.push("/pathway-templates"); // Corrected redirect
+        router.push("/pathway-templates");
         return;
       }
       setTemplate(fetchedTemplate);
@@ -54,7 +56,7 @@ export function PathwayTemplateDetail({ templateId }: PathwayTemplateDetailProps
       }
     } catch (error: any) {
       toast.error(error.message || "Failed to load template details.");
-      router.push("/pathway-templates"); // Corrected redirect
+      router.push("/pathway-templates");
     } finally {
       setIsLoading(false);
     }
@@ -129,6 +131,18 @@ export function PathwayTemplateDetail({ templateId }: PathwayTemplateDetailProps
     }
   };
 
+  const handleSaveNewVersion = async () => {
+    try {
+      const newVersion = await createTemplateVersionAction(templateId);
+      if (newVersion) {
+        toast.success(`New version ${newVersion.version_number} created successfully!`);
+        // No need to re-fetch template/phases, just versions will update
+      }
+    } catch (error: any) {
+      toast.error(error.message || "Failed to save new version.");
+    }
+  };
+
   if (isLoading || !template) {
     return (
       <div className="space-y-8">
@@ -167,7 +181,7 @@ export function PathwayTemplateDetail({ templateId }: PathwayTemplateDetailProps
     <div className="space-y-8">
       <div className="flex items-center justify-between">
         <Button asChild variant="ghost" className="rounded-full px-4 py-2 text-label-large">
-          <Link href="/pathway-templates"> {/* Corrected link */}
+          <Link href="/pathway-templates">
             <ArrowLeft className="mr-2 h-5 w-5" /> Back to Templates
           </Link>
         </Button>
@@ -176,8 +190,13 @@ export function PathwayTemplateDetail({ templateId }: PathwayTemplateDetailProps
             <Copy className="mr-2 h-5 w-5" /> Clone Template
           </Button>
           {canModifyTemplate && (
+            <Button variant="tonal" className="rounded-full px-6 py-3 text-label-large" onClick={handleSaveNewVersion}>
+              <Save className="mr-2 h-5 w-5" /> Save New Version
+            </Button>
+          )}
+          {canModifyTemplate && (
             <Button asChild className="rounded-full px-6 py-3 text-label-large">
-              <Link href={`/pathway-templates/${currentTemplate.id}/edit`}> {/* Corrected link */}
+              <Link href={`/pathway-templates/${currentTemplate.id}/edit`}>
                 <Edit className="mr-2 h-5 w-5" /> Edit Template Details
               </Link>
             </Button>
@@ -221,38 +240,59 @@ export function PathwayTemplateDetail({ templateId }: PathwayTemplateDetailProps
         </CardContent>
       </Card>
 
-      <div className="flex justify-between items-center mt-8">
-        <h2 className="text-headline-large font-bold text-foreground">Phases</h2>
-        {canModifyTemplate && (
-          <Button onClick={() => { setEditingPhase(undefined); setIsPhaseFormOpen(true); }} className="rounded-full px-6 py-3 text-label-large">
-            <PlusCircle className="mr-2 h-5 w-5" /> Add New Phase
-          </Button>
-        )}
-      </div>
+      <Tabs defaultValue="workflow" className="w-full">
+        <TabsList className="grid w-full grid-cols-2 h-auto rounded-xl shadow-md bg-card text-card-foreground border-border p-1">
+          <TabsTrigger value="workflow" className="text-label-large data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm rounded-lg">
+            Workflow
+          </TabsTrigger>
+          <TabsTrigger value="history" className="text-label-large data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm rounded-lg">
+            Version History
+          </TabsTrigger>
+        </TabsList>
+        <div className="mt-6">
+          <TabsContent value="workflow">
+            <div className="flex justify-between items-center mb-8">
+              <h2 className="text-headline-large font-bold text-foreground">Phases</h2>
+              {canModifyTemplate && (
+                <Button onClick={() => { setEditingPhase(undefined); setIsPhaseFormOpen(true); }} className="rounded-full px-6 py-3 text-label-large">
+                  <PlusCircle className="mr-2 h-5 w-5" /> Add New Phase
+                </Button>
+              )}
+            </div>
 
-      {phases.length === 0 ? (
-        <Card className="rounded-xl shadow-md p-8 text-center">
-          <CardTitle className="text-headline-small text-muted-foreground mb-4">No Phases Defined</CardTitle>
-          <CardDescription className="text-body-medium text-muted-foreground">
-            Start by adding phases to build out the workflow for this pathway template.
-          </CardDescription>
-          {canModifyTemplate && (
-            <Button onClick={() => { setEditingPhase(undefined); setIsPhaseFormOpen(true); }} className="mt-6 rounded-full px-6 py-3 text-label-large">
-              <PlusCircle className="mr-2 h-5 w-5" /> Add First Phase
-            </Button>
-          )}
-        </Card>
-      ) : (
-        <WorkflowCanvas
-          phases={phases}
-          onReorder={handleReorderPhases}
-          onEditPhase={handleEditPhase}
-          onDeletePhase={handleDeletePhase}
-          onConfigurePhase={handleConfigurePhase}
-          onConfigureBranching={handleBranchingConfig}
-          canModify={canModifyTemplate}
-        />
-      )}
+            {phases.length === 0 ? (
+              <Card className="rounded-xl shadow-md p-8 text-center">
+                <CardTitle className="text-headline-small text-muted-foreground mb-4">No Phases Defined</CardTitle>
+                <CardDescription className="text-body-medium text-muted-foreground">
+                  Start by adding phases to build out the workflow for this pathway template.
+                </CardDescription>
+                {canModifyTemplate && (
+                  <Button onClick={() => { setEditingPhase(undefined); setIsPhaseFormOpen(true); }} className="mt-6 rounded-full px-6 py-3 text-label-large">
+                    <PlusCircle className="mr-2 h-5 w-5" /> Add First Phase
+                  </Button>
+                )}
+              </Card>
+            ) : (
+              <WorkflowCanvas
+                phases={phases}
+                onReorder={handleReorderPhases}
+                onEditPhase={handleEditPhase}
+                onDeletePhase={handleDeletePhase}
+                onConfigurePhase={handleConfigurePhase}
+                onConfigureBranching={handleBranchingConfig}
+                canModify={canModifyTemplate}
+              />
+            )}
+          </TabsContent>
+          <TabsContent value="history">
+            <TemplateVersionHistory
+              pathwayTemplateId={templateId}
+              canModify={canModifyTemplate}
+              onTemplateRolledBack={fetchTemplateAndPhases}
+            />
+          </TabsContent>
+        </div>
+      </Tabs>
 
       <PhaseFormDialog
         isOpen={isPhaseFormOpen}

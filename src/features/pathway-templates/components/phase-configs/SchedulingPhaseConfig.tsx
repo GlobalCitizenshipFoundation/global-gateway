@@ -26,6 +26,7 @@ const schedulingPhaseConfigSchema = z.object({
   interviewDuration: z.coerce.number().min(5, "Duration must be at least 5 minutes.").max(240, "Duration cannot exceed 240 minutes."),
   bufferTime: z.coerce.number().min(0, "Buffer time cannot be negative.").max(60, "Buffer time cannot exceed 60 minutes."),
   hostSelection: z.string().min(1, "At least one host must be selected."),
+  automatedMeetingLink: z.string().url("Invalid URL format.").nullable().optional(), // New field for automated meeting link
 });
 
 interface SchedulingPhaseConfigProps {
@@ -44,6 +45,7 @@ export function SchedulingPhaseConfig({ phase, parentId, onConfigSaved, canModif
       interviewDuration: phase.config?.interviewDuration || 30,
       bufferTime: phase.config?.bufferTime || 15,
       hostSelection: phase.config?.hostSelection || "",
+      automatedMeetingLink: phase.config?.automatedMeetingLink || null, // Default to null
     },
     mode: "onChange",
   });
@@ -139,6 +141,23 @@ export function SchedulingPhaseConfig({ phase, parentId, onConfigSaved, canModif
                   </Select>
                   <FormDescription className="text-body-small">
                     Choose the pool of internal users who can host interviews for this phase.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="automatedMeetingLink"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-label-large">Automated Meeting Link (Optional)</FormLabel>
+                  <FormControl>
+                    <Input {...field} placeholder="e.g., https://zoom.us/j/your-meeting-id" className="rounded-md" disabled={!canModify} value={field.value || ""} />
+                  </FormControl>
+                  <FormDescription className="text-body-small">
+                    Provide a base URL for automated meeting links. If left empty, a generic link will be generated.
                   </FormDescription>
                   <FormMessage />
                 </FormItem>

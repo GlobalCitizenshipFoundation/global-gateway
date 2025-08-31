@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, UserCircle2, Briefcase, Workflow, CalendarDays, CheckCircle, XCircle, Clock, FileText, Info, Award, Edit, PlusCircle } from "lucide-react"; // Added PlusCircle
+import { ArrowLeft, UserCircle2, Briefcase, Workflow, CalendarDays, CheckCircle, XCircle, Clock, FileText, Info, Award, Edit, PlusCircle, MailCheck } from "lucide-react";
 import { Application } from "../services/application-service";
 import { getApplicationByIdAction, updateApplicationAction } from "../actions";
 import { toast } from "sonner";
@@ -16,13 +16,28 @@ import { Badge } from "@/components/ui/badge";
 import { ChecklistItemFormType, ScreeningChecklist } from "./ScreeningChecklist";
 import { CollaborativeNotes } from "./CollaborativeNotes";
 import { WorkflowParticipation } from "./WorkflowParticipation";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"; // Added DialogDescription, DialogFooter
 import { ReviewForm } from "@/features/evaluations/components/ReviewForm";
-import { getReviewsAction, getReviewerAssignmentsAction, getDecisionsAction } from "@/features/evaluations/actions"; // Added getDecisionsAction
+import { getReviewsAction, getReviewerAssignmentsAction, getDecisionsAction } from "@/features/evaluations/actions";
 import { Review, ReviewerAssignment, Decision } from "@/features/evaluations/services/evaluation-service";
-import { DecisionForm } from "@/features/evaluations/components/DecisionForm"; // Import DecisionForm
-import { DecisionList } from "@/features/evaluations/components/DecisionList"; // Import DecisionList
-import { ReviewerAssignmentPanel } from "./ReviewerAssignmentPanel"; // Import ReviewerAssignmentPanel
+import { DecisionForm } from "@/features/evaluations/components/DecisionForm";
+import { DecisionList } from "@/features/evaluations/components/DecisionList";
+import { ReviewerAssignmentPanel } from "./ReviewerAssignmentPanel";
+import { RecommendationRequest } from "@/features/recommendations"; // Import RecommendationRequest from barrel file
+import { getRecommendationRequestsAction, createRecommendationRequestAction, updateRecommendationRequestStatusAction } from "@/features/recommendations"; // Import recommendation actions from barrel file
+import { getCampaignPhasesAction } from "@/features/campaigns/actions"; // To get phase config
+import { CampaignPhase } from "@/features/campaigns/services/campaign-service";
+import { format, parseISO } from "date-fns";
+import { useForm } from "react-hook-form"; // Import useForm
+import { zodResolver } from "@hookform/resolvers/zod"; // Import zodResolver
+import * as z from "zod"; // Import zod
+import { Input } from "@/components/ui/input"; // Import Input
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"; // Import Form components
+
+const createRecommendationRequestSchema = z.object({
+  recommenderEmail: z.string().email("Invalid email address."),
+  recommenderName: z.string().nullable().optional(),
+});
 
 interface ApplicationDetailProps {
   applicationId: string;
@@ -36,8 +51,12 @@ export function ApplicationDetail({ applicationId }: ApplicationDetailProps) {
   const [isReviewFormOpen, setIsReviewFormOpen] = useState(false);
   const [currentReview, setCurrentReview] = useState<Review | undefined>(undefined);
   const [reviewerAssignment, setReviewerAssignment] = useState<ReviewerAssignment | null>(null);
-  const [isDecisionFormOpen, setIsDecisionFormOpen] = useState(false); // State for decision form dialog
-  const [editingDecision, setEditingDecision] = useState<Decision | undefined>(undefined); // State for editing decision
+  const [isDecisionFormOpen, setIsDecisionFormOpen] = useState(false);
+  const [editingDecision, setEditingDecision] = useState<Decision | undefined>(undefined);
+  const [recommendationRequests, setRecommendationRequests] = useState<RecommendationRequest[]>([]); // State for recommendation requests
+  const [isRecommendationRequestFormOpen, setIsRecommendationRequestFormOpen] = useState(false); // State for recommendation request form
+  const [isLoadingRecommendationRequests, setIsLoadingRecommendationRequests] = useState(true);
+  const [currentRecommendationPhase, setCurrentRecommendationPhase] = useState<CampaignPhase | null>(null); // Current recommendation phase config
 
   const fetchApplicationDetails = async () => {
     setIsLoading(true);
@@ -45,7 +64,7 @@ export function ApplicationDetail({ applicationId }: ApplicationDetailProps) {
       const fetchedApplication = await getApplicationByIdAction(applicationId);
       if (!fetchedApplication) {
         toast.error("Application not found or unauthorized.");
-        router.push("/applications/screening"); // Corrected redirect
+        router.push("/applications/screening");
         return;
       }
       setApplication(fetchedApplication);
@@ -58,12 +77,31 @@ export function ApplicationDetail({ applicationId }: ApplicationDetailProps) {
 
         if (assignment) {
           const reviews = await getReviewsAction(fetchedApplication.id, user.id, fetchedApplication.current_campaign_phase_id);
-          setCurrentReview(reviews?.[0]); // Assuming one review per reviewer per phase
+          setCurrentReview(reviews?.[0]);
         }
       }
+
+      // Fetch recommendation requests if in a recommendation phase
+      if (fetchedApplication.current_campaign_phases?.type === 'Recommendation') {
+        setIsLoadingRecommendationRequests(true);
+        const fetchedRequests = await getRecommendationRequestsAction(applicationId);
+        if (fetchedRequests) {
+          setRecommendationRequests(fetchedRequests);
+        }
+        // Fetch the current recommendation phase config
+        const campaignPhases = await getCampaignPhasesAction(fetchedApplication.campaigns?.id || "");
+        const recPhase = campaignPhases?.find(p => p.id === fetchedApplication.current_campaign_phase_id);
+        setCurrentRecommendationPhase(recPhase || null);
+        setIsLoadingRecommendationRequests(false);
+      } else {
+        setRecommendationRequests([]);
+        setCurrentRecommendationPhase(null);
+        setIsLoadingRecommendationRequests(false);
+      }
+
     } catch (error: any) {
       toast.error(error.message || "Failed to load application details.");
-      router.push("/applications/screening"); // Corrected redirect
+      router.push("/applications/screening");
     } finally {
       setIsLoading(false);
     }
@@ -80,18 +118,34 @@ export function ApplicationDetail({ applicationId }: ApplicationDetailProps) {
 
   const handleReviewSaved = () => {
     setIsReviewFormOpen(false);
-    fetchApplicationDetails(); // Re-fetch to update review status
+    fetchApplicationDetails();
   };
 
   const handleDecisionSaved = () => {
     setIsDecisionFormOpen(false);
     setEditingDecision(undefined);
-    fetchApplicationDetails(); // Re-fetch to update application status if needed
+    fetchApplicationDetails();
   };
 
   const handleEditDecision = (decision: Decision) => {
     setEditingDecision(decision);
     setIsDecisionFormOpen(true);
+  };
+
+  const handleRecommendationRequestSaved = () => {
+    setIsRecommendationRequestFormOpen(false);
+    fetchApplicationDetails();
+  };
+
+  const handleSendReminder = async (requestId: string) => {
+    try {
+      // In a real app, this would trigger an email sending service
+      await updateRecommendationRequestStatusAction(requestId, 'sent'); // Mark as sent again
+      toast.success("Reminder sent successfully!");
+      fetchApplicationDetails();
+    } catch (error: any) {
+      toast.error(error.message || "Failed to send reminder.");
+    }
   };
 
   const getStatusColor = (status: Application['screening_status']) => {
@@ -136,17 +190,21 @@ export function ApplicationDetail({ applicationId }: ApplicationDetailProps) {
 
   const userRole: string = user?.user_metadata?.role || '';
   const isAdminOrRecruiter = ['admin', 'coordinator', 'evaluator', 'screener'].includes(userRole);
-  const isReviewer = ['reviewer', 'admin', 'coordinator', 'evaluator'].includes(userRole); // Roles that can review
+  const isReviewer = ['reviewer', 'admin', 'coordinator', 'evaluator'].includes(userRole);
   const canModifyApplication: boolean = isAdminOrRecruiter || application.applicant_id === user?.id;
   const canAddNotes: boolean = isAdminOrRecruiter;
-  const canModifyDecisions: boolean = isAdminOrRecruiter; // Only admin/campaign creator can manage decisions
-  const canModifyAssignments: boolean = isAdminOrRecruiter; // Only admin/campaign creator can manage assignments
+  const canModifyDecisions: boolean = isAdminOrRecruiter;
+  const canModifyAssignments: boolean = isAdminOrRecruiter;
+  const canManageRecommendations: boolean = isAdminOrRecruiter; // Only admin/campaign creator can manage recommendations
 
   const isCurrentPhaseReview = application.current_campaign_phases?.type === 'Review';
   const canSubmitReview = isReviewer && isCurrentPhaseReview && reviewerAssignment?.status === 'accepted';
 
   const isCurrentPhaseDecision = application.current_campaign_phases?.type === 'Decision';
   const canRecordDecision = isAdminOrRecruiter && isCurrentPhaseDecision;
+
+  const isCurrentPhaseRecommendation = application.current_campaign_phases?.type === 'Recommendation';
+  const canRequestRecommendation = canManageRecommendations && isCurrentPhaseRecommendation;
 
   // Pre-process initialChecklistData to ensure it strictly conforms to ChecklistItemFormType
   const processedChecklistData: ChecklistItemFormType[] = (application.data?.screeningChecklist || []).map((item: any) => ({
@@ -160,7 +218,7 @@ export function ApplicationDetail({ applicationId }: ApplicationDetailProps) {
     <div className="space-y-8">
       <div className="flex items-center justify-between">
         <Button asChild variant="ghost" className="rounded-full px-4 py-2 text-label-large">
-          <Link href="/applications/screening"> {/* Corrected link */}
+          <Link href="/applications/screening">
             <ArrowLeft className="mr-2 h-5 w-5" /> Back to Screening
           </Link>
         </Button>
@@ -173,6 +231,11 @@ export function ApplicationDetail({ applicationId }: ApplicationDetailProps) {
           {canRecordDecision && (
             <Button onClick={() => { setEditingDecision(undefined); setIsDecisionFormOpen(true); }} className="rounded-full px-6 py-3 text-label-large">
               <PlusCircle className="mr-2 h-5 w-5" /> Record Decision
+            </Button>
+          )}
+          {canRequestRecommendation && (
+            <Button onClick={() => setIsRecommendationRequestFormOpen(true)} className="rounded-full px-6 py-3 text-label-large">
+              <PlusCircle className="mr-2 h-5 w-5" /> Request Recommendation
             </Button>
           )}
         </div>
@@ -267,6 +330,69 @@ export function ApplicationDetail({ applicationId }: ApplicationDetailProps) {
         />
       )}
 
+      {/* Recommendation Requests Section */}
+      {isCurrentPhaseRecommendation && (
+        <Card className="rounded-xl shadow-lg p-6">
+          <CardHeader className="p-0 mb-4">
+            <CardTitle className="text-headline-large font-bold text-foreground">Recommendation Requests</CardTitle>
+            <CardDescription className="text-body-medium text-muted-foreground">
+              Manage requests sent to recommenders for this application.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="p-0 space-y-4">
+            {isLoadingRecommendationRequests ? (
+              <div className="space-y-4">
+                {[...Array(2)].map((_, i) => (
+                  <Skeleton key={i} className="h-24 w-full rounded-lg" />
+                ))}
+              </div>
+            ) : recommendationRequests.length === 0 ? (
+              <p className="text-body-medium text-muted-foreground text-center">No recommendation requests sent yet.</p>
+            ) : (
+              <div className="space-y-4 max-h-96 overflow-y-auto pr-2">
+                {recommendationRequests.map((req) => (
+                  <Card key={req.id} className="rounded-lg border p-4 flex items-center justify-between">
+                    <div>
+                      <p className="text-title-medium font-medium text-foreground">
+                        {req.recommender_name || req.recommender_email}
+                      </p>
+                      <p className="text-body-medium text-muted-foreground">
+                        Email: {req.recommender_email}
+                      </p>
+                      <p className="text-body-small text-muted-foreground mt-1">
+                        Status: <span className="font-medium capitalize">{req.status}</span>
+                      </p>
+                      {req.request_sent_at && (
+                        <p className="text-body-small text-muted-foreground">
+                          Sent: {format(parseISO(req.request_sent_at), "PPP")}
+                        </p>
+                      )}
+                      {req.submitted_at && (
+                        <p className="text-body-small text-muted-foreground">
+                          Submitted: {format(parseISO(req.submitted_at), "PPP")}
+                        </p>
+                      )}
+                    </div>
+                    {canManageRecommendations && req.status !== 'submitted' && (
+                      <Button variant="tonal" size="sm" className="rounded-md text-label-small" onClick={() => handleSendReminder(req.id)}>
+                        <MailCheck className="mr-1 h-3 w-3" /> Send Reminder
+                      </Button>
+                    )}
+                    {canManageRecommendations && req.status === 'submitted' && (
+                      <Button variant="outlined" size="sm" className="rounded-md text-label-small" asChild>
+                        <Link href={`/recommendation/${req.unique_token}`} target="_blank">
+                          <FileText className="mr-1 h-3 w-3" /> View Submission
+                        </Link>
+                      </Button>
+                    )}
+                  </Card>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
       {/* Application Decisions Section */}
       <DecisionList
         applicationId={application.id}
@@ -331,6 +457,79 @@ export function ApplicationDetail({ applicationId }: ApplicationDetailProps) {
               onDecisionSaved={handleDecisionSaved}
               onCancel={() => setIsDecisionFormOpen(false)}
             />
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* Recommendation Request Form Dialog */}
+      {isRecommendationRequestFormOpen && application.current_campaign_phase_id && (
+        <Dialog open={isRecommendationRequestFormOpen} onOpenChange={setIsRecommendationRequestFormOpen}>
+          <DialogContent className="sm:max-w-[425px] rounded-xl shadow-lg bg-card text-card-foreground border-border">
+            <DialogHeader>
+              <DialogTitle className="text-headline-small">Request Recommendation</DialogTitle>
+              <DialogDescription className="text-body-medium text-muted-foreground">
+                Send a request to a recommender for this application.
+              </DialogDescription>
+            </DialogHeader>
+            <Form {...useForm<z.infer<typeof createRecommendationRequestSchema>>({
+              resolver: zodResolver(createRecommendationRequestSchema),
+              defaultValues: {
+                recommenderEmail: "",
+                recommenderName: "",
+              },
+            })}>
+              {({ handleSubmit, formState: { isSubmitting } }) => (
+                <form onSubmit={handleSubmit(async (values) => {
+                  try {
+                    const formData = new FormData();
+                    formData.append("recommender_email", values.recommenderEmail);
+                    formData.append("recommender_name", values.recommenderName || "");
+                    const result = await createRecommendationRequestAction(application.id, formData);
+                    if (result) {
+                      toast.success("Recommendation request sent successfully!");
+                      handleRecommendationRequestSaved();
+                    }
+                  } catch (error: any) {
+                    toast.error(error.message || "Failed to send recommendation request.");
+                  }
+                })} className="grid gap-4 py-4">
+                  <FormField
+                    control={useForm<z.infer<typeof createRecommendationRequestSchema>>().control} // Dummy control for type inference
+                    name="recommenderName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-label-large">Recommender Name (Optional)</FormLabel>
+                        <FormControl>
+                          <Input placeholder="e.g., Dr. Jane Doe" {...field} className="rounded-md" value={field.value || ""} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={useForm<z.infer<typeof createRecommendationRequestSchema>>().control} // Dummy control for type inference
+                    name="recommenderEmail"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-label-large">Recommender Email</FormLabel>
+                        <FormControl>
+                          <Input type="email" placeholder="recommender@example.com" {...field} className="rounded-md" value={field.value || ""} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <DialogFooter>
+                    <Button type="button" variant="outlined" onClick={() => setIsRecommendationRequestFormOpen(false)} className="rounded-md text-label-large">
+                      Cancel
+                    </Button>
+                    <Button type="submit" className="rounded-md text-label-large" disabled={isSubmitting}>
+                      {isSubmitting ? "Sending..." : "Send Request"}
+                    </Button>
+                  </DialogFooter>
+                </form>
+              )}
+            </Form>
           </DialogContent>
         </Dialog>
       )}
