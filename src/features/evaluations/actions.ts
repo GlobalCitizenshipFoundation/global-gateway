@@ -107,8 +107,8 @@ export async function createReviewerAssignmentAction(formData: FormData): Promis
       campaignPhaseId,
       status
     );
-    revalidatePath(`/workbench/applications/${applicationId}`);
-    revalidatePath(`/workbench/evaluations/assignments`); // Revalidate assignments list
+    revalidatePath(`/applications/${applicationId}`); // Corrected path
+    revalidatePath(`/evaluations/assignments`); // Corrected path
     return newAssignment;
   } catch (error: any) {
     console.error("Error in createReviewerAssignmentAction:", error.message);
@@ -153,8 +153,8 @@ export async function updateReviewerAssignmentAction(id: string, formData: FormD
     }
 
     const updatedAssignment = await updateReviewerAssignment(id, updates); // Use the service function
-    revalidatePath(`/workbench/applications/${assignment.application_id}`);
-    revalidatePath(`/workbench/evaluations/assignments`);
+    revalidatePath(`/applications/${assignment.application_id}`); // Corrected path
+    revalidatePath(`/evaluations/assignments`); // Corrected path
     return updatedAssignment;
   } catch (error: any) {
     console.error("Error in updateReviewerAssignmentAction:", error.message);
@@ -182,8 +182,8 @@ export async function deleteReviewerAssignmentAction(id: string): Promise<boolea
     await authorizeApplicationAccessForEvaluation(assignment.application_id, 'write');
 
     const success = await deleteReviewerAssignment(id); // Use the service function
-    revalidatePath(`/workbench/applications/${assignment.application_id}`);
-    revalidatePath(`/workbench/evaluations/assignments`);
+    revalidatePath(`/applications/${assignment.application_id}`); // Corrected path
+    revalidatePath(`/evaluations/assignments`); // Corrected path
     return success;
   } catch (error: any) {
     console.error("Error in deleteReviewerAssignmentAction:", error.message);
@@ -244,8 +244,8 @@ export async function createReviewAction(formData: FormData): Promise<Review | n
       comments,
       status
     );
-    revalidatePath(`/workbench/applications/${applicationId}`);
-    revalidatePath(`/workbench/evaluations/my-reviews`); // Revalidate reviewer's dashboard
+    revalidatePath(`/applications/${applicationId}`); // Corrected path
+    revalidatePath(`/evaluations/my-reviews`); // Corrected path
     return newReview;
   } catch (error: any) {
     console.error("Error in createReviewAction:", error.message);
@@ -284,8 +284,8 @@ export async function updateReviewAction(id: string, formData: FormData): Promis
     if (status !== undefined) updates.status = status;
 
     const updatedReview = await updateReview(id, updates); // Use the service function
-    revalidatePath(`/workbench/applications/${review.application_id}`);
-    revalidatePath(`/workbench/evaluations/my-reviews`);
+    revalidatePath(`/applications/${review.application_id}`); // Corrected path
+    revalidatePath(`/evaluations/my-reviews`); // Corrected path
     return updatedReview;
   } catch (error: any) {
     console.error("Error in updateReviewAction:", error.message);
@@ -315,8 +315,8 @@ export async function deleteReviewAction(id: string): Promise<boolean> {
     }
 
     const success = await deleteReview(id); // Use the service function
-    revalidatePath(`/workbench/applications/${review.application_id}`);
-    revalidatePath(`/workbench/evaluations/my-reviews`);
+    revalidatePath(`/applications/${review.application_id}`); // Corrected path
+    revalidatePath(`/evaluations/my-reviews`); // Corrected path
     return success;
   } catch (error: any) {
     console.error("Error in deleteReviewAction:", error.message);
@@ -368,8 +368,8 @@ export async function createDecisionAction(formData: FormData): Promise<Decision
       notes,
       isFinal
     );
-    revalidatePath(`/workbench/applications/${applicationId}`);
-    revalidatePath(`/workbench/evaluations/decisions`); // Revalidate decisions list
+    revalidatePath(`/applications/${applicationId}`); // Corrected path
+    revalidatePath(`/evaluations/decisions`); // Corrected path
     return newDecision;
   } catch (error: any) {
     console.error("Error in createDecisionAction:", error.message);
@@ -406,11 +406,18 @@ export async function updateDecisionAction(id: string, formData: FormData): Prom
     if (isFinal !== undefined) updates.is_final = isFinal;
 
     const updatedDecision = await updateDecision(id, updates); // Use the service function
-    revalidatePath(`/workbench/applications/${decision.application_id}`);
-    revalidatePath(`/workbench/evaluations/decisions`);
+    revalidatePath(`/applications/${decision.application_id}`); // Corrected path
+    revalidatePath(`/evaluations/decisions`); // Corrected path
     return updatedDecision;
   } catch (error: any) {
     console.error("Error in updateDecisionAction:", error.message);
+    if (error.message === "UnauthorizedToModifyDecision") {
+      redirect("/error/403");
+    } else if (error.message === "DecisionNotFound") {
+      redirect("/error/404");
+    } else if (error.message === "FailedToRetrieveDecision") {
+      redirect("/error/500");
+    }
     throw error;
   }
 }
@@ -435,11 +442,18 @@ export async function deleteDecisionAction(id: string): Promise<boolean> {
     await authorizeApplicationAccessForEvaluation(decision.application_id, 'write');
 
     const success = await deleteDecision(id); // Use the service function
-    revalidatePath(`/workbench/applications/${decision.application_id}`);
-    revalidatePath(`/workbench/evaluations/decisions`);
+    revalidatePath(`/applications/${decision.application_id}`); // Corrected path
+    revalidatePath(`/evaluations/decisions`); // Corrected path
     return success;
   } catch (error: any) {
     console.error("Error in deleteDecisionAction:", error.message);
+    if (error.message === "UnauthorizedToModifyDecision") {
+      redirect("/error/403");
+    } else if (error.message === "DecisionNotFound") {
+      redirect("/error/404");
+    } else if (error.message === "FailedToRetrieveDecision") {
+      redirect("/error/500");
+    }
     throw error;
   }
 }

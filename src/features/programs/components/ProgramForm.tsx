@@ -76,13 +76,13 @@ export function ProgramForm({ initialData }: ProgramFormProps) {
         result = await updateProgramAction(initialData.id, formData);
         if (result) {
           toast.success("Program updated successfully!");
-          router.push(`/workbench/programs`); // Redirect to list after update
+          router.push(`/programs`); // Corrected path
         }
       } else {
         result = await createProgramAction(formData);
         if (result) {
           toast.success("Program created successfully!");
-          router.push(`/workbench/programs`); // Redirect to list after creation
+          router.push(`/programs`); // Corrected path
         }
       }
     } catch (error: any) {

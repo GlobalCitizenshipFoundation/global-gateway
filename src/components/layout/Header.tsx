@@ -97,11 +97,11 @@ export function Header() {
                 <DropdownMenuSeparator className="bg-border" />
                 <DropdownMenuItem className="text-body-medium hover:bg-muted hover:text-muted-foreground cursor-pointer">
                   <UserCircle2 className="mr-2 h-4 w-4" />
-                  <span>Profile</span>
+                  <Link href="/profile"><span>Profile</span></Link> {/* Corrected path */}
                 </DropdownMenuItem>
                 <DropdownMenuItem className="text-body-medium hover:bg-muted hover:text-muted-foreground cursor-pointer">
                   <Settings className="mr-2 h-4 w-4" />
-                  <span>Settings</span>
+                  <Link href="/settings"><span>Settings</span></Link> {/* Corrected path */}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator className="bg-border" />
                 <DropdownMenuItem onClick={handleSignOut} className="text-body-medium hover:bg-muted hover:text-muted-foreground cursor-pointer">

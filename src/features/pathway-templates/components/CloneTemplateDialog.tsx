@@ -65,7 +65,7 @@ export function CloneTemplateDialog({
       if (clonedTemplate) {
         toast.success(`Template "${clonedTemplate.name}" cloned successfully!`);
         onClose();
-        router.push(`/workbench/pathway-templates/${clonedTemplate.id}`);
+        router.push(`/pathway-templates/${clonedTemplate.id}`); // Corrected path
       }
     } catch (error: any) {
       console.error("Clone template error:", error);

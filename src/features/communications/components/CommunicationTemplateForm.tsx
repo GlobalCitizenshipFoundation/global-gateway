@@ -63,13 +63,13 @@ export function CommunicationTemplateForm({ initialData }: CommunicationTemplate
         result = await updateCommunicationTemplateAction(initialData.id, formData);
         if (result) {
           toast.success("Communication template updated successfully!");
-          router.push(`/workbench/communications/templates`);
+          router.push(`/communications/templates`); // Corrected path
         }
       } else {
         result = await createCommunicationTemplateAction(formData);
         if (result) {
           toast.success("Communication template created successfully!");
-          router.push(`/workbench/communications/templates`);
+          router.push(`/communications/templates`); // Corrected path
         }
       }
     } catch (error: any) {

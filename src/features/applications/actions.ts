@@ -131,7 +131,7 @@ export async function createApplicationAction(campaignId: string, formData: Form
       screening_status
     );
     revalidatePath(`/portal/my-applications`);
-    revalidatePath(`/workbench/applications`); // Revalidate for recruiters
+    revalidatePath(`/applications`); // Corrected path
     return newApplication;
   } catch (error: any) {
     console.error("Error in createApplicationAction:", error.message);
@@ -149,7 +149,7 @@ export async function updateApplicationAction(id: string, formData: FormData): P
 
     const updates: Partial<Application> = {};
     const isApplicant = user.id === application.applicant_id;
-    const isCampaignCreator = user.id === application.campaigns?.creator_id;
+    const isCampaignCreator = application.campaigns && user.id === application.campaigns.creator_id; // Ensure campaigns is not null
 
     // Fields that can be updated by anyone with write access (applicant or campaign creator/admin)
     if (formData.has("data")) updates.data = JSON.parse(formData.get("data") as string);
@@ -172,8 +172,8 @@ export async function updateApplicationAction(id: string, formData: FormData): P
     const updatedApplication = await updateApplication(id, updates); // Use the service function
 
     revalidatePath(`/portal/my-applications`);
-    revalidatePath(`/workbench/applications`);
-    revalidatePath(`/workbench/applications/${id}`); // Revalidate specific application detail page
+    revalidatePath(`/applications`); // Corrected path
+    revalidatePath(`/applications/${id}`); // Corrected path
     return updatedApplication;
   } catch (error: any) {
     console.error("Error in updateApplicationAction:", error.message);
@@ -195,7 +195,7 @@ export async function deleteApplicationAction(id: string): Promise<boolean> {
     const success = await deleteApplication(id); // Use the service function
 
     revalidatePath("/portal/my-applications");
-    revalidatePath("/workbench/applications");
+    revalidatePath("/applications"); // Corrected path
     return success;
   } catch (error: any) {
     console.error("Error in deleteApplicationAction:", error.message);
@@ -294,7 +294,7 @@ export async function createApplicationNoteAction(applicationId: string, formDat
 
   try {
     const newNote = await createApplicationNote(applicationId, user.id, content); // Use the service function
-    revalidatePath(`/workbench/applications/${applicationId}`);
+    revalidatePath(`/applications/${applicationId}`); // Corrected path
     return newNote;
   } catch (error: any) {
     console.error("Error in createApplicationNoteAction:", error.message);
@@ -315,7 +315,7 @@ export async function updateApplicationNoteAction(noteId: string, formData: Form
     }
 
     const updatedNote = await updateApplicationNote(noteId, { content }); // Use the service function
-    revalidatePath(`/workbench/applications/${note.application_id}`);
+    revalidatePath(`/applications/${note.application_id}`); // Corrected path
     return updatedNote;
   } catch (error: any) {
     console.error("Error in updateApplicationNoteAction:", error.message);
@@ -338,7 +338,7 @@ export async function deleteApplicationNoteAction(noteId: string): Promise<boole
     }
 
     const success = await deleteApplicationNote(noteId); // Use the service function
-    revalidatePath(`/workbench/applications/${note.application_id}`);
+    revalidatePath(`/applications/${note.application_id}`); // Corrected path
     return success;
   } catch (error: any) {
     console.error("Error in deleteApplicationNoteAction:", error.message);

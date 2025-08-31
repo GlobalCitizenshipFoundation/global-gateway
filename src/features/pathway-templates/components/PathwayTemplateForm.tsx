@@ -58,13 +58,13 @@ export function PathwayTemplateForm({ initialData }: PathwayTemplateFormProps) {
         result = await updatePathwayTemplateAction(initialData.id, formData);
         if (result) {
           toast.success("Pathway template updated successfully!");
-          router.push(`/workbench/pathway-templates/${result.id}`);
+          router.push(`/pathway-templates/${result.id}`); // Corrected path
         }
       } else {
         result = await createPathwayTemplateAction(formData);
         if (result) {
           toast.success("Pathway template created successfully!");
-          router.push(`/workbench/pathway-templates/${result.id}`);
+          router.push(`/pathway-templates/${result.id}`); // Corrected path
         }
       }
     } catch (error: any) {

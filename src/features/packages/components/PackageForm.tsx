@@ -58,13 +58,13 @@ export function PackageForm({ initialData }: PackageFormProps) {
         result = await updatePackageAction(initialData.id, formData);
         if (result) {
           toast.success("Package updated successfully!");
-          router.push(`/workbench/packages/${result.id}`);
+          router.push(`/packages/${result.id}`); // Corrected path
         }
       } else {
         result = await createPackageAction(formData);
         if (result) {
           toast.success("Package created successfully!");
-          router.push(`/workbench/packages/${result.id}`);
+          router.push(`/packages/${result.id}`); // Corrected path
         }
       }
     } catch (error: any) {

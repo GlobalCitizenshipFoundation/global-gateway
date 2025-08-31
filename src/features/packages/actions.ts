@@ -119,7 +119,7 @@ export async function createPackageAction(formData: FormData): Promise<Package |
       user.id
     );
 
-    revalidatePath("/workbench/packages");
+    revalidatePath("/packages"); // Corrected path
     return newPackage;
   } catch (error: any) {
     console.error("Error in createPackageAction:", error.message);
@@ -144,8 +144,8 @@ export async function updatePackageAction(id: string, formData: FormData): Promi
       { name, description, is_public }
     );
 
-    revalidatePath("/workbench/packages");
-    revalidatePath(`/workbench/packages/${id}`);
+    revalidatePath("/packages"); // Corrected path
+    revalidatePath(`/packages/${id}`); // Corrected path
     return updatedPackage;
   } catch (error: any) {
     console.error("Error in updatePackageAction:", error.message);
@@ -166,7 +166,7 @@ export async function deletePackageAction(id: string): Promise<boolean> {
 
     const success = await deletePackage(id); // Use the service function
 
-    revalidatePath("/workbench/packages");
+    revalidatePath("/packages"); // Corrected path
     return success;
   } catch (error: any) {
     console.error("Error in deletePackageAction:", error.message);
@@ -229,7 +229,7 @@ export async function addPackageItemAction(packageId: string, formData: FormData
       order_index
     );
 
-    revalidatePath(`/workbench/packages/${packageId}`);
+    revalidatePath(`/packages/${packageId}`); // Corrected path
     return newItem;
   } catch (error: any) {
     console.error("Error in addPackageItemAction:", error.message);
@@ -252,7 +252,7 @@ export async function updatePackageItemOrderAction(packageId: string, items: { i
       await updatePackageItemOrder(item.id, item.order_index); // Use the service function
     }
 
-    revalidatePath(`/workbench/packages/${packageId}`);
+    revalidatePath(`/packages/${packageId}`); // Corrected path
     return true;
   } catch (error: any) {
     console.error("Error in updatePackageItemOrderAction:", error.message);
@@ -273,7 +273,7 @@ export async function removePackageItemAction(itemId: string, packageId: string)
 
     const success = await removePackageItem(itemId); // Use the service function
 
-    revalidatePath(`/workbench/packages/${packageId}`);
+    revalidatePath(`/packages/${packageId}`); // Corrected path
     return success;
   } catch (error: any) {
     console.error("Error in removePackageItemAction:", error.message);

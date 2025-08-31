@@ -3,15 +3,11 @@ import { PathwayTemplateDetail } from "@/features/pathway-templates/components/P
 import { getTemplateByIdAction } from "@/features/pathway-templates/actions";
 import React from "react";
 
-// Removed the explicit interface PathwayTemplateDetailPageProps
+export default async function PathwayTemplateDetailPage(props: any) {
+  // Explicitly cast params and searchParams to their expected types
+  const params = props.params as { id: string };
+  const searchParams = props.searchParams as { [key: string]: string | string[] | undefined };
 
-export default async function PathwayTemplateDetailPage({ 
-  params, 
-  searchParams 
-}: { 
-  params: { id: string }; // Directly define the type for params
-  searchParams: { [key: string]: string | string[] | undefined }; // Directly define the type for searchParams
-}) {
   const { id } = params;
 
   // Validate if 'id' is a UUID before proceeding to fetch

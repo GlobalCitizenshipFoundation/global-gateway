@@ -133,13 +133,13 @@ export function CampaignForm({ initialData }: CampaignFormProps) {
         result = await updateCampaignAction(initialData.id, formData);
         if (result) {
           toast.success("Campaign updated successfully!");
-          router.push(`/workbench/campaigns`); // Redirect to list after update
+          router.push(`/campaigns`); // Corrected path
         }
       } else {
         result = await createCampaignAction(formData);
         if (result) {
           toast.success("Campaign created successfully!");
-          router.push(`/workbench/campaigns`); // Redirect to list after creation
+          router.push(`/campaigns`); // Corrected path
         }
       }
     } catch (error: any) {
