@@ -77,6 +77,8 @@ export function FormPhaseConfig({ phase, parentId, onConfigSaved, onCancel, canM
   });
 
   const onSubmit = async (values: z.infer<typeof formPhaseConfigSchema>) => {
+    console.log("FormPhaseConfig onSubmit called with values:", values);
+    console.log("Form state errors on submit:", form.formState.errors);
     if (!canModify) {
       toast.error("You do not have permission to modify this phase configuration.");
       return;
@@ -107,6 +109,9 @@ export function FormPhaseConfig({ phase, parentId, onConfigSaved, onCancel, canM
     { value: "URL", label: "URL Input" },
     { value: "Section Header", label: "Section Header" }, // Added Section Header
   ];
+
+  console.log("FormPhaseConfig rendered for phase:", phase.id, "canModify:", canModify);
+  console.log("Form state errors on render:", form.formState.errors);
 
   return (
     <div className="rounded-xl shadow-lg p-6">
