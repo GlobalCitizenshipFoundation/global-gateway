@@ -19,8 +19,8 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { PlusCircle, Trash2, GripVertical, CalendarIcon, UserCircle2, CheckCircle, Clock, ChevronUp } from "lucide-react"; // Added ChevronUp
-import { PhaseTask } from "@/types/supabase"; // Corrected import path for PhaseTask
+import { PlusCircle, Trash2, GripVertical, CalendarIcon, UserCircle2, CheckCircle, Clock, ChevronUp } from "lucide-react";
+import { PhaseTask } from "@/types/supabase";
 import { getPhaseTasksAction, createPhaseTaskAction, updatePhaseTaskAction, deletePhaseTaskAction } from "../actions";
 import { useSession } from "@/context/SessionContextProvider";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -38,7 +38,8 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog"; // Added Dialog imports
+} from "@/components/ui/dialog";
+import { Switch } from "@/components/ui/switch"; // Added missing Switch import
 
 const taskFormSchema = z.object({
   name: z.string().min(1, "Task name is required.").max(100, "Name cannot exceed 100 characters."),
@@ -165,10 +166,10 @@ export function PhaseTaskManagementPanel({ phaseId, pathwayTemplateId, canModify
 
       let result: PhaseTask | null;
       if (editingTask) {
-        result = await updatePhaseTaskAction(editingTask.id, phaseId, pathwayTemplateId, formData); // Corrected arguments
+        result = await updatePhaseTaskAction(editingTask.id, phaseId, pathwayTemplateId, formData);
       } else {
         formData.append("order_index", tasks.length.toString());
-        result = await createPhaseTaskAction(phaseId, pathwayTemplateId, formData); // Corrected arguments
+        result = await createPhaseTaskAction(phaseId, pathwayTemplateId, formData);
       }
 
       if (result) {
@@ -185,7 +186,7 @@ export function PhaseTaskManagementPanel({ phaseId, pathwayTemplateId, canModify
 
   const handleDeleteTask = async (taskId: string) => {
     try {
-      const success = await deletePhaseTaskAction(taskId, phaseId, pathwayTemplateId); // Corrected arguments
+      const success = await deletePhaseTaskAction(taskId, phaseId, pathwayTemplateId);
       if (success) {
         toast.success("Task deleted successfully!");
         fetchTasks();
@@ -200,7 +201,7 @@ export function PhaseTaskManagementPanel({ phaseId, pathwayTemplateId, canModify
     try {
       const formData = new FormData();
       formData.append("status", newStatus);
-      const result = await updatePhaseTaskAction(task.id, phaseId, pathwayTemplateId, formData); // Corrected arguments
+      const result = await updatePhaseTaskAction(task.id, phaseId, pathwayTemplateId, formData);
       if (result) {
         toast.success(`Task marked as ${newStatus}.`);
         fetchTasks();
@@ -521,7 +522,7 @@ export function PhaseTaskManagementPanel({ phaseId, pathwayTemplateId, canModify
                       <FormControl>
                         <Switch
                           checked={field.value === 'completed'}
-                          onCheckedChange={(checked) => field.onChange(checked ? 'completed' : 'pending')}
+                          onCheckedChange={(checked: boolean) => field.onChange(checked ? 'completed' : 'pending')} // Explicitly typed 'checked'
                           className="data-[state=checked]:bg-primary data-[state=unchecked]:bg-muted-foreground"
                           disabled={!canUpdateStatusForEditingTask}
                         />
