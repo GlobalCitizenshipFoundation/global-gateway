@@ -139,12 +139,12 @@ export function EmailPhaseConfig({ phase, parentId, onConfigSaved, canModify, up
   ];
 
   return (
-    <Card className="rounded-xl shadow-lg p-6">
-      <CardHeader className="p-0 mb-6">
-        <CardTitle className="text-headline-small text-foreground">Email Settings</CardTitle>
+    <div className="rounded-xl shadow-lg p-6">
+      <div className="p-0 mb-6">
+        <h3 className="text-headline-small text-foreground">Email Settings</h3>
         <p className="text-body-medium text-muted-foreground">Define the content and triggers for this email phase.</p>
-      </CardHeader>
-      <CardContent className="p-0">
+      </div>
+      <div className="p-0">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
             <FormField
@@ -373,7 +373,7 @@ export function EmailPhaseConfig({ phase, parentId, onConfigSaved, canModify, up
             )}
           </form>
         </Form>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

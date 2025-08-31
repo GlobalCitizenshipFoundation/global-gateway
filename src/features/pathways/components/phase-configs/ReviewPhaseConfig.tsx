@@ -32,7 +32,7 @@ const rubricCriterionSchema = z.object({
   id: z.string().uuid().optional(), // Optional for new criteria
   name: z.string().min(1, "Criterion name is required."),
   description: z.string().nullable().optional(),
-  maxScore: z.coerce.number().min(1, "Max score must be at least 1."),
+  maxScore: z.coerce.number().min(1, "Max score must be at least 1.").max(100, "Max score cannot exceed 100."), // Added max constraint
   weight: z.coerce.number().min(0, "Weight cannot be negative.").max(100, "Weight cannot exceed 100.").optional(), // Added weight
 });
 
@@ -105,12 +105,12 @@ export function ReviewPhaseConfig({ phase, parentId, onConfigSaved, canModify, u
   ];
 
   return (
-    <Card className="rounded-xl shadow-lg p-6">
-      <CardHeader className="p-0 mb-6">
-        <CardTitle className="text-headline-small text-foreground">Review Settings</CardTitle>
+    <div className="rounded-xl shadow-lg p-6">
+      <div className="p-0 mb-6">
+        <h3 className="text-headline-small text-foreground">Review Settings</h3>
         <p className="text-body-medium text-muted-foreground">Configure how applications will be reviewed in this phase.</p>
-      </CardHeader>
-      <CardContent className="p-0">
+      </div>
+      <div className="p-0">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
             <FormField
@@ -313,7 +313,7 @@ export function ReviewPhaseConfig({ phase, parentId, onConfigSaved, canModify, u
             )}
           </form>
         </Form>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

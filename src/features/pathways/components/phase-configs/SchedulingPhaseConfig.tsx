@@ -77,12 +77,12 @@ export function SchedulingPhaseConfig({ phase, parentId, onConfigSaved, canModif
   ];
 
   return (
-    <Card className="rounded-xl shadow-lg p-6">
-      <CardHeader className="p-0 mb-6">
-        <CardTitle className="text-headline-small text-foreground">Scheduling Settings</CardTitle>
+    <div className="rounded-xl shadow-lg p-6">
+      <div className="p-0 mb-6">
+        <h3 className="text-headline-small text-foreground">Scheduling Settings</h3>
         <p className="text-body-medium text-muted-foreground">Configure interview durations, buffer times, and host assignments for this scheduling phase.</p>
-      </CardHeader>
-      <CardContent className="p-0">
+      </div>
+      <div className="p-0">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
             <FormField
@@ -171,7 +171,7 @@ export function SchedulingPhaseConfig({ phase, parentId, onConfigSaved, canModif
             )}
           </form>
         </Form>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

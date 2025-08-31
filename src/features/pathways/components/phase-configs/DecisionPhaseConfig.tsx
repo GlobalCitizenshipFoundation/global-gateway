@@ -114,12 +114,12 @@ export function DecisionPhaseConfig({ phase, parentId, onConfigSaved, canModify,
   ];
 
   return (
-    <Card className="rounded-xl shadow-lg p-6">
-      <CardHeader className="p-0 mb-6">
-        <CardTitle className="text-headline-small text-foreground">Decision Settings</CardTitle>
+    <div className="rounded-xl shadow-lg p-6">
+      <div className="p-0 mb-6">
+        <h3 className="text-headline-small text-foreground">Decision Settings</h3>
         <p className="text-body-medium text-muted-foreground">Define possible outcomes and automated actions for this decision phase.</p>
-      </CardHeader>
-      <CardContent className="p-0">
+      </div>
+      <div className="p-0">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
             <h3 className="text-title-large font-bold text-foreground mt-8">Decision Outcomes</h3>
@@ -370,7 +370,7 @@ export function DecisionPhaseConfig({ phase, parentId, onConfigSaved, canModify,
             )}
           </form>
         </Form>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
