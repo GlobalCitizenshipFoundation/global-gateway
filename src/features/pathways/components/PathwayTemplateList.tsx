@@ -9,7 +9,7 @@ import { PathwayTemplate } from "../services/pathway-template-service";
 import { toast } from "sonner";
 import { useSession } from "@/context/SessionContextProvider";
 import { Skeleton } from "@/components/ui/skeleton";
-import { getTemplatesAction, deletePathwayTemplateAction } from "../actions";
+import { getTemplatesAction, softDeletePathwayTemplateAction } from "../actions"; // Corrected import
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
@@ -74,7 +74,7 @@ export function PathwayTemplateList() {
 
   const handleDelete = async (id: string) => {
     try {
-      const success = await deletePathwayTemplateAction(id);
+      const success = await softDeletePathwayTemplateAction(id); // Corrected function call
       if (success) {
         toast.success("Pathway template deleted successfully!");
         fetchTemplates(); // Refresh the list

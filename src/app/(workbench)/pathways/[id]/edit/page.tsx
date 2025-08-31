@@ -2,6 +2,7 @@ import React from "react";
 import { notFound } from "next/navigation";
 import { PathwayTemplateForm } from "@/features/pathways/components/PathwayTemplateForm";
 import { getTemplateByIdAction } from "@/features/pathways/actions";
+import { createClient } from "@/integrations/supabase/server"; // Import createClient
 
 interface EditPathwayTemplatePageProps {
   params: Promise<{ id: string }>; // Adjusted type for Next.js type checker
@@ -24,9 +25,21 @@ export default async function EditPathwayTemplatePage(props: EditPathwayTemplate
     notFound(); // This will render the nearest not-found.tsx or the global 404 page
   }
 
+  // Determine if the current user can modify this template
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  const userRole: string = user?.user_metadata?.role || '';
+  const isAdmin = userRole === 'admin';
+  const canModify = !!user && (template.creator_id === user.id || isAdmin); // Ensure boolean
+
   return (
     <div className="container mx-auto py-8 px-4">
-      <PathwayTemplateForm initialData={template} />
+      <PathwayTemplateForm
+        initialData={template}
+        onTemplateSaved={() => {}} // Placeholder, actual refresh handled by parent or revalidatePath
+        onCancel={() => {}} // Placeholder, actual navigation handled by parent
+        canModify={canModify}
+      />
     </div>
   );
 }

@@ -21,6 +21,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PlusCircle, Trash2, GripVertical, GitFork } from "lucide-react"; // Import GitFork for rules
 import { BaseConfigurableItem } from "../../services/pathway-template-service"; // Import BaseConfigurableItem
 import { updatePhaseConfigAction as defaultUpdatePhaseConfigAction } from "../../actions"; // Renamed default action
+import { Checkbox } from "@/components/ui/checkbox"; // Import Checkbox component
 
 // Zod schema for a single decision outcome
 const decisionOutcomeSchema = z.object({
@@ -174,7 +175,11 @@ export function DecisionPhaseConfig({ phase, parentId, onConfigSaved, canModify,
                         </FormDescription>
                       </div>
                       <FormControl>
-                        <Input type="checkbox" checked={field.value} onChange={field.onChange} disabled={!canModify} />
+                        <Checkbox // Changed from Input type="checkbox" to Checkbox
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                          disabled={!canModify}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

@@ -22,7 +22,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { PathwayTemplate } from "../services/pathway-template-service";
-import { updatePathwayTemplateAction, updatePathwayTemplateStatusAction } from "../actions"; // Import updatePathwayTemplateStatusAction
+import { createPathwayTemplateAction, updatePathwayTemplateAction, updatePathwayTemplateStatusAction } from "../actions"; // Import createPathwayTemplateAction
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"; // Import Select components
 
 const formSchema = z.object({
@@ -84,10 +84,13 @@ export function PathwayTemplateForm({ initialData, onTemplateSaved, onCancel, ca
           onTemplateSaved();
         }
       } else {
-        // This form is now primarily for editing. Creation is handled elsewhere.
-        // If this component were to be used for creation, the logic would go here.
-        // For now, we'll assume it's always for updating an existing template.
-        toast.error("Template creation is not supported directly from this form.");
+        // Handle creation for new templates
+        formData.append("status", values.status); // Include status for creation
+        result = await createPathwayTemplateAction(formData);
+        if (result) {
+          toast.success("Pathway template created successfully!");
+          onTemplateSaved(); // Call onTemplateSaved which might trigger a redirect
+        }
       }
     } catch (error: any) {
       console.error("Form submission error:", error);
@@ -212,7 +215,9 @@ export function PathwayTemplateForm({ initialData, onTemplateSaved, onCancel, ca
               <Button type="submit" className="rounded-md text-label-large" disabled={form.formState.isSubmitting || !canModify}>
                 {form.formState.isSubmitting
                   ? "Saving..."
-                  : "Save Changes"}
+                  : initialData
+                  ? "Save Changes"
+                  : "Create Template"}
               </Button>
             </div>
           </form>

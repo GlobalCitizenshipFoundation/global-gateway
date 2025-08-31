@@ -6,19 +6,17 @@ import {
   getPathwayTemplates,
   getPathwayTemplateById,
   createPathwayTemplate,
-  updatePathwayTemplate,
-  softDeletePathwayTemplate, // Changed to soft delete
-  hardDeletePathwayTemplate, // New hard delete
+  updatePathwayTemplate as updatePathwayTemplateService, // Renamed to avoid conflict
+  softDeletePathwayTemplate,
+  hardDeletePathwayTemplate,
   getPhasesByPathwayTemplateId,
   createPhase,
   updatePhase as updatePhaseService, // Renamed to avoid conflict with local updatePhaseAction
   updatePhaseBranchingConfig as updatePhaseBranchingConfigService, // Import new service function
-  softDeletePhase, // Changed to soft delete
-  hardDeletePhase, // New hard delete
+  softDeletePhase,
+  hardDeletePhase,
   clonePathwayTemplate,
-  updatePathwayTemplate as updatePathwayTemplateService, // Renamed to avoid conflict
   updatePhase as updatePhaseServiceForReorder, // Renamed for reorder
-  rollbackTemplateToVersion,
 } from "./services/pathway-template-service";
 import {
   PhaseTask,
@@ -32,6 +30,7 @@ import {
   createTemplateVersion,
   getTemplateVersions,
   getTemplateVersion,
+  rollbackTemplateToVersion, // Corrected import path
 } from "./services/template-versioning-service"; // Import new versioning service
 import { createActivityLog } from "./services/template-activity-log-service"; // Import new activity log service
 import { createClient } from "@/integrations/supabase/server";
@@ -666,11 +665,13 @@ export async function clonePathwayTemplateAction(templateId: string, newName: st
     redirect("/login");
   }
 
+  let originalTemplate: PathwayTemplate | null = null;
   try {
     const { template } = await authorizeTemplateAction(templateId, 'read');
     if (!template) {
       throw new Error("TemplateNotFound");
     }
+    originalTemplate = template;
   } catch (error: any) {
     console.error("Error in clonePathwayTemplateAction authorization:", error.message);
     if (error.message === "UnauthorizedAccessToPrivateTemplate") {
@@ -694,8 +695,8 @@ export async function clonePathwayTemplateAction(templateId: string, newName: st
       user.id,
       user.id // last_updated_by for new template and phases
     );
-    if (clonedTemplate) {
-      await createActivityLog(clonedTemplate.id, user.id, 'cloned', `Cloned template "${templateId}" to new template "${clonedTemplate.name}".`, { originalTemplateId: templateId });
+    if (clonedTemplate && originalTemplate) { // Ensure originalTemplate is not null
+      await createActivityLog(clonedTemplate.id, user.id, 'cloned', `Cloned template "${originalTemplate.name}" to new template "${clonedTemplate.name}".`, { originalTemplateId: templateId });
     }
     revalidatePath("/pathways");
     return clonedTemplate;
@@ -778,7 +779,7 @@ export async function rollbackTemplateToVersionAction(pathwayTemplateId: string,
       throw new Error("TemplateNotFound");
     }
 
-    const rolledBackTemplate = await rollbackTemplateToVersion(pathwayTemplateId, versionId);
+    const rolledBackTemplate = await rollbackTemplateToVersion(pathwayTemplateId, versionId, user.id); // Pass user.id as updaterId
 
     if (rolledBackTemplate) {
       await createActivityLog(pathwayTemplateId, user.id, 'rolled_back', `Rolled back template "${template.name}" to version "${versionId}".`, { versionId });
@@ -800,7 +801,7 @@ export async function rollbackTemplateToVersionAction(pathwayTemplateId: string,
 // --- Phase Task Management Server Actions ---
 
 // Helper function to authorize access to a phase task
-async function authorizePhaseTaskAction(taskId: string | null, phaseId: string, pathwayTemplateId: string, action: 'read' | 'write' | 'update_status'): Promise<{ user: any; task: PhaseTask | null; isAdmin: boolean; isPhaseCreator: boolean; isAssignedUser: boolean }> {
+async function authorizePhaseTaskAction(taskId: string | null, phaseId: string, pathwayTemplateId: string, action: 'read' | 'write' | 'update_status'): Promise<{ user: any; task: PhaseTask | null; isAdmin: boolean; isPhaseCreator: boolean; isAssignedUser: boolean; template: PathwayTemplate | null }> {
   const supabase = await createClient();
   const { data: { user }, error: userError } = await supabase.auth.getUser();
 
@@ -811,7 +812,7 @@ async function authorizePhaseTaskAction(taskId: string | null, phaseId: string, 
   const userRole: string = user.user_metadata?.role || '';
   const isAdmin = userRole === 'admin';
 
-  // First, authorize access to the parent phase/template
+  // First, authorize access to the parent phase's template
   const { template } = await authorizeTemplateAction(pathwayTemplateId, 'read');
   if (!template) {
     throw new Error("ParentTemplateNotFound");
@@ -841,7 +842,7 @@ async function authorizePhaseTaskAction(taskId: string | null, phaseId: string, 
     }
   }
 
-  return { user, task, isAdmin, isPhaseCreator, isAssignedUser };
+  return { user, task, isAdmin, isPhaseCreator, isAssignedUser, template };
 }
 
 export async function getPhaseTasksAction(phaseId: string): Promise<PhaseTask[] | null> {
@@ -914,7 +915,7 @@ export async function createPhaseTaskAction(phaseId: string, pathwayTemplateId: 
 
 export async function updatePhaseTaskAction(taskId: string, phaseId: string, pathwayTemplateId: string, formData: FormData): Promise<PhaseTask | null> {
   try {
-    const { user, task, isAdmin, isPhaseCreator, isAssignedUser } = await authorizePhaseTaskAction(taskId, phaseId, pathwayTemplateId, 'write');
+    const { user, task, isAdmin, isPhaseCreator, isAssignedUser, template } = await authorizePhaseTaskAction(taskId, phaseId, pathwayTemplateId, 'write');
     if (!task) {
       throw new Error("PhaseTaskNotFound");
     }
@@ -945,8 +946,8 @@ export async function updatePhaseTaskAction(taskId: string, phaseId: string, pat
 
     const updatedPhaseTask = await updatePhaseTask(taskId, updates);
 
-    if (updatedPhaseTask) {
-      await createActivityLog(pathwayTemplateId, user.id, 'phase_task_updated', `Updated task "${updatedPhaseTask.name}" in phase "${phaseId}" of template "${template?.name}".`, { phaseId, taskId: updatedPhaseTask.id, updates });
+    if (updatedPhaseTask && template) { // Ensure template is not null
+      await createActivityLog(pathwayTemplateId, user.id, 'phase_task_updated', `Updated task "${updatedPhaseTask.name}" in phase "${phaseId}" of template "${template.name}".`, { phaseId, taskId: updatedPhaseTask.id, updates });
     }
 
     revalidatePath(`/pathways/${pathwayTemplateId}`);
@@ -971,8 +972,8 @@ export async function deletePhaseTaskAction(taskId: string, phaseId: string, pat
 
     const success = await deletePhaseTask(taskId);
 
-    if (success) {
-      await createActivityLog(pathwayTemplateId, user.id, 'phase_task_deleted', `Deleted task "${task.name}" from phase "${phaseId}" in template "${template?.name}".`, { phaseId, taskId });
+    if (success && template) { // Ensure template is not null
+      await createActivityLog(pathwayTemplateId, user.id, 'phase_task_deleted', `Deleted task "${task.name}" from phase "${phaseId}" in template "${template.name}".`, { phaseId, taskId });
     }
 
     revalidatePath(`/pathways/${pathwayTemplateId}`);

@@ -59,7 +59,7 @@ export function PhaseTaskManagementPanel({ phaseId, pathwayTemplateId, canModify
   const { user, isLoading: isSessionLoading } = useSession();
   const [tasks, setTasks] = useState<PhaseTask[]>([]);
   const [isLoadingTasks, setIsLoadingTasks] = useState(true);
-  const [isTaskFormOpen, setIsTaskFormOpen] = useState(false);
+  const [isTaskFormOpen, setIsTaskFormOpen] = useState(true); // Changed to true for testing
   const [editingTask, setEditingTask] = useState<PhaseTask | undefined>(undefined);
 
   const form = useForm<z.infer<typeof taskFormSchema>>({
@@ -164,10 +164,10 @@ export function PhaseTaskManagementPanel({ phaseId, pathwayTemplateId, canModify
 
       let result: PhaseTask | null;
       if (editingTask) {
-        result = await updatePhaseTaskAction(editingTask.id, pathwayTemplateId, formData);
+        result = await updatePhaseTaskAction(editingTask.id, phaseId, pathwayTemplateId, formData); // Corrected arguments
       } else {
         formData.append("order_index", tasks.length.toString());
-        result = await createPhaseTaskAction(phaseId, formData);
+        result = await createPhaseTaskAction(phaseId, pathwayTemplateId, formData); // Corrected arguments
       }
 
       if (result) {
@@ -184,7 +184,7 @@ export function PhaseTaskManagementPanel({ phaseId, pathwayTemplateId, canModify
 
   const handleDeleteTask = async (taskId: string) => {
     try {
-      const success = await deletePhaseTaskAction(taskId, pathwayTemplateId);
+      const success = await deletePhaseTaskAction(taskId, phaseId, pathwayTemplateId); // Corrected arguments
       if (success) {
         toast.success("Task deleted successfully!");
         fetchTasks();
@@ -199,7 +199,7 @@ export function PhaseTaskManagementPanel({ phaseId, pathwayTemplateId, canModify
     try {
       const formData = new FormData();
       formData.append("status", newStatus);
-      const result = await updatePhaseTaskAction(task.id, pathwayTemplateId, formData);
+      const result = await updatePhaseTaskAction(task.id, phaseId, pathwayTemplateId, formData); // Corrected arguments
       if (result) {
         toast.success(`Task marked as ${newStatus}.`);
         fetchTasks();
