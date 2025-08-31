@@ -13,7 +13,7 @@ import { PathwayTemplate, Phase, Profile } from "@/types/supabase"; // Import Pr
 import { toast } from "sonner";
 import { useSession } from "@/context/SessionContextProvider";
 import { Skeleton } from "@/components/ui/skeleton";
-import { getTemplateByIdAction, getPhasesAction, reorderPhasesAction, deletePhaseAction, createTemplateVersionAction, publishPathwayTemplateAction, updatePathwayTemplateStatusAction, updatePathwayTemplateAction, createPathwayTemplateAction, deletePathwayTemplateAction, createPhaseAction } from "../actions";
+import { getTemplateByIdAction, getPhasesAction, reorderPhasesAction, deletePhaseAction as deletePhaseActionService, createTemplateVersionAction, publishPathwayTemplateAction, updatePathwayTemplateStatusAction, updatePathwayTemplateAction, createPathwayTemplateAction, deletePathwayTemplateAction, createPhaseAction } from "../actions"; // Corrected deletePhaseAction import
 import { DragDropContext, Droppable, DropResult } from "@hello-pangea/dnd";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Input } from "@/components/ui/input";
@@ -279,7 +279,7 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
       return;
     }
     try {
-      const success = await deletePhaseAction(phaseId, templateId);
+      const success = await deletePhaseActionService(phaseId, templateId); // Use deletePhaseActionService
       if (success) {
         toast.success("Phase deleted successfully!");
         fetchTemplateAndPhases();
@@ -953,7 +953,7 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
                   <AlertDialogHeader>
                     <AlertDialogTitle className="text-headline-small">Confirm Permanent Deletion</AlertDialogTitle>
                     <AlertDialogDescription className="text-body-medium text-muted-foreground">
-                      Are you sure you want to permanently delete the &quot;{template.name}&quot; pathway template? This action cannot be undone and will remove all associated phases and data.
+                      Are you sure you want to permanently delete the "{template.name}" pathway template? This action cannot be undone and will remove all associated phases and data.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
