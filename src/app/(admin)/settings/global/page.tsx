@@ -16,6 +16,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+
 } from "@/components/ui/form";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Settings, Save } from "lucide-react";
@@ -39,7 +40,7 @@ const jsonSchema = z.any()
     }
     return val;
   })
-  .refine(val => typeof val === 'object' && val !== null, {
+  .refine((val: unknown) => typeof val === 'object' && val !== null, { // Explicitly type val and corrected 'refile' to 'refine'
     message: "Value must be a valid JSON object.",
   });
 
@@ -133,6 +134,7 @@ function SettingForm({ settingKey, initialData, onSettingSaved, canModify }: Set
                   placeholder='{"default_value": "example"}'
                   className="resize-y min-h-[150px] rounded-md font-mono text-sm"
                   disabled={!canModify}
+                  value={field.value === null || field.value === undefined ? "" : String(field.value)} // Ensure string value
                 />
               </FormControl>
               <FormDescription className="text-body-small">
@@ -154,6 +156,7 @@ function SettingForm({ settingKey, initialData, onSettingSaved, canModify }: Set
                   placeholder="A brief description of what this setting controls."
                   className="resize-y min-h-[80px] rounded-md"
                   disabled={!canModify}
+                  value={field.value === null || field.value === undefined ? "" : String(field.value)} // Ensure string value
                 />
               </FormControl>
               <FormMessage />

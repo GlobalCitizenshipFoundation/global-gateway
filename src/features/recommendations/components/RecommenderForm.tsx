@@ -21,16 +21,17 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Loader2, Send, CheckCircle, XCircle } from "lucide-react";
+import { Loader2, Send, CheckCircle, XCircle, CalendarIcon } from "lucide-react"; // Added CalendarIcon
 import { RecommendationRequest } from "../services/recommendation-service";
 import { submitRecommendationAction } from "../actions";
 import { getCampaignPhasesAction } from "@/features/campaigns/actions"; // To fetch phase config
 import { CampaignPhase } from "@/features/campaigns/services/campaign-service";
 import { Skeleton } from "@/components/ui/skeleton";
-import { format } from "date-fns";
+import { format, parseISO } from "date-fns";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
+import { Label } from "@/components/ui/label"; // Added Label import
 
 // Define a schema for a generic form field value
 const genericFieldValueSchema = z.union([
@@ -81,7 +82,7 @@ export function RecommenderForm({ request }: RecommenderFormProps) {
           if (field.type === "Checkbox") {
             defaultValues[field.label] = request.form_data?.[field.label] ?? false;
           } else if (field.type === "Date") {
-            defaultValues[field.label] = request.form_data?.[field.label] ? new Date(request.form_data[field.label]) : null;
+            defaultValues[field.label] = request.form_data?.[field.label] ? parseISO(request.form_data[field.label]) : null;
           }
         });
         form.reset(defaultValues);
@@ -114,7 +115,15 @@ export function RecommenderForm({ request }: RecommenderFormProps) {
         }
       }
 
-      const result = await submitRecommendationAction(request.unique_token, new FormData(Object.entries(submissionData).map(([key, value]) => [key, String(value)])));
+      // Convert submissionData to FormData
+      const formData = new FormData();
+      for (const key in submissionData) {
+        if (submissionData.hasOwnProperty(key)) {
+          formData.append(key, String(submissionData[key]));
+        }
+      }
+
+      const result = await submitRecommendationAction(request.unique_token, formData);
       if (result) {
         toast.success("Recommendation submitted successfully!");
         setIsSubmitted(true);
@@ -184,14 +193,14 @@ export function RecommenderForm({ request }: RecommenderFormProps) {
                               type={fieldConfig.type === "Email" ? "email" : fieldConfig.type === "Phone" ? "tel" : "text"}
                               placeholder={`Enter ${fieldConfig.label.toLowerCase()}`}
                               {...field}
-                              value={field.value || ""}
+                              value={field.value === null || field.value === undefined ? "" : String(field.value)} // Ensure string value
                             />
                           ) : fieldConfig.type === "Rich Text Area" ? (
                             <Textarea
                               placeholder={`Enter ${fieldConfig.label.toLowerCase()}`}
                               className="resize-y min-h-[120px] rounded-md"
                               {...field}
-                              value={field.value || ""}
+                              value={field.value === null || field.value === undefined ? "" : String(field.value)} // Ensure string value
                             />
                           ) : fieldConfig.type === "Date" ? (
                             <Popover>
@@ -204,7 +213,7 @@ export function RecommenderForm({ request }: RecommenderFormProps) {
                                   )}
                                 >
                                   {field.value ? (
-                                    format(field.value, "PPP")
+                                    format(field.value as Date, "PPP") // Cast to Date
                                   ) : (
                                     <span>Pick a date</span>
                                   )}
@@ -214,7 +223,7 @@ export function RecommenderForm({ request }: RecommenderFormProps) {
                               <PopoverContent className="w-auto p-0 rounded-xl shadow-lg bg-card text-card-foreground border-border" align="start">
                                 <Calendar
                                   mode="single"
-                                  selected={field.value || undefined}
+                                  selected={field.value as Date | undefined} // Cast to Date | undefined
                                   onSelect={field.onChange}
                                   initialFocus
                                 />
@@ -223,13 +232,13 @@ export function RecommenderForm({ request }: RecommenderFormProps) {
                           ) : fieldConfig.type === "Checkbox" ? (
                             <div className="flex items-center space-x-2">
                               <Checkbox
-                                checked={field.value}
+                                checked={field.value as boolean} // Cast to boolean
                                 onCheckedChange={field.onChange}
                               />
                               <Label htmlFor={fieldConfig.id}>{fieldConfig.label}</Label>
                             </div>
                           ) : fieldConfig.type === "Radio Group" && fieldConfig.options ? (
-                            <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex flex-col space-y-1">
+                            <RadioGroup onValueChange={field.onChange} defaultValue={field.value as string} className="flex flex-col space-y-1">
                               {fieldConfig.options.map((option: string) => (
                                 <div key={option} className="flex items-center space-x-2">
                                   <RadioGroupItem value={option} id={`${fieldConfig.id}-${option}`} />

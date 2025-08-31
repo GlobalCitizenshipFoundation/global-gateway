@@ -41,7 +41,7 @@ const availabilityFormSchema = z.object({
   date: z.date({ required_error: "Date is required." }),
   startTime: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, "Invalid start time format (HH:MM)."),
   endTime: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, "Invalid end time format (HH:MM)."),
-  isAvailable: z.boolean().default(true),
+  isAvailable: z.boolean(), // Explicitly boolean
 }).refine((data) => {
   const startDateTime = setMinutes(setHours(data.date, parseInt(data.startTime.split(':')[0])), parseInt(data.startTime.split(':')[1]));
   const endDateTime = setMinutes(setHours(data.date, parseInt(data.endTime.split(':')[0])), parseInt(data.endTime.split(':')[1]));

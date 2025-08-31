@@ -60,20 +60,38 @@ export async function getRecommendationRequestsAction(applicationId: string): Pr
   }
 }
 
+export async function getRecommendationRequestByTokenAction(token: string): Promise<RecommendationRequest | null> {
+  try {
+    // This action is public, but the service layer will handle token validation.
+    // No user-based authorization needed here, as it's for external recommenders.
+    const request = await getRecommendationRequestByToken(token);
+    return request;
+  } catch (error: any) {
+    console.error("Error in getRecommendationRequestByTokenAction:", error.message);
+    // Specific error handling for public access
+    if (error.message === "RecommendationRequestNotFound") {
+      redirect("/error/404");
+    }
+    throw error; // Re-throw for client-side toast
+  }
+}
+
 export async function createRecommendationRequestAction(applicationId: string, formData: FormData): Promise<RecommendationRequest | null> {
   try {
     const { user, isAdmin, isCampaignCreator } = await authorizeRecommendationAction('write', applicationId);
 
     const recommender_email = formData.get("recommender_email") as string;
     const recommender_name = formData.get("recommender_name") as string | null;
+    const campaign_phase_id = formData.get("campaign_phase_id") as string; // Get campaign_phase_id
     const unique_token = crypto.randomUUID(); // Generate a unique token
 
-    if (!recommender_email) {
-      throw new Error("Recommender email is required.");
+    if (!recommender_email || !campaign_phase_id) {
+      throw new Error("Recommender email and campaign phase ID are required.");
     }
 
     const newRequest = await createRecommendationRequest(
       applicationId,
+      campaign_phase_id, // Pass campaign_phase_id
       recommender_email,
       recommender_name,
       unique_token,

@@ -6,6 +6,7 @@ import { Profile } from "@/types/supabase"; // Assuming Profile interface is ava
 export interface RecommendationRequest {
   id: string;
   application_id: string;
+  campaign_phase_id: string; // Added campaign_phase_id
   recommender_email: string;
   recommender_name: string | null;
   unique_token: string;
@@ -62,6 +63,7 @@ export async function getRecommendationRequestByToken(token: string): Promise<Re
 
 export async function createRecommendationRequest(
   applicationId: string,
+  campaignPhaseId: string, // Added campaignPhaseId
   recommenderEmail: string,
   recommenderName: string | null = null,
   uniqueToken: string,
@@ -72,6 +74,7 @@ export async function createRecommendationRequest(
     .from("recommendation_requests")
     .insert([{
       application_id: applicationId,
+      campaign_phase_id: campaignPhaseId, // Added campaign_phase_id
       recommender_email: recommenderEmail,
       recommender_name: recommenderName,
       unique_token: uniqueToken,

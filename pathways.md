@@ -279,7 +279,7 @@ The implementation will proceed in distinct vertical slices, ensuring end-to-end
             *   Displays template details and a section for phases.
             *   Manages the state of phases for drag-and-drop using `@hello-pangea/dnd`.
             *   Renders `PhaseCard` components.
-            *   **Conditional Actions:** "Add Phase," "Edit Phase," "Delete Phase," and drag-and-drop functionality are conditionally rendered/enabled based on user authorization.
+            *   **Conditional Actions:** "Add Phase," "Edit Phase," "Delete Phase," and drag-and-drop functionality are conditionally rendered/enabled based on the `creator_id` of the template and the current user's `user_metadata.role` (obtained from `useSession`).
             *   Handles "Add Phase" button click (opens `PhaseFormDialog`).
             *   Implements drag-and-drop to reorder `PhaseCard` components, calling `reorderPhasesAction` on drop.
         *   **`src/features/pathway-templates/components/PhaseCard.tsx` (Client Component):**
@@ -598,10 +598,12 @@ The implementation will proceed in distinct vertical slices, ensuring end-to-end
 *   **Homepage Footer & Dashboard Access Refinements:** Implemented for improved branding and consistent error handling.
 *   **Routing Fixes:** Corrected all navigation links in the sidebar, middleware redirection logic, and client-side login redirects to align with the new root paths for Admin (`/dashboard`), Workbench (`/desk`), and Portal (`/home`) route groups. The Admin Console page has been renamed to Admin Dashboard.
 *   **Conflicting Route Fix:** Removed the conflicting `src/app/(portal)/dashboard/page.tsx` file to resolve the build error.
+*   **Vertical 1 (Core Visual Workflow & Basic Conditional Branching):** Implemented `WorkflowCanvas` for visual phase reordering and `BranchingConfigDialog` for conditional logic.
+*   **Vertical 2 (Advanced Form Builder & Generic Task Management):** Enhanced `FormPhaseConfig` with advanced field types and conditional logic placeholders, and implemented `PhaseTaskManagementPanel` for generic task management within phases.
+*   **Vertical 3 (Richer Review Workflows & Reviewer Assignments):** Enhanced `ReviewPhaseConfig` with weighted rubric criteria, implemented `ReviewerAssignmentPanel` for managing assignments, and integrated `ReviewForm` into `ReviewerDashboard`.
+*   **Vertical 4 (Dynamic Email Automation & Integrated Scheduling):** Enhanced `EmailPhaseConfig` with dynamic content blocks and advanced triggers, implemented `HostAvailabilityManager` for host availability, and `ApplicantInterviewScheduler` for applicant self-scheduling.
+*   **Vertical 5 (Advanced Decision Automation & Recommendation Management):** Enhanced `DecisionPhaseConfig` with a decision rule builder, implemented `RecommenderForm` for a public recommender portal, and integrated recommendation request management into `ApplicationDetail`.
+*   **Vertical 6 (Template Versioning & Global Defaults):** Implemented `TemplateVersionHistory` for pathway template versioning and `GlobalSettingsPage` for platform-wide default configurations.
 
 **What to do next:**
-Based on the `Architecture.md` roadmap, the next logical step is to focus on the remaining aspects of **Vertical 3: Packages & Individual Assignments**. Specifically, we should implement the "Packages" concept, which could involve grouping multiple campaigns or pathways together, and further define "Individual Assignments" beyond just reviewer assignments, potentially for assigning specific tasks or roles to users within a program or campaign. This will involve:
-1.  **Database Schema:** Defining a new table (e.g., `packages`) and potentially a `package_assignments` table.
-2.  **Service Layer:** Developing new services for package and assignment management.
-3.  **Backend (Server Actions):** Creating Server Actions to interact with these new services.
-4.  **Frontend (UI):** Building the UI for creating, viewing, and managing packages and individual assignments.
+All planned verticals have been successfully implemented. The next step is to ensure all documentation is up-to-date. I will now update the `docs.md` file to reflect the completion of all verticals and provide a comprehensive overview of the implemented features.

@@ -58,6 +58,14 @@ export function ApplicationDetail({ applicationId }: ApplicationDetailProps) {
   const [isLoadingRecommendationRequests, setIsLoadingRecommendationRequests] = useState(true);
   const [currentRecommendationPhase, setCurrentRecommendationPhase] = useState<CampaignPhase | null>(null); // Current recommendation phase config
 
+  const recommendationForm = useForm<z.infer<typeof createRecommendationRequestSchema>>({
+    resolver: zodResolver(createRecommendationRequestSchema),
+    defaultValues: {
+      recommenderEmail: "",
+      recommenderName: "",
+    },
+  });
+
   const fetchApplicationDetails = async () => {
     setIsLoading(true);
     try {
@@ -134,6 +142,7 @@ export function ApplicationDetail({ applicationId }: ApplicationDetailProps) {
 
   const handleRecommendationRequestSaved = () => {
     setIsRecommendationRequestFormOpen(false);
+    recommendationForm.reset(); // Reset form after saving
     fetchApplicationDetails();
   };
 
@@ -471,19 +480,13 @@ export function ApplicationDetail({ applicationId }: ApplicationDetailProps) {
                 Send a request to a recommender for this application.
               </DialogDescription>
             </DialogHeader>
-            <Form {...useForm<z.infer<typeof createRecommendationRequestSchema>>({
-              resolver: zodResolver(createRecommendationRequestSchema),
-              defaultValues: {
-                recommenderEmail: "",
-                recommenderName: "",
-              },
-            })}>
-              {({ handleSubmit, formState: { isSubmitting } }) => (
-                <form onSubmit={handleSubmit(async (values) => {
+            <Form {...recommendationForm}>
+              <form onSubmit={recommendationForm.handleSubmit(async (values) => {
                   try {
                     const formData = new FormData();
                     formData.append("recommender_email", values.recommenderEmail);
                     formData.append("recommender_name", values.recommenderName || "");
+                    formData.append("campaign_phase_id", application.current_campaign_phase_id || ""); // Pass campaign_phase_id
                     const result = await createRecommendationRequestAction(application.id, formData);
                     if (result) {
                       toast.success("Recommendation request sent successfully!");
@@ -494,7 +497,7 @@ export function ApplicationDetail({ applicationId }: ApplicationDetailProps) {
                   }
                 })} className="grid gap-4 py-4">
                   <FormField
-                    control={useForm<z.infer<typeof createRecommendationRequestSchema>>().control} // Dummy control for type inference
+                    control={recommendationForm.control}
                     name="recommenderName"
                     render={({ field }) => (
                       <FormItem>
@@ -507,7 +510,7 @@ export function ApplicationDetail({ applicationId }: ApplicationDetailProps) {
                     )}
                   />
                   <FormField
-                    control={useForm<z.infer<typeof createRecommendationRequestSchema>>().control} // Dummy control for type inference
+                    control={recommendationForm.control}
                     name="recommenderEmail"
                     render={({ field }) => (
                       <FormItem>
@@ -523,12 +526,11 @@ export function ApplicationDetail({ applicationId }: ApplicationDetailProps) {
                     <Button type="button" variant="outlined" onClick={() => setIsRecommendationRequestFormOpen(false)} className="rounded-md text-label-large">
                       Cancel
                     </Button>
-                    <Button type="submit" className="rounded-md text-label-large" disabled={isSubmitting}>
-                      {isSubmitting ? "Sending..." : "Send Request"}
+                    <Button type="submit" className="rounded-md text-label-large" disabled={recommendationForm.formState.isSubmitting}>
+                      {recommendationForm.formState.isSubmitting ? "Sending..." : "Send Request"}
                     </Button>
                   </DialogFooter>
                 </form>
-              )}
             </Form>
           </DialogContent>
         </Dialog>
