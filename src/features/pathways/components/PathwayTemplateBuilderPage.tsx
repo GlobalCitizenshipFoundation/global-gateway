@@ -833,7 +833,7 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
                     <FormLabel className="text-label-large">Phase Type</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
-                        <SelectTrigger className="rounded-md">
+                        <SelectTrigger className="rounded-md" onBlur={field.onBlur}> {/* Added onBlur here */}
                           <SelectValue placeholder={field.value ? undefined : "Select a phase type"} />
                         </SelectTrigger>
                       </FormControl>
