@@ -20,11 +20,11 @@
     --popover: 0 0% 100%; /* White */
     --popover-foreground: 0 0% 10%; /* Neutral 10 */
 
-    /* Primary - derived from #E91E63 (HSL: 339, 80%, 52%) */
-    --primary: 339 80% 49%; /* Primary 40 */
+    /* Primary - derived from #AD1457 (HSL: 334, 79%, 38%) */
+    --primary: 334 79% 38%; /* Primary 40 */
     --on-primary: 0 0% 100%; /* On Primary - Changed to white for WCAG AA contrast */
-    --primary-container: 339 100% 90%; /* Primary 90 */
-    --on-primary-container: 339 100% 10%; /* On Primary Container */
+    --primary-container: 334 100% 90%; /* Primary 90 */
+    --on-primary-container: 334 100% 10%; /* On Primary Container */
 
     /* Secondary - derived from #880E4F (HSL: 320, 75%, 30%) */
     --secondary: 320 75% 30%; /* Secondary 40 */
@@ -55,7 +55,7 @@
 
     --border: 0 0% 80%; /* Neutral 80 */
     --input: 0 0% 95%; /* Neutral 95 */
-    --ring: 339 80% 49%; /* Primary 40 */
+    --ring: 334 79% 38%; /* Primary 40 */
 
     /* Phase Type Colors (Light Theme) */
     --phase-form: 220 80% 40%; /* Blue 40 */
@@ -96,7 +96,7 @@
     --radius: 0.5rem; /* Default border radius */
 
     /* Chart colors - using a diverse set */
-    --chart-1: 339 80% 49%; /* Primary */
+    --chart-1: 334 79% 38%; /* Primary */
     --chart-2: 320 75% 30%; /* Secondary */
     --chart-3: 190 70% 40%; /* Tertiary */
     --chart-4: 40 90% 50%; /* Amber */
@@ -105,12 +105,12 @@
     /* Sidebar colors - derived from neutral/surface for now, can be customized */
     --sidebar-background: 0 0% 95%;
     --sidebar-foreground: 0 0% 10%;
-    --sidebar-primary: 339 80% 49%;
+    --sidebar-primary: 334 79% 38%;
     --sidebar-primary-foreground: 0 0% 100%; /* Changed to white for WCAG AA contrast */
     --sidebar-accent: 0 0% 90%;
     --sidebar-accent-foreground: 0 0% 10%;
     --sidebar-border: 0 0% 80%;
-    --sidebar-ring: 339 80% 49%;
+    --sidebar-ring: 334 79% 38%;
   }
 
   .dark {
@@ -122,11 +122,11 @@
     --popover: 0 0% 10%; /* Neutral 10 */
     --popover-foreground: 0 0% 90%; /* Neutral 90 */
 
-    /* Primary - derived from #E91E63 */
-    --primary: 339 100% 70%; /* Primary 80 */
-    --on-primary: 339 100% 10%; /* On Primary */
-    --primary-container: 339 100% 20%; /* Primary 20 */
-    --on-primary-container: 339 100% 90%; /* On Primary Container */
+    /* Primary - derived from #AD1457 */
+    --primary: 334 100% 70%; /* Primary 80 */
+    --on-primary: 334 100% 10%; /* On Primary */
+    --primary-container: 334 100% 20%; /* Primary 20 */
+    --on-primary-container: 334 100% 90%; /* On Primary Container */
 
     /* Secondary - derived from #880E4F */
     --secondary: 320 100% 70%; /* Secondary 80 */
@@ -157,7 +157,7 @@
 
     --border: 0 0% 30%; /* Neutral 30 */
     --input: 0 0% 15%; /* Neutral 15 */
-    --ring: 339 100% 70%; /* Primary 80 */
+    --ring: 334 100% 70%; /* Primary 80 */
 
     /* Phase Type Colors (Dark Theme) */
     --phase-form: 220 100% 70%; /* Blue 80 */
@@ -198,7 +198,7 @@
     --radius: 0.5rem; /* Default border radius */
 
     /* Chart colors */
-    --chart-1: 339 100% 70%; /* Primary */
+    --chart-1: 334 100% 70%; /* Primary */
     --chart-2: 320 100% 70%; /* Secondary */
     --chart-3: 190 100% 70%; /* Tertiary */
     --chart-4: 40 90% 70%; /* Amber */
@@ -207,12 +207,12 @@
     /* Sidebar colors */
     --sidebar-background: 0 0% 15%;
     --sidebar-foreground: 0 0% 90%;
-    --sidebar-primary: 339 100% 70%;
-    --sidebar-primary-foreground: 339 100% 10%;
+    --sidebar-primary: 334 100% 70%;
+    --sidebar-primary-foreground: 334 100% 10%;
     --sidebar-accent: 0 0% 20%;
     --sidebar-accent-foreground: 0 0% 90%;
     --sidebar-border: 0 0% 30%;
-    --sidebar-ring: 339 100% 70%;
+    --sidebar-ring: 334 100% 70%;
   }
 
   .body-with-fixed-header {
