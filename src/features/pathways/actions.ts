@@ -3,20 +3,22 @@
 import {
   PathwayTemplate, // Corrected import path
   Phase, // Corrected import path
+  PhaseTask, // Corrected import path
+} from "@/types/supabase"; // All types now imported from central types file
+import {
   getPathwayTemplates,
   getPathwayTemplateById,
   createPathwayTemplate,
   updatePathwayTemplate as updatePathwayTemplateService,
-  deletePathwayTemplate, // Changed to hard delete
+  deletePathwayTemplate,
   getPhasesByPathwayTemplateId,
   createPhase,
   updatePhase as updatePhaseService,
   updatePhaseBranchingConfig as updatePhaseBranchingConfigService,
-  deletePhase, // Changed to hard delete
+  deletePhase,
   clonePathwayTemplate,
 } from "./services/pathway-template-service";
 import {
-  PhaseTask, // Corrected import path
   getPhaseTasksByPhaseId,
   createPhaseTask,
   updatePhaseTask,
@@ -204,9 +206,9 @@ export async function updatePathwayTemplateAction(id: string, formData: FormData
       application_open_date,
       participation_deadline,
       general_instructions,
-      applicant_instructions, // New field
-      manager_instructions, // New field
-      is_visible_to_applicants, // New field
+      applicant_instructions,
+      manager_instructions,
+      is_visible_to_applicants,
     };
 
     const updatedTemplate = await updatePathwayTemplateService(
@@ -218,9 +220,9 @@ export async function updatePathwayTemplateAction(id: string, formData: FormData
         application_open_date,
         participation_deadline,
         general_instructions,
-        applicant_instructions, // New field
-        manager_instructions, // New field
-        is_visible_to_applicants, // New field
+        applicant_instructions,
+        manager_instructions,
+        is_visible_to_applicants,
       },
       user.id
     );
@@ -443,11 +445,11 @@ export async function updatePhaseAction(phaseId: string, pathwayTemplateId: stri
         name,
         type,
         description,
-        phase_start_date, // New field
-        phase_end_date, // New field
-        applicant_instructions, // New field
-        manager_instructions, // New field
-        is_visible_to_applicants, // New field
+        phase_start_date,
+        phase_end_date,
+        applicant_instructions,
+        manager_instructions,
+        is_visible_to_applicants,
       },
       user.id
     );
@@ -665,9 +667,10 @@ export async function createTemplateVersionAction(pathwayTemplateId: string): Pr
     const newVersion = await createTemplateVersion(pathwayTemplateId, snapshot, user.id);
 
     if (newVersion) {
-      await createActivityLog(pathwayTemplateId, user.id, 'version_created', `Created new version ${newVersion.version_number} for template "${template.name}".`, { versionId: newVersion.id });
+      await createActivityLog(pathwayTemplateId, user.id, 'version_created', `Created new version ${newVersion.version_number} for template "${template.name}".`);
     }
 
+    revalidatePath("/pathways");
     revalidatePath(`/pathways/${pathwayTemplateId}`);
     return newVersion;
   } catch (error: any) {
@@ -917,7 +920,7 @@ export async function deletePhaseTaskAction(taskId: string, phaseId: string, pat
     const success = await deletePhaseTask(taskId);
 
     if (success) {
-      await createActivityLog(pathwayTemplateId, user.id, 'phase_task_deleted', `Deleted task "${task.name}" from phase "${phaseId}" in template "${template?.name}".`, { phaseId, taskId });
+      await createActivityLog(pathwayTemplateId, user.id, 'phase_task_deleted', `Deleted task "${task.name}" from phase "${phaseId}" in template "${template?.name}".`, { phaseId });
     }
 
     revalidatePath(`/pathways/${pathwayTemplateId}`);

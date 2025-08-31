@@ -11,7 +11,7 @@ import { SchedulingPhaseConfig } from "@/features/pathways/components/phase-conf
 import { DecisionPhaseConfig } from "@/features/pathways/components/phase-configs/DecisionPhaseConfig";
 import { RecommendationPhaseConfig } from "@/features/pathways/components/phase-configs/RecommendationPhaseConfig";
 import { updateCampaignPhaseConfigAction } from "../actions"; // Campaign-specific action
-import { BaseConfigurableItem } from "@/features/pathways/services/pathway-template-service"; // Import BaseConfigurableItem
+import { BaseConfigurableItem } from "@/types/supabase"; // Import BaseConfigurableItem
 import { ScreeningPhaseConfig } from "@/features/pathways/components/phase-configs/ScreeningPhaseConfig"; // Import ScreeningPhaseConfig
 
 interface CampaignPhaseConfigurationPanelProps {

@@ -8,12 +8,12 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { ArrowLeft, PlusCircle, Workflow, Lock, Globe, Edit, Copy, Save, CheckCircle, Clock, UserCircle2, CalendarDays, Info, X } from "lucide-react";
-import { PathwayTemplate, Phase } from "@/types/supabase"; // Import from types/supabase
+import { ArrowLeft, PlusCircle, Workflow, Lock, Globe, Edit, Copy, Save, CheckCircle, Clock, UserCircle2, CalendarDays, Info, X, Trash2 } from "lucide-react";
+import { PathwayTemplate, Phase } from "@/types/supabase";
 import { toast } from "sonner";
 import { useSession } from "@/context/SessionContextProvider";
 import { Skeleton } from "@/components/ui/skeleton";
-import { getTemplateByIdAction, getPhasesAction, reorderPhasesAction, deletePhaseAction, createTemplateVersionAction, publishPathwayTemplateAction, updatePathwayTemplateStatusAction, updatePathwayTemplateAction, createPathwayTemplateAction, createPhaseAction, deletePathwayTemplateAction } from "../actions"; // Updated delete actions
+import { getTemplateByIdAction, getPhasesAction, reorderPhasesAction, deletePhaseAction, createTemplateVersionAction, publishPathwayTemplateAction, updatePathwayTemplateStatusAction, updatePathwayTemplateAction, createPathwayTemplateAction, createPhaseAction, deletePathwayTemplateAction } from "../actions";
 import { DragDropContext, Droppable, DropResult } from "@hello-pangea/dnd";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Input } from "@/components/ui/input";
@@ -38,6 +38,7 @@ import { CloneTemplateDialog } from "./CloneTemplateDialog";
 import { TemplateVersionHistory } from "./TemplateVersionHistory";
 import { TemplateActivityLog } from "./TemplateActivityLog";
 import { PhaseDetailsForm } from "./PhaseDetailsForm";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 // Zod schema for the entire template builder page (template details + phases)
 const templateBuilderSchema = z.object({
@@ -48,9 +49,9 @@ const templateBuilderSchema = z.object({
   application_open_date: z.date().nullable().optional(),
   participation_deadline: z.date().nullable().optional(),
   general_instructions: z.string().max(5000, { message: "General instructions cannot exceed 5000 characters." }).nullable().optional(),
-  applicant_instructions: z.string().max(5000, { message: "Applicant instructions cannot exceed 5000 characters." }).nullable().optional(), // New field
-  manager_instructions: z.string().max(5000, { message: "Manager instructions cannot exceed 5000 characters." }).nullable().optional(), // New field
-  is_visible_to_applicants: z.boolean().optional(), // New field
+  applicant_instructions: z.string().max(5000, { message: "Applicant instructions cannot exceed 5000 characters." }).nullable().optional(),
+  manager_instructions: z.string().max(5000, { message: "Manager instructions cannot exceed 5000 characters." }).nullable().optional(),
+  is_visible_to_applicants: z.boolean().optional(),
 });
 
 // Schema for the inline phase creation form
@@ -73,8 +74,8 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
   const [isLoading, setIsLoading] = useState(true);
   const [isCloneDialogOpen, setIsCloneDialogOpen] = useState(false);
   const [templateToClone, setTemplateToClone] = useState<PathwayTemplate | null>(null);
-  const [isAddingNewPhase, setIsAddingNewPhase] = useState(false); // State for inline new phase form
-  const [expandedPhaseId, setExpandedPhaseId] = useState<string | null>(null); // State for expanded phase card
+  const [isAddingNewPhase, setIsAddingNewPhase] = useState(false);
+  const [expandedPhaseId, setExpandedPhaseId] = useState<string | null>(null);
 
   const templateForm = useForm<z.infer<typeof templateBuilderSchema>>({
     resolver: zodResolver(templateBuilderSchema),
@@ -86,9 +87,9 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
       application_open_date: initialTemplate?.application_open_date ? new Date(initialTemplate.application_open_date) : null,
       participation_deadline: initialTemplate?.participation_deadline ? new Date(initialTemplate.participation_deadline) : null,
       general_instructions: initialTemplate?.general_instructions || "",
-      applicant_instructions: initialTemplate?.applicant_instructions || "", // New field
-      manager_instructions: initialTemplate?.manager_instructions || "", // New field
-      is_visible_to_applicants: initialTemplate?.is_visible_to_applicants ?? true, // New field
+      applicant_instructions: initialTemplate?.applicant_instructions || "",
+      manager_instructions: initialTemplate?.manager_instructions || "",
+      is_visible_to_applicants: initialTemplate?.is_visible_to_applicants ?? true,
     },
     mode: "onChange",
   });
@@ -102,7 +103,7 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
   });
 
   const fetchTemplateAndPhases = useCallback(async () => {
-    if (!templateId) { // For new template creation, no fetch needed
+    if (!templateId) {
       setIsLoading(false);
       return;
     }
@@ -123,9 +124,9 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
         application_open_date: fetchedTemplate.application_open_date ? new Date(fetchedTemplate.application_open_date) : null,
         participation_deadline: fetchedTemplate.participation_deadline ? new Date(fetchedTemplate.participation_deadline) : null,
         general_instructions: fetchedTemplate.general_instructions || "",
-        applicant_instructions: fetchedTemplate.applicant_instructions || "", // New field
-        manager_instructions: fetchedTemplate.manager_instructions || "", // New field
-        is_visible_to_applicants: fetchedTemplate.is_visible_to_applicants ?? true, // New field
+        applicant_instructions: fetchedTemplate.applicant_instructions || "",
+        manager_instructions: fetchedTemplate.manager_instructions || "",
+        is_visible_to_applicants: fetchedTemplate.is_visible_to_applicants ?? true,
       });
 
       const fetchedPhases = await getPhasesAction(templateId);
@@ -162,24 +163,21 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
       formData.append("application_open_date", values.application_open_date ? values.application_open_date.toISOString() : "");
       formData.append("participation_deadline", values.participation_deadline ? values.participation_deadline.toISOString() : "");
       formData.append("general_instructions", values.general_instructions || "");
-      formData.append("applicant_instructions", values.applicant_instructions || ""); // New field
-      formData.append("manager_instructions", values.manager_instructions || ""); // New field
-      formData.append("is_visible_to_applicants", values.is_visible_to_applicants ? "on" : "off"); // New field
+      formData.append("applicant_instructions", values.applicant_instructions || "");
+      formData.append("manager_instructions", values.manager_instructions || "");
+      formData.append("is_visible_to_applicants", values.is_visible_to_applicants ? "on" : "off");
 
 
       let result: PathwayTemplate | null;
       if (templateId) {
         result = await updatePathwayTemplateAction(templateId, formData);
         if (template?.status !== values.status) {
-          // If status changed, call the status update action
           await updatePathwayTemplateStatusAction(templateId, values.status);
-          // If status changed to 'published', also create a version
           if (values.status === 'published') {
             await createTemplateVersionAction(templateId);
           }
         }
       } else {
-        // For new templates, create and then potentially publish/version if status is not draft
         result = await createPathwayTemplateAction(formData);
         if (result && values.status !== 'draft') {
           await updatePathwayTemplateStatusAction(result.id, values.status);
@@ -192,9 +190,9 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
       if (result) {
         toast.success(`Template ${templateId ? "updated" : "created"} successfully!`);
         if (!templateId) {
-          router.push(`/pathways/${result.id}`); // Redirect to new template's builder page
+          router.push(`/pathways/${result.id}`);
         } else {
-          fetchTemplateAndPhases(); // Refresh current page
+          fetchTemplateAndPhases();
         }
       }
     } catch (error: any) {
@@ -204,17 +202,17 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
   };
 
   const handlePhaseUpdated = () => {
-    fetchTemplateAndPhases(); // Re-fetch to update list and order indices
-    setExpandedPhaseId(null); // Collapse any expanded phase after update
-    setIsAddingNewPhase(false); // Hide inline creator after new phase is added
+    fetchTemplateAndPhases();
+    setExpandedPhaseId(null);
+    setIsAddingNewPhase(false);
   };
 
   const handleDeletePhase = async (phaseId: string) => {
     try {
-      const success = await deletePhaseAction(phaseId, templateId!); // Use hard delete
+      const success = await deletePhaseAction(phaseId, templateId!);
       if (success) {
         toast.success("Phase deleted successfully!");
-        fetchTemplateAndPhases(); // Re-fetch to update list and order indices
+        fetchTemplateAndPhases();
       }
     } catch (error: any) {
       toast.error(error.message || "Failed to delete phase.");
@@ -235,7 +233,7 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
       order_index: index,
     }));
 
-    setPhases(updatedPhases); // Optimistic update
+    setPhases(updatedPhases);
 
     try {
       const success = await reorderPhasesAction(
@@ -244,13 +242,13 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
       );
       if (!success) {
         toast.error("Failed to reorder phases. Reverting changes.");
-        fetchTemplateAndPhases(); // Revert on failure
+        fetchTemplateAndPhases();
       } else {
         toast.success("Phases reordered successfully!");
       }
     } catch (error: any) {
       toast.error(error.message || "Failed to reorder phases. Reverting changes.");
-      fetchTemplateAndPhases(); // Revert on failure
+      fetchTemplateAndPhases();
     }
   };
 
@@ -259,7 +257,7 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
       const newVersion = await createTemplateVersionAction(templateId!);
       if (newVersion) {
         toast.success(`New version ${newVersion.version_number} created!`);
-        fetchTemplateAndPhases(); // Refresh to show new version
+        fetchTemplateAndPhases();
       }
     } catch (error: any) {
       toast.error(error.message || "Failed to create new version.");
@@ -271,16 +269,29 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
       const publishedVersion = await publishPathwayTemplateAction(templateId!);
       if (publishedVersion) {
         toast.success(`Template published and new version ${publishedVersion.version_number} created!`);
-        fetchTemplateAndPhases(); // Refresh to show new status and version
+        fetchTemplateAndPhases();
       }
     } catch (error: any) {
       toast.error(error.message || "Failed to publish template.");
     }
   };
 
+  const handleUpdateStatus = async (newStatus: PathwayTemplate['status']) => {
+    if (!templateId) return;
+    try {
+      const updatedTemplate = await updatePathwayTemplateStatusAction(templateId, newStatus);
+      if (updatedTemplate) {
+        toast.success(`Template status updated to ${newStatus}!`);
+        fetchTemplateAndPhases();
+      }
+    } catch (error: any) {
+      toast.error(error.message || "Failed to update template status.");
+    }
+  };
+
   const handleDeleteTemplate = async () => {
     try {
-      const success = await deletePathwayTemplateAction(templateId!); // Use hard delete
+      const success = await deletePathwayTemplateAction(templateId!);
       if (success) {
         toast.success("Template permanently deleted!");
         router.push("/pathways");
@@ -297,7 +308,7 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
 
   const handleToggleExpandPhase = (phaseId: string) => {
     setExpandedPhaseId(prevId => (prevId === phaseId ? null : phaseId));
-    setIsAddingNewPhase(false); // Hide inline creator if expanding a phase
+    setIsAddingNewPhase(false);
   };
 
   const handleInlinePhaseCreate = async (values: z.infer<typeof inlinePhaseCreationSchema>) => {
@@ -309,19 +320,19 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
       const formData = new FormData();
       formData.append("name", values.name);
       formData.append("type", values.type);
-      formData.append("description", ""); // Default empty description
-      formData.append("order_index", phases.length.toString()); // Append at the end
-      formData.append("phase_start_date", ""); // Default empty
-      formData.append("phase_end_date", ""); // Default empty
-      formData.append("applicant_instructions", ""); // Default empty
-      formData.append("manager_instructions", ""); // Default empty
-      formData.append("is_visible_to_applicants", "on"); // Default true
+      formData.append("description", "");
+      formData.append("order_index", phases.length.toString());
+      formData.append("phase_start_date", "");
+      formData.append("phase_end_date", "");
+      formData.append("applicant_instructions", "");
+      formData.append("manager_instructions", "");
+      formData.append("is_visible_to_applicants", "on");
 
       const result = await createPhaseAction(templateId, formData);
       if (result) {
         toast.success(`Phase "${result.name}" created successfully!`);
-        handlePhaseUpdated(); // This will re-fetch and hide the inline form
-        inlinePhaseForm.reset(); // Reset inline form fields
+        handlePhaseUpdated();
+        inlinePhaseForm.reset();
       }
     } catch (error: any) {
       console.error("Inline phase creation error:", error);
@@ -722,7 +733,7 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
                       />
                     </FormControl>
                     <FormDescription className="text-body-small">
-                      These instructions are for internal staff only (e.g., hiring managers, recruiters) for the overall template.
+                      These instructions are for internal staff only (e.g., hiring managers, recruiters).
                     </FormDescription>
                     <FormMessage />
                   </FormItem>

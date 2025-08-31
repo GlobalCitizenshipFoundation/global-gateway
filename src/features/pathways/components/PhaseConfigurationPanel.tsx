@@ -27,7 +27,7 @@ export function PhaseConfigurationPanel({
   onConfigSaved,
   onCancel, // Destructure onCancel
   canModify,
-}: PhaseConfigurationPanelPanelProps) {
+}: PhaseConfigurationPanelProps) {
   const renderConfigComponent = () => {
     switch (phase.type) {
       case "Form":

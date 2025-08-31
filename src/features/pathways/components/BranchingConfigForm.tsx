@@ -15,7 +15,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Phase } from "../services/pathway-template-service";
+import { Phase } from "@/types/supabase"; // Corrected import path
 import { updatePhaseBranchingAction, getPhasesAction } from "../actions";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";

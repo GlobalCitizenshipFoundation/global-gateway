@@ -19,7 +19,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { PlusCircle, Trash2, GripVertical, CalendarIcon, UserCircle2, CheckCircle, Clock } from "lucide-react";
+import { PlusCircle, Trash2, GripVertical, CalendarIcon, UserCircle2, CheckCircle, Clock, ChevronUp } from "lucide-react"; // Added ChevronUp
 import { PhaseTask } from "@/types/supabase"; // Corrected import path for PhaseTask
 import { getPhaseTasksAction, createPhaseTaskAction, updatePhaseTaskAction, deletePhaseTaskAction } from "../actions";
 import { useSession } from "@/context/SessionContextProvider";
@@ -61,6 +61,7 @@ export function PhaseTaskManagementPanel({ phaseId, pathwayTemplateId, canModify
   const [isLoadingTasks, setIsLoadingTasks] = useState(true);
   const [isTaskFormOpen, setIsTaskFormOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<PhaseTask | undefined>(undefined);
+  const [isCollapsed, setIsCollapsed] = useState(false); // State for collapse
 
   const form = useForm<z.infer<typeof taskFormSchema>>({
     resolver: zodResolver(taskFormSchema),
@@ -239,304 +240,313 @@ export function PhaseTaskManagementPanel({ phaseId, pathwayTemplateId, canModify
 
   return (
     <div className="space-y-6">
-      <h3 className="text-title-large font-bold text-foreground">Phase Tasks</h3>
+      <div className="flex items-center justify-between cursor-pointer" onClick={() => setIsCollapsed(!isCollapsed)}>
+        <h3 className="text-title-large font-bold text-foreground">Phase Tasks</h3>
+        <Button variant="ghost" size="icon" className="rounded-full">
+          <ChevronUp className={cn("h-5 w-5 transition-transform", isCollapsed ? "rotate-180" : "rotate-0")} />
+          <span className="sr-only">{isCollapsed ? "Expand Tasks" : "Collapse Tasks"}</span>
+        </Button>
+      </div>
       <p className="text-body-medium text-muted-foreground">
         Define and manage sub-tasks for this phase.
       </p>
-      {isLoadingTasks ? (
-        <div className="space-y-4">
-          {[...Array(2)].map((_, i) => (
-            <Skeleton key={i} className="h-24 w-full rounded-lg" />
-          ))}
-        </div>
-      ) : (
-        <div className="space-y-4">
-          {tasks.length === 0 ? (
-            <p className="text-body-medium text-muted-foreground text-center">No tasks defined for this phase yet.</p>
-          ) : (
-            tasks.map((task) => {
-              const isAssignedToCurrentUser = user?.id === task.assigned_to_user_id;
-              const canUpdateStatus = canModify || isAssignedToCurrentUser; // Creator/Admin or assigned user can update status
-              const canEditDetails = canModify; // Only creator/admin can edit details
 
-              return (
-                <Card key={task.id} className="rounded-lg border p-4 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Checkbox
-                        checked={task.status === 'completed'}
-                        onCheckedChange={() => canUpdateStatus && handleToggleTaskStatus(task)}
-                        disabled={!canUpdateStatus}
-                        className="data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"
-                      />
-                      <h4 className={cn("text-title-medium font-medium text-foreground", task.status === 'completed' && "line-through text-muted-foreground")}>
-                        {task.name}
-                      </h4>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      {canEditDetails && (
-                        <Button variant="outlined" size="icon" className="rounded-md" onClick={() => { setEditingTask(task); setIsTaskFormOpen(true); }}>
-                          <PlusCircle className="h-4 w-4" /> {/* Reusing PlusCircle for edit, could be Edit icon */}
-                          <span className="sr-only">Edit Task</span>
-                        </Button>
-                      )}
-                      {canEditDetails && (
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button variant="destructive" size="icon" className="rounded-md">
-                              <Trash2 className="h-4 w-4" />
-                              <span className="sr-only">Delete Task</span>
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent className="rounded-xl shadow-lg bg-card text-card-foreground border-border">
-                            <AlertDialogHeader>
-                              <AlertDialogTitle className="text-headline-small">Confirm Deletion</AlertDialogTitle>
-                              <AlertDialogDescription className="text-body-medium text-muted-foreground">
-                                Are you sure you want to delete the task &quot;{task.name}&quot;? This action cannot be undone.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel className="rounded-md text-label-large">Cancel</AlertDialogCancel>
-                              <AlertDialogAction
-                                onClick={() => handleDeleteTask(task.id)}
-                                className="rounded-md text-label-large bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                              >
-                                Delete
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      )}
-                    </div>
-                  </div>
-                  {task.description && (
-                    <p className="text-body-small text-muted-foreground ml-7">{task.description}</p>
-                  )}
-                  <div className="flex items-center gap-4 text-body-small text-muted-foreground ml-7">
-                    {task.assigned_to_user_id && (
-                      <div className="flex items-center gap-1">
-                        <Avatar className="h-5 w-5">
-                          <AvatarImage src={task.profiles?.avatar_url || ""} alt={task.profiles?.first_name || "User"} />
-                          <AvatarFallback className="bg-primary-container text-on-primary-container text-label-small">
-                            {getUserInitials(task.profiles?.first_name, task.profiles?.last_name)}
-                          </AvatarFallback>
-                        </Avatar>
-                        <span>Assigned to: {task.profiles?.first_name || "Unknown User"}</span>
-                      </div>
-                    )}
-                    {task.assigned_to_role && !task.assigned_to_user_id && (
-                      <div className="flex items-center gap-1">
-                        <UserCircle2 className="h-4 w-4" />
-                        <span>Assigned to: {task.assigned_to_role}</span>
-                      </div>
-                    )}
-                    {task.due_date && (
-                      <div className="flex items-center gap-1">
-                        <CalendarIcon className="h-4 w-4" />
-                        <span>Due: {new Date(task.due_date).toLocaleDateString()}</span>
-                      </div>
-                    )}
-                    <div className="flex items-center gap-1">
-                      {task.status === 'completed' ? <CheckCircle className="h-4 w-4 text-green-600" /> : <Clock className="h-4 w-4 text-yellow-600" />}
-                      <span className="capitalize">{task.status}</span>
-                    </div>
-                  </div>
-                </Card>
-              );
-            })
-          )}
-        </div>
-      )}
+      <div className={cn("overflow-hidden transition-max-height duration-300 ease-in-out", isCollapsed ? "max-h-0" : "max-h-[1000px]")}> {/* Dynamic max-h */}
+        {isLoadingTasks ? (
+          <div className="space-y-4">
+            {[...Array(2)].map((_, i) => (
+              <Skeleton key={i} className="h-24 w-full rounded-lg" />
+            ))}
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {tasks.length === 0 ? (
+              <p className="text-body-medium text-muted-foreground text-center">No tasks defined for this phase yet.</p>
+            ) : (
+              tasks.map((task) => {
+                const isAssignedToCurrentUser = user?.id === task.assigned_to_user_id;
+                const canUpdateStatus = canModify || isAssignedToCurrentUser; // Creator/Admin or assigned user can update status
+                const canEditDetails = canModify; // Only creator/admin can edit details
 
-      {canModify && (
-        <Button
-          type="button"
-          variant="outlined"
-          onClick={() => { setEditingTask(undefined); setIsTaskFormOpen(true); }}
-          className="w-full rounded-md text-label-large mt-6"
-        >
-          <PlusCircle className="mr-2 h-5 w-5" /> Add New Task
-        </Button>
-      )}
-
-      {/* Task Form Dialog */}
-      <Dialog open={isTaskFormOpen} onOpenChange={setIsTaskFormOpen}>
-        <DialogContent className="sm:max-w-[425px] rounded-xl shadow-lg bg-card text-card-foreground border-border">
-          <DialogHeader>
-            <DialogTitle className="text-headline-small">
-              {editingTask ? "Edit Task" : "Add New Task"}
-            </DialogTitle>
-            <DialogDescription className="text-body-medium text-muted-foreground">
-              {editingTask ? "Update the details of this task." : "Define a new task for this phase."}
-            </DialogDescription>
-          </DialogHeader>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4 py-4">
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-label-large">Task Name</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g., Review application documents" {...field} className="rounded-md" disabled={!canEditDetailsForEditingTask} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="description"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-label-large">Description (Optional)</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder="Provide a brief description of the task."
-                        className="resize-y min-h-[80px] rounded-md"
-                        {...field}
-                        value={field.value || ""}
-                        disabled={!canEditDetailsForEditingTask}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="assigned_to_role"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-label-large">Assigned To Role (Optional)</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value || ""} disabled={!canEditDetailsForEditingTask}>
-                      <FormControl>
-                        <SelectTrigger className="rounded-md">
-                          <SelectValue placeholder="Select a role" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent className="rounded-md shadow-lg bg-card text-card-foreground border-border">
-                        <SelectItem value="" className="text-body-medium hover:bg-muted hover:text-muted-foreground cursor-pointer">None</SelectItem>
-                        {assignedRoleOptions.map((role) => (
-                          <SelectItem key={role.value} value={role.value} className="text-body-medium hover:bg-muted hover:text-muted-foreground cursor-pointer">
-                            {role.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormDescription className="text-body-small">
-                      Assign this task to a specific role within the platform.
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="assigned_to_user_id"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-label-large">Assigned To User (Optional)</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value || ""} disabled={!canEditDetailsForEditingTask}>
-                      <FormControl>
-                        <SelectTrigger className="rounded-md">
-                          <SelectValue placeholder="Select a user" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent className="rounded-md shadow-lg bg-card text-card-foreground border-border">
-                        <SelectItem value="" className="text-body-medium hover:bg-muted hover:text-muted-foreground cursor-pointer">None</SelectItem>
-                        {availableUsers.map((userOption) => (
-                          <SelectItem key={userOption.id} value={userOption.id} className="text-body-medium hover:bg-muted hover:text-muted-foreground cursor-pointer">
-                            {userOption.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormDescription className="text-body-small">
-                      Assign this task to a specific user. Overrides role assignment.
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="due_date"
-                render={({ field }) => (
-                  <FormItem className="flex flex-col">
-                    <FormLabel className="text-label-large">Due Date (Optional)</FormLabel>
-                    <Popover>
-                      <PopoverTrigger asChild disabled={!canEditDetailsForEditingTask}>
-                        <FormControl>
-                          <Button
-                            variant="outlined"
-                            className={cn(
-                              "w-full pl-3 text-left font-normal rounded-md",
-                              !field.value && "text-muted-foreground"
-                            )}
-                          >
-                            {field.value ? (
-                              format(field.value, "PPP")
-                            ) : (
-                              <span>Pick a date</span>
-                            )}
-                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                          </Button>
-                        </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0 rounded-xl shadow-lg bg-card text-card-foreground border-border" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={field.value || undefined}
-                          onSelect={field.onChange}
-                          initialFocus
+                return (
+                  <Card key={task.id} className="rounded-lg border p-4 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Checkbox
+                          checked={task.status === 'completed'}
+                          onCheckedChange={() => canUpdateStatus && handleToggleTaskStatus(task)}
+                          disabled={!canUpdateStatus}
+                          className="data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"
                         />
-                      </PopoverContent>
-                    </Popover>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="status"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                    <div className="space-y-0.5">
-                      <FormLabel className="text-label-large">Task Status</FormLabel>
-                      <FormDescription className="text-body-small">
-                        Mark this task as pending or completed.
-                      </FormDescription>
+                        <h4 className={cn("text-title-medium font-medium text-foreground", task.status === 'completed' && "line-through text-muted-foreground")}>
+                          {task.name}
+                        </h4>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        {canEditDetails && (
+                          <Button variant="outlined" size="icon" className="rounded-md" onClick={() => { setEditingTask(task); setIsTaskFormOpen(true); }}>
+                            <PlusCircle className="h-4 w-4" /> {/* Reusing PlusCircle for edit, could be Edit icon */}
+                            <span className="sr-only">Edit Task</span>
+                          </Button>
+                        )}
+                        {canEditDetails && (
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button variant="destructive" size="icon" className="rounded-md">
+                                <Trash2 className="h-4 w-4" />
+                                <span className="sr-only">Delete Task</span>
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent className="rounded-xl shadow-lg bg-card text-card-foreground border-border">
+                              <AlertDialogHeader>
+                                <AlertDialogTitle className="text-headline-small">Confirm Deletion</AlertDialogTitle>
+                                <AlertDialogDescription className="text-body-medium text-muted-foreground">
+                                  Are you sure you want to delete the task &quot;{task.name}&quot;? This action cannot be undone.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel className="rounded-md text-label-large">Cancel</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => handleDeleteTask(task.id)}
+                                  className="rounded-md text-label-large bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                >
+                                  Delete
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        )}
+                      </div>
                     </div>
-                    <FormControl>
-                      <Switch
-                        checked={field.value === 'completed'}
-                        onCheckedChange={(checked) => field.onChange(checked ? 'completed' : 'pending')}
-                        className="data-[state=checked]:bg-primary data-[state=unchecked]:bg-muted-foreground"
-                        disabled={!canUpdateStatusForEditingTask}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <DialogFooter>
-                <Button type="button" variant="outlined" onClick={() => setIsTaskFormOpen(false)} className="rounded-md text-label-large">
-                  Cancel
-                </Button>
-                <Button type="submit" className="rounded-md text-label-large" disabled={form.formState.isSubmitting || (!canEditDetailsForEditingTask && !canUpdateStatusForEditingTask)}>
-                  {form.formState.isSubmitting
-                    ? "Saving..."
-                    : editingTask
-                    ? "Save Changes"
-                    : "Add Task"}
-                </Button>
-              </DialogFooter>
-            </form>
-          </Form>
-        </DialogContent>
-      </Dialog>
+                    {task.description && (
+                      <p className="text-body-small text-muted-foreground ml-7">{task.description}</p>
+                    )}
+                    <div className="flex items-center gap-4 text-body-small text-muted-foreground ml-7">
+                      {task.assigned_to_user_id && (
+                        <div className="flex items-center gap-1">
+                          <Avatar className="h-5 w-5">
+                            <AvatarImage src={task.profiles?.avatar_url || ""} alt={task.profiles?.first_name || "User"} />
+                            <AvatarFallback className="bg-primary-container text-on-primary-container text-label-small">
+                              {getUserInitials(task.profiles?.first_name, task.profiles?.last_name)}
+                            </AvatarFallback>
+                          </Avatar>
+                          <span>Assigned to: {task.profiles?.first_name || "Unknown User"}</span>
+                        </div>
+                      )}
+                      {task.assigned_to_role && !task.assigned_to_user_id && (
+                        <div className="flex items-center gap-1">
+                          <UserCircle2 className="h-4 w-4" />
+                          <span>Assigned to: {task.assigned_to_role}</span>
+                        </div>
+                      )}
+                      {task.due_date && (
+                        <div className="flex items-center gap-1">
+                          <CalendarIcon className="h-4 w-4" />
+                          <span>Due: {new Date(task.due_date).toLocaleDateString()}</span>
+                        </div>
+                      )}
+                      <div className="flex items-center gap-1">
+                        {task.status === 'completed' ? <CheckCircle className="h-4 w-4 text-green-600" /> : <Clock className="h-4 w-4 text-yellow-600" />}
+                        <span className="capitalize">{task.status}</span>
+                      </div>
+                    </div>
+                  </Card>
+                );
+              })
+            )}
+          </div>
+        )}
+
+        {canModify && (
+          <Button
+            type="button"
+            variant="outlined"
+            onClick={() => { setEditingTask(undefined); setIsTaskFormOpen(true); }}
+            className="w-full rounded-md text-label-large mt-6"
+          >
+            <PlusCircle className="mr-2 h-5 w-5" /> Add New Task
+          </Button>
+        )}
+
+        {/* Task Form Dialog */}
+        <Dialog open={isTaskFormOpen} onOpenChange={setIsTaskFormOpen}>
+          <DialogContent className="sm:max-w-[425px] rounded-xl shadow-lg bg-card text-card-foreground border-border">
+            <DialogHeader>
+              <DialogTitle className="text-headline-small">
+                {editingTask ? "Edit Task" : "Add New Task"}
+              </DialogTitle>
+              <DialogDescription className="text-body-medium text-muted-foreground">
+                {editingTask ? "Update the details of this task." : "Define a new task for this phase."}
+              </DialogDescription>
+            </DialogHeader>
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4 py-4">
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-label-large">Task Name</FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g., Review application documents" {...field} className="rounded-md" disabled={!canEditDetailsForEditingTask} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="description"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-label-large">Description (Optional)</FormLabel>
+                      <FormControl>
+                        <Textarea
+                          placeholder="Provide a brief description of the task."
+                          className="resize-y min-h-[80px] rounded-md"
+                          {...field}
+                          value={field.value || ""}
+                          disabled={!canEditDetailsForEditingTask}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="assigned_to_role"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-label-large">Assigned To Role (Optional)</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value || ""} disabled={!canEditDetailsForEditingTask}>
+                        <FormControl>
+                          <SelectTrigger className="rounded-md">
+                            <SelectValue placeholder="Select a role" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent className="rounded-md shadow-lg bg-card text-card-foreground border-border">
+                          <SelectItem value="" className="text-body-medium hover:bg-muted hover:text-muted-foreground cursor-pointer">None</SelectItem>
+                          {assignedRoleOptions.map((role) => (
+                            <SelectItem key={role.value} value={role.value} className="text-body-medium hover:bg-muted hover:text-muted-foreground cursor-pointer">
+                              {role.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormDescription className="text-body-small">
+                        Assign this task to a specific role within the platform.
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="assigned_to_user_id"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-label-large">Assigned To User (Optional)</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value || ""} disabled={!canEditDetailsForEditingTask}>
+                        <FormControl>
+                          <SelectTrigger className="rounded-md">
+                            <SelectValue placeholder="Select a user" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent className="rounded-md shadow-lg bg-card text-card-foreground border-border">
+                          <SelectItem value="" className="text-body-medium hover:bg-muted hover:text-muted-foreground cursor-pointer">None</SelectItem>
+                          {availableUsers.map((userOption) => (
+                            <SelectItem key={userOption.id} value={userOption.id} className="text-body-medium hover:bg-muted hover:text-muted-foreground cursor-pointer">
+                              {userOption.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormDescription className="text-body-small">
+                        Assign this task to a specific user. Overrides role assignment.
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="due_date"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-col">
+                      <FormLabel className="text-label-large">Due Date (Optional)</FormLabel>
+                      <Popover>
+                        <PopoverTrigger asChild disabled={!canEditDetailsForEditingTask}>
+                          <FormControl>
+                            <Button
+                              variant="outlined"
+                              className={cn(
+                                "w-full pl-3 text-left font-normal rounded-md",
+                                !field.value && "text-muted-foreground"
+                              )}
+                            >
+                              {field.value ? (
+                                format(field.value, "PPP")
+                              ) : (
+                                <span>Pick a date</span>
+                              )}
+                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                            </Button>
+                          </FormControl>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0 rounded-xl shadow-lg bg-card text-card-foreground border-border" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={field.value || undefined}
+                            onSelect={field.onChange}
+                            initialFocus
+                          />
+                        </PopoverContent>
+                      </Popover>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="status"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                      <div className="space-y-0.5">
+                        <FormLabel className="text-label-large">Task Status</FormLabel>
+                        <FormDescription className="text-body-small">
+                          Mark this task as pending or completed.
+                        </FormDescription>
+                      </div>
+                      <FormControl>
+                        <Switch
+                          checked={field.value === 'completed'}
+                          onCheckedChange={(checked) => field.onChange(checked ? 'completed' : 'pending')}
+                          className="data-[state=checked]:bg-primary data-[state=unchecked]:bg-muted-foreground"
+                          disabled={!canUpdateStatusForEditingTask}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <DialogFooter>
+                  <Button type="button" variant="outlined" onClick={() => setIsTaskFormOpen(false)} className="rounded-md text-label-large">
+                    Cancel
+                  </Button>
+                  <Button type="submit" className="rounded-md text-label-large" disabled={form.formState.isSubmitting || (!canEditDetailsForEditingTask && !canUpdateStatusForEditingTask)}>
+                    {form.formState.isSubmitting
+                      ? "Saving..."
+                      : editingTask
+                      ? "Save Changes"
+                      : "Add Task"}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </Form>
+          </DialogContent>
+        </Dialog>
+      </div>
     </div>
   );
 }
