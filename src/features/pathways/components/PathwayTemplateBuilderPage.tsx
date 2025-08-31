@@ -834,7 +834,9 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
                     <Select key={field.name} onValueChange={field.onChange} value={field.value || ""} disabled={!canModifyTemplate}>
                       <FormControl>
                         <SelectTrigger className="rounded-md" onBlur={field.onBlur}>
-                          <SelectValue placeholder="Select a phase type" />
+                          <SelectValue>
+                            {field.value ? phaseTypes.find(t => t.value === field.value)?.label : "Select a phase type"}
+                          </SelectValue>
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent className="rounded-md shadow-lg bg-card text-card-foreground border-border">
