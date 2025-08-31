@@ -66,7 +66,9 @@ export function RecommenderForm({ request }: RecommenderFormProps) {
     const fetchPhaseConfig = async () => {
       setIsLoadingPhaseConfig(true);
       try {
-        const fetchedPhases = await getCampaignPhasesAction(request.applications?.campaigns?.id || "");
+        // Ensure request.applications?.campaigns?.id is a string for getCampaignPhasesAction
+        const campaignId = request.applications?.campaigns?.id || "";
+        const fetchedPhases = await getCampaignPhasesAction(campaignId);
         const currentPhase = fetchedPhases?.find((p: CampaignPhase) => p.id === request.campaign_phase_id);
 
         if (!currentPhase) {
@@ -77,6 +79,7 @@ export function RecommenderForm({ request }: RecommenderFormProps) {
 
         // Dynamically set default values from request.form_data or empty
         const defaultValues: Record<string, any> = {};
+        // Access config directly from currentPhase, which is CampaignPhase
         (currentPhase.config?.recommenderInformationFields || []).forEach((field: any) => {
           defaultValues[field.label] = request.form_data?.[field.label] ?? "";
           if (field.type === "Checkbox") {
@@ -145,6 +148,7 @@ export function RecommenderForm({ request }: RecommenderFormProps) {
     );
   }
 
+  // Access config directly from campaignPhase, which is CampaignPhase
   const recommenderInformationFields = campaignPhase.config?.recommenderInformationFields || [];
 
   return (

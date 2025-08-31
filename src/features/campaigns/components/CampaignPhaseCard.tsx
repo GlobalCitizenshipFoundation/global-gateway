@@ -3,7 +3,7 @@
 import React from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Edit, Trash2, GripVertical, Settings } from "lucide-react";
+import { Edit, Trash2, GripVertical, Settings } from "lucide-react"; // Import Settings icon
 import { CampaignPhase } from "../services/campaign-service";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Draggable } from "@hello-pangea/dnd";

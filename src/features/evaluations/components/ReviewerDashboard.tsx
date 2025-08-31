@@ -17,6 +17,7 @@ import { cn } from "@/lib/utils";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"; // Import Dialog components
 import { ReviewForm } from "./ReviewForm"; // Import ReviewForm
+import { CampaignPhase } from "@/features/campaigns/services/campaign-service"; // Import CampaignPhase
 
 export function ReviewerDashboard() {
   const { user, isLoading: isSessionLoading } = useSession();
@@ -142,7 +143,7 @@ export function ReviewerDashboard() {
       assignment.applications?.profiles?.first_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       assignment.applications?.profiles?.last_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       assignment.applications?.campaigns?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      assignment.campaign_phases?.name?.toLowerCase().includes(searchTerm.toLowerCase());
+      (assignment.campaign_phases as CampaignPhase)?.name?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = assignmentStatusFilter === "all" || assignment.status === assignmentStatusFilter;
     return matchesSearch && matchesStatus;
   });
@@ -152,7 +153,7 @@ export function ReviewerDashboard() {
       review.applications?.profiles?.first_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       review.applications?.profiles?.last_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       review.applications?.campaigns?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      review.campaign_phases?.name?.toLowerCase().includes(searchTerm.toLowerCase());
+      (review.campaign_phases as CampaignPhase)?.name?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = reviewStatusFilter === "all" || review.status === reviewStatusFilter;
     return matchesSearch && matchesStatus;
   });
@@ -202,7 +203,7 @@ export function ReviewerDashboard() {
             <SelectItem value="assigned" className="text-body-medium hover:bg-muted hover:text-muted-foreground cursor-pointer">Assigned</SelectItem>
             <SelectItem value="accepted" className="text-body-medium hover:bg-muted hover:text-muted-foreground cursor-pointer">Accepted</SelectItem>
             <SelectItem value="declined" className="text-body-medium hover:bg-muted hover:text-muted-foreground cursor-pointer">Declined</SelectItem>
-            <SelectItem value="completed" className="text-body-medium hover:bg-muted hover:text-muted-foreground cursor-pointer">Completed</SelectItem>
+            <SelectItem value="completed" className className="text-body-medium hover:bg-muted hover:text-muted-foreground cursor-pointer">Completed</SelectItem>
           </SelectContent>
         </Select>
         <Select value={reviewStatusFilter} onValueChange={setReviewStatusFilter}>
@@ -247,7 +248,7 @@ export function ReviewerDashboard() {
                       <Briefcase className="h-3 w-3" /> {assignment.applications?.campaigns?.name || "N/A Campaign"}
                     </p>
                     <p className="text-body-small text-muted-foreground flex items-center gap-1">
-                      <Workflow className="h-3 w-3" /> {assignment.campaign_phases?.name || "N/A Phase"}
+                      <Workflow className="h-3 w-3" /> {(assignment.campaign_phases as CampaignPhase)?.name || "N/A Phase"}
                     </p>
                     <div className={cn("flex items-center gap-1 px-2 py-0.5 rounded-full w-fit mt-1", getAssignmentStatusColor(assignment.status))}>
                       {getAssignmentStatusIcon(assignment.status)}
@@ -331,7 +332,7 @@ export function ReviewerDashboard() {
                       <Briefcase className="h-3 w-3" /> {review.applications?.campaigns?.name || "N/A Campaign"}
                     </p>
                     <p className="text-body-small text-muted-foreground flex items-center gap-1">
-                      <Workflow className="h-3 w-3" /> {review.campaign_phases?.name || "N/A Phase"}
+                      <Workflow className="h-3 w-3" /> {(review.campaign_phases as CampaignPhase)?.name || "N/A Phase"}
                     </p>
                     <div className={cn("flex items-center gap-1 px-2 py-0.5 rounded-full w-fit mt-1", getReviewStatusColor(review.status))}>
                       {getReviewStatusIcon(review.status)}

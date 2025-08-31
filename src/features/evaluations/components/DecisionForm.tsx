@@ -71,8 +71,12 @@ export function DecisionForm({
     const fetchPhaseConfig = async () => {
       setIsLoadingPhaseConfig(true);
       try {
-        const fetchedPhases = await getCampaignPhasesAction(campaignPhaseId);
-        const currentPhase = fetchedPhases?.find(p => p.id === campaignPhaseId);
+        // Assuming campaignId is available from the application context or can be fetched
+        // For now, we'll fetch all phases and find the relevant one.
+        // In a real app, you might pass campaignId directly or fetch application first.
+        const campaignId = initialDecision?.applications?.campaigns?.id || ''; // Derive campaignId if possible
+        const fetchedPhases = await getCampaignPhasesAction(campaignId);
+        const currentPhase = fetchedPhases?.find((p: CampaignPhase) => p.id === campaignPhaseId);
 
         if (!currentPhase) {
           toast.error("Campaign phase not found for decision configuration.");
@@ -143,6 +147,7 @@ export function DecisionForm({
     );
   }
 
+  // Access config directly from campaignPhase, which is CampaignPhase
   const decisionOutcomes = campaignPhase?.config?.decisionOutcomes || [];
 
   return (

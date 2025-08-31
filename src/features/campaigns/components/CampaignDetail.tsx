@@ -118,7 +118,7 @@ export function CampaignDetail({ campaignId }: CampaignDetailProps) {
     try {
       const success = await reorderCampaignPhasesAction(
         campaignId,
-        updatedPhases.map((p) => ({ id: p.id, order_index: p.order_index }))
+        updatedPhases.map((p: CampaignPhase) => ({ id: p.id, order_index: p.order_index }))
       );
       if (!success) {
         toast.error("Failed to reorder campaign phases. Reverting changes.");
@@ -262,7 +262,7 @@ export function CampaignDetail({ campaignId }: CampaignDetailProps) {
           <Droppable droppableId="campaign-phases">
             {(provided) => (
               <div {...provided.droppableProps} ref={provided.innerRef} className="space-y-4">
-                {campaignPhases.map((phase, index) => (
+                {campaignPhases.map((phase: CampaignPhase, index: number) => (
                   <CampaignPhaseCard
                     key={phase.id}
                     phase={phase}

@@ -22,6 +22,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { ApplicationPhase } from "../services/application-service"; // Import ApplicationPhase
 
 export function ScreeningDashboard() {
   const { user, isLoading: isSessionLoading } = useSession();
@@ -225,7 +226,7 @@ export function ScreeningDashboard() {
               <CardContent className="flex-grow pt-2 space-y-2 text-body-medium text-muted-foreground">
                 <p className="flex items-center gap-2">
                   <Workflow className="h-4 w-4" />
-                  Current Phase: <span className="font-medium text-foreground">{app.current_campaign_phases?.name || "N/A"}</span>
+                  Current Phase: <span className="font-medium text-foreground">{(app.current_campaign_phases as ApplicationPhase)?.name || "N/A"}</span>
                 </p>
                 <p className="flex items-center gap-2">
                   <CalendarDays className="h-4 w-4" />

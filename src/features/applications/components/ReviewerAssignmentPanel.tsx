@@ -72,7 +72,7 @@ export function ReviewerAssignmentPanel({
       const fetchedPhases = await getCampaignPhasesAction(campaignId);
       if (fetchedPhases) {
         // Filter for 'Review' type phases
-        setCampaignPhases(fetchedPhases.filter(p => p.type === 'Review'));
+        setCampaignPhases(fetchedPhases.filter((p: CampaignPhase) => p.type === 'Review'));
       }
     } catch (error: any) {
       toast.error(error.message || "Failed to load reviewer assignments or campaign phases.");
@@ -130,7 +130,7 @@ export function ReviewerAssignmentPanel({
       case "assigned": return <Clock className="h-4 w-4 text-blue-600" />;
       case "accepted": return <CheckCircle className="h-4 w-4 text-green-600" />;
       case "declined": return <XCircle className="h-4 w-4 text-red-600" />;
-      case "completed": return <CheckCircle className="h-4 w-4 text-purple-600" />;
+      case "completed": return <Award className="h-4 w-4 text-purple-600" />;
       default: return <Clock className="h-4 w-4 text-gray-500" />;
     }
   };
@@ -187,7 +187,7 @@ export function ReviewerAssignmentPanel({
             ) : (
               assignments.map((assignment) => {
                 const reviewerName = `${assignment.profiles?.first_name || ''} ${assignment.profiles?.last_name || ''}`.trim() || "Unknown Reviewer";
-                const phaseName = assignment.campaign_phases?.name || "Unknown Phase";
+                const phaseName = (assignment.campaign_phases as CampaignPhase)?.name || "Unknown Phase";
 
                 return (
                   <div key={assignment.id} className="flex items-start space-x-3 p-3 rounded-lg bg-muted/30 border border-border">
@@ -303,7 +303,7 @@ export function ReviewerAssignmentPanel({
                               No review phases available.
                             </SelectItem>
                           ) : (
-                            campaignPhases.map((phase) => (
+                            campaignPhases.map((phase: CampaignPhase) => (
                               <SelectItem key={phase.id} value={phase.id} className="text-body-medium hover:bg-muted hover:text-muted-foreground cursor-pointer">
                                 {phase.name}
                               </SelectItem>

@@ -91,7 +91,7 @@ export default async function AdminDashboardPage() {
             </Link>
           </Button>
           <Button asChild variant="tonal" className="rounded-lg px-6 py-4 h-auto text-label-large flex items-center justify-between">
-            <Link href="/pathway-templates">
+            <Link href="/pathways">
               <span>View Pathway Templates</span>
               <ArrowRight className="ml-2 h-5 w-5" />
             </Link>

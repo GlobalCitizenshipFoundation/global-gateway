@@ -186,7 +186,7 @@ The implementation will proceed in distinct vertical slices, ensuring end-to-end
             ON public.pathway_templates FOR DELETE TO authenticated
             USING (auth.uid() = creator_id);
             ```
-*   **Service Layer (`src/features/pathway-templates/services/pathway-template-service.ts`):**
+*   **Service Layer (`src/features/pathways/services/pathway-template-service.ts`):**
     *   **Functions:**
         *   `getPathwayTemplates()`: Fetches templates.
         *   `getPathwayTemplateById(id: string)`: Fetches a single template.
@@ -194,7 +194,7 @@ The implementation will proceed in distinct vertical slices, ensuring end-to-end
         *   `updatePathwayTemplate(id: string, updates: Partial<PathwayTemplate>)`: Updates an existing template.
         *   `deletePathwayTemplate(id: string)`: Deletes a template.
     *   **Error Handling:** Each function will include `console.error` for logging and `toast.error` for user feedback.
-*   **Backend (Next.js Server Actions - `src/features/pathway-templates/actions.ts`):**
+*   **Backend (Next.js Server Actions - `src/features/pathways/actions.ts`):**
     *   **Purpose:** These actions will be the primary interface for client-side mutations, ensuring server-side validation, authorization, and direct database interaction via the `pathwayTemplateService`.
     *   **Actions:**
         *   `createPathwayTemplateAction(formData: FormData)`: Extracts `name`, `description`, `is_private` from `formData`. Gets `creator_id` from session. Calls `pathwayTemplateService.createPathwayTemplate`.
@@ -208,20 +208,20 @@ The implementation will proceed in distinct vertical slices, ensuring end-to-end
         *   `getTemplatesAction()`: (For Server Components) Calls `pathwayTemplateService.getPathwayTemplates`.
         *   `getTemplateByIdAction(id: string)`: (For Server Components) Calls `pathwayTemplateService.getPathwayTemplateById`.
             *   **Authorization Logic:** After fetching the template, it will check if `(template.creator_id === auth.uid()) OR (template.is_private === FALSE) OR (user_metadata.role === 'admin')`. If none of these are true, it will return `null` or throw an error, ensuring the UI doesn't display unauthorized private templates.
-*   **Frontend (UI - `src/app/(workbench)/pathway-templates/page.tsx`, `src/features/pathway-templates/components/PathwayTemplateList.tsx`, `src/features/pathway-templates/components/PathwayTemplateForm.tsx`):**
-    *   **`src/app/(workbench)/pathway-templates/page.tsx` (Server Component):** Responsible for initial data fetching of templates using `getTemplatesAction()` and rendering the `PathwayTemplateList` component.
-    *   **`src/features/pathway-templates/components/PathwayTemplateList.tsx` (Client Component):**
+*   **Frontend (UI - `src/app/(workbench)/pathways/page.tsx`, `src/features/pathways/components/PathwayTemplateList.tsx`, `src/features/pathways/components/PathwayTemplateForm.tsx`):**
+    *   **`src/app/(workbench)/pathways/page.tsx` (Server Component):** Responsible for initial data fetching of templates using `getTemplatesAction()` and rendering the `PathwayTemplateList` component.
+    *   **`src/features/pathways/components/PathwayTemplateList.tsx` (Client Component):**
         *   Fetches templates using `getTemplatesAction()` (or receives initial data from Server Component).
         *   Renders M3 `Card` components for each template.
         *   **Conditional UI:** Displays a lock icon for private templates.
         *   **Conditional Actions:** "Edit" and "Delete" buttons will be conditionally rendered/enabled based on the `creator_id` of the template and the current user's `user_metadata.role` (obtained from `useSession`).
-        *   Handles "Create New Template" button click (navigates to `/workbench/pathway-templates/new`).
-        *   Handles "Edit" button click (navigates to `/workbench/pathway-templates/[id]`).
+        *   Handles "Create New Template" button click (navigates to `/pathways/new`).
+        *   Handles "Edit" button click (navigates to `/pathways/[id]/edit`).
         *   Handles "Delete" button click (triggers `AlertDialog` and calls `deletePathwayTemplateAction`).
         *   Implements `Skeleton` for loading states.
         *   Implements filter options for "My Templates," "Public Templates," and "All Templates (Admin Only)" (if admin).
-    *   **`src/features/pathway-templates/components/PathwayTemplateForm.tsx` (Client Component):**
-        *   Used for both creating (`/workbench/pathway-templates/new`) and editing (`/workbench/pathway-templates/[id]`).
+    *   **`src/features/pathways/components/PathwayTemplateForm.tsx` (Client Component):**
+        *   Used for both creating (`/pathways/new`) and editing (`/pathways/[id]/edit`).
         *   Utilizes `react-hook-form` with `zod` resolver for form state and validation.
         *   Renders M3 `Input` for name, `Textarea` for description, and an M3 `Switch` for `is_private`.
         *   Submits data using the appropriate Server Action (`createPathwayTemplateAction` or `updatePathwayTemplateAction`).
@@ -268,48 +268,48 @@ The implementation will proceed in distinct vertical slices, ensuring end-to-end
             ON public.phases FOR INSERT TO authenticated
             WITH CHECK (true);
             ```
-*   **Service Layer (`src/features/pathway-templates/services/pathway-template-service.ts`):**
+*   **Service Layer (`src/features/pathways/services/pathway-template-service.ts`):**
         *   Functions `getPhasesByPathwayTemplateId`, `createPhase`, `updatePhase`, `deletePhase` are implemented.
-    *   **Backend (Next.js Server Actions - `src/features/pathway-templates/actions.ts`):**
+    *   **Backend (Next.js Server Actions - `src/features/pathways/actions.ts`):**
         *   Server Actions `getPhasesAction`, `createPhaseAction`, `updatePhaseAction`, `deletePhaseAction`, `reorderPhasesAction` are implemented.
         *   All phase-related Server Actions include robust authorization logic (`authorizeTemplateAction`) to ensure only the `creator_id` of the parent template or a 'super admin' can modify phases.
-    *   **Frontend (UI - `src/app/(workbench)/pathway-templates/[id]/page.tsx`, `src/features/pathway-templates/components/PathwayTemplateDetail.tsx`, `src/features/pathway-templates/components/PhaseCard.tsx`, `src/features/pathway-templates/components/PhaseFormDialog.tsx`):**
-        *   **`src/app/(workbench)/pathway-templates/[id]/page.tsx` (Server Component):** Fetches the specific `PathwayTemplate` and its associated `Phases` using Server Actions. Renders `PathwayTemplateDetail`.
-        *   **`src/features/pathway-templates/components/PathwayTemplateDetail.tsx` (Client Component):**
+    *   **Frontend (UI - `src/app/(workbench)/pathways/[id]/page.tsx`, `src/features/pathways/components/PathwayTemplateDetail.tsx`, `src/features/pathways/components/PhaseCard.tsx`, `src/features/pathways/components/PhaseFormDialog.tsx`):**
+        *   **`src/app/(workbench)/pathways/[id]/page.tsx` (Server Component):** Fetches the specific `PathwayTemplate` and its associated `Phases` using Server Actions. Renders `PathwayTemplateDetail`.
+        *   **`src/features/pathways/components/PathwayTemplateDetail.tsx` (Client Component):**
             *   Displays template details and a section for phases.
             *   Manages the state of phases for drag-and-drop using `@hello-pangea/dnd`.
             *   Renders `PhaseCard` components.
             *   **Conditional Actions:** "Add Phase," "Edit Phase," "Delete Phase," and drag-and-drop functionality are conditionally rendered/enabled based on the `creator_id` of the template and the current user's `user_metadata.role` (obtained from `useSession`).
             *   Handles "Add Phase" button click (opens `PhaseFormDialog`).
             *   Implements drag-and-drop to reorder `PhaseCard` components, calling `reorderPhasesAction` on drop.
-        *   **`src/features/pathway-templates/components/PhaseCard.tsx` (Client Component):**
+        *   **`src/features/pathways/components/PhaseCard.tsx` (Client Component):**
             *   Displays individual phase details, includes a drag handle, and M3 `Button` components for "Edit Phase" and "Delete Phase."
-        *   **`src/features/pathway-templates/components/PhaseFormDialog.tsx` (Client Component):**
+        *   **`src/features/pathways/components/PhaseFormDialog.tsx` (Client Component):**
             *   An M3 `Dialog` for creating or editing phase `name`, `type`, and `description`.
             *   Uses `react-hook-form` and `zod` for validation.
             *   Submits data to `createPhaseAction` or `updatePhaseAction`.
 
 *   **Vertical 1.3: Phase-Specific Configuration (Initial Form & Review)**
     *   **Data Layer:** The `config` (JSONB) field in `public.phases` stores detailed settings for each phase type.
-    *   **Service Layer (`src/features/pathway-templates/services/pathway-template-service.ts`):**
+    *   **Service Layer (`src/features/pathways/services/pathway-template-service.ts`):**
         *   The `updatePhase` function is extended to correctly store updates to the `config` JSONB field.
-    *   **Backend (Next.js Server Actions - `src/features/pathway-templates/actions.ts`):**
+    *   **Backend (Next.js Server Actions - `src/features/pathways/actions.ts`):**
         *   `updatePhaseConfigAction(phaseId: string, pathwayTemplateId: string, configUpdates: Record<string, any>)` is implemented with full authorization.
-    *   **Frontend (UI - `src/features/pathway-templates/components/PhaseConfigurationPanel.tsx`, and `src/features/pathway-templates/components/phase-configs/*.tsx`):**
-        *   **`src/features/pathway-templates/components/PhaseConfigurationPanel.tsx` (Client Component):** Dynamically renders specific configuration sub-components (`FormPhaseConfig`, `ReviewPhaseConfig`, `EmailPhaseConfig`, `SchedulingPhaseConfig`, `DecisionPhaseConfig`, `RecommendationPhaseConfig`) based on `phase.type`. It passes `phase.config` and handles updates via `updatePhaseConfigAction`.
-        *   **`src/features/pathway-templates/components/phase-configs/FormPhaseConfig.tsx` (Client Component):** UI for defining form fields with dynamic array management using `react-hook-form` and `zod`.
-        *   **`src/features/pathway-templates/components/phase-configs/ReviewPhaseConfig.tsx` (Client Component):** UI for defining rubric criteria, scoring scales, and anonymization settings.
-        *   **`src/features/pathway-templates/components/phase-configs/EmailPhaseConfig.tsx` (Client Component):** UI for defining email subject, body, recipient roles, and trigger events.
-        *   **`src/features/pathway-templates/components/phase-configs/SchedulingPhaseConfig.tsx` (Client Component):** UI for defining interview duration, buffer time, and host selection.
-        *   **`src/features/pathway-templates/components/phase-configs/DecisionPhaseConfig.tsx` (Client Component):** UI for defining decision outcomes, associated email templates, and automated next steps.
-        *   **`src/features/pathway-templates/components/phase-configs/RecommendationPhaseConfig.tsx` (Client Component):** UI for defining number of recommenders, recommender information fields, and reminder schedules.
+    *   **Frontend (UI - `src/features/pathways/components/PhaseConfigurationPanel.tsx`, and `src/features/pathways/components/phase-configs/*.tsx`):**
+        *   **`src/features/pathways/components/PhaseConfigurationPanel.tsx` (Client Component):** Dynamically renders specific configuration sub-components (`FormPhaseConfig`, `ReviewPhaseConfig`, `EmailPhaseConfig`, `SchedulingPhaseConfig`, `DecisionPhaseConfig`, `RecommendationPhaseConfig`) based on `phase.type`. It passes `phase.config` and handles updates via `updatePhaseConfigAction`.
+        *   **`src/features/pathways/components/phase-configs/FormPhaseConfig.tsx` (Client Component):** UI for defining form fields with dynamic array management using `react-hook-form` and `zod`.
+        *   **`src/features/pathways/components/phase-configs/ReviewPhaseConfig.tsx` (Client Component):** UI for defining rubric criteria, scoring scales, and anonymization settings.
+        *   **`src/features/pathways/components/phase-configs/EmailPhaseConfig.tsx` (Client Component):** UI for defining email subject, body, recipient roles, and trigger events.
+        *   **`src/features/pathways/components/phase-configs/SchedulingPhaseConfig.tsx` (Client Component):** UI for defining interview duration, buffer time, and host selection.
+        *   **`src/features/pathways/components/phase-configs/DecisionPhaseConfig.tsx` (Client Component):** UI for defining decision outcomes, associated email templates, and automated next steps.
+        *   **`src/features/pathways/components/phase-configs/RecommendationPhaseConfig.tsx` (Client Component):** UI for defining number of recommenders, recommender information fields, and reminder schedules.
 
 *   **Vertical 1.4: Template Cloning**
-    *   **Service Layer (`src/features/pathway-templates/services/pathway-template-service.ts`):**
+    *   **Service Layer (`src/features/pathways/services/pathway-template-service.ts`):**
         *   `clonePathwayTemplate(templateId: string, newName: string, creatorId: string)` is implemented to perform a deep copy of a template and its phases.
-    *   **Backend (Next.js Server Actions - `src/features/pathway-templates/actions.ts`):**
+    *   **Backend (Next.js Server Actions - `src/features/pathways/actions.ts`):**
         *   `clonePathwayTemplateAction(templateId: string, newName: string)` is implemented with authorization to ensure only authenticated users can clone viewable templates.
-    *   **Frontend (UI - `src/features/pathway-templates/components/CloneTemplateDialog.tsx`):**
+    *   **Frontend (UI - `src/features/pathways/components/CloneTemplateDialog.tsx`):**
         *   An M3 `Dialog` (`CloneTemplateDialog`) is used for inputting the new template name.
         *   A "Clone" M3 `Button` is added to `PathwayTemplateList` and `PathwayTemplateDetail` to trigger the dialog.
 
@@ -344,7 +344,7 @@ The implementation will proceed in distinct vertical slices, ensuring end-to-end
 *   **Vertical 2.2: Campaign Phase Management (Deep Copy, Add, Delete, Reorder)**
     *   **Database Schema (`public.campaign_phases`):**
         *   Table created with `id`, `campaign_id`, `original_phase_id`, `name`, `type`, `description`, `order_index`, `config`, `created_at`, `updated_at` columns.
-        *   **Row Level Security (RLS)** enabled with policies for `SELECT`, `INSERT`, `UPDATE`, `DELETE` based on the parent campaign's authorization.
+        *   **Row Level Security (RLS)** enabled with policies for `SELECT` (own or admin), `INSERT` (own or admin), `UPDATE` (own or admin), `DELETE` (own or admin).
     *   **Service Layer (`src/features/campaigns/services/campaign-service.ts`):**
         *   Functions `getCampaignPhasesByCampaignId`, `createCampaignPhase`, `updateCampaignPhase`, `deleteCampaignPhase`, `deepCopyPhasesFromTemplate` are implemented.
     *   **Backend (Next.js Server Actions - `src/features/campaigns/actions.ts`):**
@@ -362,7 +362,7 @@ The implementation will proceed in distinct vertical slices, ensuring end-to-end
     *   **Backend (Next.js Server Actions - `src/features/campaigns/actions.ts`):**
         *   `updateCampaignPhaseConfigAction(phaseId: string, campaignId: string, configUpdates: Record<string, any>)` is implemented with full authorization.
     *   **Frontend (UI - `src/features/campaigns/components/CampaignPhaseConfigurationPanel.tsx`):**
-        *   **`src/features/campaigns/components/CampaignPhaseConfigurationPanel.tsx` (Client Component):** Reuses the `PhaseConfigurationPanel` and `phase-configs` components from `pathway-templates` by passing a campaign-specific `updatePhaseConfigAction` wrapper. This demonstrates the reusability of phase configuration logic.
+        *   **`src/features/campaigns/components/CampaignPhaseConfigurationPanel.tsx` (Client Component):** Reuses the `PhaseConfigurationPanel` and `phase-configs` components from `pathways` by passing a campaign-specific `updatePhaseConfigAction` wrapper. This demonstrates the reusability of phase configuration logic.
 
 ---
 
@@ -518,7 +518,7 @@ The implementation will proceed in distinct vertical slices, ensuring end-to-end
     *   **`src/app/(workbench)/communications/templates/[id]/edit/page.tsx` (Server Component):** Renders `CommunicationTemplateForm` for editing.
     *   **`src/features/communications/components/CommunicationTemplateList.tsx` (Client Component):** Displays a list of communication templates with CRUD actions, search, and filters by type and ownership.
     *   **`src/features/communications/components/CommunicationTemplateForm.tsx` (Client Component):** Form for creating/editing communication template details, including name, subject, body, type, and public/private status.
-*   **Integration with Email Phase Configuration (`src/features/pathway-templates/components/phase-configs/EmailPhaseConfig.tsx`):**
+*   **Integration with Email Phase Configuration (`src/features/pathways/components/phase-configs/EmailPhaseConfig.tsx`):**
     *   The `EmailPhaseConfig` component has been updated to fetch and display available `CommunicationTemplates` of type 'email'.
     *   Users can now select an existing template to pre-fill the subject and body fields of the email phase configuration.
 *   **Sidebar Update (`src/components/layout/Sidebar.tsx`):**
@@ -597,7 +597,6 @@ The implementation will proceed in distinct vertical slices, ensuring end-to-end
 *   **User Profile Enhancements:** Fully implemented, allowing users to manage detailed personal and professional information, including email display from `auth.users`.
 *   **Homepage Footer & Dashboard Access Refinements:** Implemented for improved branding and consistent error handling.
 *   **Routing Fixes:** Corrected all navigation links in the sidebar, middleware redirection logic, and client-side login redirects to align with the new root paths for Admin (`/dashboard`), Workbench (`/desk`), and Portal (`/home`) route groups. The Admin Console page has been renamed to Admin Dashboard.
-*   **Conflicting Route Fix:** Removed the conflicting `src/app/(portal)/dashboard/page.tsx` file to resolve the build error.
 *   **Vertical 1 (Core Visual Workflow & Basic Conditional Branching):** Implemented `WorkflowCanvas` for visual phase reordering and `BranchingConfigDialog` for conditional logic.
 *   **Vertical 2 (Advanced Form Builder & Generic Task Management):** Enhanced `FormPhaseConfig` with advanced field types and conditional logic placeholders, and implemented `PhaseTaskManagementPanel` for generic task management within phases.
 *   **Vertical 3 (Richer Review Workflows & Reviewer Assignments):** Enhanced `ReviewPhaseConfig` with weighted rubric criteria, implemented `ReviewerAssignmentPanel` for managing assignments, and integrated `ReviewForm` into `ReviewerDashboard`.

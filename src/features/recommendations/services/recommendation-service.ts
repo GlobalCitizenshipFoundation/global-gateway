@@ -16,7 +16,7 @@ export interface RecommendationRequest {
   form_data: Record<string, any> | null; // Stores the recommender's submission
   created_at: string;
   updated_at: string;
-  applications?: { profiles: Profile; campaigns: { name: string } }; // For joining with applicant's profile via application and campaign name
+  applications?: { profiles: Profile; campaigns: { id: string; name: string } }; // For joining with applicant's profile via application and campaign name, added 'id' to campaigns
 }
 
 // Internal helper to get Supabase client
@@ -30,7 +30,7 @@ export async function getRecommendationRequests(applicationId?: string): Promise
   const supabase = await getSupabase();
   let query = supabase
     .from("recommendation_requests")
-    .select("*, applications(profiles(first_name, last_name, avatar_url), campaigns(name))")
+    .select("*, applications(profiles(first_name, last_name, avatar_url), campaigns(id, name))") // Select campaigns.id
     .order("created_at", { ascending: false });
 
   if (applicationId) {
@@ -50,7 +50,7 @@ export async function getRecommendationRequestByToken(token: string): Promise<Re
   const supabase = await getSupabase();
   const { data, error } = await supabase
     .from("recommendation_requests")
-    .select("*, applications(profiles(first_name, last_name, avatar_url), campaigns(name))")
+    .select("*, applications(profiles(first_name, last_name, avatar_url), campaigns(id, name))") // Select campaigns.id
     .eq("unique_token", token)
     .single();
 
@@ -81,7 +81,7 @@ export async function createRecommendationRequest(
       status: status,
       request_sent_at: new Date().toISOString(), // Mark as sent upon creation
     }])
-    .select("*, applications(profiles(first_name, last_name, avatar_url), campaigns(name))")
+    .select("*, applications(profiles(first_name, last_name, avatar_url), campaigns(id, name))") // Select campaigns.id
     .single();
 
   if (error) {
@@ -105,7 +105,7 @@ export async function submitRecommendation(
       updated_at: new Date().toISOString(),
     })
     .eq("id", requestId)
-    .select("*, applications(profiles(first_name, last_name, avatar_url), campaigns(name))")
+    .select("*, applications(profiles(first_name, last_name, avatar_url), campaigns(id, name))") // Select campaigns.id
     .single();
 
   if (error) {
@@ -124,7 +124,7 @@ export async function updateRecommendationRequestStatus(
     .from("recommendation_requests")
     .update({ status: newStatus, updated_at: new Date().toISOString() })
     .eq("id", requestId)
-    .select("*, applications(profiles(first_name, last_name, avatar_url), campaigns(name))")
+    .select("*, applications(profiles(first_name, last_name, avatar_url), campaigns(id, name))") // Select campaigns.id
     .single();
 
   if (error) {

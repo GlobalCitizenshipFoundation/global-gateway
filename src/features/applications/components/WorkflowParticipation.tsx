@@ -42,7 +42,7 @@ export function WorkflowParticipation({
 
   const getPhaseStatus = (phase: CampaignPhase) => {
     const isCurrentPhase = phase.id === currentCampaignPhaseId;
-    const currentPhaseIndex = phases.findIndex(p => p.id === currentCampaignPhaseId);
+    const currentPhaseIndex = phases.findIndex((p: CampaignPhase) => p.id === currentCampaignPhaseId);
     const phaseIndex = phases.indexOf(phase);
 
     if (applicationOverallStatus === 'accepted' && phaseIndex <= currentPhaseIndex) {

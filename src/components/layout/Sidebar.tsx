@@ -113,7 +113,7 @@ export function Sidebar({ isCollapsed, toggleCollapsed, isMobile, isOpen, closeS
         { href: "/desk", icon: LayoutDashboard, label: "Desk" },
         { href: "/programs", icon: Briefcase, label: "Programs" },
         { href: "/packages", icon: Package, label: "Packages" },
-        { href: "/pathway-templates", icon: Workflow, label: "Pathway Templates" },
+        { href: "/pathways", icon: Workflow, label: "Pathway Templates" },
         { href: "/campaigns", icon: Briefcase, label: "Campaigns" },
         { href: "/applications/screening", icon: FileText, label: "Applications Screening" },
         { href: "/evaluations/my-reviews", icon: Award, label: "My Reviews" },

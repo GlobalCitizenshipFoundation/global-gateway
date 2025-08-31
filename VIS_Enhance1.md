@@ -29,22 +29,22 @@ This document outlines a detailed Vertical Implementation Strategy to bring the 
     *   **OCP:** The `phases` table schema remains stable, and new logic is stored within the flexible `config` JSONB, allowing for extension without modification of the table structure.
     *   **Encapsulation:** The specific details of how branching is stored are encapsulated within the `config` field, abstracted from the core `Phase` entity.
 
-**Service Layer (`src/features/pathway-templates/services/pathway-template-service.ts`):**
+**Service Layer (`src/features/pathways/services/pathway-template-service.ts`):**
 *   **New Function:** `updatePhaseBranchingConfig(phaseId: string, configUpdates: Record<string, any>)`: A dedicated function to update only the branching-related part of a phase's configuration.
 *   **SOLID/OOP Focus:**
     *   **SRP:** The service functions remain focused on CRUD operations for phases and now specifically for updating *parts* of the `config`.
     *   **DIP:** The service exposes an abstract way to update configuration, not tied to specific UI elements.
 
-**Backend (Next.js Server Actions - `src/features/pathway-templates/actions.ts`):**
+**Backend (Next.js Server Actions - `src/features/pathways/actions.ts`):**
 *   **New Action:** `updatePhaseBranchingAction(phaseId: string, pathwayTemplateId: string, formData: FormData)`: This action will extract branching logic from `formData` and call the new service function.
 *   **Authorization:** `authorizeTemplateAction` will be used to ensure only authorized users (creator or admin) can modify the template's phases and their configurations.
 *   **Validation:** Server-side validation will ensure that `next_phase_id` references valid, existing phases within the same template.
 *   **Revalidation:** `revalidatePath` for the template detail page.
 *   **SOLID/OOP Focus:**
     *   **SRP:** Actions remain focused on handling form data, authorization, and calling the appropriate service.
-    *   **DIP:** Actions depend on the `pathway-template-service` abstraction.
+    *   **DIP:** Actions depend on the `pathways-service` abstraction.
 
-**Frontend (UI/UX - `src/features/pathway-templates/components/PathwayTemplateDetail.tsx`, `src/features/pathway-templates/components/WorkflowCanvas.tsx` (new), `src/features/pathway-templates/components/BranchingConfigDialog.tsx` (new)):**
+**Frontend (UI/UX - `src/features/pathways/components/PathwayTemplateDetail.tsx`, `src/features/pathways/components/WorkflowCanvas.tsx` (new), `src/features/pathways/components/BranchingConfigDialog.tsx` (new)):**
 *   **`PathwayTemplateDetail.tsx`:** Will orchestrate the `WorkflowCanvas` and related configuration dialogs.
 *   **`WorkflowCanvas.tsx` (New Client Component):**
     *   Will render phases as M3-styled cards/nodes on a canvas.
@@ -104,9 +104,9 @@ This document outlines a detailed Vertical Implementation Strategy to bring the 
     *   **Encapsulation:** Task details are encapsulated within the `phase_tasks` table.
 
 **Service Layer:**
-*   **`src/features/pathway-templates/services/pathway-template-service.ts`:**
+*   **`src/features/pathways/services/pathway-template-service.ts`:**
     *   `updatePhaseConfig(phaseId: string, configUpdates: Record<string, any>)`: Extended to handle complex form field configurations.
-*   **New Service: `src/features/pathway-templates/services/phase-task-service.ts`:**
+*   **New Service: `src/features/pathways/services/phase-task-service.ts`:**
     *   `getPhaseTasksByPhaseId(phaseId: string)`
     *   `createPhaseTask(phaseId: string, name: string, description: string | null, assignedToRole: string | null, assignedToUserId: string | null, dueDate: string | null, orderIndex: number)`
     *   `updatePhaseTask(taskId: string, updates: Partial<Omit<PhaseTask, 'id' | 'phase_id' | 'created_at'>>)`
@@ -116,9 +116,9 @@ This document outlines a detailed Vertical Implementation Strategy to bring the 
     *   **DIP:** Services expose high-level abstractions for task management.
 
 **Backend (Next.js Server Actions):**
-*   **`src/features/pathway-templates/actions.ts`:**
+*   **`src/features/pathways/actions.ts`:**
     *   `updatePhaseConfigAction(phaseId: string, pathwayTemplateId: string, configUpdates: Record<string, any>)`: Extended to handle advanced form configurations.
-*   **New Actions (`src/features/pathway-templates/actions.ts` or `src/features/phase-tasks/actions.ts`):**
+*   **New Actions (`src/features/pathways/actions.ts`):**
     *   `getPhaseTasksAction(phaseId: string)`
     *   `createPhaseTaskAction(phaseId: string, formData: FormData)`
     *   `updatePhaseTaskAction(taskId: string, formData: FormData)`
@@ -131,12 +131,12 @@ This document outlines a detailed Vertical Implementation Strategy to bring the 
     *   **DIP:** Actions depend on service abstractions.
 
 **Frontend (UI/UX):**
-*   **`src/features/pathway-templates/components/phase-configs/FormPhaseConfig.tsx`:**
+*   **`src/features/pathways/components/phase-configs/FormPhaseConfig.tsx`:**
     *   **Overhaul:** Implement UI for conditional field display (e.g., a rule builder for each field), field grouping (e.g., using `Accordion` or nested `Card` components), and advanced validation options.
     *   **M3 Adherence:** Use `Input`, `Select`, `Switch`, `Textarea`, `Accordion` components, ensuring proper spacing and typography.
-*   **`src/features/pathway-templates/components/PhaseConfigurationPanel.tsx`:**
+*   **`src/features/pathways/components/PhaseConfigurationPanel.tsx`:**
     *   Will be updated to include a new section for "Tasks" for *all* phase types.
-*   **New Component: `src/features/pathway-templates/components/PhaseTaskManagementPanel.tsx`:**
+*   **New Component: `src/features/pathways/components/PhaseTaskManagementPanel.tsx`:**
     *   A client component rendered within `PhaseConfigurationPanel`.
     *   Displays a list of tasks for the current phase.
     *   Provides UI for adding, editing, deleting tasks (using `Dialogs` for forms).
@@ -173,7 +173,7 @@ This document outlines a detailed Vertical Implementation Strategy to bring the 
     *   **Encapsulation:** Review logic and assignment details are encapsulated within their respective tables and `config` fields.
 
 **Service Layer:**
-*   **`src/features/pathway-templates/services/pathway-template-service.ts`:**
+*   **`src/features/pathways/services/pathway-template-service.ts`:**
     *   `updatePhaseConfig(phaseId: string, configUpdates: Record<string, any>)`: Extended to handle multi-round review configurations.
 *   **`src/features/evaluations/services/evaluation-service.ts`:** (Already exists)
     *   `getReviewerAssignments`, `createReviewerAssignment`, `updateReviewerAssignment`, `deleteReviewerAssignment`, `getReviews`, `createReview`, `updateReview`.
@@ -182,7 +182,7 @@ This document outlines a detailed Vertical Implementation Strategy to bring the 
     *   **DIP:** Services provide abstract interfaces for review and assignment management.
 
 **Backend (Next.js Server Actions):**
-*   **`src/features/pathway-templates/actions.ts`:**
+*   **`src/features/pathways/actions.ts`:**
     *   `updatePhaseConfigAction`: Extended for richer review configurations.
 *   **`src/features/evaluations/actions.ts`:** (Already exists)
     *   `getReviewerAssignmentsAction`, `createReviewerAssignmentAction`, `updateReviewerAssignmentAction`, `getReviewsAction`, `createReviewAction`, `updateReviewAction`.
@@ -193,7 +193,7 @@ This document outlines a detailed Vertical Implementation Strategy to bring the 
     *   **SRP:** Actions handle authorization and data transformation before calling services.
 
 **Frontend (UI/UX):**
-*   **`src/features/pathway-templates/components/phase-configs/ReviewPhaseConfig.tsx`:**
+*   **`src/features/pathways/components/phase-configs/ReviewPhaseConfig.tsx`:**
     *   **Overhaul:** Implement UI for defining multiple review rounds (e.g., using `Tabs` or `Accordion` for each round), detailed rubric criteria (with weighting inputs), and advanced reviewer assignment policies (e.g., number of reviewers per application).
     *   **M3 Adherence:** Use `Tabs`, `Accordion`, `Input`, `Select`, `Switch`, `RadioGroup`, `Button` components.
 *   **`src/features/applications/components/ApplicationDetail.tsx`:**
@@ -255,7 +255,7 @@ This document outlines a detailed Vertical Implementation Strategy to bring the 
     *   **OCP:** `phases.config` allows extending email/scheduling logic.
 
 **Service Layer:**
-*   **`src/features/pathway-templates/services/pathway-template-service.ts`:**
+*   **`src/features/pathways/services/pathway-template-service.ts`:**
     *   `updatePhaseConfig`: Extended for email/scheduling configurations.
 *   **`src/features/communications/services/communication-service.ts`:**
     *   `sendAutomatedEmail(templateId: string, recipientId: string, contextData: Record<string, any>)`: New function to send emails with dynamic content.
@@ -272,7 +272,7 @@ This document outlines a detailed Vertical Implementation Strategy to bring the 
     *   **DIP:** `communication-service` depends on an abstract `IContentRenderer` for dynamic content.
 
 **Backend (Next.js Server Actions):**
-*   **`src/features/pathway-templates/actions.ts`:**
+*   **`src/features/pathways/actions.ts`:**
     *   `updatePhaseConfigAction`: Extended for email/scheduling configurations.
 *   **`src/features/communications/actions.ts`:**
     *   `sendAutomatedEmailAction(templateId: string, recipientId: string, contextData: Record<string, any>)`: New action.
@@ -287,10 +287,10 @@ This document outlines a detailed Vertical Implementation Strategy to bring the 
     *   **DIP:** Actions depend on service abstractions.
 
 **Frontend (UI/UX):**
-*   **`src/features/pathway-templates/components/phase-configs/EmailPhaseConfig.tsx`:**
+*   **`src/features/pathways/components/phase-configs/EmailPhaseConfig.tsx`:**
     *   **Overhaul:** Integrate a rich text editor with a placeholder selector. Implement UI for conditional content blocks (e.g., using a simple rule builder). Add options for advanced trigger events.
     *   **M3 Adherence:** Use a rich text editor component (e.g., a custom one built with `Textarea` and `Button` for placeholders), `Select` for triggers, `Switch` for conditional blocks.
-*   **`src/features/pathway-templates/components/phase-configs/SchedulingPhaseConfig.tsx`:**
+*   **`src/features/pathways/components/phase-configs/SchedulingPhaseConfig.tsx`:**
     *   **Overhaul:** Implement UI for defining interview duration, buffer time, and selecting host pools.
     *   **M3 Adherence:** Use `Input` (number), `Select` for host pools.
 *   **`src/app/(workbench)/scheduling/page.tsx`:**
@@ -344,7 +344,7 @@ This document outlines a detailed Vertical Implementation Strategy to bring the 
     *   **OCP:** `phases.config` allows extending decision/recommendation logic.
 
 **Service Layer:**
-*   **`src/features/pathway-templates/services/pathway-template-service.ts`:**
+*   **`src/features/pathways/services/pathway-template-service.ts`:**
     *   `updatePhaseConfig`: Extended for decision/recommendation configurations.
 *   **`src/features/evaluations/services/evaluation-service.ts`:** (Already exists)
     *   `createDecision`, `updateDecision`.
@@ -358,7 +358,7 @@ This document outlines a detailed Vertical Implementation Strategy to bring the 
     *   **DIP:** Services depend on abstract communication and form-building capabilities.
 
 **Backend (Next.js Server Actions):**
-*   **`src/features/pathway-templates/actions.ts`:**
+*   **`src/features/pathways/actions.ts`:**
     *   `updatePhaseConfigAction`: Extended for decision/recommendation configurations.
 *   **`src/features/evaluations/actions.ts`:**
     *   `createDecisionAction`, `updateDecisionAction`.
@@ -374,10 +374,10 @@ This document outlines a detailed Vertical Implementation Strategy to bring the 
     *   **SRP:** Actions handle specific recommendation/decision operations.
 
 **Frontend (UI/UX):**
-*   **`src/features/pathway-templates/components/phase-configs/DecisionPhaseConfig.tsx`:**
+*   **`src/features/pathways/components/phase-configs/DecisionPhaseConfig.tsx`:**
     *   **Overhaul:** Implement a "Decision Rule Builder" UI (e.g., using a dynamic list of conditions and outcomes). Expand "Automated Next Step" to include more complex actions.
     *   **M3 Adherence:** Use `Input`, `Select`, `Switch`, `Button` for rule building.
-*   **`src/features/pathway-templates/components/phase-configs/RecommendationPhaseConfig.tsx`:**
+*   **`src/features/pathways/components/phase-configs/RecommendationPhaseConfig.tsx`:**
     *   **Overhaul:** Implement UI for defining the number of recommenders, custom recommender information fields (reusing `FormPhaseConfig` logic), and reminder schedules.
     *   **M3 Adherence:** Use `Input` (number), `Select`, `Button` for field management.
 *   **`src/features/applications/components/ApplicationDetail.tsx`:**
@@ -429,7 +429,7 @@ This document outlines a detailed Vertical Implementation Strategy to bring the 
     *   **OCP:** `global_settings` allows adding new settings without schema changes.
 
 **Service Layer:**
-*   **New Service: `src/features/pathway-templates/services/template-versioning-service.ts`:**
+*   **New Service: `src/features/pathways/services/template-versioning-service.ts`:**
     *   `createTemplateVersion(templateId: string, snapshot: Record<string, any>, createdBy: string)`
     *   `getTemplateVersions(templateId: string)`
     *   `getTemplateVersion(versionId: string)`
@@ -442,7 +442,7 @@ This document outlines a detailed Vertical Implementation Strategy to bring the 
     *   **DIP:** Services depend on abstract data access.
 
 **Backend (Next.js Server Actions):**
-*   **New Actions (`src/features/pathway-templates/actions.ts`):**
+*   **New Actions (`src/features/pathways/actions.ts`):**
     *   `createTemplateVersionAction(templateId: string)`
     *   `getTemplateVersionsAction(templateId: string)`
     *   `rollbackTemplateAction(templateId: string, versionId: string)`
@@ -456,7 +456,7 @@ This document outlines a detailed Vertical Implementation Strategy to bring the 
     *   **SRP:** Actions handle specific versioning/settings operations.
 
 **Frontend (UI/UX):**
-*   **`src/features/pathway-templates/components/PathwayTemplateDetail.tsx`:**
+*   **`src/features/pathways/components/PathwayTemplateDetail.tsx`:**
     *   **New Tab/Section:** A "Version History" tab or section.
     *   **UI:** Display a list of versions (date, author, version number). Buttons for "View Snapshot," "Compare," "Rollback."
     *   **M3 Adherence:** Use `Table` for history, `Dialogs` for comparison/rollback confirmation.
@@ -464,7 +464,7 @@ This document outlines a detailed Vertical Implementation Strategy to bring the 
     *   **Overhaul:** This page will become the "Global Settings" dashboard.
     *   **UI:** Display configurable settings (e.g., default email subject, default review scale) with input fields.
     *   **M3 Adherence:** Use `Form` components, `Input`, `Select`, `Switch`.
-*   **`src/features/pathway-templates/components/phase-configs/*.tsx`:**
+*   **`src/features/pathways/components/phase-configs/*.tsx`:**
     *   **Enhancement:** UI elements will indicate when a value is inherited from a global default and provide an option to override it.
     *   **M3 Adherence:** Subtle visual cues (e.g., a small "inherited" badge, a reset button).
 *   **SOLID/OOP Focus:**

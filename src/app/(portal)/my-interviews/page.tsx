@@ -5,6 +5,7 @@ import { ApplicantInterviewScheduler } from "@/features/scheduling/components/Ap
 import { createClient } from "@/integrations/supabase/server";
 import { redirect } from "next/navigation";
 import { getApplicationsAction } from "@/features/applications/actions"; // To get applicant's applications
+import { ApplicationPhase } from "@/features/applications/services/application-service"; // Import ApplicationPhase
 
 export default async function MyInterviewsPage() {
   const supabase = await createClient();
@@ -32,10 +33,10 @@ export default async function MyInterviewsPage() {
 
   if (applicantApplications && applicantApplications.length > 0) {
     // Find an application that is currently in a 'Scheduling' phase
-    const schedulingApp = applicantApplications.find(app => app.current_campaign_phases?.type === 'Scheduling');
+    const schedulingApp = applicantApplications.find(app => (app.current_campaign_phases as ApplicationPhase)?.type === 'Scheduling');
     if (schedulingApp) {
       targetApplicationId = schedulingApp.id;
-      targetCampaignPhaseId = schedulingApp.current_campaign_phases?.id;
+      targetCampaignPhaseId = (schedulingApp.current_campaign_phases as ApplicationPhase)?.id;
     } else {
       // If no app is in a scheduling phase, just pick the first one to allow viewing past/future interviews
       // and potentially booking if a phase becomes active later.

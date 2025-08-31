@@ -2,7 +2,7 @@
 
 ## 1. Introduction and Strategic Importance
 
-The Global Gateway platform is designed to streamline the management of diverse programs, including fellowships, hiring, awards, and grants. This revised Product Requirement Document outlines an expanded vision for the platform, transforming its core Pathway Template Management module into a sophisticated, dynamic, and visual workflow builder. This enhancement is critical for enabling intelligent automation, adaptive applicant journeys, and comprehensive process orchestration, ensuring consistency, reducing manual overhead, and accelerating the launch of new initiatives. The platform will empower administrators and creators with advanced tools to define, standardize, and reuse complex multi-phase workflows, fostering positive change through global certification and accreditation.
+The Global Gateway platform is designed to streamline the management of diverse programs, including fellowships, hiring, awards, and grants. This revised Product Requirement Document outlines an expanded vision for the platform, transforming its core Pathway Template Management module into a sophisticated, dynamic, and visual workflow builder. This enhancement is critical for enabling intelligent automation, adaptive applicant journeys, and comprehensive process orchestration, ensuring consistency, reducing manual overhead, and accelerating the launch of new initiatives, fostering positive change through global certification and accreditation.
 
 ## 2. Core Capabilities and User Value (Enhanced)
 

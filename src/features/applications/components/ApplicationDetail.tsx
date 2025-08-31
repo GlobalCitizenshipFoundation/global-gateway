@@ -33,6 +33,7 @@ import { zodResolver } from "@hookform/resolvers/zod"; // Import zodResolver
 import * as z from "zod"; // Import zod
 import { Input } from "@/components/ui/input"; // Import Input
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"; // Import Form components
+import { ApplicationPhase } from "../services/application-service"; // Import ApplicationPhase
 
 const createRecommendationRequestSchema = z.object({
   recommenderEmail: z.string().email("Invalid email address."),
@@ -90,7 +91,7 @@ export function ApplicationDetail({ applicationId }: ApplicationDetailProps) {
       }
 
       // Fetch recommendation requests if in a recommendation phase
-      if (fetchedApplication.current_campaign_phases?.type === 'Recommendation') {
+      if ((fetchedApplication.current_campaign_phases as ApplicationPhase)?.type === 'Recommendation') {
         setIsLoadingRecommendationRequests(true);
         const fetchedRequests = await getRecommendationRequestsAction(applicationId);
         if (fetchedRequests) {
@@ -98,7 +99,7 @@ export function ApplicationDetail({ applicationId }: ApplicationDetailProps) {
         }
         // Fetch the current recommendation phase config
         const campaignPhases = await getCampaignPhasesAction(fetchedApplication.campaigns?.id || "");
-        const recPhase = campaignPhases?.find(p => p.id === fetchedApplication.current_campaign_phase_id);
+        const recPhase = campaignPhases?.find((p: CampaignPhase) => p.id === fetchedApplication.current_campaign_phase_id);
         setCurrentRecommendationPhase(recPhase || null);
         setIsLoadingRecommendationRequests(false);
       } else {
@@ -206,13 +207,13 @@ export function ApplicationDetail({ applicationId }: ApplicationDetailProps) {
   const canModifyAssignments: boolean = isAdminOrRecruiter;
   const canManageRecommendations: boolean = isAdminOrRecruiter; // Only admin/campaign creator can manage recommendations
 
-  const isCurrentPhaseReview = application.current_campaign_phases?.type === 'Review';
+  const isCurrentPhaseReview = (application.current_campaign_phases as ApplicationPhase)?.type === 'Review';
   const canSubmitReview = isReviewer && isCurrentPhaseReview && reviewerAssignment?.status === 'accepted';
 
-  const isCurrentPhaseDecision = application.current_campaign_phases?.type === 'Decision';
+  const isCurrentPhaseDecision = (application.current_campaign_phases as ApplicationPhase)?.type === 'Decision';
   const canRecordDecision = isAdminOrRecruiter && isCurrentPhaseDecision;
 
-  const isCurrentPhaseRecommendation = application.current_campaign_phases?.type === 'Recommendation';
+  const isCurrentPhaseRecommendation = (application.current_campaign_phases as ApplicationPhase)?.type === 'Recommendation';
   const canRequestRecommendation = canManageRecommendations && isCurrentPhaseRecommendation;
 
   // Pre-process initialChecklistData to ensure it strictly conforms to ChecklistItemFormType
@@ -273,7 +274,7 @@ export function ApplicationDetail({ applicationId }: ApplicationDetailProps) {
         <CardContent className="p-0 text-body-medium text-muted-foreground space-y-2 mt-4">
           <p className="flex items-center gap-2">
             <Workflow className="h-4 w-4" />
-            Current Phase: <span className="font-medium text-foreground">{application.current_campaign_phases?.name || "N/A"}</span>
+            Current Phase: <span className="font-medium text-foreground">{(application.current_campaign_phases as ApplicationPhase)?.name || "N/A"}</span>
           </p>
           <p className="flex items-center gap-2">
             <CalendarDays className="h-4 w-4" />
@@ -460,7 +461,7 @@ export function ApplicationDetail({ applicationId }: ApplicationDetailProps) {
             </DialogHeader>
             <DecisionForm
               applicationId={application.id}
-              campaignPhaseId={application.current_campaign_phases?.id || application.current_campaign_phase_id}
+              campaignPhaseId={(application.current_campaign_phases as ApplicationPhase)?.id || application.current_campaign_phase_id}
               deciderId={user.id}
               initialDecision={editingDecision}
               onDecisionSaved={handleDecisionSaved}

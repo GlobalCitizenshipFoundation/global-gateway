@@ -81,8 +81,8 @@ export function ReviewForm({
     const fetchPhaseConfig = async () => {
       setIsLoadingPhaseConfig(true);
       try {
-        // Fetch all phases for the campaign, then find the specific one
-        const campaignId = initialReview?.applications?.campaign_id || ''; // Assuming campaign_id is available in initialReview or can be derived
+        // Assuming campaignId is available from the application context or can be fetched
+        const campaignId = initialReview?.applications?.campaigns?.id || ''; // Derive campaignId if possible
         const fetchedPhases = await getCampaignPhasesAction(campaignId);
         const currentPhase = fetchedPhases?.find((p: CampaignPhase) => p.id === campaignPhaseId);
 
@@ -173,6 +173,7 @@ export function ReviewForm({
     );
   }
 
+  // Access config directly from campaignPhase, which is CampaignPhase
   const rubricCriteria = campaignPhase?.config?.rubricCriteria || [];
   const allowComments = campaignPhase?.config?.allowComments ?? true;
 

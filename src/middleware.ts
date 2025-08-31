@@ -58,7 +58,7 @@ export async function middleware(request: NextRequest) {
 
     // Workbench routes
     const workbenchRoles = ['admin', 'coordinator', 'evaluator', 'screener', 'reviewer'];
-    const workbenchPaths = ['/desk', '/programs', '/pathway-templates', '/campaigns', '/applications/screening', '/evaluations/my-reviews', '/evaluations', '/scheduling', '/communications/templates', '/reports', '/packages'];
+    const workbenchPaths = ['/desk', '/programs', '/pathways', '/campaigns', '/applications/screening', '/evaluations/my-reviews', '/evaluations', '/scheduling', '/communications/templates', '/reports', '/packages'];
     if (workbenchPaths.some(path => pathname.startsWith(path)) && !workbenchRoles.includes(userRole)) {
       console.log(`[Dyad Middleware] Unauthorized access for user (${userRole}) to ${pathname}. Redirecting to /error/403`);
       return NextResponse.redirect(new URL("/error/403", request.url));
