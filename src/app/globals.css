@@ -124,7 +124,7 @@
 
     /* Primary - derived from #AD1457 */
     --primary: 334 100% 70%; /* Primary 80 */
-    --on-primary: 334 100% 10%; /* On Primary */
+    --on-primary: 0 0% 10%; /* On Primary - Changed to neutral dark for better contrast */
     --primary-container: 334 100% 20%; /* Primary 20 */
     --on-primary-container: 334 100% 90%; /* On Primary Container */
 
@@ -208,7 +208,7 @@
     --sidebar-background: 0 0% 15%;
     --sidebar-foreground: 0 0% 90%;
     --sidebar-primary: 334 100% 70%;
-    --sidebar-primary-foreground: 334 100% 10%;
+    --sidebar-primary-foreground: 0 0% 10%; /* Changed to neutral dark for better contrast */
     --sidebar-accent: 0 0% 20%;
     --sidebar-accent-foreground: 0 0% 90%;
     --sidebar-border: 0 0% 30%;
