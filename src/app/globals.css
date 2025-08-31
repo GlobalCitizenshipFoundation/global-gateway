@@ -57,6 +57,37 @@
     --input: 0 0% 95%; /* Neutral 95 */
     --ring: 339 80% 49%; /* Primary 40 */
 
+    /* Phase Type Colors (Light Theme) */
+    --phase-form: 220 80% 40%; /* Blue 40 */
+    --on-phase-form: 0 0% 100%;
+    --phase-form-container: 220 100% 90%;
+    --on-phase-form-container: 220 100% 10%;
+
+    --phase-review: 260 70% 40%; /* Violet 40 */
+    --on-phase-review: 0 0% 100%;
+    --phase-review-container: 260 100% 90%;
+    --on-phase-review-container: 260 100% 10%;
+
+    --phase-email: 40 90% 50%; /* Amber 50 */
+    --on-phase-email: 0 0% 100%;
+    --phase-email-container: 40 100% 90%;
+    --on-phase-email-container: 40 100% 10%;
+
+    --phase-scheduling: 120 70% 40%; /* Green 40 */
+    --on-phase-scheduling: 0 0% 100%;
+    --phase-scheduling-container: 120 100% 90%;
+    --on-phase-scheduling-container: 120 100% 10%;
+
+    --phase-decision: 0 80% 50%; /* Red 40 (Destructive) */
+    --on-phase-decision: 0 0% 100%;
+    --phase-decision-container: 0 100% 90%;
+    --on-phase-decision-container: 0 100% 10%;
+
+    --phase-recommendation: 160 70% 40%; /* Teal 40 */
+    --on-phase-recommendation: 0 0% 100%;
+    --phase-recommendation-container: 160 100% 90%;
+    --on-phase-recommendation-container: 160 100% 10%;
+
     --radius: 0.5rem; /* Default border radius */
 
     /* Chart colors - using a diverse set */
@@ -122,6 +153,37 @@
     --border: 0 0% 30%; /* Neutral 30 */
     --input: 0 0% 15%; /* Neutral 15 */
     --ring: 339 100% 70%; /* Primary 80 */
+
+    /* Phase Type Colors (Dark Theme) */
+    --phase-form: 220 100% 70%; /* Blue 80 */
+    --on-phase-form: 220 100% 10%;
+    --phase-form-container: 220 100% 20%;
+    --on-phase-form-container: 220 100% 90%;
+
+    --phase-review: 260 100% 70%; /* Violet 80 */
+    --on-phase-review: 260 100% 10%;
+    --phase-review-container: 260 100% 20%;
+    --on-phase-review-container: 260 100% 90%;
+
+    --phase-email: 40 100% 70%; /* Amber 80 */
+    --on-phase-email: 40 100% 10%;
+    --phase-email-container: 40 100% 20%;
+    --on-phase-email-container: 40 100% 90%;
+
+    --phase-scheduling: 120 100% 70%; /* Green 80 */
+    --on-phase-scheduling: 120 100% 10%;
+    --phase-scheduling-container: 120 100% 20%;
+    --on-phase-scheduling-container: 120 100% 90%;
+
+    --phase-decision: 0 100% 70%; /* Red 80 (Destructive) */
+    --on-phase-decision: 0 100% 10%;
+    --phase-decision-container: 0 100% 20%;
+    --on-phase-decision-container: 0 100% 90%;
+
+    --phase-recommendation: 160 100% 70%; /* Teal 80 */
+    --on-phase-recommendation: 160 100% 10%;
+    --phase-recommendation-container: 160 100% 20%;
+    --on-phase-recommendation-container: 160 100% 90%;
 
     /* Chart colors */
     --chart-1: 339 100% 70%; /* Primary */

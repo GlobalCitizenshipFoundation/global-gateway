@@ -94,7 +94,46 @@ export default {
   				'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
   				border: 'hsl(var(--sidebar-border))',
   				ring: 'hsl(var(--sidebar-ring))'
-  			}
+  			},
+            // New M3-inspired colors for phase types
+            phase: {
+                form: {
+                    DEFAULT: 'hsl(var(--phase-form))',
+                    foreground: 'hsl(var(--on-phase-form))',
+                    container: 'hsl(var(--phase-form-container))',
+                    'on-container': 'hsl(var(--on-phase-form-container))',
+                },
+                review: {
+                    DEFAULT: 'hsl(var(--phase-review))',
+                    foreground: 'hsl(var(--on-phase-review))',
+                    container: 'hsl(var(--phase-review-container))',
+                    'on-container': 'hsl(var(--on-phase-review-container))',
+                },
+                email: {
+                    DEFAULT: 'hsl(var(--phase-email))',
+                    foreground: 'hsl(var(--on-phase-email))',
+                    container: 'hsl(var(--phase-email-container))',
+                    'on-container': 'hsl(var(--on-phase-email-container))',
+                },
+                scheduling: {
+                    DEFAULT: 'hsl(var(--phase-scheduling))',
+                    foreground: 'hsl(var(--on-phase-scheduling))',
+                    container: 'hsl(var(--phase-scheduling-container))',
+                    'on-container': 'hsl(var(--on-phase-scheduling-container))',
+                },
+                decision: {
+                    DEFAULT: 'hsl(var(--phase-decision))',
+                    foreground: 'hsl(var(--on-phase-decision))',
+                    container: 'hsl(var(--phase-decision-container))',
+                    'on-container': 'hsl(var(--on-phase-decision-container))',
+                },
+                recommendation: {
+                    DEFAULT: 'hsl(var(--phase-recommendation))',
+                    foreground: 'hsl(var(--on-phase-recommendation))',
+                    container: 'hsl(var(--phase-recommendation-container))',
+                    'on-container': 'hsl(var(--on-phase-recommendation-container))',
+                },
+            }
   		},
   		borderRadius: {
             'none': '0',

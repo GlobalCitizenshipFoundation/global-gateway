@@ -20,7 +20,7 @@ interface WorkflowCanvasProps {
 }
 
 // Helper component for rendering connectors
-const Connector: React.FC<{ type: 'straight' | 'conditional-success' | 'conditional-failure' | 'start' | 'end'; label?: string; isLast?: boolean }> = ({ type, label, isLast }) => {
+const Connector: React.FC<{ type: 'straight' | 'conditional-success' | 'conditional-failure' | 'start' | 'end'; label?: string; isLast?: boolean; isConditional?: boolean }> = ({ type, label, isLast, isConditional }) => {
   const baseClasses = "flex items-center justify-center text-muted-foreground";
   const iconClasses = "h-6 w-6";
 
@@ -42,7 +42,7 @@ const Connector: React.FC<{ type: 'straight' | 'conditional-success' | 'conditio
     );
   }
 
-  if (isLast) return null; // No connector after the last phase
+  if (isLast && !isConditional) return null; // No connector after the last phase if not conditional
 
   return (
     <div className={cn(baseClasses, "relative py-2")}>
@@ -110,31 +110,30 @@ export function WorkflowCanvas({
     const isLastPhase = index === internalPhases.length - 1;
     const isConditional = currentPhase.type === "Decision" || currentPhase.type === "Review";
 
-    if (isLastPhase) {
-      // If it's the last phase, and it's conditional, we still need to show its branches
-      if (isConditional) {
-        const nextSuccessPhase = internalPhases.find(p => p.id === currentPhase.config?.next_phase_id_on_success);
-        const nextFailurePhase = internalPhases.find(p => p.id === currentPhase.config?.next_phase_id_on_failure);
+    // If it's the last phase, and it's conditional, we still need to show its branches if they exist
+    if (isLastPhase && isConditional) {
+      const nextSuccessPhase = internalPhases.find(p => p.id === currentPhase.config?.next_phase_id_on_success);
+      const nextFailurePhase = internalPhases.find(p => p.id === currentPhase.config?.next_phase_id_on_failure);
 
-        if (nextSuccessPhase || nextFailurePhase) {
-          return (
-            <div className="flex flex-col items-center py-4">
-              <GitFork className="h-6 w-6 text-muted-foreground" />
-              {nextSuccessPhase && (
-                <div className="flex items-center text-green-600 text-body-small mt-1">
-                  <ArrowRight className="h-4 w-4 mr-1" /> Success: {nextSuccessPhase.name}
-                </div>
-              )}
-              {nextFailurePhase && (
-                <div className="flex items-center text-red-600 text-body-small mt-1">
-                  <ArrowRight className="h-4 w-4 mr-1" /> Failure: {nextFailurePhase.name}
-                </div>
-              )}
-            </div>
-          );
-        }
+      if (nextSuccessPhase || nextFailurePhase) {
+        return (
+          <div className="flex flex-col items-center py-4">
+            <GitFork className="h-6 w-6 text-muted-foreground" />
+            {nextSuccessPhase && (
+              <div className="flex items-center text-green-600 text-body-small mt-1">
+                <ArrowRight className="h-4 w-4 mr-1" /> Success: {nextSuccessPhase.name}
+              </div>
+            )}
+            {nextFailurePhase && (
+              <div className="flex items-center text-red-600 text-body-small mt-1">
+                <ArrowRight className="h-4 w-4 mr-1" /> Failure: {nextFailurePhase.name}
+              </div>
+            )}
+            <Connector type="end" /> {/* Always end the path after conditional branches */}
+          </div>
+        );
       }
-      return <Connector type="end" />;
+      return <Connector type="end" />; // If last phase, not conditional, or conditional without branches, just end
     }
 
     // For non-last phases, check if it's conditional and has branches
@@ -158,7 +157,8 @@ export function WorkflowCanvas({
               </div>
             )}
             {/* If the next phase in linear order is NOT one of the branches, also show a straight connector */}
-            {!nextSuccessPhase && !nextFailurePhase && (
+            {!(nextSuccessPhase && nextSuccessPhase.order_index === index + 1) &&
+             !(nextFailurePhase && nextFailurePhase.order_index === index + 1) && (
               <div className="mt-2">
                 <Connector type="straight" />
               </div>
