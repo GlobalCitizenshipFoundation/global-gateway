@@ -20,13 +20,16 @@ export interface PathwayTemplate {
   name: string;
   description: string | null;
   is_private: boolean;
+  status: 'draft' | 'pending_review' | 'published' | 'archived'; // Added status
   created_at: string;
   updated_at: string;
+  last_updated_by: string | null; // Added last_updated_by
 }
 
 // Phase now extends BaseConfigurableItem
 export interface Phase extends BaseConfigurableItem {
   pathway_template_id: string;
+  last_updated_by: string | null; // Added last_updated_by
 }
 
 // Internal helper to get Supabase client
@@ -67,12 +70,14 @@ export async function createPathwayTemplate(
   name: string,
   description: string | null,
   is_private: boolean,
-  creator_id: string
+  creator_id: string,
+  status: PathwayTemplate['status'] = 'draft', // Default status
+  last_updated_by: string // Must be provided on creation
 ): Promise<PathwayTemplate | null> {
   const supabase = await getSupabase();
   const { data, error } = await supabase
     .from("pathway_templates")
-    .insert([{ name, description, is_private, creator_id }])
+    .insert([{ name, description, is_private, creator_id, status, last_updated_by }])
     .select()
     .single();
 
@@ -85,12 +90,13 @@ export async function createPathwayTemplate(
 
 export async function updatePathwayTemplate(
   id: string,
-  updates: Partial<Omit<PathwayTemplate, "id" | "creator_id" | "created_at">>
+  updates: Partial<Omit<PathwayTemplate, "id" | "creator_id" | "created_at">>,
+  updaterId: string // The user performing the update
 ): Promise<PathwayTemplate | null> {
   const supabase = await getSupabase();
   const { data, error } = await supabase
     .from("pathway_templates")
-    .update({ ...updates, updated_at: new Date().toISOString() })
+    .update({ ...updates, updated_at: new Date().toISOString(), last_updated_by: updaterId })
     .eq("id", id)
     .select()
     .single();
@@ -142,13 +148,14 @@ export async function createPhase(
   type: string,
   order_index: number,
   description: string | null = null,
-  config: Record<string, any> = {}
+  config: Record<string, any> = {},
+  last_updated_by: string // Must be provided on creation
 ): Promise<Phase | null> {
   const supabase = await getSupabase();
   const { data, error } = await supabase
     .from("phases")
     .insert([
-      { pathway_template_id: pathwayTemplateId, name, type, order_index, description, config },
+      { pathway_template_id: pathwayTemplateId, name, type, order_index, description, config, last_updated_by },
     ])
     .select()
     .single();
@@ -162,12 +169,13 @@ export async function createPhase(
 
 export async function updatePhase(
   id: string,
-  updates: Partial<Omit<Phase, "id" | "pathway_template_id" | "created_at">>
+  updates: Partial<Omit<Phase, "id" | "pathway_template_id" | "created_at">>,
+  updaterId: string // The user performing the update
 ): Promise<Phase | null> {
   const supabase = await getSupabase();
   const { data, error } = await supabase
     .from("phases")
-    .update({ ...updates, updated_at: new Date().toISOString() })
+    .update({ ...updates, updated_at: new Date().toISOString(), last_updated_by: updaterId })
     .eq("id", id)
     .select()
     .single();
@@ -182,7 +190,8 @@ export async function updatePhase(
 // New function to update only the branching configuration of a phase
 export async function updatePhaseBranchingConfig(
   id: string,
-  configUpdates: Record<string, any>
+  configUpdates: Record<string, any>,
+  updaterId: string // The user performing the update
 ): Promise<Phase | null> {
   const supabase = await getSupabase();
   // Fetch current config to merge updates
@@ -201,7 +210,7 @@ export async function updatePhaseBranchingConfig(
 
   const { data, error } = await supabase
     .from("phases")
-    .update({ config: mergedConfig, updated_at: new Date().toISOString() })
+    .update({ config: mergedConfig, updated_at: new Date().toISOString(), last_updated_by: updaterId })
     .eq("id", id)
     .select()
     .single();
@@ -227,7 +236,8 @@ export async function deletePhase(id: string): Promise<boolean> {
 export async function clonePathwayTemplate(
   templateId: string,
   newName: string,
-  creatorId: string
+  creatorId: string,
+  clonerId: string // The user performing the clone
 ): Promise<PathwayTemplate | null> {
   const supabase = await getSupabase();
   const { data: originalTemplate, error: templateError } = await supabase
@@ -261,6 +271,8 @@ export async function clonePathwayTemplate(
         description: originalTemplate.description,
         is_private: originalTemplate.is_private, // Cloned template retains privacy setting
         creator_id: creatorId, // New template owned by the cloner
+        status: 'draft', // Cloned template starts as draft
+        last_updated_by: clonerId, // Set cloner as last updater
       },
     ])
     .select()
@@ -279,6 +291,7 @@ export async function clonePathwayTemplate(
     description: phase.description,
     order_index: phase.order_index,
     config: phase.config,
+    last_updated_by: clonerId, // Set cloner as last updater for phases
   }));
 
   if (newPhasesData.length > 0) {

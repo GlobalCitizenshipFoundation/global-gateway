@@ -90,7 +90,8 @@ export async function getTemplateVersion(versionId: string): Promise<PathwayTemp
 
 export async function rollbackTemplateToVersion(
   pathwayTemplateId: string,
-  versionId: string
+  versionId: string,
+  updaterId: string // Added updaterId
 ): Promise<PathwayTemplate | null> {
   const supabase = await getSupabase();
 
@@ -117,7 +118,9 @@ export async function rollbackTemplateToVersion(
       name: snapshotTemplate.name,
       description: snapshotTemplate.description,
       is_private: snapshotTemplate.is_private,
-    }
+      status: snapshotTemplate.status, // Include status in rollback
+    },
+    updaterId // Pass updaterId
   );
 
   if (!updatedTemplate) {
@@ -145,6 +148,7 @@ export async function rollbackTemplateToVersion(
       description: phase.description,
       order_index: phase.order_index,
       config: phase.config,
+      last_updated_by: updaterId, // Set updaterId for restored phases
     }));
 
     const { error: insertPhasesError } = await supabase

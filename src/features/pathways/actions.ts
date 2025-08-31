@@ -130,7 +130,9 @@ export async function createPathwayTemplateAction(formData: FormData): Promise<P
     name,
     description,
     is_private,
-    user.id
+    user.id,
+    'draft', // Default status
+    user.id // last_updated_by
   );
 
   revalidatePath("/pathways");
@@ -139,11 +141,12 @@ export async function createPathwayTemplateAction(formData: FormData): Promise<P
 
 export async function updatePathwayTemplateAction(id: string, formData: FormData): Promise<PathwayTemplate | null> {
   try {
-    await authorizeTemplateAction(id, 'write'); // Authorize before update
+    const { user } = await authorizeTemplateAction(id, 'write'); // Authorize before update
 
     const name = formData.get("name") as string;
     const description = formData.get("description") as string | null;
     const is_private = formData.get("is_private") === "on";
+    const status = formData.get("status") as PathwayTemplate['status'] || 'draft'; // Get status from form or default
 
     if (!name) {
       throw new Error("Template name is required.");
@@ -151,7 +154,8 @@ export async function updatePathwayTemplateAction(id: string, formData: FormData
 
     const updatedTemplate = await updatePathwayTemplate( // Use the service function
       id,
-      { name, description, is_private }
+      { name, description, is_private, status },
+      user.id // updaterId
     );
 
     revalidatePath("/pathways");
@@ -213,23 +217,26 @@ export async function getPhasesAction(pathwayTemplateId: string): Promise<Phase[
 
 export async function createPhaseAction(pathwayTemplateId: string, formData: FormData): Promise<Phase | null> {
   try {
-    await authorizeTemplateAction(pathwayTemplateId, 'write'); // User must have write access to the parent template
+    const { user } = await authorizeTemplateAction(pathwayTemplateId, 'write'); // User must have write access to the parent template
 
     const name = formData.get("name") as string;
     const type = formData.get("type") as string;
     const description = formData.get("description") as string | null;
     const order_index = parseInt(formData.get("order_index") as string);
+    const config = JSON.parse(formData.get("config") as string || '{}'); // Get config from form or default
 
     if (!name || !type || isNaN(order_index)) {
       throw new Error("Phase name, type, and order index are required.");
     }
 
-    const newPhase = await createPhase( // Use the service function
+    const newPhase = await createPhase( // Use the service function (renamed import)
       pathwayTemplateId,
       name,
       type,
       order_index,
-      description
+      description,
+      config, // Pass config
+      user.id // last_updated_by
     );
 
     revalidatePath(`/pathways/${pathwayTemplateId}`);
@@ -249,12 +256,12 @@ export async function createPhaseAction(pathwayTemplateId: string, formData: For
 
 export async function updatePhaseAction(phaseId: string, pathwayTemplateId: string, formData: FormData): Promise<Phase | null> {
   try {
-    await authorizeTemplateAction(pathwayTemplateId, 'write'); // User must have write access to the parent template
+    const { user } = await authorizeTemplateAction(pathwayTemplateId, 'write'); // User must have write access to the parent template
 
     const name = formData.get("name") as string;
     const type = formData.get("type") as string;
     const description = formData.get("description") as string | null;
-    // order_index is not updated via form, but via reorder action
+    const config = JSON.parse(formData.get("config") as string || '{}'); // Get config from form or default
 
     if (!name || !type) {
       throw new Error("Phase name and type are required.");
@@ -262,7 +269,8 @@ export async function updatePhaseAction(phaseId: string, pathwayTemplateId: stri
 
     const updatedPhase = await updatePhaseService( // Use the service function (renamed import)
       phaseId,
-      { name, type, description }
+      { name, type, description, config }, // Pass config
+      user.id // updaterId
     );
 
     revalidatePath(`/pathways/${pathwayTemplateId}`);
@@ -282,11 +290,12 @@ export async function updatePhaseAction(phaseId: string, pathwayTemplateId: stri
 
 export async function updatePhaseConfigAction(phaseId: string, pathwayTemplateId: string, configUpdates: Record<string, any>): Promise<Phase | null> {
   try {
-    await authorizeTemplateAction(pathwayTemplateId, 'write'); // User must have write access to the parent template
+    const { user } = await authorizeTemplateAction(pathwayTemplateId, 'write'); // User must have write access to the parent template
 
     const updatedPhase = await updatePhaseService( // Use the service function (renamed import)
       phaseId,
-      { config: configUpdates }
+      { config: configUpdates },
+      user.id // updaterId
     );
 
     revalidatePath(`/pathways/${pathwayTemplateId}`);
@@ -307,7 +316,7 @@ export async function updatePhaseConfigAction(phaseId: string, pathwayTemplateId
 // New Server Action for updating phase branching configuration
 export async function updatePhaseBranchingAction(phaseId: string, pathwayTemplateId: string, formData: FormData): Promise<Phase | null> {
   try {
-    await authorizeTemplateAction(pathwayTemplateId, 'write'); // User must have write access to the parent template
+    const { user } = await authorizeTemplateAction(pathwayTemplateId, 'write'); // User must have write access to the parent template
 
     const next_phase_id_on_success = formData.get("next_phase_id_on_success") as string | null;
     const next_phase_id_on_failure = formData.get("next_phase_id_on_failure") as string | null;
@@ -331,7 +340,11 @@ export async function updatePhaseBranchingAction(phaseId: string, pathwayTemplat
       next_phase_id_on_failure: next_phase_id_on_failure || null,
     };
 
-    const updatedPhase = await updatePhaseBranchingConfigService(phaseId, configUpdates);
+    const updatedPhase = await updatePhaseBranchingConfigService(
+      phaseId,
+      configUpdates,
+      user.id // updaterId
+    );
 
     revalidatePath(`/pathways/${pathwayTemplateId}`);
     return updatedPhase;
@@ -371,11 +384,11 @@ export async function deletePhaseAction(phaseId: string, pathwayTemplateId: stri
 
 export async function reorderPhasesAction(pathwayTemplateId: string, phases: { id: string; order_index: number }[]): Promise<boolean> {
   try {
-    await authorizeTemplateAction(pathwayTemplateId, 'write'); // User must have write access to the parent template
+    const { user } = await authorizeTemplateAction(pathwayTemplateId, 'write'); // User must have write access to the parent template
 
     // Perform updates in a transaction if possible, or sequentially
     for (const phase of phases) {
-      await updatePhaseService(phase.id, { order_index: phase.order_index }); // Use the service function (renamed import)
+      await updatePhaseService(phase.id, { order_index: phase.order_index }, user.id); // Use the service function (renamed import)
     }
 
     revalidatePath(`/pathways/${pathwayTemplateId}`);
@@ -428,7 +441,8 @@ export async function clonePathwayTemplateAction(templateId: string, newName: st
     const clonedTemplate = await clonePathwayTemplate( // Use the service function
       templateId,
       newName,
-      user.id // The new template will be owned by the current user
+      user.id, // The new template will be owned by the current user
+      user.id // clonerId
     );
     revalidatePath("/pathways");
     return clonedTemplate;
@@ -669,9 +683,9 @@ export async function getTemplateVersionAction(versionId: string): Promise<Pathw
 
 export async function rollbackTemplateToVersionAction(pathwayTemplateId: string, versionId: string): Promise<PathwayTemplate | null> {
   try {
-    await authorizeTemplateAction(pathwayTemplateId, 'write'); // User must have write access to the template
+    const { user } = await authorizeTemplateAction(pathwayTemplateId, 'write'); // User must have write access to the template
 
-    const rolledBackTemplate = await rollbackTemplateToVersion(pathwayTemplateId, versionId);
+    const rolledBackTemplate = await rollbackTemplateToVersion(pathwayTemplateId, versionId, user.id); // Pass updaterId
 
     revalidatePath(`/pathways/${pathwayTemplateId}`);
     return rolledBackTemplate;
