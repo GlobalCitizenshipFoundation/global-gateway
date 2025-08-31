@@ -9,7 +9,8 @@ interface EditPathwayTemplatePageProps {
   };
 }
 
-export default async function EditPathwayTemplatePage({ params }: EditPathwayTemplatePageProps) {
+export default async function EditPathwayTemplatePage(props: any) {
+  const params = props.params as { id: string };
   const { id } = params;
 
   // Validate if 'id' is a UUID before proceeding to fetch

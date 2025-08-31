@@ -112,7 +112,7 @@ export function PathwayTemplateList() {
       <div className="flex flex-col md:flex-row justify-between items-center gap-4">
         <h1 className="text-display-small font-bold text-foreground">Pathway Templates</h1>
         <Button asChild className="rounded-full px-6 py-3 text-label-large">
-          <Link href="/pathway-templates/new"> {/* Corrected link */}
+          <Link href="/pathway-templates/new">
             <PlusCircle className="mr-2 h-5 w-5" /> Create New Template
           </Link>
         </Button>
@@ -147,7 +147,7 @@ export function PathwayTemplateList() {
           </CardDescription>
           {!searchTerm && (
             <Button asChild className="mt-6 rounded-full px-6 py-3 text-label-large">
-              <Link href="/pathway-templates/new"> {/* Corrected link */}
+              <Link href="/pathway-templates/new">
                 <PlusCircle className="mr-2 h-5 w-5" /> Create Template Now
               </Link>
             </Button>
@@ -197,7 +197,7 @@ export function PathwayTemplateList() {
                       <span className="sr-only">Clone Template</span>
                     </Button>
                     <Button asChild variant="outlined" size="icon" className="rounded-md">
-                      <Link href={`/pathway-templates/${template.id}`}> {/* Corrected link */}
+                      <Link href={`/pathway-templates/${template.id}`}>
                         <Edit className="h-4 w-4" />
                         <span className="sr-only">Edit</span>
                       </Link>

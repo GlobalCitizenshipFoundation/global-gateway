@@ -105,7 +105,7 @@ export function CampaignList() {
       <div className="flex flex-col md:flex-row justify-between items-center gap-4">
         <h1 className="text-display-small font-bold text-foreground">Campaigns</h1>
         <Button asChild className="rounded-full px-6 py-3 text-label-large">
-          <Link href="/campaigns/new"> {/* Corrected link */}
+          <Link href="/campaigns/new">
             <PlusCircle className="mr-2 h-5 w-5" /> Create New Campaign
           </Link>
         </Button>
@@ -140,7 +140,7 @@ export function CampaignList() {
           </CardDescription>
           {!searchTerm && (
             <Button asChild className="mt-6 rounded-full px-6 py-3 text-label-large">
-              <Link href="/campaigns/new"> {/* Corrected link */}
+              <Link href="/campaigns/new">
                 <PlusCircle className="mr-2 h-5 w-5" /> Create Campaign Now
               </Link>
             </Button>
@@ -182,7 +182,7 @@ export function CampaignList() {
                     {campaign.pathway_template_id && campaign.pathway_templates?.name && (
                       <p className="text-body-small text-muted-foreground flex items-center gap-1 mt-2">
                         <Workflow className="h-4 w-4" />
-                        Template: <Link href={`/pathway-templates/${campaign.pathway_template_id}`} className="text-primary hover:underline"> {/* Corrected link */}
+                        Template: <Link href={`/pathway-templates/${campaign.pathway_template_id}`} className="text-primary hover:underline">
                           {campaign.pathway_templates.name}
                         </Link>
                       </p>
@@ -201,7 +201,7 @@ export function CampaignList() {
                   </CardContent>
                   <div className="flex justify-end p-4 pt-0 space-x-2">
                     <Button asChild variant="outlined" size="icon" className="rounded-md">
-                      <Link href={`/campaigns/${campaign.id}/edit`}> {/* Corrected link */}
+                      <Link href={`/campaigns/${campaign.id}/edit`}>
                         <Edit className="h-4 w-4" />
                         <span className="sr-only">Edit</span>
                       </Link>

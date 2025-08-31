@@ -119,7 +119,7 @@ export async function createProgramAction(formData: FormData): Promise<Program |
       user.id
     );
 
-    revalidatePath("/programs"); // Corrected path
+    revalidatePath("/programs");
     return newProgram;
   } catch (error: any) {
     console.error("Error in createProgramAction:", error.message);
@@ -146,8 +146,8 @@ export async function updateProgramAction(id: string, formData: FormData): Promi
       { name, description, start_date, end_date, status }
     );
 
-    revalidatePath("/programs"); // Corrected path
-    revalidatePath(`/programs/${id}`); // Corrected path
+    revalidatePath("/programs");
+    revalidatePath(`/programs/${id}`);
     return updatedProgram;
   } catch (error: any) {
     console.error("Error in updateProgramAction:", error.message);
@@ -168,7 +168,7 @@ export async function deleteProgramAction(id: string): Promise<boolean> {
 
     const success = await deleteProgram(id); // Use the service function
 
-    revalidatePath("/programs"); // Corrected path
+    revalidatePath("/programs");
     return success;
   } catch (error: any) {
     console.error("Error in deleteProgramAction:", error.message);

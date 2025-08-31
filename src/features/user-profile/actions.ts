@@ -90,7 +90,7 @@ export async function updateProfileDetailsAction(formData: FormData): Promise<Pr
 
     const updatedProfile = await updateProfile(userId, updates); // Use the service function
 
-    revalidatePath("/profile"); // Corrected path
+    revalidatePath("/profile");
     return updatedProfile;
   } catch (error: any) {
     console.error("Error in updateProfileDetailsAction:", error.message);

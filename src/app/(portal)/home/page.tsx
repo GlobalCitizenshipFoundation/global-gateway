@@ -21,7 +21,7 @@ export default function PortalDashboardPage() {
           </CardContent>
           <div className="mt-4">
             <Button asChild variant="tonal" className="w-full rounded-md">
-              <Link href="/portal/my-applications">Go to Applications</Link>
+              <Link href="/my-applications">Go to Applications</Link>
             </Button>
           </div>
         </Card>
@@ -36,7 +36,7 @@ export default function PortalDashboardPage() {
           </CardContent>
           <div className="mt-4">
             <Button asChild variant="tonal" className="w-full rounded-md">
-              <Link href="/portal/profile">Edit Profile</Link>
+              <Link href="/profile">Edit Profile</Link>
             </Button>
           </div>
         </Card>
@@ -51,7 +51,7 @@ export default function PortalDashboardPage() {
           </CardContent>
           <div className="mt-4">
             <Button asChild variant="tonal" className="w-full rounded-md">
-              <Link href="/portal/campaigns">Browse Campaigns</Link>
+              <Link href="/campaigns">Browse Campaigns</Link>
             </Button>
           </div>
         </Card>

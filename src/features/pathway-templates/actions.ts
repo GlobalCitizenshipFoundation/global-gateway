@@ -118,7 +118,7 @@ export async function createPathwayTemplateAction(formData: FormData): Promise<P
     user.id
   );
 
-  revalidatePath("/pathway-templates"); // Corrected path
+  revalidatePath("/pathway-templates");
   return newTemplate;
 }
 
@@ -139,8 +139,8 @@ export async function updatePathwayTemplateAction(id: string, formData: FormData
       { name, description, is_private }
     );
 
-    revalidatePath("/pathway-templates"); // Corrected path
-    revalidatePath(`/pathway-templates/${id}`); // Corrected path
+    revalidatePath("/pathway-templates");
+    revalidatePath(`/pathway-templates/${id}`);
     return updatedTemplate;
   } catch (error: any) {
     console.error("Error in updatePathwayTemplateAction:", error.message);
@@ -161,7 +161,7 @@ export async function deletePathwayTemplateAction(id: string): Promise<boolean> 
 
     const success = await deletePathwayTemplate(id); // Use the service function
 
-    revalidatePath("/pathway-templates"); // Corrected path
+    revalidatePath("/pathway-templates");
     return success;
   } catch (error: any) {
     console.error("Error in deletePathwayTemplateAction:", error.message);
@@ -217,7 +217,7 @@ export async function createPhaseAction(pathwayTemplateId: string, formData: For
       description
     );
 
-    revalidatePath(`/pathway-templates/${pathwayTemplateId}`); // Corrected path
+    revalidatePath(`/pathway-templates/${pathwayTemplateId}`);
     return newPhase;
   } catch (error: any) {
     console.error("Error in createPhaseAction:", error.message);
@@ -250,7 +250,7 @@ export async function updatePhaseAction(phaseId: string, pathwayTemplateId: stri
       { name, type, description }
     );
 
-    revalidatePath(`/pathway-templates/${pathwayTemplateId}`); // Corrected path
+    revalidatePath(`/pathway-templates/${pathwayTemplateId}`);
     return updatedPhase;
   } catch (error: any) {
     console.error("Error in updatePhaseAction:", error.message);
@@ -274,7 +274,7 @@ export async function updatePhaseConfigAction(phaseId: string, pathwayTemplateId
       { config: configUpdates }
     );
 
-    revalidatePath(`/pathway-templates/${pathwayTemplateId}`); // Corrected path
+    revalidatePath(`/pathway-templates/${pathwayTemplateId}`);
     return updatedPhase;
   } catch (error: any) {
     console.error("Error in updatePhaseConfigAction:", error.message);
@@ -295,7 +295,7 @@ export async function deletePhaseAction(phaseId: string, pathwayTemplateId: stri
 
     const success = await deletePhase(phaseId); // Use the service function
 
-    revalidatePath(`/pathway-templates/${pathwayTemplateId}`); // Corrected path
+    revalidatePath(`/pathway-templates/${pathwayTemplateId}`);
     return success;
   } catch (error: any) {
     console.error("Error in deletePhaseAction:", error.message);
@@ -319,7 +319,7 @@ export async function reorderPhasesAction(pathwayTemplateId: string, phases: { i
       await updatePhaseService(phase.id, { order_index: phase.order_index }); // Use the service function (renamed import)
     }
 
-    revalidatePath(`/pathway-templates/${pathwayTemplateId}`); // Corrected path
+    revalidatePath(`/pathway-templates/${pathwayTemplateId}`);
     return true;
   } catch (error: any) {
     console.error("Error in reorderPhasesAction:", error.message);
@@ -370,7 +370,7 @@ export async function clonePathwayTemplateAction(templateId: string, newName: st
       newName,
       user.id // The new template will be owned by the current user
     );
-    revalidatePath("/pathway-templates"); // Corrected path
+    revalidatePath("/pathway-templates");
     return clonedTemplate;
   } catch (error: any) {
     console.error("Error in clonePathwayTemplateAction:", error.message);

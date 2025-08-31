@@ -101,7 +101,7 @@ export function ProgramList() {
       <div className="flex flex-col md:flex-row justify-between items-center gap-4">
         <h1 className="text-display-small font-bold text-foreground">Programs</h1>
         <Button asChild className="rounded-full px-6 py-3 text-label-large">
-          <Link href="/programs/new"> {/* Corrected link */}
+          <Link href="/programs/new">
             <PlusCircle className="mr-2 h-5 w-5" /> Create New Program
           </Link>
         </Button>
@@ -135,7 +135,7 @@ export function ProgramList() {
           </CardDescription>
           {!searchTerm && (
             <Button asChild className="mt-6 rounded-full px-6 py-3 text-label-large">
-              <Link href="/programs/new"> {/* Corrected link */}
+              <Link href="/programs/new">
                 <PlusCircle className="mr-2 h-5 w-5" /> Create Program Now
               </Link>
             </Button>
@@ -168,7 +168,7 @@ export function ProgramList() {
                 </CardContent>
                 <div className="flex justify-end p-4 pt-0 space-x-2">
                   <Button asChild variant="outlined" size="icon" className="rounded-md">
-                    <Link href={`/programs/${program.id}`}> {/* Corrected link */}
+                    <Link href={`/programs/${program.id}`}>
                       <Edit className="h-4 w-4" />
                       <span className="sr-only">Edit</span>
                     </Link>

@@ -116,7 +116,7 @@ export async function createCommunicationTemplateAction(formData: FormData): Pro
       user.id
     );
 
-    revalidatePath("/communications/templates"); // Corrected path
+    revalidatePath("/communications/templates");
     return newTemplate;
   } catch (error: any) {
     console.error("Error in createCommunicationTemplateAction:", error.message);
@@ -143,8 +143,8 @@ export async function updateCommunicationTemplateAction(id: string, formData: Fo
       { name, subject, body, type, is_public }
     );
 
-    revalidatePath("/communications/templates"); // Corrected path
-    revalidatePath(`/communications/templates/${id}`); // Corrected path
+    revalidatePath("/communications/templates");
+    revalidatePath(`/communications/templates/${id}`);
     return updatedTemplate;
   } catch (error: any) {
     console.error("Error in updateCommunicationTemplateAction:", error.message);
@@ -165,7 +165,7 @@ export async function deleteCommunicationTemplateAction(id: string): Promise<boo
 
     const success = await deleteCommunicationTemplate(id); // Use the service function
 
-    revalidatePath("/communications/templates"); // Corrected path
+    revalidatePath("/communications/templates");
     return success;
   } catch (error: any) {
     console.error("Error in deleteCommunicationTemplateAction:", error.message);

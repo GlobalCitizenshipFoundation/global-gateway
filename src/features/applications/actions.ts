@@ -131,7 +131,7 @@ export async function createApplicationAction(campaignId: string, formData: Form
       screening_status
     );
     revalidatePath(`/portal/my-applications`);
-    revalidatePath(`/applications`); // Corrected path
+    revalidatePath(`/applications`);
     return newApplication;
   } catch (error: any) {
     console.error("Error in createApplicationAction:", error.message);
@@ -172,8 +172,8 @@ export async function updateApplicationAction(id: string, formData: FormData): P
     const updatedApplication = await updateApplication(id, updates); // Use the service function
 
     revalidatePath(`/portal/my-applications`);
-    revalidatePath(`/applications`); // Corrected path
-    revalidatePath(`/applications/${id}`); // Corrected path
+    revalidatePath(`/applications`);
+    revalidatePath(`/applications/${id}`);
     return updatedApplication;
   } catch (error: any) {
     console.error("Error in updateApplicationAction:", error.message);
@@ -195,7 +195,7 @@ export async function deleteApplicationAction(id: string): Promise<boolean> {
     const success = await deleteApplication(id); // Use the service function
 
     revalidatePath("/portal/my-applications");
-    revalidatePath("/applications"); // Corrected path
+    revalidatePath("/applications");
     return success;
   } catch (error: any) {
     console.error("Error in deleteApplicationAction:", error.message);
@@ -294,7 +294,7 @@ export async function createApplicationNoteAction(applicationId: string, formDat
 
   try {
     const newNote = await createApplicationNote(applicationId, user.id, content); // Use the service function
-    revalidatePath(`/applications/${applicationId}`); // Corrected path
+    revalidatePath(`/applications/${applicationId}`);
     return newNote;
   } catch (error: any) {
     console.error("Error in createApplicationNoteAction:", error.message);
@@ -315,7 +315,7 @@ export async function updateApplicationNoteAction(noteId: string, formData: Form
     }
 
     const updatedNote = await updateApplicationNote(noteId, { content }); // Use the service function
-    revalidatePath(`/applications/${note.application_id}`); // Corrected path
+    revalidatePath(`/applications/${note.application_id}`);
     return updatedNote;
   } catch (error: any) {
     console.error("Error in updateApplicationNoteAction:", error.message);
@@ -338,7 +338,7 @@ export async function deleteApplicationNoteAction(noteId: string): Promise<boole
     }
 
     const success = await deleteApplicationNote(noteId); // Use the service function
-    revalidatePath(`/applications/${note.application_id}`); // Corrected path
+    revalidatePath(`/applications/${note.application_id}`);
     return success;
   } catch (error: any) {
     console.error("Error in deleteApplicationNoteAction:", error.message);

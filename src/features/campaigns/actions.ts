@@ -163,9 +163,9 @@ export async function createCampaignAction(formData: FormData): Promise<Campaign
       await deepCopyPhasesFromTemplate(newCampaign.id, pathway_template_id); // Use the service function
     }
 
-    revalidatePath("/campaigns"); // Corrected path
+    revalidatePath("/campaigns");
     if (program_id) {
-      revalidatePath(`/programs/${program_id}`); // Corrected path
+      revalidatePath(`/programs/${program_id}`);
     }
     return newCampaign;
   } catch (error: any) {
@@ -222,13 +222,13 @@ export async function updateCampaignAction(id: string, formData: FormData): Prom
       { name, description, pathway_template_id, start_date, end_date, is_public, status, config, program_id }
     );
 
-    revalidatePath("/campaigns"); // Corrected path
-    revalidatePath(`/campaigns/${id}`); // Corrected path
+    revalidatePath("/campaigns");
+    revalidatePath(`/campaigns/${id}`);
     if (campaign.program_id) {
-      revalidatePath(`/programs/${campaign.program_id}`); // Corrected path
+      revalidatePath(`/programs/${campaign.program_id}`);
     }
     if (program_id) {
-      revalidatePath(`/programs/${program_id}`); // Corrected path
+      revalidatePath(`/programs/${program_id}`);
     }
     return updatedCampaign;
   } catch (error: any) {
@@ -254,9 +254,9 @@ export async function deleteCampaignAction(id: string): Promise<boolean> {
 
     const success = await deleteCampaign(id); // Use the service function
 
-    revalidatePath("/campaigns"); // Corrected path
+    revalidatePath("/campaigns");
     if (campaign.program_id) {
-      revalidatePath(`/programs/${campaign.program_id}`); // Corrected path
+      revalidatePath(`/programs/${campaign.program_id}`);
     }
     return success;
   } catch (error: any) {
@@ -317,7 +317,7 @@ export async function createCampaignPhaseAction(campaignId: string, formData: Fo
       original_phase_id
     );
 
-    revalidatePath(`/campaigns/${campaignId}`); // Corrected path
+    revalidatePath(`/campaigns/${campaignId}`);
     return newPhase;
   } catch (error: any) {
     console.error("Error in createCampaignPhaseAction:", error.message);
@@ -350,7 +350,7 @@ export async function updateCampaignPhaseAction(phaseId: string, campaignId: str
       { name, type, description, config }
     );
 
-    revalidatePath(`/campaigns/${campaignId}`); // Corrected path
+    revalidatePath(`/campaigns/${campaignId}`);
     return updatedPhase;
   } catch (error: any) {
     console.error("Error in updateCampaignPhaseAction:", error.message);
@@ -374,7 +374,7 @@ export async function updateCampaignPhaseConfigAction(phaseId: string, campaignI
       { config: configUpdates }
     );
 
-    revalidatePath(`/campaigns/${campaignId}`); // Corrected path
+    revalidatePath(`/campaigns/${campaignId}`);
     return updatedPhase;
   } catch (error: any) {
     console.error("Error in updateCampaignPhaseConfigAction:", error.message);
@@ -395,7 +395,7 @@ export async function deleteCampaignPhaseAction(phaseId: string, campaignId: str
 
     const success = await deleteCampaignPhase(phaseId); // Use the service function
 
-    revalidatePath(`/campaigns/${campaignId}`); // Corrected path
+    revalidatePath(`/campaigns/${campaignId}`);
     return success;
   } catch (error: any) {
     console.error("Error in deleteCampaignPhaseAction:", error.message);
@@ -419,7 +419,7 @@ export async function reorderCampaignPhasesAction(campaignId: string, phases: { 
       await updateCampaignPhaseService(phase.id, { order_index: phase.order_index }); // Use the service function (renamed import)
     }
 
-    revalidatePath(`/campaigns/${campaignId}`); // Corrected path
+    revalidatePath(`/campaigns/${campaignId}`);
     return true;
   } catch (error: any) {
     console.error("Error in reorderCampaignPhasesAction:", error.message);

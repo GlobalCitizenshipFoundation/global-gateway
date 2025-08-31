@@ -36,7 +36,7 @@ export async function middleware(request: NextRequest) {
   // If there's a user session
   if (user) {
     // Authenticated users are allowed to access public paths.
-    // The initial redirect to their dashboard after login is now handled client-side by SignInForm.tsx.
+    // The initial redirect to their dashboard after login is now handled client-side by LoginPage.tsx.
     // If they manually navigate to a public path (like /login), LoginPage.tsx will redirect them.
 
     // Role-based access control for authenticated users (using correct root paths)
