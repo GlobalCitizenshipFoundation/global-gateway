@@ -416,9 +416,13 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
     console.log("[PathwayTemplateBuilderPage] inlinePhaseForm state errors on submit (inside handler):", inlinePhaseForm.formState.errors);
     console.log("[PathwayTemplateBuilderPage] inlinePhaseForm state isValid on submit (inside handler):", inlinePhaseForm.formState.isValid);
 
-    // Removed the manual isValid check and trigger() call here.
-    // handleSubmit should handle validation and prevent onSubmit from firing if invalid.
-    // The console.error below will only be reached if handleSubmit somehow allows an invalid form.
+    if (!inlinePhaseForm.formState.isValid) {
+      console.error("[PathwayTemplateBuilderPage] Form is invalid, preventing API call. Forcing trigger to show errors.");
+      inlinePhaseForm.trigger(); // Force validation to display messages
+      console.log("[PathwayTemplateBuilderPage] Errors after trigger:", inlinePhaseForm.formState.errors); // NEW LOG
+      toast.error("Please correct the errors in the new phase form.");
+      return;
+    }
 
     if (!canModifyTemplate || !templateId) {
       toast.error("You do not have permission to add phases.");
@@ -825,7 +829,7 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
                 control={inlinePhaseForm.control}
                 name="type"
                 render={({ field }) => {
-                  // console.log(`[Phase Type Field] field.value: '${field.value}'`); // Removed debug log
+                  // Removed debug log
                   return (
                     <FormItem>
                       <FormLabel className="text-label-large">Phase Type</FormLabel>
@@ -836,9 +840,7 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent className="rounded-md shadow-lg bg-card text-card-foreground border-border">
-                          <SelectItem value="" className="text-body-medium hover:bg-muted hover:text-muted-foreground cursor-pointer">
-                            (None)
-                          </SelectItem> {/* Explicit empty option */}
+                          {/* Removed the problematic SelectItem with value="" */}
                           {phaseTypes.map((type: { value: string; label: string }) => (
                             <SelectItem key={type.value} value={type.value} className="text-body-medium hover:bg-muted hover:text-muted-foreground cursor-pointer">
                               {type.label}
