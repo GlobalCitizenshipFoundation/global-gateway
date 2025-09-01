@@ -131,8 +131,8 @@ export async function createPathwayTemplateAction(formData: FormData): Promise<P
   const participation_deadline = (formData.get("participation_deadline") as string) || null;
   const general_instructions = (formData.get("general_instructions") as string) || null;
   const is_visible_to_applicants = formData.get("is_visible_to_applicants") === "on";
-  const tagsString = (formData.get("tags") as string) || '';
-  const tags = tagsString.split(',').map(tag => tag.trim()).filter(Boolean);
+  const tagsString = (formData.get("tags") as string) || '[]'; // Get JSON string
+  const tags = JSON.parse(tagsString); // Parse back to array
 
 
   if (!name) {
@@ -180,8 +180,8 @@ export async function updatePathwayTemplateAction(id: string, formData: FormData
     const participation_deadline = (formData.get("participation_deadline") as string) || null;
     const general_instructions = (formData.get("general_instructions") as string) || null;
     const is_visible_to_applicants = formData.get("is_visible_to_applicants") === "on";
-    const tagsString = (formData.get("tags") as string) || '';
-    const tags = tagsString.split(',').map(tag => tag.trim()).filter(Boolean);
+    const tagsString = (formData.get("tags") as string) || '[]'; // Get JSON string
+    const tags = JSON.parse(tagsString); // Parse back to array
 
 
     if (!name) {
