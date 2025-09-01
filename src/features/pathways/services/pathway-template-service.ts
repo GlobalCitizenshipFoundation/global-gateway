@@ -8,11 +8,14 @@ async function getSupabase() {
   return await createClient();
 }
 
+// Define the common select string for pathway templates to include joined profiles
+const pathwayTemplateSelect = "*, creator_profile:profiles!pathway_templates_creator_id_fkey(first_name, last_name, avatar_url), last_updater_profile:profiles!pathway_templates_last_updated_by_fkey(first_name, last_name, avatar_url)";
+
 export async function getPathwayTemplates(): Promise<PathwayTemplate[] | null> {
   const supabase = await getSupabase();
   const { data, error } = await supabase
     .from("pathway_templates")
-    .select("*") // Simplified select for testing
+    .select(pathwayTemplateSelect) // Use the common select string
     .order("created_at", { ascending: false });
 
   if (error) {
@@ -27,7 +30,7 @@ export async function getPathwayTemplateById(id: string): Promise<PathwayTemplat
   const supabase = await getSupabase();
   const { data, error } = await supabase
     .from("pathway_templates")
-    .select("*") // Simplified select for testing
+    .select(pathwayTemplateSelect) // Use the common select string
     .eq("id", id)
     .single();
 
@@ -69,7 +72,7 @@ export async function createPathwayTemplate(
       is_visible_to_applicants,
       tags, // Include tags in the insert statement
     }])
-    .select("*") // Simplified select for testing
+    .select(pathwayTemplateSelect) // Use the common select string for return
     .single();
 
   if (error) {
@@ -90,7 +93,7 @@ export async function updatePathwayTemplate(
     .from("pathway_templates")
     .update({ ...updates, updated_at: new Date().toISOString(), last_updated_by: updaterId })
     .eq("id", id)
-    .select("*") // Simplified select for testing
+    .select(pathwayTemplateSelect) // Use the common select string for return
     .single();
 
   if (error) {
@@ -296,7 +299,7 @@ export async function clonePathwayTemplate(
         tags: originalTemplate.tags, // Include tags from original template
       },
     ])
-    .select("*") // Simplified select for testing
+    .select(pathwayTemplateSelect) // Use the common select string for return
     .single();
 
   if (newTemplateError || !newTemplateData) {
