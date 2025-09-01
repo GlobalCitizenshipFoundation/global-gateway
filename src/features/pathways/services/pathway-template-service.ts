@@ -9,7 +9,7 @@ async function getSupabase() {
 }
 
 // Define the common select string for pathway templates to include joined profiles
-const pathwayTemplateSelect = "*, creator_profile:profiles!pathway_templates_creator_id_fkey(first_name, last_name, avatar_url), last_updater_profile:profiles!pathway_templates_last_updated_by_fkey(first_name, last_name, avatar_url)";
+const pathwayTemplateSelect = "*, creator_profile:creator_id(profiles(first_name, last_name, avatar_url)), last_updater_profile:last_updated_by(profiles(first_name, last_name, avatar_url))";
 
 export async function getPathwayTemplates(): Promise<PathwayTemplate[] | null> {
   const supabase = await getSupabase();
