@@ -85,7 +85,7 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
   const [isCloneDialogOpen, setIsCloneDialogOpen] = useState(false);
   const [templateToClone, setTemplateToClone] = useState<PathwayTemplate | null>(null);
   const [isAddingNewPhase, setIsAddingNewPhase] = useState(false);
-  const [expandedPhaseIds, setExpandedPhaseIds] = new Set<string>();
+  const [expandedPhaseIds, setExpandedPhaseIds] = useState<Set<string>>(new Set<string>());
   const [showUnsavedChangesWarning, setShowUnsavedChangesWarning] = useState(false); // State for unsaved changes warning
   const [nextPath, setNextPath] = useState<string | null>(null); // Path to navigate to if changes are discarded
   const [isVersionHistoryOpen, setIsVersionHistoryOpen] = useState(false); // State for Version History dialog
@@ -290,7 +290,7 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
       if (success) {
         toast.success("Phase deleted successfully!");
         fetchTemplateAndPhases();
-        setExpandedPhaseIds(prev => {
+        setExpandedPhaseIds((prev: Set<string>) => {
           const newSet = new Set(prev);
           newSet.delete(phaseId);
           return newSet;
@@ -385,7 +385,7 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
   };
 
   const handleToggleExpandPhase = (phaseId: string) => {
-    setExpandedPhaseIds(prev => {
+    setExpandedPhaseIds((prev: Set<string>) => {
       const newSet = new Set(prev);
       if (newSet.has(phaseId)) {
         newSet.delete(phaseId);
@@ -414,7 +414,7 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
   };
 
   const handleCollapseAllPhases = () => {
-    setExpandedPhaseIds(new Set());
+    setExpandedPhaseIds(new Set<string>());
     setIsAddingNewPhase(false);
   };
 
@@ -772,232 +772,80 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
               </CardContent>
             </Card>
           )}
+
+          {template && canModifyTemplate && (
+            <CardFooter className="flex flex-wrap justify-end items-center gap-2 mt-8 pt-6 border-t border-border">
+              {/* Save Draft */}
+              <Button type="submit" variant="tonal" className="rounded-full px-6 py-3 text-label-large" disabled={templateForm.formState.isSubmitting}>
+                {templateForm.formState.isSubmitting ? "Saving Draft..." : <><Save className="mr-2 h-5 w-5" /> Save Draft</>}
+              </Button>
+
+              {/* Publish Template */}
+              <Button variant="default" className="rounded-full px-6 py-3 text-label-large" onClick={handlePublishTemplate} disabled={currentTemplate.status === 'published'}>
+                <CheckCircle className="mr-2 h-5 w-5" /> {currentTemplate.status === 'published' ? "Published" : "Publish Template"}
+              </Button>
+
+              {/* More Actions Dropdown */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="icon" className="rounded-full">
+                    <MoreVertical className="h-5 w-5" />
+                    <span className="sr-only">More actions</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="rounded-md shadow-lg bg-card text-card-foreground border-border">
+                  <DropdownMenuLabel className="text-body-medium">More Actions</DropdownMenuLabel>
+                  <DropdownMenuSeparator className="bg-border" />
+
+                  {/* Clone Template */}
+                  <DropdownMenuItem onSelect={() => handleClone(template)} className="text-body-medium hover:bg-muted hover:text-muted-foreground cursor-pointer">
+                    <Copy className="mr-2 h-4 w-4" /> Clone Template
+                  </DropdownMenuItem>
+
+                  {/* Archive / Unarchive Template */}
+                  {currentTemplate.status === 'archived' ? (
+                    <DropdownMenuItem onSelect={() => handleUpdateStatus('draft')} className="text-body-medium hover:bg-muted hover:text-muted-foreground cursor-pointer">
+                      <RotateCcw className="mr-2 h-4 w-4" /> Unarchive
+                    </DropdownMenuItem>
+                  ) : (
+                    <DropdownMenuItem onSelect={() => handleUpdateStatus('archived')} className="text-body-medium text-destructive hover:bg-destructive-container hover:text-destructive cursor-pointer">
+                      <Archive className="mr-2 h-4 w-4" /> Archive Template
+                    </DropdownMenuItem>
+                  )}
+
+                  <DropdownMenuSeparator className="bg-border" />
+
+                  {/* Delete Template */}
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <DropdownMenuItem onSelect={(e: Event) => e.preventDefault()} className="text-body-medium text-destructive hover:bg-destructive-container hover:text-destructive cursor-pointer">
+                        <Trash2 className="mr-2 h-4 w-4" /> Delete Template
+                      </DropdownMenuItem>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent className="rounded-xl shadow-lg bg-card text-card-foreground border-border">
+                      <AlertDialogHeader>
+                        <AlertDialogTitle className="text-headline-small">Confirm Permanent Deletion</AlertDialogTitle>
+                        <AlertDialogDescription className="text-body-medium text-muted-foreground">
+                          Are you sure you want to permanently delete the "{template.name}" pathway template? This action cannot be undone and will remove all associated phases and data.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel onClick={handleStayOnPage} className="rounded-md text-label-large">Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={handleDeleteTemplate}
+                          className="rounded-md text-label-large bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        >
+                          Delete Permanently
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </CardFooter>
+          )}
         </form>
       </Form>
-
-      <div className="flex flex-col md:flex-row justify-between items-center mt-8 gap-4">
-        <h2 className="text-headline-large font-bold text-foreground">Phases</h2>
-        {templateId && canModifyTemplate && (
-          <Button
-            variant="outline"
-            className="rounded-full px-6 py-3 text-label-large"
-            onClick={handleToggleAllPhases}
-          >
-            {isAllPhasesExpanded ? <><ChevronUp className="mr-2 h-5 w-5" /> Collapse All</> : <><ChevronDown className="mr-2 h-5 w-5" /> Expand All</>}
-          </Button>
-        )}
-      </div>
-
-      {phases.length === 0 && !isAddingNewPhase && templateId ? (
-        <Card className="rounded-xl shadow-md p-8 text-center">
-          <CardTitle className="text-headline-small text-muted-foreground mb-4">No Phases Defined</CardTitle>
-          <CardDescription className="text-body-medium text-muted-foreground">
-            This template currently has no phases. Add phases to define its workflow.
-          </CardDescription>
-        </Card>
-      ) : (
-        <DragDropContext onDragEnd={handleReorderPhases}>
-          <Droppable droppableId="pathway-phases">
-            {(provided) => (
-              <div {...provided.droppableProps} ref={provided.innerRef} className="space-y-4">
-                {phases.map((phase: Phase, index: number) => (
-                  <PhaseBuilderCard
-                    key={phase.id}
-                    phase={phase}
-                    index={index}
-                    onDelete={handleDeletePhase}
-                    onPhaseUpdated={handlePhaseUpdated}
-                    canModify={canModifyTemplate}
-                    isExpanded={expandedPhaseIds.has(phase.id)}
-                    onToggleExpand={handleToggleExpandPhase}
-                  />
-                ))}
-                {provided.placeholder}
-              </div>
-            )}
-          </Droppable>
-        </DragDropContext>
-      )}
-
-      {templateId && canModifyTemplate && (
-        <div className="mt-6 flex justify-center">
-          <Button variant="outline" onClick={() => setIsAddingNewPhase(true)} className="w-fit rounded-md text-label-large">
-            <PlusCircle className="mr-2 h-5 w-5" /> Add New Phase
-          </Button>
-        </div>
-      )}
-
-      {isAddingNewPhase && templateId && canModifyTemplate && (
-        <Card className="rounded-xl shadow-lg p-6 border-l-8 border-primary bg-primary-container/10 mt-6">
-          <h3 className="text-title-large font-bold text-foreground mb-4">New Phase Details</h3>
-          <Form {...inlinePhaseForm}>
-            <form onSubmit={inlinePhaseForm.handleSubmit(handleInlinePhaseCreate)} className="grid gap-4 py-4">
-              <FormField
-                control={inlinePhaseForm.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-label-large">Phase Name</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g., Initial Application" {...field} className="rounded-md" />
-                    </FormControl>
-                    <FormDescription className="text-body-small">
-                      A unique and descriptive name for your phase.
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={inlinePhaseForm.control}
-                name="type"
-                render={({ field }) => {
-                  // Removed debug log
-                  return (
-                    <FormItem>
-                      <FormLabel className="text-label-large">Phase Type</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value as string || ""} disabled={!canModifyTemplate}>
-                        <FormControl>
-                          <SelectTrigger className="rounded-md" onBlur={field.onBlur}>
-                            <SelectValue placeholder="Select a phase type" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent className="rounded-md shadow-lg bg-card text-card-foreground border-border">
-                          {/* Removed the problematic SelectItem with value="" */}
-                          {phaseTypes.map((type: { value: string; label: string }) => (
-                            <SelectItem key={type.value} value={type.value} className="text-body-medium hover:bg-muted hover:text-muted-foreground cursor-pointer">
-                              {type.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormDescription className="text-body-small">
-                        The type of actions or steps involved in this phase.
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  );
-                }}
-              />
-              <div className="flex justify-end space-x-2">
-                <Button type="button" variant="outline" onClick={() => setIsAddingNewPhase(false)} className="rounded-md text-label-large">
-                  <X className="mr-2 h-4 w-4" /> Cancel
-                </Button>
-                <Button type="submit" className="rounded-md text-label-large" disabled={inlinePhaseForm.formState.isSubmitting}>
-                  {inlinePhaseForm.formState.isSubmitting ? "Creating..." : <><PlusCircle className="mr-2 h-5 w-5" /> Create Phase</>}
-                </Button>
-              </div>
-            </form>
-          </Form>
-        </Card>
-      )}
-
-      {template && (
-        <>
-          {/* Version History Dialog */}
-          <Dialog open={isVersionHistoryOpen} onOpenChange={setIsVersionHistoryOpen}>
-            <DialogContent className="sm:max-w-[900px] rounded-xl shadow-lg bg-card text-card-foreground border-border max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle className="text-headline-small">Template Version History</DialogTitle>
-                <DialogDescription className="text-body-medium text-muted-foreground">
-                  Review and manage past versions of this pathway template.
-                </DialogDescription>
-              </DialogHeader>
-              <TemplateVersionHistory
-                pathwayTemplateId={template.id}
-                canModify={canModifyTemplate}
-                onTemplateRolledBack={fetchTemplateAndPhases}
-                refreshTrigger={refreshTrigger}
-              />
-            </DialogContent>
-          </Dialog>
-
-          {/* Activity Log Dialog */}
-          <Dialog open={isActivityLogOpen} onOpenChange={setIsActivityLogOpen}>
-            <DialogContent className="sm:max-w-[900px] rounded-xl shadow-lg bg-card text-card-foreground border-border max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle className="text-headline-small">Template Activity Log</DialogTitle>
-                <DialogDescription className="text-body-medium text-muted-foreground">
-                  A chronological record of all changes and events for this template.
-                </DialogDescription>
-              </DialogHeader>
-              <TemplateActivityLog templateId={template.id} refreshTrigger={refreshTrigger} />
-            </DialogContent>
-          </Dialog>
-        </>
-      )}
-
-      {template && canModifyTemplate && (
-        <div className="flex flex-wrap justify-end items-center gap-2 mt-8 pt-6 border-t border-border">
-          {/* Save Draft */}
-          <Button type="submit" variant="tonal" className="rounded-full px-6 py-3 text-label-large" disabled={templateForm.formState.isSubmitting}>
-            {templateForm.formState.isSubmitting ? "Saving Draft..." : <><Save className="mr-2 h-5 w-5" /> Save Draft</>}
-          </Button>
-
-          {/* Publish Template */}
-          <Button variant="default" className="rounded-full px-6 py-3 text-label-large" onClick={handlePublishTemplate} disabled={currentTemplate.status === 'published'}>
-            <CheckCircle className="mr-2 h-5 w-5" /> {currentTemplate.status === 'published' ? "Published" : "Publish Template"}
-          </Button>
-
-          {/* More Actions Dropdown */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="icon" className="rounded-full">
-                <MoreVertical className="h-5 w-5" />
-                <span className="sr-only">More actions</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="rounded-md shadow-lg bg-card text-card-foreground border-border">
-              <DropdownMenuLabel className="text-body-medium">More Actions</DropdownMenuLabel>
-              <DropdownMenuSeparator className="bg-border" />
-
-              {/* Clone Template */}
-              <DropdownMenuItem onSelect={() => handleClone(template)} className="text-body-medium hover:bg-muted hover:text-muted-foreground cursor-pointer">
-                <Copy className="mr-2 h-4 w-4" /> Clone Template
-              </DropdownMenuItem>
-
-              {/* Archive / Unarchive Template */}
-              {currentTemplate.status === 'archived' ? (
-                <DropdownMenuItem onSelect={() => handleUpdateStatus('draft')} className="text-body-medium hover:bg-muted hover:text-muted-foreground cursor-pointer">
-                  <RotateCcw className="mr-2 h-4 w-4" /> Unarchive
-                </DropdownMenuItem>
-              ) : (
-                <DropdownMenuItem onSelect={() => handleUpdateStatus('archived')} className="text-body-medium text-destructive hover:bg-destructive-container hover:text-destructive cursor-pointer">
-                  <Archive className="mr-2 h-4 w-4" /> Archive Template
-                </DropdownMenuItem>
-              )}
-
-              <DropdownMenuSeparator className="bg-border" />
-
-              {/* Delete Template */}
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <DropdownMenuItem onSelect={(e: Event) => e.preventDefault()} className="text-body-medium text-destructive hover:bg-destructive-container hover:text-destructive cursor-pointer">
-                    <Trash2 className="mr-2 h-4 w-4" /> Delete Template
-                  </DropdownMenuItem>
-                </AlertDialogTrigger>
-                <AlertDialogContent className="rounded-xl shadow-lg bg-card text-card-foreground border-border">
-                  <AlertDialogHeader>
-                    <AlertDialogTitle className="text-headline-small">Confirm Permanent Deletion</AlertDialogTitle>
-                    <AlertDialogDescription className="text-body-medium text-muted-foreground">
-                      Are you sure you want to permanently delete the "{template.name}" pathway template? This action cannot be undone and will remove all associated phases and data.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel onClick={handleStayOnPage} className="rounded-md text-label-large">Cancel</AlertDialogCancel>
-                    <AlertDialogAction
-                      onClick={handleDeleteTemplate}
-                      className="rounded-md text-label-large bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                    >
-                      Delete Permanently
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      )}
 
       {template && (
         <CardFooter className="flex flex-col md:flex-row md:justify-between md:items-center text-body-small text-muted-foreground border-t border-border pt-6 mt-8">
