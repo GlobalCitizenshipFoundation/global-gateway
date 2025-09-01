@@ -61,6 +61,7 @@ const templateBuilderSchema = z.object({
   participation_deadline: z.date().nullable().optional(),
   general_instructions: z.string().max(5000, { message: "General instructions cannot exceed 5000 characters." }).nullable().optional(),
   is_visible_to_applicants: z.boolean().optional(),
+  tags: z.string().nullable().optional(), // New field for tags (comma-separated string)
 });
 
 // Schema for the inline phase creation form
@@ -103,6 +104,7 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
       participation_deadline: initialTemplate?.participation_deadline ? new Date(initialTemplate.participation_deadline) : null,
       general_instructions: initialTemplate?.general_instructions || "",
       is_visible_to_applicants: initialTemplate?.is_visible_to_applicants ?? true,
+      tags: initialTemplate?.tags?.join(', ') || "", // Convert array to comma-separated string
     },
     mode: "onChange",
   });
@@ -150,6 +152,7 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
         participation_deadline: fetchedTemplate.participation_deadline ? new Date(fetchedTemplate.participation_deadline) : null,
         general_instructions: fetchedTemplate.general_instructions || "",
         is_visible_to_applicants: fetchedTemplate.is_visible_to_applicants ?? true,
+        tags: fetchedTemplate.tags?.join(', ') || "", // Convert array to comma-separated string
       });
 
       // Fetch creator and last updater profiles
@@ -244,6 +247,7 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
       formData.append("participation_deadline", values.participation_deadline ? values.participation_deadline.toISOString() : "");
       formData.append("general_instructions", values.general_instructions || "");
       formData.append("is_visible_to_applicants", values.is_visible_to_applicants ? "on" : "off");
+      formData.append("tags", values.tags || ""); // Append tags as a comma-separated string
 
 
       let result: PathwayTemplate | null;
@@ -255,7 +259,10 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
 
       if (result) {
         toast.success(`Template ${templateId ? "updated" : "created"} successfully!`);
-        templateForm.reset(values); // Reset form to clear dirty state
+        templateForm.reset({
+          ...values,
+          tags: values.tags || "", // Ensure tags are reset correctly
+        }); // Reset form to clear dirty state
         if (!templateId) {
           router.push(`/pathways/${result.id}`);
         } else {
@@ -596,6 +603,22 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
                       </FormControl>
                       <FormDescription className="text-body-small">
                         Optional: A detailed description of what this template is used for.
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={templateForm.control}
+                  name="tags"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-label-large">Tags (Comma-separated)</FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g., fellowship, global, application" {...field} className="rounded-md" disabled={!canModifyTemplate} value={field.value || ""} />
+                      </FormControl>
+                      <FormDescription className="text-body-small">
+                        Add tags to categorize and organize your templates (e.g., "hiring", "awards", "fellowship").
                       </FormDescription>
                       <FormMessage />
                     </FormItem>

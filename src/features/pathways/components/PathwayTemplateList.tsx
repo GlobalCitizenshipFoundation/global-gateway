@@ -4,7 +4,7 @@ import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { PlusCircle, Edit, Trash2, Workflow, Lock, Globe, Copy } from "lucide-react"; // Import Copy icon
+import { PlusCircle, Edit, Trash2, Workflow, Lock, Globe, Copy, LayoutGrid, List, CalendarDays, UserCircle2, Clock, Tag, CheckCircle, Archive } from "lucide-react"; // Import Tag icon, CheckCircle, Archive
 import { PathwayTemplate } from "@/types/supabase"; // Import from types/supabase
 import { toast } from "sonner";
 import { useSession } from "@/context/SessionContextProvider";
@@ -15,6 +15,139 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { CloneTemplateDialog } from "./CloneTemplateDialog"; // Import CloneTemplateDialog
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"; // Import ToggleGroup
+import { PathwayTemplateTable } from "./PathwayTemplateTable"; // Import the new table component
+import { Badge } from "@/components/ui/badge"; // Import Badge
+
+// Helper component for Kanban view cards
+interface PathwayTemplateCardProps {
+  template: PathwayTemplate;
+  user: any;
+  isAdmin: boolean;
+  handleClone: (template: PathwayTemplate) => void;
+  handleDelete: (id: string) => void;
+}
+
+const PathwayTemplateCard: React.FC<PathwayTemplateCardProps> = ({ template, user, isAdmin, handleClone, handleDelete }) => {
+  const canEditOrDelete = user && (template.creator_id === user.id || isAdmin);
+  const getProfileDisplayName = (profile: any) => {
+    if (!profile) return "Unknown User";
+    return `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || "Unknown User";
+  };
+
+  const getStatusBadge = (status: PathwayTemplate['status']) => {
+    switch (status) {
+      case 'draft': return <Badge variant="outline" className="bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-100"><Clock className="h-3 w-3 mr-1" /> Draft</Badge>;
+      case 'published': return <Badge variant="outline" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"><CheckCircle className="h-3 w-3 mr-1" /> Published</Badge>;
+      case 'archived': return <Badge variant="outline" className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200"><Archive className="h-3 w-3 mr-1" /> Archived</Badge>;
+      default: return <Badge variant="outline" className="bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-100">Unknown</Badge>;
+    }
+  };
+
+  return (
+    <Card className="rounded-xl shadow-md hover:shadow-lg hover:-translate-y-1 transition-all duration-300 flex flex-col">
+      <CardHeader className="flex-grow">
+        <CardTitle className="text-headline-small text-primary flex items-center gap-2">
+          <Workflow className="h-6 w-6" /> {template.name}
+          <TooltipProvider>
+            {template.is_private ? (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Lock className="h-4 w-4 text-muted-foreground" />
+                </TooltipTrigger>
+                <TooltipContent className="rounded-md shadow-lg bg-card text-card-foreground border-border text-body-small">
+                  Private Template
+                </TooltipContent>
+              </Tooltip>
+            ) : (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Globe className="h-4 w-4 text-muted-foreground" />
+                </TooltipTrigger>
+                <TooltipContent className="rounded-md shadow-lg bg-card text-card-foreground border-border text-body-small">
+                  Public Template
+                </TooltipContent>
+              </Tooltip>
+            )}
+          </TooltipProvider>
+        </CardTitle>
+        <CardDescription className="text-body-medium text-muted-foreground">
+          {template.description || "No description provided."}
+        </CardDescription>
+        {template.tags && template.tags.length > 0 && (
+          <div className="flex flex-wrap gap-1 mt-2">
+            {template.tags.map((tag, idx) => (
+              <Badge key={idx} variant="secondary" className="text-label-small bg-muted text-muted-foreground">
+                <Tag className="h-3 w-3 mr-1" /> {tag}
+              </Badge>
+            ))}
+          </div>
+        )}
+      </CardHeader>
+      <CardContent className="text-body-small text-muted-foreground space-y-1">
+        <p className="flex items-center gap-1">
+          <UserCircle2 className="h-4 w-4" />
+          Creator: {getProfileDisplayName(template.creator_profile)}
+        </p>
+        <p className="flex items-center gap-1">
+          <CalendarDays className="h-4 w-4" />
+          Created: {new Date(template.created_at).toLocaleDateString()}
+        </p>
+        <p className="flex items-center gap-1">
+          <UserCircle2 className="h-4 w-4" />
+          Last Updated By: {getProfileDisplayName(template.last_updater_profile)}
+        </p>
+        <p className="flex items-center gap-1">
+          <CalendarDays className="h-4 w-4" />
+          Last Updated: {new Date(template.updated_at).toLocaleDateString()}
+        </p>
+        <p className="flex items-center gap-1">
+          {getStatusBadge(template.status)}
+        </p>
+      </CardContent>
+      <div className="flex justify-end p-4 pt-0 space-x-2">
+        <Button variant="outline" size="icon" className="rounded-md" onClick={() => handleClone(template)}>
+          <Copy className="h-4 w-4" />
+          <span className="sr-only">Clone Template</span>
+        </Button>
+        <Button asChild variant="outline" size="icon" className="rounded-md">
+          <Link href={`/pathways/${template.id}`}>
+            <Edit className="h-4 w-4" />
+            <span className="sr-only">Edit</span>
+          </Link>
+        </Button>
+        {canEditOrDelete && (
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="destructive" size="icon" className="rounded-md">
+                <Trash2 className="h-4 w-4" />
+                <span className="sr-only">Delete</span>
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent className="rounded-xl shadow-lg bg-card text-card-foreground border-border">
+              <AlertDialogHeader>
+                <AlertDialogTitle className="text-headline-small">Are you absolutely sure?</AlertDialogTitle>
+                <AlertDialogDescription className="text-body-medium text-muted-foreground">
+                  This action cannot be undone. This will permanently delete the &quot;{template.name}&quot; pathway template and all associated phases.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel className="rounded-md text-label-large">Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={() => handleDelete(template.id)}
+                  className="rounded-md text-label-large bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                >
+                  Delete
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        )}
+      </div>
+    </Card>
+  );
+};
+
 
 export function PathwayTemplateList() {
   const { user, isLoading: isSessionLoading } = useSession();
@@ -23,6 +156,9 @@ export function PathwayTemplateList() {
   const [isLoading, setIsLoading] = useState(true);
   const [filter, setFilter] = useState<"all" | "my" | "public">("all");
   const [searchTerm, setSearchTerm] = useState("");
+  const [tagFilter, setTagFilter] = useState(""); // New state for tag filter
+  const [sortBy, setSortBy] = useState<string>("created_at_desc"); // Default sort
+  const [viewMode, setViewMode] = useState<"kanban" | "table">("kanban"); // New state for view mode
   const [isCloneDialogOpen, setIsCloneDialogOpen] = useState(false); // State for clone dialog
   const [templateToClone, setTemplateToClone] = useState<PathwayTemplate | null>(null); // State for template being cloned
 
@@ -50,14 +186,23 @@ export function PathwayTemplateList() {
   }, [user, isSessionLoading]);
 
   useEffect(() => {
-    let currentFiltered = templates;
+    let currentFiltered = [...templates]; // Create a mutable copy
 
     // Apply search term filter
     if (searchTerm) {
       currentFiltered = currentFiltered.filter(
         (template) =>
           template.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          template.description?.toLowerCase().includes(searchTerm.toLowerCase())
+          template.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          template.tags?.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()))
+      );
+    }
+
+    // Apply tag filter
+    if (tagFilter) {
+      const lowerCaseTagFilter = tagFilter.toLowerCase();
+      currentFiltered = currentFiltered.filter(
+        (template) => template.tags?.some(tag => tag.toLowerCase().includes(lowerCaseTagFilter))
       );
     }
 
@@ -69,8 +214,23 @@ export function PathwayTemplateList() {
     }
     // "all" filter is handled by the initial fetch and search
 
+    // Apply sorting
+    currentFiltered.sort((a, b) => {
+      switch (sortBy) {
+        case "name_asc": return a.name.localeCompare(b.name);
+        case "name_desc": return b.name.localeCompare(a.name);
+        case "created_at_asc": return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+        case "created_at_desc": return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        case "updated_at_asc": return new Date(a.updated_at).getTime() - new Date(b.updated_at).getTime();
+        case "updated_at_desc": return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
+        case "status_asc": return a.status.localeCompare(b.status);
+        case "status_desc": return b.status.localeCompare(a.status);
+        default: return 0;
+      }
+    });
+
     setFilteredTemplates(currentFiltered);
-  }, [templates, filter, searchTerm, user]);
+  }, [templates, filter, searchTerm, tagFilter, sortBy, user]);
 
   const handleDelete = async (id: string) => {
     try {
@@ -120,10 +280,16 @@ export function PathwayTemplateList() {
 
       <div className="flex flex-col md:flex-row gap-4">
         <Input
-          placeholder="Search templates by name or description..."
+          placeholder="Search templates by name, description, or tags..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="flex-grow rounded-md"
+        />
+        <Input
+          placeholder="Filter by tag..."
+          value={tagFilter}
+          onChange={(e) => setTagFilter(e.target.value)}
+          className="w-[180px] rounded-md"
         />
         <Select value={filter} onValueChange={(value: "all" | "my" | "public") => setFilter(value)}>
           <SelectTrigger className="w-[180px] rounded-md">
@@ -137,15 +303,40 @@ export function PathwayTemplateList() {
             <SelectItem value="public" className="text-body-medium hover:bg-muted hover:text-muted-foreground cursor-pointer">Public Templates</SelectItem>
           </SelectContent>
         </Select>
+        <Select value={sortBy} onValueChange={setSortBy}>
+          <SelectTrigger className="w-[200px] rounded-md">
+            <SelectValue placeholder="Sort by" />
+          </SelectTrigger>
+          <SelectContent className="rounded-md shadow-lg bg-card text-card-foreground border-border">
+            <SelectItem value="name_asc" className="text-body-medium hover:bg-muted hover:text-muted-foreground cursor-pointer">Name (A-Z)</SelectItem>
+            <SelectItem value="name_desc" className="text-body-medium hover:bg-muted hover:text-muted-foreground cursor-pointer">Name (Z-A)</SelectItem>
+            <SelectItem value="created_at_desc" className="text-body-medium hover:bg-muted hover:text-muted-foreground cursor-pointer">Created Date (Newest)</SelectItem>
+            <SelectItem value="created_at_asc" className="text-body-medium hover:bg-muted hover:text-muted-foreground cursor-pointer">Created Date (Oldest)</SelectItem>
+            <SelectItem value="updated_at_desc" className="text-body-medium hover:bg-muted hover:text-muted-foreground cursor-pointer">Last Updated (Newest)</SelectItem>
+            <SelectItem value="updated_at_asc" className="text-body-medium hover:bg-muted hover:text-muted-foreground cursor-pointer">Last Updated (Oldest)</SelectItem>
+            <SelectItem value="status_asc" className="text-body-medium hover:bg-muted hover:text-muted-foreground cursor-pointer">Status (A-Z)</SelectItem>
+            <SelectItem value="status_desc" className="text-body-medium hover:bg-muted hover:text-muted-foreground cursor-pointer">Status (Z-A)</SelectItem>
+          </SelectContent>
+        </Select>
+        <ToggleGroup type="single" value={viewMode} onValueChange={(value: "kanban" | "table") => value && setViewMode(value)} className="rounded-md bg-muted p-1">
+          <ToggleGroupItem value="kanban" aria-label="Toggle Kanban view" className="rounded-md data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">
+            <LayoutGrid className="h-5 w-5" />
+          </ToggleGroupItem>
+          <ToggleGroupItem value="table" aria-label="Toggle Table view" className="rounded-md data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">
+            <List className="h-5 w-5" />
+          </ToggleGroupItem>
+        </ToggleGroup>
       </div>
 
       {filteredTemplates.length === 0 ? (
         <Card className="rounded-xl shadow-md p-8 text-center">
           <CardTitle className="text-headline-small text-muted-foreground mb-4">No Pathway Templates Found</CardTitle>
           <CardDescription className="text-body-medium text-muted-foreground">
-            {searchTerm ? "No templates match your search criteria." : "Start by creating your first pathway template to define your program workflows."}
+            {searchTerm || tagFilter || filter !== "all"
+              ? "No templates match your current filters."
+              : "Start by creating your first pathway template to define your program workflows."}
           </CardDescription>
-          {!searchTerm && (
+          {!searchTerm && !tagFilter && filter === "all" && (
             <Button asChild className="mt-6 rounded-full px-6 py-3 text-label-large">
               <Link href="/pathways/new">
                 <PlusCircle className="mr-2 h-5 w-5" /> Create Template Now
@@ -154,87 +345,31 @@ export function PathwayTemplateList() {
           )}
         </Card>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <TooltipProvider>
-            {filteredTemplates.map((template) => {
-              const canEditOrDelete = user && (template.creator_id === user.id || isAdmin);
-              return (
-                <Card key={template.id} className="rounded-xl shadow-md hover:shadow-lg hover:-translate-y-1 transition-all duration-300 flex flex-col">
-                  <CardHeader className="flex-grow">
-                    <CardTitle className="text-headline-small text-primary flex items-center gap-2">
-                      <Workflow className="h-6 w-6" /> {template.name}
-                      {template.is_private ? (
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Lock className="h-4 w-4 text-muted-foreground" />
-                          </TooltipTrigger>
-                          <TooltipContent className="rounded-md shadow-lg bg-card text-card-foreground border-border text-body-small">
-                            Private Template
-                          </TooltipContent>
-                        </Tooltip>
-                      ) : (
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Globe className="h-4 w-4 text-muted-foreground" />
-                          </TooltipTrigger>
-                          <TooltipContent className="rounded-md shadow-lg bg-card text-card-foreground border-border text-body-small">
-                            Public Template
-                          </TooltipContent>
-                        </Tooltip>
-                      )}
-                    </CardTitle>
-                    <CardDescription className="text-body-medium text-muted-foreground">
-                      {template.description || "No description provided."}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="text-body-small text-muted-foreground">
-                    <p>Created: {new Date(template.created_at).toLocaleDateString()}</p>
-                    <p>Last Updated: {new Date(template.updated_at).toLocaleDateString()}</p>
-                  </CardContent>
-                  <div className="flex justify-end p-4 pt-0 space-x-2">
-                    <Button variant="outline" size="icon" className="rounded-md" onClick={() => handleClone(template)}>
-                      <Copy className="h-4 w-4" />
-                      <span className="sr-only">Clone Template</span>
-                    </Button>
-                    <Button asChild variant="outline" size="icon" className="rounded-md">
-                      <Link href={`/pathways/${template.id}`}>
-                        <Edit className="h-4 w-4" />
-                        <span className="sr-only">Edit</span>
-                      </Link>
-                    </Button>
-                    {canEditOrDelete && (
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button variant="destructive" size="icon" className="rounded-md">
-                            <Trash2 className="h-4 w-4" />
-                            <span className="sr-only">Delete</span>
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent className="rounded-xl shadow-lg bg-card text-card-foreground border-border">
-                          <AlertDialogHeader>
-                            <AlertDialogTitle className="text-headline-small">Are you absolutely sure?</AlertDialogTitle>
-                            <AlertDialogDescription className="text-body-medium text-muted-foreground">
-                              This action cannot be undone. This will permanently delete the &quot;{template.name}&quot; pathway template and all associated phases.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel className="rounded-md text-label-large">Cancel</AlertDialogCancel>
-                            <AlertDialogAction
-                              onClick={() => handleDelete(template.id)}
-                              className="rounded-md text-label-large bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                            >
-                              Delete
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    )}
-                  </div>
-                </Card>
-              );
-            })}
-          </TooltipProvider>
-        </div>
+        viewMode === "kanban" ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <TooltipProvider>
+              {filteredTemplates.map((template) => (
+                <PathwayTemplateCard
+                  key={template.id}
+                  template={template}
+                  user={user}
+                  isAdmin={isAdmin}
+                  handleClone={handleClone}
+                  handleDelete={handleDelete}
+                />
+              ))}
+            </TooltipProvider>
+          </div>
+        ) : (
+          <PathwayTemplateTable
+            templates={filteredTemplates}
+            user={user}
+            isAdmin={isAdmin}
+            handleClone={handleClone}
+            handleDelete={handleDelete}
+            fetchTemplates={fetchTemplates} // Pass fetchTemplates for revalidation
+          />
+        )
       )}
 
       {templateToClone && (
