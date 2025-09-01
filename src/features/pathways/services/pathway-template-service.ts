@@ -12,7 +12,7 @@ export async function getPathwayTemplates(): Promise<PathwayTemplate[] | null> {
   const supabase = await getSupabase();
   const { data, error } = await supabase
     .from("pathway_templates")
-    .select("*, creator_profile:profiles!creator_id(first_name, last_name, avatar_url), last_updater_profile:profiles!last_updated_by(first_name, last_name, avatar_url)") // Simplified join syntax
+    .select("*, creator_profile:auth.users!pathway_templates_creator_id_fkey(profiles(first_name, last_name, avatar_url)), last_updater_profile:auth.users!pathway_templates_last_updated_by_fkey(profiles(first_name, last_name, avatar_url))") // Corrected join syntax
     .order("created_at", { ascending: false });
 
   if (error) {
@@ -20,14 +20,14 @@ export async function getPathwayTemplates(): Promise<PathwayTemplate[] | null> {
     return null;
   }
   console.log("[pathway-template-service] getPathwayTemplates - Fetched data:", data); // LOG ADDED
-  return data;
+  return data as unknown as PathwayTemplate[]; // Explicitly cast to unknown then PathwayTemplate[]
 }
 
 export async function getPathwayTemplateById(id: string): Promise<PathwayTemplate | null> {
   const supabase = await getSupabase();
   const { data, error } = await supabase
     .from("pathway_templates")
-    .select("*, creator_profile:profiles!creator_id(first_name, last_name, avatar_url), last_updater_profile:profiles!last_updated_by(first_name, last_name, avatar_url)") // Simplified join syntax
+    .select("*, creator_profile:auth.users!pathway_templates_creator_id_fkey(profiles(first_name, last_name, avatar_url)), last_updater_profile:auth.users!pathway_templates_last_updated_by_fkey(profiles(first_name, last_name, avatar_url))") // Corrected join syntax
     .eq("id", id)
     .single();
 
@@ -36,7 +36,7 @@ export async function getPathwayTemplateById(id: string): Promise<PathwayTemplat
     return null;
   }
   console.log(`[pathway-template-service] getPathwayTemplateById(${id}) - Fetched data:`, data); // LOG ADDED
-  return data;
+  return data as unknown as PathwayTemplate; // Explicitly cast to unknown then PathwayTemplate
 }
 
 export async function createPathwayTemplate(
@@ -69,7 +69,7 @@ export async function createPathwayTemplate(
       is_visible_to_applicants,
       tags, // Include tags in the insert statement
     }])
-    .select("*, creator_profile:profiles!creator_id(first_name, last_name, avatar_url), last_updater_profile:profiles!last_updated_by(first_name, last_name, avatar_url)") // Simplified join syntax
+    .select("*, creator_profile:auth.users!pathway_templates_creator_id_fkey(profiles(first_name, last_name, avatar_url)), last_updater_profile:auth.users!pathway_templates_last_updated_by_fkey(profiles(first_name, last_name, avatar_url))") // Corrected join syntax
     .single();
 
   if (error) {
@@ -77,7 +77,7 @@ export async function createPathwayTemplate(
     return null;
   }
   console.log("[pathway-template-service] createPathwayTemplate - Insert successful, data:", data); // LOG ADDED
-  return data;
+  return data as unknown as PathwayTemplate; // Explicitly cast to unknown then PathwayTemplate
 }
 
 export async function updatePathwayTemplate(
@@ -90,7 +90,7 @@ export async function updatePathwayTemplate(
     .from("pathway_templates")
     .update({ ...updates, updated_at: new Date().toISOString(), last_updated_by: updaterId })
     .eq("id", id)
-    .select("*, creator_profile:profiles!creator_id(first_name, last_name, avatar_url), last_updater_profile:profiles!last_updated_by(first_name, last_name, avatar_url)") // Simplified join syntax
+    .select("*, creator_profile:auth.users!pathway_templates_creator_id_fkey(profiles(first_name, last_name, avatar_url)), last_updater_profile:auth.users!pathway_templates_last_updated_by_fkey(profiles(first_name, last_name, avatar_url))") // Corrected join syntax
     .single();
 
   if (error) {
@@ -98,7 +98,7 @@ export async function updatePathwayTemplate(
     return null;
   }
   console.log(`[pathway-template-service] updatePathwayTemplate(${id}) - Update successful, data:`, data); // LOG ADDED
-  return data;
+  return data as unknown as PathwayTemplate; // Explicitly cast to unknown then PathwayTemplate
 }
 
 export async function deletePathwayTemplate(id: string): Promise<boolean> {
@@ -133,7 +133,7 @@ export async function getPhasesByPathwayTemplateId(
     ); // LOG ADDED
     return null;
   }
-  console.log(`[pathway-template-service] getPhasesByPathwayTemplateId(${pathwayTemplateId}) - Fetched phases:`, data); // LOG ADDED
+  console.log(`[pathway-template-service] getPhasesByPathwayTemplateId(${pathwayTemplateId}) - Fetched data:`, data); // LOG ADDED
   return data;
 }
 
@@ -279,7 +279,7 @@ export async function clonePathwayTemplate(
   }
 
   // Create the new template
-  const { data: newTemplate, error: newTemplateError } = await supabase
+  const { data: newTemplateData, error: newTemplateError } = await supabase
     .from("pathway_templates")
     .insert([
       {
@@ -296,18 +296,20 @@ export async function clonePathwayTemplate(
         tags: originalTemplate.tags, // Include tags from original template
       },
     ])
-    .select("*, creator_profile:profiles!creator_id(first_name, last_name, avatar_url), last_updater_profile:profiles!last_updated_by(first_name, last_name, avatar_url)") // Simplified join syntax
+    .select("*, creator_profile:auth.users!pathway_templates_creator_id_fkey(profiles(first_name, last_name, avatar_url)), last_updater_profile:auth.users!pathway_templates_last_updated_by_fkey(profiles(first_name, last_name, avatar_url))") // Corrected join syntax
     .single();
 
-  if (newTemplateError || !newTemplate) {
+  if (newTemplateError || !newTemplateData) {
     console.error("[pathway-template-service] clonePathwayTemplate - Error creating new template during cloning:", newTemplateError?.message); // LOG ADDED
     return null;
   }
+  const newTemplate = newTemplateData as unknown as PathwayTemplate; // Explicitly cast to unknown then PathwayTemplate
+
   console.log("[pathway-template-service] clonePathwayTemplate - New template created during cloning:", newTemplate); // LOG ADDED
 
   // Create new phases for the cloned template
   const newPhasesData = originalPhases.map((phase) => ({
-    pathway_template_id: newTemplate.id,
+    pathway_template_id: newTemplate.id, // Access id from the explicitly cast newTemplate
     name: phase.name,
     type: phase.type,
     description: phase.description,
@@ -329,10 +331,10 @@ export async function clonePathwayTemplate(
     if (newPhasesError) {
       console.error("[pathway-template-service] clonePathwayTemplate - Error creating new phases during cloning:", newPhasesError.message); // LOG ADDED
       // Optionally, delete the newly created template if phase creation fails
-      await supabase.from("pathway_templates").delete().eq("id", newTemplate.id);
+      await supabase.from("pathway_templates").delete().eq("id", newTemplate.id); // Access id from the explicitly cast newTemplate
       return null;
     }
     console.log("[pathway-template-service] clonePathwayTemplate - New phases created during cloning:", newPhasesData); // LOG ADDED
   }
-  return newTemplate;
+  return newTemplate; // Explicitly cast to PathwayTemplate
 }
