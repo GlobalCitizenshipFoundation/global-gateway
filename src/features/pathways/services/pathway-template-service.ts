@@ -12,7 +12,7 @@ export async function getPathwayTemplates(): Promise<PathwayTemplate[] | null> {
   const supabase = await getSupabase();
   const { data, error } = await supabase
     .from("pathway_templates")
-    .select("*")
+    .select("*, creator_profile:profiles!pathway_templates_creator_id_fkey(first_name, last_name, avatar_url), last_updater_profile:profiles!pathway_templates_last_updated_by_fkey(first_name, last_name, avatar_url)")
     .order("created_at", { ascending: false });
 
   if (error) {
@@ -26,7 +26,7 @@ export async function getPathwayTemplateById(id: string): Promise<PathwayTemplat
   const supabase = await getSupabase();
   const { data, error } = await supabase
     .from("pathway_templates")
-    .select("*")
+    .select("*, creator_profile:profiles!pathway_templates_creator_id_fkey(first_name, last_name, avatar_url), last_updater_profile:profiles!pathway_templates_last_updated_by_fkey(first_name, last_name, avatar_url)")
     .eq("id", id)
     .single();
 
@@ -47,7 +47,8 @@ export async function createPathwayTemplate(
   application_open_date: string | null,
   participation_deadline: string | null,
   general_instructions: string | null,
-  is_visible_to_applicants: boolean
+  is_visible_to_applicants: boolean,
+  tags: string[] | null // Added tags parameter
 ): Promise<PathwayTemplate | null> {
   const supabase = await getSupabase();
   const { data, error } = await supabase
@@ -63,8 +64,9 @@ export async function createPathwayTemplate(
       participation_deadline,
       general_instructions,
       is_visible_to_applicants,
+      tags, // Include tags in the insert statement
     }])
-    .select()
+    .select("*, creator_profile:profiles!pathway_templates_creator_id_fkey(first_name, last_name, avatar_url), last_updater_profile:profiles!pathway_templates_last_updated_by_fkey(first_name, last_name, avatar_url)")
     .single();
 
   if (error) {
@@ -76,7 +78,7 @@ export async function createPathwayTemplate(
 
 export async function updatePathwayTemplate(
   id: string,
-  updates: Partial<Omit<PathwayTemplate, "id" | "creator_id" | "created_at">>,
+  updates: Partial<Omit<PathwayTemplate, "id" | "creator_id" | "created_at" | "creator_profile" | "last_updater_profile">>, // Exclude joined profiles from updates
   updaterId: string
 ): Promise<PathwayTemplate | null> {
   const supabase = await getSupabase();
@@ -84,7 +86,7 @@ export async function updatePathwayTemplate(
     .from("pathway_templates")
     .update({ ...updates, updated_at: new Date().toISOString(), last_updated_by: updaterId })
     .eq("id", id)
-    .select()
+    .select("*, creator_profile:profiles!pathway_templates_creator_id_fkey(first_name, last_name, avatar_url), last_updater_profile:profiles!pathway_templates_last_updated_by_fkey(first_name, last_name, avatar_url)")
     .single();
 
   if (error) {
@@ -280,9 +282,10 @@ export async function clonePathwayTemplate(
         participation_deadline: originalTemplate.participation_deadline,
         general_instructions: originalTemplate.general_instructions,
         is_visible_to_applicants: originalTemplate.is_visible_to_applicants,
+        tags: originalTemplate.tags, // Include tags from original template
       },
     ])
-    .select()
+    .select("*, creator_profile:profiles!pathway_templates_creator_id_fkey(first_name, last_name, avatar_url), last_updater_profile:profiles!pathway_templates_last_updated_by_fkey(first_name, last_name, avatar_url)")
     .single();
 
   if (newTemplateError || !newTemplate) {

@@ -34,6 +34,9 @@ export interface PathwayTemplate {
   participation_deadline: string | null; // ISO date string
   general_instructions: string | null; // Rich text content
   is_visible_to_applicants: boolean; // New field
+  tags: string[] | null; // New field for tags
+  creator_profile?: Profile; // Joined profile data for the creator
+  last_updater_profile?: Profile; // Joined profile data for the last updater
 }
 
 // New base interface for configurable items (phases)

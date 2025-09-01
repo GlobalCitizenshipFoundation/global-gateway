@@ -131,6 +131,8 @@ export async function createPathwayTemplateAction(formData: FormData): Promise<P
   const participation_deadline = (formData.get("participation_deadline") as string) || null;
   const general_instructions = (formData.get("general_instructions") as string) || null;
   const is_visible_to_applicants = formData.get("is_visible_to_applicants") === "on";
+  const tagsString = (formData.get("tags") as string) || '';
+  const tags = tagsString.split(',').map(tag => tag.trim()).filter(Boolean);
 
 
   if (!name) {
@@ -148,7 +150,8 @@ export async function createPathwayTemplateAction(formData: FormData): Promise<P
       application_open_date,
       participation_deadline,
       general_instructions,
-      is_visible_to_applicants
+      is_visible_to_applicants,
+      tags // Pass the new tags argument
     );
 
     if (newTemplate) {
@@ -177,6 +180,8 @@ export async function updatePathwayTemplateAction(id: string, formData: FormData
     const participation_deadline = (formData.get("participation_deadline") as string) || null;
     const general_instructions = (formData.get("general_instructions") as string) || null;
     const is_visible_to_applicants = formData.get("is_visible_to_applicants") === "on";
+    const tagsString = (formData.get("tags") as string) || '';
+    const tags = tagsString.split(',').map(tag => tag.trim()).filter(Boolean);
 
 
     if (!name) {
@@ -191,6 +196,7 @@ export async function updatePathwayTemplateAction(id: string, formData: FormData
       participation_deadline: template.participation_deadline,
       general_instructions: template.general_instructions,
       is_visible_to_applicants: template.is_visible_to_applicants,
+      tags: template.tags, // Include tags in old values
     };
     const newValues = {
       name,
@@ -200,6 +206,7 @@ export async function updatePathwayTemplateAction(id: string, formData: FormData
       participation_deadline,
       general_instructions,
       is_visible_to_applicants,
+      tags, // Include tags in new values
     };
 
     const updatedTemplate = await updatePathwayTemplateService(
@@ -212,6 +219,7 @@ export async function updatePathwayTemplateAction(id: string, formData: FormData
         participation_deadline,
         general_instructions,
         is_visible_to_applicants,
+        tags, // Pass the new tags argument
       },
       user.id
     );
