@@ -314,7 +314,7 @@ export function PathwayTemplateTable({
                                 <DropdownMenuSeparator className="bg-border" />
                                 <AlertDialog>
                                   <AlertDialogTrigger asChild>
-                                    <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-body-medium text-destructive hover:bg-destructive-container hover:text-destructive cursor-pointer">
+                                    <DropdownMenuItem onSelect={(e: Event) => e.preventDefault()} className="text-body-medium text-destructive hover:bg-destructive-container hover:text-destructive cursor-pointer">
                                       <Trash2 className="mr-2 h-4 w-4" /> Delete Permanently
                                     </DropdownMenuItem>
                                   </AlertDialogTrigger>

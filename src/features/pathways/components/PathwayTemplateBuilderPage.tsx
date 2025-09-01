@@ -85,7 +85,7 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
   const [isCloneDialogOpen, setIsCloneDialogOpen] = useState(false);
   const [templateToClone, setTemplateToClone] = useState<PathwayTemplate | null>(null);
   const [isAddingNewPhase, setIsAddingNewPhase] = useState(false);
-  const [expandedPhaseIds, setExpandedPhaseIds] = useState<Set<string>>(new Set());
+  const [expandedPhaseIds, setExpandedPhaseIds] = new Set<string>();
   const [showUnsavedChangesWarning, setShowUnsavedChangesWarning] = useState(false); // State for unsaved changes warning
   const [nextPath, setNextPath] = useState<string | null>(null); // Path to navigate to if changes are discarded
   const [isVersionHistoryOpen, setIsVersionHistoryOpen] = useState(false); // State for Version History dialog
@@ -972,7 +972,7 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
               {/* Delete Template */}
               <AlertDialog>
                 <AlertDialogTrigger asChild>
-                  <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-body-medium text-destructive hover:bg-destructive-container hover:text-destructive cursor-pointer">
+                  <DropdownMenuItem onSelect={(e: Event) => e.preventDefault()} className="text-body-medium text-destructive hover:bg-destructive-container hover:text-destructive cursor-pointer">
                     <Trash2 className="mr-2 h-4 w-4" /> Delete Template
                   </DropdownMenuItem>
                 </AlertDialogTrigger>
