@@ -12,7 +12,7 @@ export async function getPathwayTemplates(): Promise<PathwayTemplate[] | null> {
   const supabase = await getSupabase();
   const { data, error } = await supabase
     .from("pathway_templates")
-    .select("*, creator_profile:profiles!pathway_templates_creator_id_fkey(first_name, last_name, avatar_url), last_updater_profile:profiles!pathway_templates_last_updated_by_fkey(first_name, last_name, avatar_url)")
+    .select("*, creator_profile:profiles!creator_id(first_name, last_name, avatar_url), last_updater_profile:profiles!last_updated_by(first_name, last_name, avatar_url)") // Simplified join syntax
     .order("created_at", { ascending: false });
 
   if (error) {
@@ -26,7 +26,7 @@ export async function getPathwayTemplateById(id: string): Promise<PathwayTemplat
   const supabase = await getSupabase();
   const { data, error } = await supabase
     .from("pathway_templates")
-    .select("*, creator_profile:profiles!pathway_templates_creator_id_fkey(first_name, last_name, avatar_url), last_updater_profile:profiles!pathway_templates_last_updated_by_fkey(first_name, last_name, avatar_url)")
+    .select("*, creator_profile:profiles!creator_id(first_name, last_name, avatar_url), last_updater_profile:profiles!last_updated_by(first_name, last_name, avatar_url)") // Simplified join syntax
     .eq("id", id)
     .single();
 
@@ -66,7 +66,7 @@ export async function createPathwayTemplate(
       is_visible_to_applicants,
       tags, // Include tags in the insert statement
     }])
-    .select("*, creator_profile:profiles!pathway_templates_creator_id_fkey(first_name, last_name, avatar_url), last_updater_profile:profiles!pathway_templates_last_updated_by_fkey(first_name, last_name, avatar_url)")
+    .select("*, creator_profile:profiles!creator_id(first_name, last_name, avatar_url), last_updater_profile:profiles!last_updated_by(first_name, last_name, avatar_url)") // Simplified join syntax
     .single();
 
   if (error) {
@@ -86,7 +86,7 @@ export async function updatePathwayTemplate(
     .from("pathway_templates")
     .update({ ...updates, updated_at: new Date().toISOString(), last_updated_by: updaterId })
     .eq("id", id)
-    .select("*, creator_profile:profiles!pathway_templates_creator_id_fkey(first_name, last_name, avatar_url), last_updater_profile:profiles!pathway_templates_last_updated_by_fkey(first_name, last_name, avatar_url)")
+    .select("*, creator_profile:profiles!creator_id(first_name, last_name, avatar_url), last_updater_profile:profiles!last_updated_by(first_name, last_name, avatar_url)") // Simplified join syntax
     .single();
 
   if (error) {
@@ -285,7 +285,7 @@ export async function clonePathwayTemplate(
         tags: originalTemplate.tags, // Include tags from original template
       },
     ])
-    .select("*, creator_profile:profiles!pathway_templates_creator_id_fkey(first_name, last_name, avatar_url), last_updater_profile:profiles!pathway_templates_last_updated_by_fkey(first_name, last_name, avatar_url)")
+    .select("*, creator_profile:profiles!creator_id(first_name, last_name, avatar_url), last_updater_profile:profiles!last_updated_by(first_name, last_name, avatar_url)") // Simplified join syntax
     .single();
 
   if (newTemplateError || !newTemplate) {
