@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod"; // FIX 1: Corrected import syntax
+import * as z from "zod";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { ArrowLeft, PlusCircle, Workflow, Lock, Globe, Edit, Copy, Save, CheckCircle, Clock, UserCircle2, CalendarDays, Info, X, Trash2, ChevronDown, ChevronUp, Archive, History, Activity, RotateCcw, MoreVertical, Tag } from "lucide-react";
@@ -16,7 +16,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { getTemplateByIdAction, getPhasesAction, reorderPhasesAction, deletePhaseAction as deletePhaseActionService, createTemplateVersionAction, publishPathwayTemplateAction, updatePathwayTemplateStatusAction, updatePathwayTemplateAction, createPathwayTemplateAction, deletePathwayTemplateAction, createPhaseAction } from "../actions";
 import { DragDropContext, Droppable, DropResult } from "@hello-pangea/dnd";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Input } from "@/components/ui/input"; // FIX 2: Corrected import path
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -38,7 +38,7 @@ import { CloneTemplateDialog } from "./CloneTemplateDialog";
 import { TemplateVersionHistory } from "./TemplateVersionHistory";
 import { TemplateActivityLog } from "./TemplateActivityLog";
 import { PhaseDetailsForm } from "./PhaseDetailsForm";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"; // FIX 3: Corrected AlertDialogHeader import
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import {
@@ -50,7 +50,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { getProfileByIdAction } from "@/features/user-profile/actions";
-import { TagInput } from "@/components/TagInput"; // FIX 2: Corrected import path
+import { TagInput } from "@/components/TagInput";
 
 
 // Zod schema for the entire template builder page (template details + phases)
@@ -268,6 +268,8 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
         result = await createPathwayTemplateAction(formData);
       }
 
+      console.log("[pathways/components/PathwayTemplateBuilderPage.tsx] handleTemplateDetailsSave - createPathwayTemplateAction Result:", result); // LOG ADDED
+
       if (result) {
         toast.success(`Template ${templateId ? "updated" : "created"} successfully!`);
         templateForm.reset({
@@ -281,7 +283,7 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
         }
       }
     } catch (error: any) {
-      console.error("Template details submission error:", error);
+      console.error("[pathways/components/PathwayTemplateBuilderPage.tsx] handleTemplateDetailsSave - Error during template save:", error); // LOG ADDED
       toast.error(error.message || "Failed to save template details.");
     }
   };
@@ -341,7 +343,6 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
       }
     } catch (error: any) {
       toast.error(error.message || "Failed to reorder phases. Reverting changes.");
-      fetchTemplateAndPhases();
     }
   };
 
@@ -437,7 +438,7 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
     if (!inlinePhaseForm.formState.isValid) {
       console.error("[PathwayTemplateBuilderPage] Form is invalid, preventing API call. Forcing trigger to show errors.");
       inlinePhaseForm.trigger(); // Force validation to display messages
-      console.log("[PathwayTemplateBuilderPage] Errors after trigger:", inlinePhaseForm.formState.errors); // NEW LOG
+      console.log("[PathwayTemplateBuilderPage] Errors after trigger:", inlinePhaseForm.formState.errors);
       toast.error("Please correct the errors in the new phase form.");
       return;
     }
@@ -450,13 +451,12 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
       const formData = new FormData();
       formData.append("name", values.name);
       formData.append("type", values.type);
-      formData.append("description", ""); // Empty string for description is fine for TEXT column
+      formData.append("description", "");
       formData.append("order_index", phases.length.toString());
-      // Pass null for optional date/text fields if they are empty
-      formData.append("phase_start_date", ""); // Will be handled as null in action if empty
-      formData.append("phase_end_date", ""); // Will be handled as null in action if empty
-      formData.append("applicant_instructions", ""); // Will be handled as null in action if empty
-      formData.append("manager_instructions", ""); // Will be handled as null in action if empty
+      formData.append("phase_start_date", "");
+      formData.append("phase_end_date", "");
+      formData.append("applicant_instructions", "");
+      formData.append("manager_instructions", "");
       formData.append("is_visible_to_applicants", "on");
 
       const result = await createPhaseAction(templateId, formData);
@@ -466,14 +466,13 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
         inlinePhaseForm.reset();
       }
     } catch (error: any) {
-      console.error("Inline phase creation error:", error);
+      console.error("[PathwayTemplateBuilderPage] Inline phase creation error:", error);
       toast.error(error.message || "Failed to create phase.");
     }
   };
 
   const isNewTemplate = !templateId;
 
-  // FIX 4: Define helper functions getStatusBadge and getProfileDisplayName
   const getStatusBadge = (status: PathwayTemplate['status']) => {
     switch (status) {
       case 'draft': return <Badge variant="outline" className="bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-100"><Clock className="h-3 w-3 mr-1" /> Draft</Badge>;

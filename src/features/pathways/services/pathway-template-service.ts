@@ -16,9 +16,10 @@ export async function getPathwayTemplates(): Promise<PathwayTemplate[] | null> {
     .order("created_at", { ascending: false });
 
   if (error) {
-    console.error("Error fetching pathway templates:", error.message);
+    console.error("[pathway-template-service] getPathwayTemplates - Error fetching templates:", error.message); // LOG ADDED
     return null;
   }
+  console.log("[pathway-template-service] getPathwayTemplates - Fetched data:", data); // LOG ADDED
   return data;
 }
 
@@ -31,9 +32,10 @@ export async function getPathwayTemplateById(id: string): Promise<PathwayTemplat
     .single();
 
   if (error) {
-    console.error(`Error fetching pathway template ${id}:`, error.message);
+    console.error(`[pathway-template-service] getPathwayTemplateById(${id}) - Error fetching template:`, error.message); // LOG ADDED
     return null;
   }
+  console.log(`[pathway-template-service] getPathwayTemplateById(${id}) - Fetched data:`, data); // LOG ADDED
   return data;
 }
 
@@ -51,6 +53,7 @@ export async function createPathwayTemplate(
   tags: string[] | null // Added tags parameter
 ): Promise<PathwayTemplate | null> {
   const supabase = await getSupabase();
+  console.log("[pathway-template-service] createPathwayTemplate - Attempting insert with:", { name, description, is_private, creator_id, status, last_updated_by, application_open_date, participation_deadline, general_instructions, is_visible_to_applicants, tags }); // LOG ADDED
   const { data, error } = await supabase
     .from("pathway_templates")
     .insert([{
@@ -70,9 +73,10 @@ export async function createPathwayTemplate(
     .single();
 
   if (error) {
-    console.error("Error creating pathway template:", error.message);
+    console.error("[pathway-template-service] createPathwayTemplate - Error inserting template:", error.message); // LOG ADDED
     return null;
   }
+  console.log("[pathway-template-service] createPathwayTemplate - Insert successful, data:", data); // LOG ADDED
   return data;
 }
 
@@ -90,9 +94,10 @@ export async function updatePathwayTemplate(
     .single();
 
   if (error) {
-    console.error(`Error updating pathway template ${id}:`, error.message);
+    console.error(`[pathway-template-service] updatePathwayTemplate(${id}) - Error updating template:`, error.message); // LOG ADDED
     return null;
   }
+  console.log(`[pathway-template-service] updatePathwayTemplate(${id}) - Update successful, data:`, data); // LOG ADDED
   return data;
 }
 
@@ -104,9 +109,10 @@ export async function deletePathwayTemplate(id: string): Promise<boolean> {
     .eq("id", id);
 
   if (error) {
-    console.error(`Error deleting pathway template ${id}:`, error.message);
+    console.error(`[pathway-template-service] deletePathwayTemplate(${id}) - Error deleting template:`, error.message); // LOG ADDED
     return false;
   }
+  console.log(`[pathway-template-service] deletePathwayTemplate(${id}) - Delete successful.`); // LOG ADDED
   return true;
 }
 
@@ -122,11 +128,12 @@ export async function getPhasesByPathwayTemplateId(
 
   if (error) {
     console.error(
-      `Error fetching phases for template ${pathwayTemplateId}:`,
+      `[pathway-template-service] getPhasesByPathwayTemplateId(${pathwayTemplateId}) - Error fetching phases:`,
       error.message
-    );
+    ); // LOG ADDED
     return null;
   }
+  console.log(`[pathway-template-service] getPhasesByPathwayTemplateId(${pathwayTemplateId}) - Fetched phases:`, data); // LOG ADDED
   return data;
 }
 
@@ -167,9 +174,10 @@ export async function createPhase(
     .single();
 
   if (error) {
-    console.error("Error creating phase:", error.message);
+    console.error("[pathway-template-service] createPhase - Error creating phase:", error.message); // LOG ADDED
     return null;
   }
+  console.log("[pathway-template-service] createPhase - Insert successful, data:", data); // LOG ADDED
   return data;
 }
 
@@ -187,9 +195,10 @@ export async function updatePhase(
     .single();
 
   if (error) {
-    console.error(`Error updating phase ${id}:`, error.message);
+    console.error(`[pathway-template-service] updatePhase(${id}) - Error updating phase:`, error.message); // LOG ADDED
     return null;
   }
+  console.log(`[pathway-template-service] updatePhase(${id}) - Update successful, data:`, data); // LOG ADDED
   return data;
 }
 
@@ -207,7 +216,7 @@ export async function updatePhaseBranchingConfig(
     .single();
 
   if (fetchError || !currentPhase) {
-    console.error(`Error fetching phase ${id} for config update:`, fetchError?.message);
+    console.error(`[pathway-template-service] updatePhaseBranchingConfig(${id}) - Error fetching phase for config update:`, fetchError?.message); // LOG ADDED
     return null;
   }
 
@@ -221,9 +230,10 @@ export async function updatePhaseBranchingConfig(
     .single();
 
   if (error) {
-    console.error(`Error updating phase branching config for ${id}:`, error.message);
+    console.error(`[pathway-template-service] updatePhaseBranchingConfig(${id}) - Error updating phase branching config:`, error.message); // LOG ADDED
     return null;
   }
+  console.log(`[pathway-template-service] updatePhaseBranchingConfig(${id}) - Update successful, data:`, data); // LOG ADDED
   return data;
 }
 
@@ -232,9 +242,10 @@ export async function deletePhase(id: string): Promise<boolean> {
   const { error } = await supabase.from("phases").delete().eq("id", id);
 
   if (error) {
-    console.error(`Error deleting phase ${id}:`, error.message);
+    console.error(`[pathway-template-service] deletePhase(${id}) - Error deleting phase:`, error.message); // LOG ADDED
     return false;
   }
+  console.log(`[pathway-template-service] deletePhase(${id}) - Delete successful.`); // LOG ADDED
   return true;
 }
 
@@ -252,7 +263,7 @@ export async function clonePathwayTemplate(
     .single();
 
   if (templateError || !originalTemplate) {
-    console.error("Error fetching original template for cloning:", templateError?.message);
+    console.error("[pathway-template-service] clonePathwayTemplate - Error fetching original template for cloning:", templateError?.message); // LOG ADDED
     return null;
   }
 
@@ -263,7 +274,7 @@ export async function clonePathwayTemplate(
     .order("order_index", { ascending: true });
 
   if (phasesError) {
-    console.error("Error fetching original phases for cloning:", phasesError.message);
+    console.error("[pathway-template-service] clonePathwayTemplate - Error fetching original phases for cloning:", phasesError.message); // LOG ADDED
     return null;
   }
 
@@ -289,9 +300,10 @@ export async function clonePathwayTemplate(
     .single();
 
   if (newTemplateError || !newTemplate) {
-    console.error("Error creating new template during cloning:", newTemplateError?.message);
+    console.error("[pathway-template-service] clonePathwayTemplate - Error creating new template during cloning:", newTemplateError?.message); // LOG ADDED
     return null;
   }
+  console.log("[pathway-template-service] clonePathwayTemplate - New template created during cloning:", newTemplate); // LOG ADDED
 
   // Create new phases for the cloned template
   const newPhasesData = originalPhases.map((phase) => ({
@@ -315,11 +327,12 @@ export async function clonePathwayTemplate(
       .insert(newPhasesData);
 
     if (newPhasesError) {
-      console.error("Error creating new phases during cloning:", newPhasesError.message);
+      console.error("[pathway-template-service] clonePathwayTemplate - Error creating new phases during cloning:", newPhasesError.message); // LOG ADDED
       // Optionally, delete the newly created template if phase creation fails
       await supabase.from("pathway_templates").delete().eq("id", newTemplate.id);
       return null;
     }
+    console.log("[pathway-template-service] clonePathwayTemplate - New phases created during cloning:", newPhasesData); // LOG ADDED
   }
   return newTemplate;
 }
