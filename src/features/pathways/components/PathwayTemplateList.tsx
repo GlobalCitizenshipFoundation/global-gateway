@@ -85,25 +85,25 @@ const PathwayTemplateCard: React.FC<PathwayTemplateCardProps> = ({ template, use
         )}
       </CardHeader>
       <CardContent className="text-body-small text-muted-foreground space-y-1">
-        <p className="flex items-center gap-1">
+        <div className="flex items-center gap-1"> {/* Changed from <p> to <div> */}
           <UserCircle2 className="h-4 w-4" />
           Creator: {getProfileDisplayName(template.creator_profile)}
-        </p>
-        <p className="flex items-center gap-1">
+        </div>
+        <div className="flex items-center gap-1"> {/* Changed from <p> to <div> */}
           <CalendarDays className="h-4 w-4" />
           Created: {new Date(template.created_at).toLocaleDateString()}
-        </p>
-        <p className="flex items-center gap-1">
+        </div>
+        <div className="flex items-center gap-1"> {/* Changed from <p> to <div> */}
           <UserCircle2 className="h-4 w-4" />
           Last Updated By: {getProfileDisplayName(template.last_updater_profile)}
-        </p>
-        <p className="flex items-center gap-1">
+        </div>
+        <div className="flex items-center gap-1"> {/* Changed from <p> to <div> */}
           <CalendarDays className="h-4 w-4" />
           Last Updated: {new Date(template.updated_at).toLocaleDateString()}
-        </p>
-        <p className="flex items-center gap-1">
+        </div>
+        <div className="flex items-center gap-1"> {/* Changed from <p> to <div> */}
           {getStatusBadge(template.status)}
-        </p>
+        </div>
       </CardContent>
       <div className="flex justify-end p-4 pt-0 space-x-2">
         <Button variant="outline" size="icon" className="rounded-md" onClick={() => handleClone(template)}>
