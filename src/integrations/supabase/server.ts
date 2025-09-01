@@ -5,6 +5,11 @@ import { NextResponse } from 'next/server'; // Import NextResponse
 export const createClient = async (response?: NextResponse) => { // Make response optional
   const cookieStore = await cookies();
 
+  // --- START DYAD ADDITION ---
+  console.log("[Supabase Server Client] NEXT_PUBLIC_SUPABASE_URL:", process.env.NEXT_PUBLIC_SUPABASE_URL ? "Loaded" : "UNDEFINED");
+  console.log("[Supabase Server Client] NEXT_PUBLIC_SUPABASE_ANON_KEY:", process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? "Loaded" : "UNDEFINED");
+  // --- END DYAD ADDITION ---
+
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
