@@ -8,7 +8,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { ArrowLeft, PlusCircle, Workflow, Lock, Globe, Edit, Copy, Save, CheckCircle, Clock, UserCircle2, CalendarDays, Info, X, Trash2, ChevronDown, ChevronUp, Archive, History, Activity, RotateCcw, MoreVertical } from "lucide-react"; // Added MoreVertical for overflow menu
+import { ArrowLeft, PlusCircle, Workflow, Lock, Globe, Edit, Copy, Save, CheckCircle, Clock, UserCircle2, CalendarDays, Info, X, Trash2, ChevronDown, ChevronUp, Archive, History, Activity, RotateCcw, MoreVertical, Tag } from "lucide-react"; // Added MoreVertical for overflow menu
 import { PathwayTemplate, Phase, Profile } from "@/types/supabase"; // Import Profile type
 import { toast } from "sonner";
 import { useSession } from "@/context/SessionContextProvider";
@@ -626,6 +626,16 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
                   </FormItem>
                 )}
               />
+              {/* Display tags here */}
+              {!isNewTemplate && currentTemplate.tags && currentTemplate.tags.length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-4">
+                  {currentTemplate.tags.map((tag, idx) => (
+                    <Badge key={idx} variant="secondary" className="text-label-small bg-muted text-muted-foreground">
+                      <Tag className="h-3 w-3 mr-1" /> {tag}
+                    </Badge>
+                  ))}
+                </div>
+              )}
               <FormField
                 control={templateForm.control}
                 name="is_private"
