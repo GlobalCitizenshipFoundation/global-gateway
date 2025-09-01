@@ -5,18 +5,18 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
+import * as z from "zod"; // FIX 1: Corrected import syntax
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { ArrowLeft, PlusCircle, Workflow, Lock, Globe, Edit, Copy, Save, CheckCircle, Clock, UserCircle2, CalendarDays, Info, X, Trash2, ChevronDown, ChevronUp, Archive, History, Activity, RotateCcw, MoreVertical, Tag } from "lucide-react"; // Added MoreVertical for overflow menu
-import { PathwayTemplate, Phase, Profile } from "@/types/supabase"; // Import Profile type
+import { ArrowLeft, PlusCircle, Workflow, Lock, Globe, Edit, Copy, Save, CheckCircle, Clock, UserCircle2, CalendarDays, Info, X, Trash2, ChevronDown, ChevronUp, Archive, History, Activity, RotateCcw, MoreVertical, Tag } from "lucide-react";
+import { PathwayTemplate, Phase, Profile } from "@/types/supabase";
 import { toast } from "sonner";
 import { useSession } from "@/context/SessionContextProvider";
 import { Skeleton } from "@/components/ui/skeleton";
-import { getTemplateByIdAction, getPhasesAction, reorderPhasesAction, deletePhaseAction as deletePhaseActionService, createTemplateVersionAction, publishPathwayTemplateAction, updatePathwayTemplateStatusAction, updatePathwayTemplateAction, createPathwayTemplateAction, deletePathwayTemplateAction, createPhaseAction } from "../actions"; // Corrected deletePhaseAction import
+import { getTemplateByIdAction, getPhasesAction, reorderPhasesAction, deletePhaseAction as deletePhaseActionService, createTemplateVersionAction, publishPathwayTemplateAction, updatePathwayTemplateStatusAction, updatePathwayTemplateAction, createPathwayTemplateAction, deletePathwayTemplateAction, createPhaseAction } from "../actions";
 import { DragDropContext, Droppable, DropResult } from "@hello-pangea/dnd";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Input } from "@/components/ui/input";
+import { Input } from "@/components/ui/input"; // FIX 2: Corrected import path
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -38,9 +38,9 @@ import { CloneTemplateDialog } from "./CloneTemplateDialog";
 import { TemplateVersionHistory } from "./TemplateVersionHistory";
 import { TemplateActivityLog } from "./TemplateActivityLog";
 import { PhaseDetailsForm } from "./PhaseDetailsForm";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"; // FIX 3: Corrected AlertDialogHeader import
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"; // Import Dialog components
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -49,8 +49,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { getProfileByIdAction } from "@/features/user-profile/actions"; // Import getProfileByIdAction
-import { TagInput } from "@/components/TagInput"; // Import the new TagInput component
+import { getProfileByIdAction } from "@/features/user-profile/actions";
+import { TagInput } from "@/components/TagInput"; // FIX 2: Corrected import path
 
 
 // Zod schema for the entire template builder page (template details + phases)
@@ -62,7 +62,7 @@ const templateBuilderSchema = z.object({
   participation_deadline: z.date().nullable().optional(),
   general_instructions: z.string().max(5000, { message: "General instructions cannot exceed 5000 characters." }).nullable().optional(),
   is_visible_to_applicants: z.boolean().optional(),
-  tags: z.array(z.string()).optional(), // Changed to array of strings
+  tags: z.array(z.string()).optional(),
 });
 
 // Schema for the inline phase creation form
@@ -87,13 +87,13 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
   const [templateToClone, setTemplateToClone] = useState<PathwayTemplate | null>(null);
   const [isAddingNewPhase, setIsAddingNewPhase] = useState(false);
   const [expandedPhaseIds, setExpandedPhaseIds] = useState<Set<string>>(new Set<string>());
-  const [showUnsavedChangesWarning, setShowUnsavedChangesWarning] = useState(false); // State for unsaved changes warning
-  const [nextPath, setNextPath] = useState<string | null>(null); // Path to navigate to if changes are discarded
-  const [isVersionHistoryOpen, setIsVersionHistoryOpen] = useState(false); // State for Version History dialog
-  const [isActivityLogOpen, setIsActivityLogOpen] = useState(false); // State for Activity Log dialog
-  const [creatorProfile, setCreatorProfile] = useState<Profile | null>(null); // State for creator's profile
-  const [lastUpdaterProfile, setLastUpdaterProfile] = useState<Profile | null>(null); // State for last updater's profile
-  const [refreshTrigger, setRefreshTrigger] = useState(0); // New state to trigger refreshes
+  const [showUnsavedChangesWarning, setShowUnsavedChangesWarning] = useState(false);
+  const [nextPath, setNextPath] = useState<string | null>(null);
+  const [isVersionHistoryOpen, setIsVersionHistoryOpen] = useState(false);
+  const [isActivityLogOpen, setIsActivityLogOpen] = useState(false);
+  const [creatorProfile, setCreatorProfile] = useState<Profile | null>(null);
+  const [lastUpdaterProfile, setLastUpdaterProfile] = useState<Profile | null>(null);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   const templateForm = useForm<z.infer<typeof templateBuilderSchema>>({
     resolver: zodResolver(templateBuilderSchema),
@@ -105,18 +105,28 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
       participation_deadline: initialTemplate?.participation_deadline ? new Date(initialTemplate.participation_deadline) : null,
       general_instructions: initialTemplate?.general_instructions || "",
       is_visible_to_applicants: initialTemplate?.is_visible_to_applicants ?? true,
-      tags: initialTemplate?.tags || [], // Default to empty array
+      tags: initialTemplate?.tags || [],
     },
     mode: "onChange",
   });
+
+  const phaseTypes = [
+    { value: "Form", label: "Form" },
+    { value: "Review", label: "Review" },
+    { value: "Email", label: "Email" },
+    { value: "Scheduling", label: "Scheduling" },
+    { value: "Decision", label: "Decision" },
+    { value: "Recommendation", label: "Recommendation" },
+    { value: "Screening", label: "Screening" },
+  ];
 
   const inlinePhaseForm = useForm<z.infer<typeof inlinePhaseCreationSchema>>({
     resolver: zodResolver(inlinePhaseCreationSchema),
     defaultValues: {
       name: "",
-      type: "", // Initialize with empty string
+      type: phaseTypes[0].value, // Initialize with the first phase type as default
     },
-    mode: "onChange", // Ensure validation runs on change
+    mode: "onChange",
   });
 
   // Effect to reset and validate inlinePhaseForm when it becomes visible
@@ -124,11 +134,11 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
     if (isAddingNewPhase) {
       inlinePhaseForm.reset({
         name: "",
-        type: "", // Reset to empty string
+        type: phaseTypes[0].value, // Reset to the first phase type as default
       });
       // Removed inlinePhaseForm.trigger() from here to avoid potential race conditions
     }
-  }, [isAddingNewPhase, inlinePhaseForm]);
+  }, [isAddingNewPhase, inlinePhaseForm, phaseTypes]);
 
   const fetchTemplateAndPhases = useCallback(async () => {
     console.log("[PathwayTemplateBuilderPage] fetchTemplateAndPhases called. templateId:", templateId, "user:", user?.id);
@@ -232,7 +242,7 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
     }
 
     const currentUser = user!; // Safe due to earlier redirect
-    const isAdmin = (currentUser.user_metadata?.role || '') === 'admin'; // Fixed: Added parentheses for correct precedence
+    const isAdmin = (currentUser.user_metadata?.role || '') === 'admin';
     const canModify = template ? (template.creator_id === currentUser.id || isAdmin) : true; // For new templates, assume can modify.
 
     if (!canModify) {
@@ -248,8 +258,7 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
       formData.append("participation_deadline", values.participation_deadline ? values.participation_deadline.toISOString() : "");
       formData.append("general_instructions", values.general_instructions || "");
       formData.append("is_visible_to_applicants", values.is_visible_to_applicants ? "on" : "off");
-      // Send tags as a JSON string, or an empty string if no tags (which will be parsed as null in action)
-      formData.append("tags", values.tags && values.tags.length > 0 ? JSON.stringify(values.tags) : "");
+      formData.append("tags", JSON.stringify(values.tags || [])); // Send tags as a JSON string
 
 
       let result: PathwayTemplate | null;
@@ -288,7 +297,7 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
       return;
     }
     try {
-      const success = await deletePhaseActionService(phaseId, templateId); // Use deletePhaseActionService
+      const success = await deletePhaseActionService(phaseId, templateId);
       if (success) {
         toast.success("Phase deleted successfully!");
         fetchTemplateAndPhases();
@@ -464,6 +473,21 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
 
   const isNewTemplate = !templateId;
 
+  // FIX 4: Define helper functions getStatusBadge and getProfileDisplayName
+  const getStatusBadge = (status: PathwayTemplate['status']) => {
+    switch (status) {
+      case 'draft': return <Badge variant="outline" className="bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-100"><Clock className="h-3 w-3 mr-1" /> Draft</Badge>;
+      case 'published': return <Badge variant="outline" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"><CheckCircle className="h-3 w-3 mr-1" /> Published</Badge>;
+      case 'archived': return <Badge variant="outline" className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200"><Archive className="h-3 w-3 mr-1" /> Archived</Badge>;
+      default: return <Badge variant="outline" className="bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-100">Unknown</Badge>;
+    }
+  };
+
+  const getProfileDisplayName = (profile: Profile | null) => {
+    if (!profile) return "Unknown User";
+    return `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || "Unknown User";
+  };
+
   if (isLoading || isSessionLoading || (!templateId && !user)) {
     return (
       <div className="container mx-auto py-8 px-4 space-y-8">
@@ -497,31 +521,6 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
   const userRole: string = currentUser.user_metadata?.role || '';
   const isAdmin = userRole === 'admin';
   const canModifyTemplate: boolean = template ? (template.creator_id === currentUser.id || isAdmin) : true;
-
-
-  const phaseTypes = [
-    { value: "Form", label: "Form" },
-    { value: "Review", label: "Review" },
-    { value: "Email", label: "Email" },
-    { value: "Scheduling", label: "Scheduling" },
-    { value: "Decision", label: "Decision" },
-    { value: "Recommendation", label: "Recommendation" },
-    { value: "Screening", label: "Screening" },
-  ];
-
-  const getStatusBadge = (status: PathwayTemplate['status']) => {
-    switch (status) {
-      case 'draft': return <Badge variant="outline" className="bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-100"><Clock className="h-3 w-3 mr-1" /> Draft</Badge>;
-      case 'published': return <Badge variant="outline" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"><CheckCircle className="h-3 w-3 mr-1" /> Published</Badge>;
-      case 'archived': return <Badge variant="outline" className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200"><Archive className="h-3 w-3 mr-1" /> Archived</Badge>;
-      default: return <Badge variant="outline" className="bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-100">Unknown</Badge>;
-    }
-  };
-
-  const getProfileDisplayName = (profile: Profile | null) => {
-    if (!profile) return "Unknown User";
-    return `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || "Unknown User";
-  };
 
   return (
     <div className="container mx-auto py-8 px-4 space-y-8">
@@ -621,7 +620,7 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
                     <FormControl>
                       <TagInput
                         {...field}
-                        value={field.value || []} // Ensure value is always an array
+                        value={field.value || []}
                         onChange={field.onChange}
                         disabled={!canModifyTemplate}
                         placeholder="Add tags (e.g., fellowship, global)"

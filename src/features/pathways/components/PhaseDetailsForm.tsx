@@ -57,11 +57,21 @@ export function PhaseDetailsForm({
   canModify,
   isNewPhaseForm = false,
 }: PhaseDetailsFormProps) {
+  const phaseTypes = [
+    { value: "Form", label: "Form" },
+    { value: "Review", label: "Review" },
+    { value: "Email", label: "Email" },
+    { value: "Scheduling", label: "Scheduling" },
+    { value: "Decision", label: "Decision" },
+    { value: "Recommendation", label: "Recommendation" },
+    { value: "Screening", label: "Screening" },
+  ];
+
   const form = useForm<z.infer<typeof phaseFormSchema>>({
     resolver: zodResolver(phaseFormSchema),
     defaultValues: {
       name: initialData?.name || "",
-      type: initialData?.type || "",
+      type: initialData?.type || phaseTypes[0].value, // Set default to first type if not provided
       description: initialData?.description || "",
       phase_start_date: initialData?.phase_start_date ? new Date(initialData.phase_start_date) : null,
       phase_end_date: initialData?.phase_end_date ? new Date(initialData.phase_end_date) : null,
@@ -78,7 +88,7 @@ export function PhaseDetailsForm({
 
     form.reset({
       name: initialData?.name || "",
-      type: initialData?.type || "",
+      type: initialData?.type || phaseTypes[0].value, // Reset to first type if not provided
       description: initialData?.description || "",
       phase_start_date: initialData?.phase_start_date ? new Date(initialData.phase_start_date) : null,
       phase_end_date: initialData?.phase_end_date ? new Date(initialData.phase_end_date) : null,
@@ -86,7 +96,7 @@ export function PhaseDetailsForm({
       manager_instructions: initialData?.manager_instructions || "",
       is_visible_to_applicants: initialData?.is_visible_to_applicants ?? true,
     });
-  }, [initialData, form]);
+  }, [initialData, form, phaseTypes]); // Added phaseTypes to dependencies
 
   const onSubmit = async (values: z.infer<typeof phaseFormSchema>) => {
     console.log("[PhaseDetailsForm] onSubmit called with values:", values);
@@ -126,16 +136,6 @@ export function PhaseDetailsForm({
       toast.error(error.message || "Failed to save phase.");
     }
   };
-
-  const phaseTypes = [
-    { value: "Form", label: "Form" },
-    { value: "Review", label: "Review" },
-    { value: "Email", label: "Email" },
-    { value: "Scheduling", label: "Scheduling" },
-    { value: "Decision", label: "Decision" },
-    { value: "Recommendation", label: "Recommendation" },
-    { value: "Screening", label: "Screening" },
-  ];
 
   return (
     <div className="space-y-6">
