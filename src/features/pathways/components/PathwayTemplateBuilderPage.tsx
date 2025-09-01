@@ -123,7 +123,7 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
         name: "",
         type: "", // Reset to empty string
       });
-      inlinePhaseForm.trigger(); // Force validation after reset
+      // Removed inlinePhaseForm.trigger() from here to avoid potential race conditions
     }
   }, [isAddingNewPhase, inlinePhaseForm]);
 
@@ -416,13 +416,9 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
     console.log("[PathwayTemplateBuilderPage] inlinePhaseForm state errors on submit (inside handler):", inlinePhaseForm.formState.errors);
     console.log("[PathwayTemplateBuilderPage] inlinePhaseForm state isValid on submit (inside handler):", inlinePhaseForm.formState.isValid);
 
-    if (!inlinePhaseForm.formState.isValid) {
-      console.error("[PathwayTemplateBuilderPage] Form is invalid, preventing API call. Forcing trigger to show errors.");
-      inlinePhaseForm.trigger(); // Force validation to display messages
-      console.log("[PathwayTemplateBuilderPage] Errors after trigger:", inlinePhaseForm.formState.errors); // NEW LOG
-      toast.error("Please correct the errors in the new phase form.");
-      return;
-    }
+    // Removed the manual isValid check and trigger() call here.
+    // handleSubmit should handle validation and prevent onSubmit from firing if invalid.
+    // The console.error below will only be reached if handleSubmit somehow allows an invalid form.
 
     if (!canModifyTemplate || !templateId) {
       toast.error("You do not have permission to add phases.");
@@ -828,29 +824,35 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
               <FormField
                 control={inlinePhaseForm.control}
                 name="type"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-label-large">Phase Type</FormLabel>
-                    <Select key={field.name} onValueChange={(value) => field.onChange(value === "" ? "" : value)} value={field.value || ""} disabled={!canModifyTemplate}>
-                      <FormControl>
-                        <SelectTrigger className="rounded-md" onBlur={field.onBlur}>
-                          <SelectValue placeholder="Select a phase type" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent className="rounded-md shadow-lg bg-card text-card-foreground border-border">
-                        {phaseTypes.map((type: { value: string; label: string }) => (
-                          <SelectItem key={type.value} value={type.value} className="text-body-medium hover:bg-muted hover:text-muted-foreground cursor-pointer">
-                            {type.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormDescription className="text-body-small">
-                      The type of actions or steps involved in this phase.
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
+                render={({ field }) => {
+                  // console.log(`[Phase Type Field] field.value: '${field.value}'`); // Removed debug log
+                  return (
+                    <FormItem>
+                      <FormLabel className="text-label-large">Phase Type</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value as string || ""} disabled={!canModifyTemplate}>
+                        <FormControl>
+                          <SelectTrigger className="rounded-md" onBlur={field.onBlur}>
+                            <SelectValue placeholder="Select a phase type" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent className="rounded-md shadow-lg bg-card text-card-foreground border-border">
+                          <SelectItem value="" className="text-body-medium hover:bg-muted hover:text-muted-foreground cursor-pointer">
+                            (None)
+                          </SelectItem> {/* Explicit empty option */}
+                          {phaseTypes.map((type: { value: string; label: string }) => (
+                            <SelectItem key={type.value} value={type.value} className="text-body-medium hover:bg-muted hover:text-muted-foreground cursor-pointer">
+                              {type.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormDescription className="text-body-small">
+                        The type of actions or steps involved in this phase.
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  );
+                }}
               />
               <div className="flex justify-end space-x-2">
                 <Button type="button" variant="outline" onClick={() => setIsAddingNewPhase(false)} className="rounded-md text-label-large">
