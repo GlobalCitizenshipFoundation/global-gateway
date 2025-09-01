@@ -248,7 +248,8 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
       formData.append("participation_deadline", values.participation_deadline ? values.participation_deadline.toISOString() : "");
       formData.append("general_instructions", values.general_instructions || "");
       formData.append("is_visible_to_applicants", values.is_visible_to_applicants ? "on" : "off");
-      formData.append("tags", JSON.stringify(values.tags || [])); // Send tags as a JSON string
+      // Send tags as a JSON string, or an empty string if no tags (which will be parsed as null in action)
+      formData.append("tags", values.tags && values.tags.length > 0 ? JSON.stringify(values.tags) : "");
 
 
       let result: PathwayTemplate | null;
