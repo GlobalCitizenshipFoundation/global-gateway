@@ -134,11 +134,18 @@ export async function createPathwayTemplateAction(formData: FormData): Promise<P
     redirect("/login");
   }
 
+  console.log("[pathways/actions] createPathwayTemplateAction - Entering action to create template.");
+
   const name = formData.get("name") as string;
   const description = formData.get("description") as string | null;
   const is_private = formData.get("is_private") === "on";
-  const application_open_date = (formData.get("application_open_date") as string) || null;
-  const participation_deadline = (formData.get("participation_deadline") as string) || null;
+  // --- START DYAD FIX ---
+  const application_open_date_str = (formData.get("application_open_date") as string);
+  const application_open_date = application_open_date_str === "" ? null : application_open_date_str;
+
+  const participation_deadline_str = (formData.get("participation_deadline") as string);
+  const participation_deadline = participation_deadline_str === "" ? null : participation_deadline_str;
+  // --- END DYAD FIX ---
   const general_instructions = (formData.get("general_instructions") as string) || null;
   const is_visible_to_applicants = formData.get("is_visible_to_applicants") === "on";
   const tagsString = (formData.get("tags") as string);
@@ -191,8 +198,13 @@ export async function updatePathwayTemplateAction(id: string, formData: FormData
     const name = formData.get("name") as string;
     const description = formData.get("description") as string | null;
     const is_private = formData.get("is_private") === "on";
-    const application_open_date = (formData.get("application_open_date") as string) || null;
-    const participation_deadline = (formData.get("participation_deadline") as string) || null;
+    // --- START DYAD FIX ---
+    const application_open_date_str = (formData.get("application_open_date") as string);
+    const application_open_date = application_open_date_str === "" ? null : application_open_date_str;
+
+    const participation_deadline_str = (formData.get("participation_deadline") as string);
+    const participation_deadline = participation_deadline_str === "" ? null : participation_deadline_str;
+    // --- END DYAD FIX ---
     const general_instructions = (formData.get("general_instructions") as string) || null;
     const is_visible_to_applicants = formData.get("is_visible_to_applicants") === "on";
     const tagsString = (formData.get("tags") as string);
