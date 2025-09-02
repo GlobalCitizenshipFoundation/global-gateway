@@ -82,7 +82,9 @@ export async function createPathwayTemplate(
     .single();
 
   if (error) {
-    console.error("[pathway-template-service] createPathwayTemplate - Error inserting template:", error.message); // LOG ADDED
+    // --- START DYAD ADDITION ---
+    console.error("[pathway-template-service] createPathwayTemplate - Supabase insert error:", error); // Log the full error object
+    // --- END DYAD ADDITION ---
     throw error; // Throw the error so the calling action can catch it
   }
   console.log("[pathway-template-service] createPathwayTemplate - Insert successful, data:", data); // LOG ADDED

@@ -139,13 +139,8 @@ export async function createPathwayTemplateAction(formData: FormData): Promise<P
   const name = formData.get("name") as string;
   const description = formData.get("description") as string | null;
   const is_private = formData.get("is_private") === "on";
-  // --- START DYAD FIX ---
-  const application_open_date_str = (formData.get("application_open_date") as string);
-  const application_open_date = application_open_date_str === "" ? null : application_open_date_str;
-
-  const participation_deadline_str = (formData.get("participation_deadline") as string);
-  const participation_deadline = participation_deadline_str === "" ? null : participation_deadline_str;
-  // --- END DYAD FIX ---
+  const application_open_date = (formData.get("application_open_date") as string) || null;
+  const participation_deadline = (formData.get("participation_deadline") as string) || null;
   const general_instructions = (formData.get("general_instructions") as string) || null;
   const is_visible_to_applicants = formData.get("is_visible_to_applicants") === "on";
   const tagsString = (formData.get("tags") as string);
@@ -184,7 +179,12 @@ export async function createPathwayTemplateAction(formData: FormData): Promise<P
     return newTemplate;
   } catch (error: any) {
     console.error("[pathways/actions] createPathwayTemplateAction - Error during creation:", error); // Log the full error object
-    throw error;
+    // --- START DYAD FIX ---
+    // Extract a more user-friendly message from the error object
+    const errorMessage = error.message || "Failed to create pathway template.";
+    const detailedMessage = error.details || error.hint || "";
+    throw new Error(`${errorMessage} ${detailedMessage ? `(${detailedMessage})` : ''}`);
+    // --- END DYAD FIX ---
   }
 }
 
@@ -198,13 +198,8 @@ export async function updatePathwayTemplateAction(id: string, formData: FormData
     const name = formData.get("name") as string;
     const description = formData.get("description") as string | null;
     const is_private = formData.get("is_private") === "on";
-    // --- START DYAD FIX ---
-    const application_open_date_str = (formData.get("application_open_date") as string);
-    const application_open_date = application_open_date_str === "" ? null : application_open_date_str;
-
-    const participation_deadline_str = (formData.get("participation_deadline") as string);
-    const participation_deadline = participation_deadline_str === "" ? null : participation_deadline_str;
-    // --- END DYAD FIX ---
+    const application_open_date = (formData.get("application_open_date") as string) || null;
+    const participation_deadline = (formData.get("participation_deadline") as string) || null;
     const general_instructions = (formData.get("general_instructions") as string) || null;
     const is_visible_to_applicants = formData.get("is_visible_to_applicants") === "on";
     const tagsString = (formData.get("tags") as string);
@@ -265,14 +260,11 @@ export async function updatePathwayTemplateAction(id: string, formData: FormData
     return updatedTemplate;
   } catch (error: any) {
     console.error("[pathways/actions] updatePathwayTemplateAction - Error during update:", error.message); // LOG ADDED
-    if (error.message === "UnauthorizedToModifyTemplate") {
-      redirect("/error/403");
-    } else if (error.message === "TemplateNotFound") {
-      redirect("/error/404");
-    } else if (error.message === "FailedToRetrieveTemplate") {
-      redirect("/error/500");
-    }
-    throw error;
+    // --- START DYAD FIX ---
+    const errorMessage = error.message || "Failed to update pathway template.";
+    const detailedMessage = error.details || error.hint || "";
+    throw new Error(`${errorMessage} ${detailedMessage ? `(${detailedMessage})` : ''}`);
+    // --- END DYAD FIX ---
   }
 }
 
