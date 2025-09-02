@@ -23,6 +23,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PlusCircle, Trash2, GripVertical, Mail, Clock, Save, X } from "lucide-react"; // Added Save and X icons
 import { BaseConfigurableItem } from "@/types/supabase"; // Corrected import path
 import { updatePhaseConfigAction as defaultUpdatePhaseConfigAction } from "../../actions";
+import { useTemplateBuilder } from "../../context/TemplateBuilderContext"; // Import context
 
 // Zod schema for a single recommender information field
 const recommenderFieldSchema = z.object({
@@ -47,12 +48,15 @@ interface RecommendationPhaseConfigProps {
   phase: BaseConfigurableItem;
   parentId: string;
   onConfigSaved: () => void;
-  onCancel: () => void; // Added onCancel prop
-  canModify: boolean;
+  onCancel: () => void; // This prop will now be overridden by context
+  canModify: boolean; // This prop will now be overridden by context
   updatePhaseConfigAction?: (phaseId: string, parentId: string, configUpdates: Record<string, any>) => Promise<BaseConfigurableItem | null>;
 }
 
-export function RecommendationPhaseConfig({ phase, parentId, onConfigSaved, onCancel, canModify, updatePhaseConfigAction }: RecommendationPhaseConfigProps) {
+export function RecommendationPhaseConfig({ phase, parentId, onConfigSaved, onCancel: propOnCancel, canModify: propCanModify, updatePhaseConfigAction }: RecommendationPhaseConfigProps) {
+  const { canModifyTemplate, onCancelPhaseForm } = useTemplateBuilder(); // Consume context
+  const effectiveCanModify = canModifyTemplate; // Use context value
+
   const form = useForm<z.infer<typeof recommendationPhaseConfigSchema>>({
     resolver: zodResolver(recommendationPhaseConfigSchema),
     defaultValues: {
@@ -77,7 +81,7 @@ export function RecommendationPhaseConfig({ phase, parentId, onConfigSaved, onCa
   });
 
   const onSubmit = async (values: z.infer<typeof recommendationPhaseConfigSchema>) => {
-    if (!canModify) {
+    if (!effectiveCanModify) {
       toast.error("You do not have permission to modify this phase configuration.");
       return;
     }
@@ -136,7 +140,7 @@ export function RecommendationPhaseConfig({ phase, parentId, onConfigSaved, onCa
                 <FormItem>
                   <FormLabel className="text-label-large">Number of Recommenders Required</FormLabel>
                   <FormControl>
-                    <Input type="number" {...field} placeholder="e.g., 1" className="rounded-md" disabled={!canModify} />
+                    <Input type="number" {...field} placeholder="e.g., 1" className="rounded-md" disabled={!effectiveCanModify} />
                   </FormControl>
                   <FormDescription className="text-body-small">
                     The minimum number of recommendations an applicant must receive.
@@ -159,7 +163,7 @@ export function RecommendationPhaseConfig({ phase, parentId, onConfigSaved, onCa
                     <GripVertical className="h-5 w-5 text-muted-foreground cursor-grab" />
                     <h4 className="text-title-medium text-foreground">Field #{index + 1}</h4>
                   </div>
-                  {canModify && (
+                  {effectiveCanModify && (
                     <Button
                       type="button"
                       variant="destructive"
@@ -180,7 +184,7 @@ export function RecommendationPhaseConfig({ phase, parentId, onConfigSaved, onCa
                     <FormItem>
                       <FormLabel className="text-label-large">Field Label</FormLabel>
                       <FormControl>
-                        <Input {...field} placeholder="e.g., Recommender's Email" className="rounded-md" disabled={!canModify} />
+                        <Input {...field} placeholder="e.g., Recommender's Email" className="rounded-md" disabled={!effectiveCanModify} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -193,7 +197,7 @@ export function RecommendationPhaseConfig({ phase, parentId, onConfigSaved, onCa
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="text-label-large">Field Type</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value} disabled={!canModify}>
+                      <Select onValueChange={field.onChange} defaultValue={field.value} disabled={!effectiveCanModify}>
                         <FormControl>
                           <SelectTrigger className="rounded-md">
                             <SelectValue placeholder="Select field type" />
@@ -227,7 +231,7 @@ export function RecommendationPhaseConfig({ phase, parentId, onConfigSaved, onCa
                                 onChange={(e) => optionsField.onChange(e.target.value.split("\n").map(s => s.trim()).filter(Boolean))}
                                 placeholder="Option 1\nOption 2\nOption 3"
                                 className="resize-y min-h-[80px] rounded-md"
-                                disabled={!canModify}
+                                disabled={!effectiveCanModify}
                               />
                             </FormControl>
                             <FormDescription className="text-body-small">
@@ -255,7 +259,7 @@ export function RecommendationPhaseConfig({ phase, parentId, onConfigSaved, onCa
                           checked={field.value}
                           onCheckedChange={field.onChange}
                           className="data-[state=checked]:bg-primary data-[state=unchecked]:bg-muted-foreground"
-                          disabled={!canModify}
+                          disabled={!effectiveCanModify}
                         />
                       </FormControl>
                       <FormMessage />
@@ -270,7 +274,7 @@ export function RecommendationPhaseConfig({ phase, parentId, onConfigSaved, onCa
                     <FormItem>
                       <FormLabel className="text-label-large">Helper Text (Optional)</FormLabel>
                       <FormControl>
-                        <Input {...field} placeholder="e.g., Provide details about your relationship" className="rounded-md" disabled={!canModify} value={field.value || ""} />
+                        <Input {...field} placeholder="e.g., Provide details about your relationship" className="rounded-md" disabled={!effectiveCanModify} value={field.value || ""} />
                       </FormControl>
                       <FormDescription className="text-body-small">
                         Optional: Short text to guide the recommender.
@@ -282,7 +286,7 @@ export function RecommendationPhaseConfig({ phase, parentId, onConfigSaved, onCa
               </Card>
             ))}
 
-            {canModify && (
+            {effectiveCanModify && (
               <Button
                 type="button"
                 variant="outline"
@@ -309,7 +313,7 @@ export function RecommendationPhaseConfig({ phase, parentId, onConfigSaved, onCa
                       checked={field.value}
                       onCheckedChange={field.onChange}
                       className="data-[state=checked]:bg-primary data-[state=unchecked]:bg-muted-foreground"
-                      disabled={!canModify}
+                      disabled={!effectiveCanModify}
                     />
                   </FormControl>
                 </FormItem>
@@ -323,7 +327,7 @@ export function RecommendationPhaseConfig({ phase, parentId, onConfigSaved, onCa
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-label-large">Request Email Template</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value || ""} disabled={!canModify}>
+                    <Select onValueChange={field.onChange} value={field.value || ""} disabled={!effectiveCanModify}>
                       <FormControl>
                         <SelectTrigger className="rounded-md">
                           <SelectValue placeholder="Select an email template" />
@@ -358,7 +362,7 @@ export function RecommendationPhaseConfig({ phase, parentId, onConfigSaved, onCa
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-label-large">Reminder Schedule</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value} disabled={!canModify}>
+                  <Select onValueChange={field.onChange} defaultValue={field.value} disabled={!effectiveCanModify}>
                     <FormControl>
                       <SelectTrigger className="rounded-md">
                         <SelectValue placeholder="Select reminder frequency" />
@@ -381,10 +385,10 @@ export function RecommendationPhaseConfig({ phase, parentId, onConfigSaved, onCa
             />
 
             <div className="flex justify-end space-x-2">
-              <Button type="button" variant="outline" onClick={onCancel} className="rounded-md text-label-large">
+              <Button type="button" variant="outline" onClick={onCancelPhaseForm} className="rounded-md text-label-large">
                 <X className="mr-2 h-4 w-4" /> Cancel
               </Button>
-              {canModify && (
+              {effectiveCanModify && (
                 <Button type="submit" className="w-full rounded-md text-label-large" disabled={form.formState.isSubmitting}>
                   {form.formState.isSubmitting ? "Saving..." : <><Save className="mr-2 h-4 w-4" /> Save Recommendation Configuration</>}
                 </Button>

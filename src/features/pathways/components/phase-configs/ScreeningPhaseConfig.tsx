@@ -23,6 +23,7 @@ import { PlusCircle, Trash2, GripVertical, ListChecks, Save, X } from "lucide-re
 import { BaseConfigurableItem } from "@/types/supabase"; // Corrected import path
 import { updatePhaseConfigAction as defaultUpdatePhaseConfigAction } from "../../actions";
 import { cn } from "@/lib/utils";
+import { useTemplateBuilder } from "../../context/TemplateBuilderContext"; // Import context
 
 // Zod schema for a single screening criterion
 const screeningCriterionSchema = z.object({
@@ -43,12 +44,15 @@ interface ScreeningPhaseConfigProps {
   phase: BaseConfigurableItem;
   parentId: string;
   onConfigSaved: () => void;
-  onCancel: () => void; // Added onCancel prop
-  canModify: boolean;
+  onCancel: () => void; // This prop will now be overridden by context
+  canModify: boolean; // This prop will now be overridden by context
   updatePhaseConfigAction?: (phaseId: string, parentId: string, configUpdates: Record<string, any>) => Promise<BaseConfigurableItem | null>;
 }
 
-export function ScreeningPhaseConfig({ phase, parentId, onConfigSaved, onCancel, canModify, updatePhaseConfigAction }: ScreeningPhaseConfigProps) {
+export function ScreeningPhaseConfig({ phase, parentId, onConfigSaved, onCancel: propOnCancel, canModify: propCanModify, updatePhaseConfigAction }: ScreeningPhaseConfigProps) {
+  const { canModifyTemplate, onCancelPhaseForm } = useTemplateBuilder(); // Consume context
+  const effectiveCanModify = canModifyTemplate; // Use context value
+
   const form = useForm<z.infer<typeof screeningPhaseConfigSchema>>({
     resolver: zodResolver(screeningPhaseConfigSchema),
     defaultValues: {
@@ -69,7 +73,7 @@ export function ScreeningPhaseConfig({ phase, parentId, onConfigSaved, onCancel,
   });
 
   const onSubmit = async (values: z.infer<typeof screeningPhaseConfigSchema>) => {
-    if (!canModify) {
+    if (!effectiveCanModify) {
       toast.error("You do not have permission to modify this phase configuration.");
       return;
     }
@@ -112,7 +116,7 @@ export function ScreeningPhaseConfig({ phase, parentId, onConfigSaved, onCancel,
                       checked={field.value}
                       onCheckedChange={field.onChange}
                       className="data-[state=checked]:bg-primary data-[state=unchecked]:bg-muted-foreground"
-                      disabled={!canModify}
+                      disabled={!effectiveCanModify}
                     />
                   </FormControl>
                   <FormMessage />
@@ -132,7 +136,7 @@ export function ScreeningPhaseConfig({ phase, parentId, onConfigSaved, onCancel,
                       placeholder="e.g., Summarize key findings from the initial screening."
                       className="resize-y min-h-[80px] rounded-md"
                       value={field.value || ""}
-                      disabled={!canModify}
+                      disabled={!effectiveCanModify}
                     />
                   </FormControl>
                   <FormDescription className="text-body-small">
@@ -156,7 +160,7 @@ export function ScreeningPhaseConfig({ phase, parentId, onConfigSaved, onCancel,
                     <GripVertical className="h-5 w-5 text-muted-foreground cursor-grab" />
                     <h4 className="text-title-medium text-foreground">Criterion #{index + 1}</h4>
                   </div>
-                  {canModify && (
+                  {effectiveCanModify && (
                     <Button
                       type="button"
                       variant="destructive"
@@ -177,7 +181,7 @@ export function ScreeningPhaseConfig({ phase, parentId, onConfigSaved, onCancel,
                     <FormItem>
                       <FormLabel className="text-label-large">Criterion Name</FormLabel>
                       <FormControl>
-                        <Input {...field} placeholder="e.g., Verified minimum GPA" className="rounded-md" disabled={!canModify} />
+                        <Input {...field} placeholder="e.g., Verified minimum GPA" className="rounded-md" disabled={!effectiveCanModify} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -196,7 +200,7 @@ export function ScreeningPhaseConfig({ phase, parentId, onConfigSaved, onCancel,
                           placeholder="Provide a brief explanation or instructions for this criterion."
                           className="resize-y min-h-[80px] rounded-md"
                           value={field.value || ""}
-                          disabled={!canModify}
+                          disabled={!effectiveCanModify}
                         />
                       </FormControl>
                       <FormMessage />
@@ -220,7 +224,7 @@ export function ScreeningPhaseConfig({ phase, parentId, onConfigSaved, onCancel,
                           checked={field.value}
                           onCheckedChange={field.onChange}
                           className="data-[state=checked]:bg-primary data-[state=unchecked]:bg-muted-foreground"
-                          disabled={!canModify}
+                          disabled={!effectiveCanModify}
                         />
                       </FormControl>
                       <FormMessage />
@@ -230,7 +234,7 @@ export function ScreeningPhaseConfig({ phase, parentId, onConfigSaved, onCancel,
               </Card>
             ))}
 
-            {canModify && (
+            {effectiveCanModify && (
               <Button
                 type="button"
                 variant="outline"
@@ -242,10 +246,10 @@ export function ScreeningPhaseConfig({ phase, parentId, onConfigSaved, onCancel,
             )}
 
             <div className="flex justify-end space-x-2">
-              <Button type="button" variant="outline" onClick={onCancel} className="rounded-md text-label-large">
+              <Button type="button" variant="outline" onClick={onCancelPhaseForm} className="rounded-md text-label-large">
                 <X className="mr-2 h-4 w-4" /> Cancel
               </Button>
-              {canModify && (
+              {effectiveCanModify && (
                 <Button type="submit" className="w-full rounded-md text-label-large" disabled={form.formState.isSubmitting}>
                   {form.formState.isSubmitting ? "Saving..." : <><Save className="mr-2 h-4 w-4" /> Save Screening Configuration</>}
                 </Button>

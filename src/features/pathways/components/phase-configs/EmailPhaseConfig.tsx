@@ -24,6 +24,7 @@ import { updatePhaseConfigAction as defaultUpdatePhaseConfigAction } from "../..
 import { getCommunicationTemplatesAction, CommunicationTemplate } from "@/features/communications";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PlusCircle, Trash2, GitFork, Save, X } from "lucide-react"; // Added Save and X icons
+import { useTemplateBuilder } from "../../context/TemplateBuilderContext"; // Import context
 
 // Zod schema for a single dynamic content block
 const dynamicContentBlockSchema = z.object({
@@ -46,12 +47,15 @@ interface EmailPhaseConfigProps {
   phase: BaseConfigurableItem;
   parentId: string;
   onConfigSaved: () => void;
-  onCancel: () => void; // Added onCancel prop
-  canModify: boolean;
+  onCancel: () => void; // This prop will now be overridden by context
+  canModify: boolean; // This prop will now be overridden by context
   updatePhaseConfigAction?: (phaseId: string, parentId: string, configUpdates: Record<string, any>) => Promise<BaseConfigurableItem | null>;
 }
 
-export function EmailPhaseConfig({ phase, parentId, onConfigSaved, onCancel, canModify, updatePhaseConfigAction }: EmailPhaseConfigProps) {
+export function EmailPhaseConfig({ phase, parentId, onConfigSaved, onCancel: propOnCancel, canModify: propCanModify, updatePhaseConfigAction }: EmailPhaseConfigProps) {
+  const { canModifyTemplate, onCancelPhaseForm } = useTemplateBuilder(); // Consume context
+  const effectiveCanModify = canModifyTemplate; // Use context value
+
   const [communicationTemplates, setCommunicationTemplates] = useState<CommunicationTemplate[]>([]);
   const [isLoadingTemplates, setIsLoadingTemplates] = useState(true);
 
@@ -105,7 +109,7 @@ export function EmailPhaseConfig({ phase, parentId, onConfigSaved, onCancel, can
   }, [form.watch("selectedTemplateId"), communicationTemplates]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const onSubmit = async (values: z.infer<typeof emailPhaseConfigSchema>) => {
-    if (!canModify) {
+    if (!effectiveCanModify) {
       toast.error("You do not have permission to modify this phase configuration.");
       return;
     }
@@ -154,7 +158,7 @@ export function EmailPhaseConfig({ phase, parentId, onConfigSaved, onCancel, can
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-label-large">Use Template</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value || ""} disabled={!canModify || isLoadingTemplates}>
+                  <Select onValueChange={field.onChange} value={field.value || ""} disabled={!effectiveCanModify || isLoadingTemplates}>
                     <FormControl>
                       <SelectTrigger className="rounded-md">
                         <SelectValue placeholder={isLoadingTemplates ? "Loading templates..." : "Select an existing template (optional)"} />
@@ -192,7 +196,7 @@ export function EmailPhaseConfig({ phase, parentId, onConfigSaved, onCancel, can
                 <FormItem>
                   <FormLabel className="text-label-large">Email Subject</FormLabel>
                   <FormControl>
-                    <Input {...field} placeholder="e.g., Your Application Status Update" className="rounded-md" disabled={!canModify} />
+                    <Input {...field} placeholder="e.g., Your Application Status Update" className="rounded-md" disabled={!effectiveCanModify} />
                   </FormControl>
                   <FormDescription className="text-body-small">
                     The subject line of the email. Dynamic placeholders (e.g., {"{{applicant_name}}"}) can be used.
@@ -213,7 +217,7 @@ export function EmailPhaseConfig({ phase, parentId, onConfigSaved, onCancel, can
                       {...field}
                       placeholder="e.g., Dear {{applicant_name}}, your application has moved to the next phase."
                       className="resize-y min-h-[150px] rounded-md"
-                      disabled={!canModify}
+                      disabled={!effectiveCanModify}
                     />
                   </FormControl>
                   <FormDescription className="text-body-small">
@@ -237,7 +241,7 @@ export function EmailPhaseConfig({ phase, parentId, onConfigSaved, onCancel, can
                     <GitFork className="h-5 w-5 text-muted-foreground" />
                     <h4 className="text-title-medium text-foreground">Conditional Block #{index + 1}</h4>
                   </div>
-                  {canModify && (
+                  {effectiveCanModify && (
                     <Button
                       type="button"
                       variant="destructive"
@@ -258,7 +262,7 @@ export function EmailPhaseConfig({ phase, parentId, onConfigSaved, onCancel, can
                     <FormItem>
                       <FormLabel className="text-label-large">Condition</FormLabel>
                       <FormControl>
-                        <Input {...field} placeholder="e.g., application.status === 'accepted'" className="rounded-md" disabled={!canModify} />
+                        <Input {...field} placeholder="e.g., application.status === 'accepted'" className="rounded-md" disabled={!effectiveCanModify} />
                       </FormControl>
                       <FormDescription className="text-body-small">
                         Define a condition (e.g., `application.status === 'accepted'`) for this content to appear.
@@ -279,7 +283,7 @@ export function EmailPhaseConfig({ phase, parentId, onConfigSaved, onCancel, can
                           {...field}
                           placeholder="e.g., Congratulations! You have been accepted into the program."
                           className="resize-y min-h-[100px] rounded-md"
-                          disabled={!canModify}
+                          disabled={!effectiveCanModify}
                         />
                       </FormControl>
                       <FormDescription className="text-body-small">
@@ -292,7 +296,7 @@ export function EmailPhaseConfig({ phase, parentId, onConfigSaved, onCancel, can
               </Card>
             ))}
 
-            {canModify && (
+            {effectiveCanModify && (
               <Button
                 type="button"
                 variant="outline"
@@ -316,7 +320,7 @@ export function EmailPhaseConfig({ phase, parentId, onConfigSaved, onCancel, can
                       field.onChange([value]);
                     }}
                     value={field.value?.[0] || ""} // Display current single selection
-                    disabled={!canModify}
+                    disabled={!effectiveCanModify}
                   >
                     <FormControl>
                       <SelectTrigger className="rounded-md">
@@ -345,7 +349,7 @@ export function EmailPhaseConfig({ phase, parentId, onConfigSaved, onCancel, can
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-label-large">Trigger Event</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value} disabled={!canModify}>
+                  <Select onValueChange={field.onChange} defaultValue={field.value} disabled={!effectiveCanModify}>
                     <FormControl>
                       <SelectTrigger className="rounded-md">
                         <SelectValue placeholder="Select when to send this email" />
@@ -368,10 +372,10 @@ export function EmailPhaseConfig({ phase, parentId, onConfigSaved, onCancel, can
             />
 
             <div className="flex justify-end space-x-2">
-              <Button type="button" variant="outline" onClick={onCancel} className="rounded-md text-label-large">
+              <Button type="button" variant="outline" onClick={onCancelPhaseForm} className="rounded-md text-label-large">
                 <X className="mr-2 h-4 w-4" /> Cancel
               </Button>
-              {canModify && (
+              {effectiveCanModify && (
                 <Button type="submit" className="w-full rounded-md text-label-large" disabled={form.formState.isSubmitting}>
                   {form.formState.isSubmitting ? "Saving..." : <><Save className="mr-2 h-4 w-4" /> Save Email Configuration</>}
                 </Button>

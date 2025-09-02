@@ -26,6 +26,7 @@ import { PlusCircle, Trash2, GripVertical, Save, X } from "lucide-react"; // Add
 import { BaseConfigurableItem } from "@/types/supabase"; // Corrected import path
 import { updatePhaseConfigAction as defaultUpdatePhaseConfigAction } from "../../actions";
 import { cn } from "@/lib/utils";
+import { useTemplateBuilder } from "../../context/TemplateBuilderContext"; // Import context
 
 // Zod schema for a single rubric criterion
 const rubricCriterionSchema = z.object({
@@ -48,12 +49,15 @@ interface ReviewPhaseConfigProps {
   phase: BaseConfigurableItem;
   parentId: string;
   onConfigSaved: () => void;
-  onCancel: () => void; // Added onCancel prop
-  canModify: boolean;
+  onCancel: () => void; // This prop will now be overridden by context
+  canModify: boolean; // This prop will now be overridden by context
   updatePhaseConfigAction?: (phaseId: string, parentId: string, configUpdates: Record<string, any>) => Promise<BaseConfigurableItem | null>;
 }
 
-export function ReviewPhaseConfig({ phase, parentId, onConfigSaved, onCancel, canModify, updatePhaseConfigAction }: ReviewPhaseConfigProps) {
+export function ReviewPhaseConfig({ phase, parentId, onConfigSaved, onCancel: propOnCancel, canModify: propCanModify, updatePhaseConfigAction }: ReviewPhaseConfigProps) {
+  const { canModifyTemplate, onCancelPhaseForm } = useTemplateBuilder(); // Consume context
+  const effectiveCanModify = canModifyTemplate; // Use context value
+
   const form = useForm<z.infer<typeof reviewPhaseConfigSchema>>({
     resolver: zodResolver(reviewPhaseConfigSchema),
     defaultValues: {
@@ -75,7 +79,7 @@ export function ReviewPhaseConfig({ phase, parentId, onConfigSaved, onCancel, ca
   });
 
   const onSubmit = async (values: z.infer<typeof reviewPhaseConfigSchema>) => {
-    if (!canModify) {
+    if (!effectiveCanModify) {
       toast.error("You do not have permission to modify this phase configuration.");
       return;
     }
@@ -120,7 +124,7 @@ export function ReviewPhaseConfig({ phase, parentId, onConfigSaved, onCancel, ca
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-label-large">Scoring Scale</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value} disabled={!canModify}>
+                  <Select onValueChange={field.onChange} defaultValue={field.value} disabled={!effectiveCanModify}>
                     <FormControl>
                       <SelectTrigger className="rounded-md">
                         <SelectValue placeholder="Select a scoring scale" />
@@ -153,7 +157,7 @@ export function ReviewPhaseConfig({ phase, parentId, onConfigSaved, onCancel, ca
                       onValueChange={field.onChange}
                       defaultValue={field.value}
                       className="flex flex-col space-y-2"
-                      disabled={!canModify}
+                      disabled={!effectiveCanModify}
                     >
                       {anonymizationOptions.map((option) => (
                         <FormItem key={option.value} className="flex items-center space-x-3 space-y-0">
@@ -191,7 +195,7 @@ export function ReviewPhaseConfig({ phase, parentId, onConfigSaved, onCancel, ca
                       checked={field.value}
                       onCheckedChange={field.onChange}
                       className="data-[state=checked]:bg-primary data-[state=unchecked]:bg-muted-foreground"
-                      disabled={!canModify}
+                      disabled={!effectiveCanModify}
                     />
                   </FormControl>
                 </FormItem>
@@ -211,7 +215,7 @@ export function ReviewPhaseConfig({ phase, parentId, onConfigSaved, onCancel, ca
                     <GripVertical className="h-5 w-5 text-muted-foreground cursor-grab" />
                     <h4 className="text-title-medium text-foreground">Criterion #{index + 1}</h4>
                   </div>
-                  {canModify && (
+                  {effectiveCanModify && (
                     <Button
                       type="button"
                       variant="destructive"
@@ -232,7 +236,7 @@ export function ReviewPhaseConfig({ phase, parentId, onConfigSaved, onCancel, ca
                     <FormItem>
                       <FormLabel className="text-label-large">Criterion Name</FormLabel>
                       <FormControl>
-                        <Input {...field} placeholder="e.g., Leadership Potential" className="rounded-md" disabled={!canModify} />
+                        <Input {...field} placeholder="e.g., Leadership Potential" className="rounded-md" disabled={!effectiveCanModify} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -251,7 +255,7 @@ export function ReviewPhaseConfig({ phase, parentId, onConfigSaved, onCancel, ca
                           placeholder="Optional description for this criterion."
                           className="resize-y min-h-[80px] rounded-md"
                           value={field.value || ""}
-                          disabled={!canModify}
+                          disabled={!effectiveCanModify}
                         />
                       </FormControl>
                       <FormMessage />
@@ -267,7 +271,7 @@ export function ReviewPhaseConfig({ phase, parentId, onConfigSaved, onCancel, ca
                       <FormItem>
                         <FormLabel className="text-label-large">Maximum Score</FormLabel>
                         <FormControl>
-                          <Input type="number" {...field} placeholder="e.g., 5" className="rounded-md" disabled={!canModify} />
+                          <Input type="number" {...field} placeholder="e.g., 5" className="rounded-md" disabled={!effectiveCanModify} />
                         </FormControl>
                         <FormDescription className="text-body-small">
                           The highest score a reviewer can give for this criterion.
@@ -283,7 +287,7 @@ export function ReviewPhaseConfig({ phase, parentId, onConfigSaved, onCancel, ca
                       <FormItem>
                         <FormLabel className="text-label-large">Weight (%)</FormLabel>
                         <FormControl>
-                          <Input type="number" {...field} placeholder="e.g., 25" className="rounded-md" disabled={!canModify} />
+                          <Input type="number" {...field} placeholder="e.g., 25" className="rounded-md" disabled={!effectiveCanModify} />
                         </FormControl>
                         <FormDescription className="text-body-small">
                           Relative importance of this criterion (0-100).
@@ -296,7 +300,7 @@ export function ReviewPhaseConfig({ phase, parentId, onConfigSaved, onCancel, ca
               </Card>
             ))}
 
-            {canModify && (
+            {effectiveCanModify && (
               <Button
                 type="button"
                 variant="outline"
@@ -308,10 +312,10 @@ export function ReviewPhaseConfig({ phase, parentId, onConfigSaved, onCancel, ca
             )}
 
             <div className="flex justify-end space-x-2">
-              <Button type="button" variant="outline" onClick={onCancel} className="rounded-md text-label-large">
+              <Button type="button" variant="outline" onClick={onCancelPhaseForm} className="rounded-md text-label-large">
                 <X className="mr-2 h-4 w-4" /> Cancel
               </Button>
-              {canModify && (
+              {effectiveCanModify && (
                 <Button type="submit" className="w-full rounded-md text-label-large" disabled={form.formState.isSubmitting}>
                   {form.formState.isSubmitting ? "Saving..." : <><Save className="mr-2 h-4 w-4" /> Save Review Configuration</>}
                 </Button>

@@ -20,6 +20,7 @@ import { updatePhaseBranchingAction, getPhasesAction } from "../actions";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Save, X } from "lucide-react"; // Import Save and X icons
+import { useTemplateBuilder } from "../context/TemplateBuilderContext"; // Import context
 
 const branchingFormSchema = z.object({
   next_phase_id_on_success: z.string().uuid("Invalid phase ID.").nullable().optional(),
@@ -30,17 +31,20 @@ interface BranchingConfigFormProps {
   pathwayTemplateId: string;
   phase: Phase; // The phase for which branching is being configured
   onConfigSaved: () => void;
-  onCancel: () => void; // Added onCancel prop
-  canModify: boolean;
+  onCancel: () => void; // This prop will now be overridden by context
+  canModify: boolean; // This prop will now be overridden by context
 }
 
 export function BranchingConfigForm({
   pathwayTemplateId,
   phase,
   onConfigSaved,
-  onCancel, // Destructure onCancel
-  canModify,
+  onCancel: propOnCancel, // Rename prop to avoid conflict with context
+  canModify: propCanModify, // Rename prop to avoid conflict with context
 }: BranchingConfigFormProps) {
+  const { canModifyTemplate, onCancelPhaseForm } = useTemplateBuilder(); // Consume context
+  const effectiveCanModify = canModifyTemplate; // Use context value
+
   const [allPhases, setAllPhases] = useState<Phase[]>([]);
   const [isLoadingPhases, setIsLoadingPhases] = useState(true);
 
@@ -77,7 +81,7 @@ export function BranchingConfigForm({
   }, [pathwayTemplateId, phase, form]);
 
   const onSubmit = async (values: z.infer<typeof branchingFormSchema>) => {
-    if (!canModify) {
+    if (!effectiveCanModify) {
       toast.error("You do not have permission to modify this phase configuration.");
       return;
     }
@@ -127,7 +131,7 @@ export function BranchingConfigForm({
                 <Select
                   onValueChange={(value) => field.onChange(value === "none" ? null : value)}
                   value={field.value || "none"}
-                  disabled={!canModify || isLoadingPhases}
+                  disabled={!effectiveCanModify || isLoadingPhases}
                 >
                   <FormControl>
                     <SelectTrigger className="rounded-md">
@@ -164,7 +168,7 @@ export function BranchingConfigForm({
                 <Select
                   onValueChange={(value) => field.onChange(value === "none" ? null : value)}
                   value={field.value || "none"}
-                  disabled={!canModify || isLoadingPhases}
+                  disabled={!effectiveCanModify || isLoadingPhases}
                 >
                   <FormControl>
                     <SelectTrigger className="rounded-md">
@@ -193,10 +197,10 @@ export function BranchingConfigForm({
             )}
           />
           <div className="flex justify-end space-x-2">
-            <Button type="button" variant="outline" onClick={onCancel} className="rounded-md text-label-large">
+            <Button type="button" variant="outline" onClick={onCancelPhaseForm} className="rounded-md text-label-large">
               <X className="mr-2 h-4 w-4" /> Cancel
             </Button>
-            <Button type="submit" className="rounded-md text-label-large" disabled={form.formState.isSubmitting || !canModify}>
+            <Button type="submit" className="rounded-md text-label-large" disabled={form.formState.isSubmitting || !effectiveCanModify}>
               {form.formState.isSubmitting ? "Saving..." : <><Save className="mr-2 h-4 w-4" /> Save Branching</>}
             </Button>
           </div>

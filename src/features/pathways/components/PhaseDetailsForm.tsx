@@ -26,6 +26,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { Switch } from "@/components/ui/switch"; // Import Switch
+import { useTemplateBuilder } from "../context/TemplateBuilderContext"; // Import context
 
 const phaseFormSchema = z.object({
   name: z.string().min(1, { message: "Phase name is required." }).max(100, { message: "Name cannot exceed 100 characters." }),
@@ -42,9 +43,9 @@ interface PhaseDetailsFormProps {
   pathwayTemplateId: string;
   initialData?: Phase; // Optional for creation
   onPhaseSaved: () => void;
-  onCancel: () => void; // Added onCancel prop
+  onCancel: () => void; // This prop will now be overridden by context
   nextOrderIndex: number; // Only relevant for creation, but kept for consistency
-  canModify: boolean;
+  canModify: boolean; // This prop will now be overridden by context
   isNewPhaseForm?: boolean; // New prop to distinguish creation form
 }
 
@@ -52,11 +53,14 @@ export function PhaseDetailsForm({
   pathwayTemplateId,
   initialData,
   onPhaseSaved,
-  onCancel,
+  onCancel: propOnCancel, // Rename prop to avoid conflict with context
   nextOrderIndex,
-  canModify,
+  canModify: propCanModify, // Rename prop to avoid conflict with context
   isNewPhaseForm = false,
 }: PhaseDetailsFormProps) {
+  const { canModifyTemplate, onCancelPhaseForm } = useTemplateBuilder(); // Consume context
+  const effectiveCanModify = canModifyTemplate; // Use context value
+
   const phaseTypes = [
     { value: "Form", label: "Form" },
     { value: "Review", label: "Review" },
@@ -103,7 +107,7 @@ export function PhaseDetailsForm({
     console.log("[PhaseDetailsForm] Form state errors on submit:", form.formState.errors);
     console.log("[PhaseDetailsForm] Form state isValid on submit:", form.formState.isValid);
 
-    if (!canModify) {
+    if (!effectiveCanModify) {
       toast.error("You do not have permission to modify phases.");
       return;
     }
@@ -149,7 +153,7 @@ export function PhaseDetailsForm({
               <FormItem>
                 <FormLabel className="text-label-large">Phase Name</FormLabel>
                 <FormControl>
-                  <Input placeholder="e.g., Initial Application" {...field} className="rounded-md" disabled={!canModify} />
+                  <Input placeholder="e.g., Initial Application" {...field} className="rounded-md" disabled={!effectiveCanModify} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -161,7 +165,7 @@ export function PhaseDetailsForm({
             render={({ field }) => (
               <FormItem>
                 <FormLabel className="text-label-large">Phase Type</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value} disabled={!canModify || !!initialData}>
+                <Select onValueChange={field.onChange} defaultValue={field.value} disabled={!effectiveCanModify || !!initialData}>
                   <FormControl>
                     <SelectTrigger className="rounded-md">
                       <SelectValue placeholder="Select a phase type" />
@@ -191,7 +195,7 @@ export function PhaseDetailsForm({
                         className="resize-y min-h-[80px] rounded-md"
                         {...field}
                         value={field.value || ""}
-                        disabled={!canModify}
+                        disabled={!effectiveCanModify}
                       />
                     </FormControl>
                     <FormMessage />
@@ -207,7 +211,7 @@ export function PhaseDetailsForm({
                     <FormItem className="flex flex-col">
                       <FormLabel className="text-label-large">Phase Start Date</FormLabel>
                       <Popover>
-                        <PopoverTrigger asChild disabled={!canModify}>
+                        <PopoverTrigger asChild disabled={!effectiveCanModify}>
                           <FormControl>
                             <Button
                               variant="outline"
@@ -248,7 +252,7 @@ export function PhaseDetailsForm({
                     <FormItem className="flex flex-col">
                       <FormLabel className="text-label-large">Phase End Date</FormLabel>
                       <Popover>
-                        <PopoverTrigger asChild disabled={!canModify}>
+                        <PopoverTrigger asChild disabled={!effectiveCanModify}>
                           <FormControl>
                             <Button
                               variant="outline"
@@ -296,7 +300,7 @@ export function PhaseDetailsForm({
                         className="resize-y min-h-[80px] rounded-md"
                         {...field}
                         value={field.value || ""}
-                        disabled={!canModify}
+                        disabled={!effectiveCanModify}
                       />
                     </FormControl>
                     <FormDescription className="text-body-small">
@@ -319,7 +323,7 @@ export function PhaseDetailsForm({
                         className="resize-y min-h-[80px] rounded-md"
                         {...field}
                         value={field.value || ""}
-                        disabled={!canModify}
+                        disabled={!effectiveCanModify}
                       />
                     </FormControl>
                     <FormDescription className="text-body-small">
@@ -346,7 +350,7 @@ export function PhaseDetailsForm({
                         checked={field.value}
                         onCheckedChange={field.onChange}
                         className="data-[state=checked]:bg-primary data-[state=unchecked]:bg-muted-foreground"
-                        disabled={!canModify}
+                        disabled={!effectiveCanModify}
                       />
                     </FormControl>
                     <FormMessage />
@@ -355,10 +359,10 @@ export function PhaseDetailsForm({
               />
 
               <div className="flex justify-end space-x-2">
-                <Button type="button" variant="outline" onClick={onCancel} className="rounded-md text-label-large">
+                <Button type="button" variant="outline" onClick={onCancelPhaseForm} className="rounded-md text-label-large">
                   <X className="mr-2 h-4 w-4" /> Cancel
                 </Button>
-                <Button type="submit" className="rounded-md text-label-large" disabled={form.formState.isSubmitting || !canModify}>
+                <Button type="submit" className="rounded-md text-label-large" disabled={form.formState.isSubmitting || !effectiveCanModify}>
                   {form.formState.isSubmitting
                     ? "Saving..."
                     : initialData

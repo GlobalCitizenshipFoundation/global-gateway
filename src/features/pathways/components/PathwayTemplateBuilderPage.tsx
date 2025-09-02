@@ -51,7 +51,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { getProfileByIdAction } from "@/features/user-profile/actions";
 import { TagInput } from "@/components/TagInput";
-
+import { TemplateBuilderContextProvider, useTemplateBuilder } from "../context/TemplateBuilderContext"; // Import context
 
 // Zod schema for the entire template builder page (template details + phases)
 const templateBuilderSchema = z.object({
@@ -93,7 +93,7 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
   const [isActivityLogOpen, setIsActivityLogOpen] = useState(false);
   const [creatorProfile, setCreatorProfile] = useState<Profile | null>(null);
   const [lastUpdaterProfile, setLastUpdaterProfile] = useState<Profile | null>(null);
-  const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [refreshTrigger, setRefreshTrigger] = useState(0); // Used to force re-render of children that depend on it
 
   const templateForm = useForm<z.infer<typeof templateBuilderSchema>>({
     resolver: zodResolver(templateBuilderSchema),
@@ -155,16 +155,19 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
         return;
       }
       setTemplate(fetchedTemplate);
-      templateForm.reset({
-        name: fetchedTemplate.name,
-        description: fetchedTemplate.description,
-        is_private: fetchedTemplate.is_private,
-        application_open_date: fetchedTemplate.application_open_date ? new Date(fetchedTemplate.application_open_date) : null,
-        participation_deadline: fetchedTemplate.participation_deadline ? new Date(fetchedTemplate.participation_deadline) : null,
-        general_instructions: fetchedTemplate.general_instructions || "",
-        is_visible_to_applicants: fetchedTemplate.is_visible_to_applicants ?? true,
-        tags: fetchedTemplate.tags || [], // Default to empty array
-      });
+      // Only reset form if it's not dirty, to prevent overwriting user input
+      if (!templateForm.formState.isDirty) {
+        templateForm.reset({
+          name: fetchedTemplate.name,
+          description: fetchedTemplate.description,
+          is_private: fetchedTemplate.is_private,
+          application_open_date: fetchedTemplate.application_open_date ? new Date(fetchedTemplate.application_open_date) : null,
+          participation_deadline: fetchedTemplate.participation_deadline ? new Date(fetchedTemplate.participation_deadline) : null,
+          general_instructions: fetchedTemplate.general_instructions || "",
+          is_visible_to_applicants: fetchedTemplate.is_visible_to_applicants ?? true,
+          tags: fetchedTemplate.tags || [], // Default to empty array
+        });
+      }
 
       // Fetch creator and last updater profiles
       const [creatorProfileData, lastUpdaterProfileData] = await Promise.all([
@@ -272,6 +275,7 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
 
       if (result) {
         toast.success(`Template ${templateId ? "updated" : "created"} successfully!`);
+        setTemplate(result); // Update local template state with the new/updated data
         templateForm.reset({
           ...values,
           tags: values.tags || [], // Ensure tags are reset correctly as an array
@@ -279,7 +283,7 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
         if (!templateId) {
           router.push(`/pathways/${result.id}`);
         } else {
-          fetchTemplateAndPhases();
+          fetchTemplateAndPhases(); // Re-fetch to update profiles and activity log
         }
       }
     } catch (error: any) {
@@ -288,9 +292,26 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
     }
   };
 
-  const handlePhaseUpdated = () => {
-    fetchTemplateAndPhases();
+  const handlePhaseUpdated = (updatedPhase?: Phase) => {
+    if (updatedPhase) {
+      setPhases(prevPhases => {
+        const existingIndex = prevPhases.findIndex(p => p.id === updatedPhase.id);
+        if (existingIndex > -1) {
+          // Update existing phase
+          return prevPhases.map(p => p.id === updatedPhase.id ? updatedPhase : p);
+        } else {
+          // Add new phase (for creation)
+          return [...prevPhases, updatedPhase].sort((a, b) => a.order_index - b.order_index);
+        }
+      });
+    }
+    fetchTemplateAndPhases(); // Full re-fetch for now to ensure all related data (tasks, etc.) is consistent
     setIsAddingNewPhase(false);
+  };
+
+  const onCancelPhaseForm = () => {
+    setIsAddingNewPhase(false);
+    setExpandedPhaseIds(new Set()); // Collapse all phase forms on cancel
   };
 
   const handleDeletePhase = async (phaseId: string) => {
@@ -302,7 +323,8 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
       const success = await deletePhaseActionService(phaseId, templateId);
       if (success) {
         toast.success("Phase deleted successfully!");
-        fetchTemplateAndPhases();
+        setPhases(prevPhases => prevPhases.filter(p => p.id !== phaseId)); // Optimistic update
+        fetchTemplateAndPhases(); // Re-fetch to ensure order_index is correct and activity log is updated
         setExpandedPhaseIds((prev: Set<string>) => {
           const newSet = new Set(prev);
           newSet.delete(phaseId);
@@ -328,7 +350,7 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
       order_index: index,
     }));
 
-    setPhases(updatedPhases);
+    setPhases(updatedPhases); // Optimistic update
 
     try {
       const success = await reorderPhasesAction(
@@ -462,7 +484,7 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
       const result = await createPhaseAction(templateId, formData);
       if (result) {
         toast.success(`Phase "${result.name}" created successfully!`);
-        handlePhaseUpdated();
+        handlePhaseUpdated(result); // Pass the new phase to update local state
         inlinePhaseForm.reset();
       }
     } catch (error: any) {
@@ -522,430 +544,436 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
   const canModifyTemplate: boolean = template ? (template.creator_id === currentUser.id || isAdmin) : true;
 
   return (
-    <div className="container mx-auto py-8 px-4 space-y-8">
-      <div className="flex items-center justify-between">
-        <Button asChild variant="ghost" className="rounded-full px-4 py-2 text-label-large">
-          <Link href="#" onClick={() => handleNavigate("/pathways")}>
-            <ArrowLeft className="mr-2 h-5 w-5" /> Back to Templates
-          </Link>
-        </Button>
-      </div>
+    <TemplateBuilderContextProvider
+      canModifyTemplate={canModifyTemplate}
+      refreshTemplateData={fetchTemplateAndPhases}
+      onCancelPhaseForm={onCancelPhaseForm}
+    >
+      <div className="container mx-auto py-8 px-4 space-y-8">
+        <div className="flex items-center justify-between">
+          <Button asChild variant="ghost" className="rounded-full px-4 py-2 text-label-large">
+            <Link href="#" onClick={() => handleNavigate("/pathways")}>
+              <ArrowLeft className="mr-2 h-5 w-5" /> Back to Templates
+            </Link>
+          </Button>
+        </div>
 
-      <h1 className="text-display-small font-bold text-foreground flex items-center gap-4">
-        {isNewTemplate ? "Create New Pathway Template" : `Edit Pathway Template: ${template?.name || 'Loading...'}`}
-        {!isNewTemplate && getStatusBadge(currentTemplate.status)}
-      </h1>
+        <h1 className="text-display-small font-bold text-foreground flex items-center gap-4">
+          {isNewTemplate ? "Create New Pathway Template" : `Edit Pathway Template: ${template?.name || 'Loading...'}`}
+          {!isNewTemplate && getStatusBadge(currentTemplate.status)}
+        </h1>
 
-      <Form {...templateForm}>
-        <form onSubmit={templateForm.handleSubmit(handleTemplateDetailsSave)} className="space-y-8">
-          {/* Template Basics Card - Always render for new or existing templates */}
-          <Card className="rounded-xl shadow-lg p-6">
-            <CardHeader className="p-0 mb-4">
-              <CardTitle className="text-headline-large font-bold text-foreground flex items-center gap-2">
-                Template Basics
-                {!isNewTemplate && (
-                  <TooltipProvider>
-                    {currentTemplate.is_private ? (
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Lock className="h-5 w-5 text-muted-foreground" />
-                        </TooltipTrigger>
-                        <TooltipContent className="rounded-md shadow-lg bg-card text-card-foreground border-border text-body-small">
-                          Private Template
-                        </TooltipContent>
-                      </Tooltip>
-                    ) : (
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Globe className="h-5 w-5 text-muted-foreground" />
-                        </TooltipTrigger>
-                        <TooltipContent className="rounded-md shadow-lg bg-card text-card-foreground border-border text-body-small">
-                          Public Template
-                        </TooltipContent>
-                      </Tooltip>
-                    )}
-                  </TooltipProvider>
-                )}
-              </CardTitle>
-              <CardDescription className="text-body-large text-muted-foreground">
-                Define the core identity and visibility of this pathway template.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="p-0 space-y-6">
-              <FormField
-                control={templateForm.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-label-large">Template Name</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g., Global Fellowship Application" {...field} className="rounded-md" disabled={!canModifyTemplate} />
-                    </FormControl>
-                    <FormDescription className="text-body-small">
-                      A unique and descriptive name for your pathway template.
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={templateForm.control}
-                name="description"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-label-large">Template Description</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder="Provide a brief overview of this pathway template's purpose."
-                        className="resize-y min-h-[80px] rounded-md"
-                        {...field}
-                        value={field.value || ""}
-                        disabled={!canModifyTemplate}
-                      />
-                    </FormControl>
-                    <FormDescription className="text-body-small">
-                      Optional: A detailed description of what this template is used for.
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={templateForm.control}
-                name="tags"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-label-large">Tags</FormLabel>
-                    <FormControl>
-                      <TagInput
-                        {...field}
-                        value={field.value || []}
-                        onChange={field.onChange}
-                        disabled={!canModifyTemplate}
-                        placeholder="Add tags (e.g., fellowship, global)"
-                      />
-                    </FormControl>
-                    <FormDescription className="text-body-small">
-                      Add tags to categorize and organize your templates. Press Enter or comma to add a tag.
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={templateForm.control}
-                name="is_private"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                    <div className="space-y-0.5">
-                      <FormLabel className="text-label-large">Keep Private</FormLabel>
-                      <FormDescription className="text-body-small">
-                        If enabled, this template will only be visible to you and platform administrators.
-                        Otherwise, it will be visible to all workbench users.
-                      </FormDescription>
-                    </div>
-                    <FormControl>
-                      <Switch
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                        className="data-[state=checked]:bg-primary data-[state=unchecked]:bg-muted-foreground"
-                        disabled={!canModifyTemplate}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </CardContent>
-          </Card>
-
-          {/* Essential Information Card - Always render for new or existing templates */}
-          <Card className="rounded-xl shadow-lg p-6">
-            <CardHeader className="p-0 mb-4">
-              <CardTitle className="text-headline-large font-bold text-foreground">
-                Essential Information
-              </CardTitle>
-              <CardDescription className="text-body-large text-muted-foreground">
-                Key dates and general instructions for applicants.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="p-0 space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
-                  control={templateForm.control}
-                  name="application_open_date"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-col">
-                      <FormLabel className="text-label-large">Application Open Date</FormLabel>
-                      <Popover>
-                        <PopoverTrigger asChild disabled={!canModifyTemplate}>
-                          <FormControl>
-                            <Button
-                              variant="outline"
-                              className={cn(
-                                "w-full pl-3 text-left font-normal rounded-md",
-                                !field.value && "text-muted-foreground"
-                              )}
-                            >
-                              {field.value ? (
-                                format(field.value, "PPP")
-                              ) : (
-                                <span>Pick a date</span>
-                              )}
-                              <CalendarDays className="ml-auto h-4 w-4 opacity-50" />
-                            </Button>
-                          </FormControl>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0 rounded-xl shadow-lg bg-card text-card-foreground border-border" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={field.value || undefined}
-                            onSelect={field.onChange}
-                            initialFocus
-                          />
-                        </PopoverContent>
-                      </Popover>
-                      <FormDescription className="text-body-small">
-                        The date when applications for campaigns using this template will open.
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={templateForm.control}
-                  name="participation_deadline"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-col">
-                      <FormLabel className="text-label-large">Participation Deadline</FormLabel>
-                      <Popover>
-                        <PopoverTrigger asChild disabled={!canModifyTemplate}>
-                          <FormControl>
-                            <Button
-                              variant="outline"
-                              className={cn(
-                                "w-full pl-3 text-left font-normal rounded-md",
-                                !field.value && "text-muted-foreground"
-                              )}
-                            >
-                              {field.value ? (
-                                format(field.value, "PPP")
-                              ) : (
-                                <span>Pick a date</span>
-                              )}
-                              <CalendarDays className="ml-auto h-4 w-4 opacity-50" />
-                            </Button>
-                          </FormControl>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0 rounded-xl shadow-lg bg-card text-card-foreground border-border" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={field.value || undefined}
-                            onSelect={field.onChange}
-                            initialFocus
-                          />
-                        </PopoverContent>
-                      </Popover>
-                      <FormDescription className="text-body-small">
-                        The final date for applicants to submit their participation.
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-              <FormField
-                control={templateForm.control}
-                name="general_instructions"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-label-large">General Instructions</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder="Provide general instructions or guidelines for applicants."
-                        className="resize-y min-h-[150px] rounded-md"
-                        {...field}
-                        value={field.value || ""}
-                        disabled={!canModifyTemplate}
-                      />
-                    </FormControl>
-                    <FormDescription className="text-body-small">
-                      These instructions will be visible to applicants. (Rich text editor integration coming soon)
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </CardContent>
-          </Card>
-
-          {/* Action Buttons for Template Details */}
-          <CardFooter className="flex flex-wrap justify-end items-center gap-2 mt-8 pt-6 border-t border-border">
-            {canModifyTemplate && (
-              <Button type="submit" variant="tonal" className="rounded-full px-6 py-3 text-label-large" disabled={templateForm.formState.isSubmitting}>
-                {templateForm.formState.isSubmitting ? "Saving..." : <><Save className="mr-2 h-5 w-5" /> Save Template Details</>}
-              </Button>
-            )}
-            {!isNewTemplate && canModifyTemplate && (
-              <>
-                {/* Publish Template */}
-                <Button variant="default" className="rounded-full px-6 py-3 text-label-large" onClick={handlePublishTemplate} disabled={currentTemplate.status === 'published'}>
-                  <CheckCircle className="mr-2 h-5 w-5" /> {currentTemplate.status === 'published' ? "Published" : "Publish Template"}
-                </Button>
-
-                {/* More Actions Dropdown */}
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="icon" className="rounded-full">
-                      <MoreVertical className="h-5 w-5" />
-                      <span className="sr-only">More actions</span>
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="rounded-md shadow-lg bg-card text-card-foreground border-border">
-                    <DropdownMenuLabel className="text-body-medium">More Actions</DropdownMenuLabel>
-                    <DropdownMenuSeparator className="bg-border" />
-
-                    {/* Clone Template */}
-                    <DropdownMenuItem onSelect={() => handleClone(currentTemplate)} className="text-body-medium hover:bg-muted hover:text-muted-foreground cursor-pointer">
-                      <Copy className="mr-2 h-4 w-4" /> Clone Template
-                    </DropdownMenuItem>
-
-                    {/* Archive / Unarchive Template */}
-                    {currentTemplate.status === 'archived' ? (
-                      <DropdownMenuItem onSelect={() => handleUpdateStatus('draft')} className="text-body-medium hover:bg-muted hover:text-muted-foreground cursor-pointer">
-                        <RotateCcw className="mr-2 h-4 w-4" /> Unarchive
-                      </DropdownMenuItem>
-                    ) : (
-                      <DropdownMenuItem onSelect={() => handleUpdateStatus('archived')} className="text-body-medium text-destructive hover:bg-destructive-container hover:text-destructive cursor-pointer">
-                        <Archive className="mr-2 h-4 w-4" /> Archive Template
-                      </DropdownMenuItem>
-                    )}
-
-                    <DropdownMenuSeparator className="bg-border" />
-
-                    {/* Delete Template */}
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <DropdownMenuItem onSelect={(e: Event) => e.preventDefault()} className="text-body-medium text-destructive hover:bg-destructive-container hover:text-destructive cursor-pointer">
-                          <Trash2 className="mr-2 h-4 w-4" /> Delete Template
-                        </DropdownMenuItem>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent className="rounded-xl shadow-lg bg-card text-card-foreground border-border">
-                        <AlertDialogHeader>
-                          <AlertDialogTitle className="text-headline-small">Confirm Permanent Deletion</AlertDialogTitle>
-                          <AlertDialogDescription className="text-body-medium text-muted-foreground">
-                            Are you sure you want to permanently delete the "{currentTemplate.name}" pathway template? This action cannot be undone and will remove all associated phases and data.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel onClick={handleStayOnPage} className="rounded-md text-label-large">Cancel</AlertDialogCancel>
-                          <AlertDialogAction
-                            onClick={handleDeleteTemplate}
-                            className="rounded-md text-label-large bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                          >
-                            Delete Permanently
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </>
-            )}
-          </CardFooter>
-        </form>
-      </Form>
-
-      {/* Only show phases section if template exists (i.e., not a brand new template being created) */}
-      {!isNewTemplate && template && (
-        <>
-          <div className="flex justify-between items-center mt-8">
-            <h2 className="text-headline-large font-bold text-foreground">Pathway Phases</h2>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                className="rounded-full px-6 py-3 text-label-large"
-                onClick={handleToggleAllPhases}
-                disabled={phases.length === 0}
-              >
-                {isAllPhasesExpanded ? <><ChevronUp className="mr-2 h-5 w-5" /> Collapse All</> : <><ChevronDown className="mr-2 h-5 w-5" /> Expand All</>}
-              </Button>
-              {canModifyTemplate && (
-                <Button onClick={() => setIsAddingNewPhase(prev => !prev)} className="rounded-full px-6 py-3 text-label-large">
-                  <PlusCircle className="mr-2 h-5 w-5" /> Add New Phase
-                </Button>
-              )}
-            </div>
-          </div>
-
-          {isAddingNewPhase && canModifyTemplate && (
-            <Card className="rounded-xl shadow-lg p-6 bg-muted/20 border border-border">
+        <Form {...templateForm}>
+          <form onSubmit={templateForm.handleSubmit(handleTemplateDetailsSave)} className="space-y-8">
+            {/* Template Basics Card - Always render for new or existing templates */}
+            <Card className="rounded-xl shadow-lg p-6">
               <CardHeader className="p-0 mb-4">
-                <CardTitle className="text-headline-small font-bold text-foreground">Quick Add Phase</CardTitle>
-                <CardDescription className="text-body-medium text-muted-foreground">
-                  Add a new phase to your pathway template. You can configure it later.
+                <CardTitle className="text-headline-large font-bold text-foreground flex items-center gap-2">
+                  Template Basics
+                  {!isNewTemplate && (
+                    <TooltipProvider>
+                      {currentTemplate.is_private ? (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Lock className="h-5 w-5 text-muted-foreground" />
+                          </TooltipTrigger>
+                          <TooltipContent className="rounded-md shadow-lg bg-card text-card-foreground border-border text-body-small">
+                            Private Template
+                          </TooltipContent>
+                        </Tooltip>
+                      ) : (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Globe className="h-5 w-5 text-muted-foreground" />
+                          </TooltipTrigger>
+                          <TooltipContent className="rounded-md shadow-lg bg-card text-card-foreground border-border text-body-small">
+                            Public Template
+                          </TooltipContent>
+                        </Tooltip>
+                      )}
+                    </TooltipProvider>
+                  )}
+                </CardTitle>
+                <CardDescription className="text-body-large text-muted-foreground">
+                  Define the core identity and visibility of this pathway template.
                 </CardDescription>
               </CardHeader>
-              <CardContent className="p-0">
-                <Form {...inlinePhaseForm}>
-                  <form onSubmit={inlinePhaseForm.handleSubmit(handleInlinePhaseCreate)} className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <FormField
-                      control={inlinePhaseForm.control}
-                      name="name"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-label-large">Phase Name</FormLabel>
-                          <FormControl>
-                            <Input placeholder="e.g., Initial Application" {...field} className="rounded-md" />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={inlinePhaseForm.control}
-                      name="type"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-label-large">Phase Type</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <FormControl>
-                              <SelectTrigger className="rounded-md">
-                                <SelectValue placeholder="Select a type" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent className="rounded-md shadow-lg bg-card text-card-foreground border-border">
-                              {phaseTypes.map((type) => (
-                                <SelectItem key={type.value} value={type.value} className="text-body-medium hover:bg-muted hover:text-muted-foreground cursor-pointer">
-                                  {type.label}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <div className="flex items-end">
-                      <Button type="submit" className="w-full rounded-md text-label-large" disabled={inlinePhaseForm.formState.isSubmitting}>
-                        {inlinePhaseForm.formState.isSubmitting ? "Adding..." : "Add Phase"}
-                      </Button>
-                    </div>
-                  </form>
-                </Form>
+              <CardContent className="p-0 space-y-6">
+                <FormField
+                  control={templateForm.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-label-large">Template Name</FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g., Global Fellowship Application" {...field} className="rounded-md" disabled={!canModifyTemplate} />
+                      </FormControl>
+                      <FormDescription className="text-body-small">
+                        A unique and descriptive name for your pathway template.
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={templateForm.control}
+                  name="description"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-label-large">Template Description</FormLabel>
+                      <FormControl>
+                        <Textarea
+                          placeholder="Provide a brief overview of this pathway template's purpose."
+                          className="resize-y min-h-[80px] rounded-md"
+                          {...field}
+                          value={field.value || ""}
+                          disabled={!canModifyTemplate}
+                        />
+                      </FormControl>
+                      <FormDescription className="text-body-small">
+                        Optional: A detailed description of what this template is used for.
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={templateForm.control}
+                  name="tags"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-label-large">Tags</FormLabel>
+                      <FormControl>
+                        <TagInput
+                          {...field}
+                          value={field.value || []}
+                          onChange={field.onChange}
+                          disabled={!canModifyTemplate}
+                          placeholder="Add tags (e.g., fellowship, global)"
+                        />
+                      </FormControl>
+                      <FormDescription className="text-body-small">
+                        Add tags to categorize and organize your templates. Press Enter or comma to add a tag.
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={templateForm.control}
+                  name="is_private"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                      <div className="space-y-0.5">
+                        <FormLabel className="text-label-large">Keep Private</FormLabel>
+                        <FormDescription className="text-body-small">
+                          If enabled, this template will only be visible to you and platform administrators.
+                          Otherwise, it will be visible to all workbench users.
+                        </FormDescription>
+                      </div>
+                      <FormControl>
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                          className="data-[state=checked]:bg-primary data-[state=unchecked]:bg-muted-foreground"
+                          disabled={!canModifyTemplate}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </CardContent>
             </Card>
-          )}
 
-          {phases.length === 0 && !isAddingNewPhase ? (
-            <Card className="rounded-xl shadow-md p-8 text-center">
-              <CardTitle className="text-headline-small text-muted-foreground mb-4">No Phases Defined</CardTitle>
-              <CardDescription className="text-body-medium text-muted-foreground">
-                This pathway template currently has no phases. Add phases to define its workflow.
-              </CardDescription>
+            {/* Essential Information Card - Always render for new or existing templates */}
+            <Card className="rounded-xl shadow-lg p-6">
+              <CardHeader className="p-0 mb-4">
+                <CardTitle className="text-headline-large font-bold text-foreground">
+                  Essential Information
+                </CardTitle>
+                <CardDescription className="text-body-large text-muted-foreground">
+                  Key dates and general instructions for applicants.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="p-0 space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={templateForm.control}
+                    name="application_open_date"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-col">
+                        <FormLabel className="text-label-large">Application Open Date</FormLabel>
+                        <Popover>
+                          <PopoverTrigger asChild disabled={!canModifyTemplate}>
+                            <FormControl>
+                              <Button
+                                variant="outline"
+                                className={cn(
+                                  "w-full pl-3 text-left font-normal rounded-md",
+                                  !field.value && "text-muted-foreground"
+                                )}
+                              >
+                                {field.value ? (
+                                  format(field.value, "PPP")
+                                ) : (
+                                  <span>Pick a date</span>
+                                )}
+                                <CalendarDays className="ml-auto h-4 w-4 opacity-50" />
+                              </Button>
+                            </FormControl>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0 rounded-xl shadow-lg bg-card text-card-foreground border-border" align="start">
+                            <Calendar
+                              mode="single"
+                              selected={field.value || undefined}
+                              onSelect={field.onChange}
+                              initialFocus
+                            />
+                          </PopoverContent>
+                        </Popover>
+                        <FormDescription className="text-body-small">
+                          The date when applications for campaigns using this template will open.
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={templateForm.control}
+                    name="participation_deadline"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-col">
+                        <FormLabel className="text-label-large">Participation Deadline</FormLabel>
+                        <Popover>
+                          <PopoverTrigger asChild disabled={!canModifyTemplate}>
+                            <FormControl>
+                              <Button
+                                variant="outline"
+                                className={cn(
+                                  "w-full pl-3 text-left font-normal rounded-md",
+                                  !field.value && "text-muted-foreground"
+                                )}
+                              >
+                                {field.value ? (
+                                  format(field.value, "PPP")
+                                ) : (
+                                  <span>Pick a date</span>
+                                )}
+                                <CalendarDays className="ml-auto h-4 w-4 opacity-50" />
+                              </Button>
+                            </FormControl>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0 rounded-xl shadow-lg bg-card text-card-foreground border-border" align="start">
+                            <Calendar
+                              mode="single"
+                              selected={field.value || undefined}
+                              onSelect={field.onChange}
+                              initialFocus
+                            />
+                          </PopoverContent>
+                        </Popover>
+                        <FormDescription className="text-body-small">
+                          The final date for applicants to submit their participation.
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                <FormField
+                  control={templateForm.control}
+                  name="general_instructions"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-label-large">General Instructions</FormLabel>
+                      <FormControl>
+                        <Textarea
+                          placeholder="Provide general instructions or guidelines for applicants."
+                          className="resize-y min-h-[150px] rounded-md"
+                          {...field}
+                          value={field.value || ""}
+                          disabled={!canModifyTemplate}
+                        />
+                      </FormControl>
+                      <FormDescription className="text-body-small">
+                        These instructions will be visible to applicants. (Rich text editor integration coming soon)
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </CardContent>
+            </Card>
+
+            {/* Action Buttons for Template Details */}
+            <CardFooter className="flex flex-wrap justify-end items-center gap-2 mt-8 pt-6 border-t border-border">
               {canModifyTemplate && (
-                <Button onClick={() => setIsAddingNewPhase(true)} className="mt-6 rounded-full px-6 py-3 text-label-large">
-                  <PlusCircle className="mr-2 h-5 w-5" /> Add First Phase
+                <Button type="submit" variant="tonal" className="rounded-full px-6 py-3 text-label-large" disabled={templateForm.formState.isSubmitting}>
+                  {templateForm.formState.isSubmitting ? "Saving..." : <><Save className="mr-2 h-5 w-5" /> Save Template Details</>}
+                </Button>
+              )}
+              {!isNewTemplate && canModifyTemplate && (
+                <>
+                  {/* Publish Template */}
+                  <Button variant="default" className="rounded-full px-6 py-3 text-label-large" onClick={handlePublishTemplate} disabled={currentTemplate.status === 'published'}>
+                    <CheckCircle className="mr-2 h-5 w-5" /> {currentTemplate.status === 'published' ? "Published" : "Publish Template"}
+                  </Button>
+
+                  {/* More Actions Dropdown */}
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" size="icon" className="rounded-full">
+                        <MoreVertical className="h-5 w-5" />
+                        <span className="sr-only">More actions</span>
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="rounded-md shadow-lg bg-card text-card-foreground border-border">
+                      <DropdownMenuLabel className="text-body-medium">More Actions</DropdownMenuLabel>
+                      <DropdownMenuSeparator className="bg-border" />
+
+                      {/* Clone Template */}
+                      <DropdownMenuItem onSelect={() => handleClone(currentTemplate)} className="text-body-medium hover:bg-muted hover:text-muted-foreground cursor-pointer">
+                        <Copy className="mr-2 h-4 w-4" /> Clone Template
+                      </DropdownMenuItem>
+
+                      {/* Archive / Unarchive Template */}
+                      {currentTemplate.status === 'archived' ? (
+                        <DropdownMenuItem onSelect={() => handleUpdateStatus('draft')} className="text-body-medium hover:bg-muted hover:text-muted-foreground cursor-pointer">
+                          <RotateCcw className="mr-2 h-4 w-4" /> Unarchive
+                        </DropdownMenuItem>
+                      ) : (
+                        <DropdownMenuItem onSelect={() => handleUpdateStatus('archived')} className="text-body-medium text-destructive hover:bg-destructive-container hover:text-destructive cursor-pointer">
+                          <Archive className="mr-2 h-4 w-4" /> Archive Template
+                        </DropdownMenuItem>
+                      )}
+
+                      <DropdownMenuSeparator className="bg-border" />
+
+                      {/* Delete Template */}
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <DropdownMenuItem onSelect={(e: Event) => e.preventDefault()} className="text-body-medium text-destructive hover:bg-destructive-container hover:text-destructive cursor-pointer">
+                            <Trash2 className="mr-2 h-4 w-4" /> Delete Template
+                          </DropdownMenuItem>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent className="rounded-xl shadow-lg bg-card text-card-foreground border-border">
+                          <AlertDialogHeader>
+                            <AlertDialogTitle className="text-headline-small">Confirm Permanent Deletion</AlertDialogTitle>
+                            <AlertDialogDescription className="text-body-medium text-muted-foreground">
+                              Are you sure you want to permanently delete the "{currentTemplate.name}" pathway template? This action cannot be undone and will remove all associated phases and data.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel onClick={handleStayOnPage} className="rounded-md text-label-large">Cancel</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={handleDeleteTemplate}
+                              className="rounded-md text-label-large bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            >
+                              Delete Permanently
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </>
+              )}
+            </CardFooter>
+          </form>
+        </Form>
+
+        {/* Only show phases section if template exists (i.e., not a brand new template being created) */}
+        {!isNewTemplate && template && (
+          <>
+            <div className="flex justify-between items-center mt-8">
+              <h2 className="text-headline-large font-bold text-foreground">Pathway Phases</h2>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  className="rounded-full px-6 py-3 text-label-large"
+                  onClick={handleToggleAllPhases}
+                  disabled={phases.length === 0}
+                >
+                  {isAllPhasesExpanded ? <><ChevronUp className="mr-2 h-5 w-5" /> Collapse All</> : <><ChevronDown className="mr-2 h-5 w-5" /> Expand All</>}
+                </Button>
+                {canModifyTemplate && (
+                  <Button onClick={() => setIsAddingNewPhase(prev => !prev)} className="rounded-full px-6 py-3 text-label-large">
+                    <PlusCircle className="mr-2 h-5 w-5" /> Add New Phase
+                  </Button>
+                )}
+              </div>
+            </div>
+
+            {isAddingNewPhase && canModifyTemplate && (
+              <Card className="rounded-xl shadow-lg p-6 bg-muted/20 border border-border">
+                <CardHeader className="p-0 mb-4">
+                  <CardTitle className="text-headline-small font-bold text-foreground">Quick Add Phase</CardTitle>
+                  <CardDescription className="text-body-medium text-muted-foreground">
+                    Add a new phase to your pathway template. You can configure it later.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="p-0">
+                  <Form {...inlinePhaseForm}>
+                    <form onSubmit={inlinePhaseForm.handleSubmit(handleInlinePhaseCreate)} className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <FormField
+                        control={inlinePhaseForm.control}
+                        name="name"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-label-large">Phase Name</FormLabel>
+                            <FormControl>
+                              <Input placeholder="e.g., Initial Application" {...field} className="rounded-md" />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={inlinePhaseForm.control}
+                        name="type"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-label-large">Phase Type</FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                              <FormControl>
+                                <SelectTrigger className="rounded-md">
+                                  <SelectValue placeholder="Select a type" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent className="rounded-md shadow-lg bg-card text-card-foreground border-border">
+                                {phaseTypes.map((type) => (
+                                  <SelectItem key={type.value} value={type.value} className="text-body-medium hover:bg-muted hover:text-muted-foreground cursor-pointer">
+                                    {type.label}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <div className="flex items-end">
+                        <Button type="submit" className="w-full rounded-md text-label-large" disabled={inlinePhaseForm.formState.isSubmitting}>
+                          {inlinePhaseForm.formState.isSubmitting ? "Adding..." : "Add Phase"}
+                        </Button>
+                      </div>
+                    </form>
+                  </Form>
+                </CardContent>
+              </Card>
+            )}
+
+            {phases.length === 0 && !isAddingNewPhase ? (
+              <Card className="rounded-xl shadow-md p-8 text-center">
+                <CardTitle className="text-headline-small text-muted-foreground mb-4">No Phases Defined</CardTitle>
+                <CardDescription className="text-body-medium text-muted-foreground">
+                  This pathway template currently has no phases. Add phases to define its workflow.
+                </CardDescription>
+                {canModifyTemplate && (
+                  <Button onClick={() => setIsAddingNewPhase(true)} className="mt-6 rounded-full px-6 py-3 text-label-large">
+                    <PlusCircle className="mr-2 h-5 w-5" /> Add First Phase
+                  </Link>
                 </Button>
               )}
             </Card>
@@ -960,7 +988,7 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
                         phase={phase}
                         index={index}
                         onDelete={handleDeletePhase}
-                        onPhaseUpdated={handlePhaseUpdated}
+                        onPhaseUpdated={() => handlePhaseUpdated()} // Use the granular update handler
                         canModify={canModifyTemplate}
                         isExpanded={expandedPhaseIds.has(phase.id)}
                         onToggleExpand={handleToggleExpandPhase}
@@ -1072,6 +1100,6 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
           </DialogContent>
         </Dialog>
       )}
-    </div>
+    </TemplateBuilderContextProvider>
   );
 }

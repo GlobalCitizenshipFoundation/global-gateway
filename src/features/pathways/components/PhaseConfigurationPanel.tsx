@@ -12,22 +12,26 @@ import { ScreeningPhaseConfig } from "./phase-configs/ScreeningPhaseConfig";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { PhaseTaskManagementPanel } from "./PhaseTaskManagementPanel";
 import { Separator } from "@/components/ui/separator";
+import { useTemplateBuilder } from "../context/TemplateBuilderContext"; // Import context
 
 interface PhaseConfigurationPanelProps {
   phase: BaseConfigurableItem;
   parentId: string; // This is pathwayTemplateId for pathway templates
   onConfigSaved: () => void;
-  onCancel: () => void; // Added onCancel prop
-  canModify: boolean;
+  onCancel: () => void; // This prop will now be overridden by context
+  canModify: boolean; // This prop will now be overridden by context
 }
 
 export function PhaseConfigurationPanel({
   phase,
   parentId,
   onConfigSaved,
-  onCancel, // Destructure onCancel
-  canModify,
+  onCancel: propOnCancel, // Rename prop to avoid conflict with context
+  canModify: propCanModify, // Rename prop to avoid conflict with context
 }: PhaseConfigurationPanelProps) {
+  const { canModifyTemplate, onCancelPhaseForm } = useTemplateBuilder(); // Consume context
+  const effectiveCanModify = canModifyTemplate; // Use context value
+
   const renderConfigComponent = () => {
     switch (phase.type) {
       case "Form":
@@ -36,8 +40,8 @@ export function PhaseConfigurationPanel({
             phase={phase}
             parentId={parentId}
             onConfigSaved={onConfigSaved}
-            onCancel={onCancel}
-            canModify={canModify}
+            onCancel={onCancelPhaseForm} // Use context's onCancel
+            canModify={effectiveCanModify}
           />
         );
       case "Review":
@@ -46,8 +50,8 @@ export function PhaseConfigurationPanel({
             phase={phase}
             parentId={parentId}
             onConfigSaved={onConfigSaved}
-            onCancel={onCancel}
-            canModify={canModify}
+            onCancel={onCancelPhaseForm} // Use context's onCancel
+            canModify={effectiveCanModify}
           />
         );
       case "Email":
@@ -56,8 +60,8 @@ export function PhaseConfigurationPanel({
             phase={phase}
             parentId={parentId}
             onConfigSaved={onConfigSaved}
-            onCancel={onCancel}
-            canModify={canModify}
+            onCancel={onCancelPhaseForm} // Use context's onCancel
+            canModify={effectiveCanModify}
           />
         );
       case "Scheduling":
@@ -66,8 +70,8 @@ export function PhaseConfigurationPanel({
             phase={phase}
             parentId={parentId}
             onConfigSaved={onConfigSaved}
-            onCancel={onCancel}
-            canModify={canModify}
+            onCancel={onCancelPhaseForm} // Use context's onCancel
+            canModify={effectiveCanModify}
           />
         );
       case "Decision":
@@ -76,8 +80,8 @@ export function PhaseConfigurationPanel({
             phase={phase}
             parentId={parentId}
             onConfigSaved={onConfigSaved}
-            onCancel={onCancel}
-            canModify={canModify}
+            onCancel={onCancelPhaseForm} // Use context's onCancel
+            canModify={effectiveCanModify}
           />
         );
       case "Recommendation":
@@ -86,8 +90,8 @@ export function PhaseConfigurationPanel({
             phase={phase}
             parentId={parentId}
             onConfigSaved={onConfigSaved}
-            onCancel={onCancel}
-            canModify={canModify}
+            onCancel={onCancelPhaseForm} // Use context's onCancel
+            canModify={effectiveCanModify}
           />
         );
       case "Screening":
@@ -96,8 +100,8 @@ export function PhaseConfigurationPanel({
             phase={phase}
             parentId={parentId}
             onConfigSaved={onConfigSaved}
-            onCancel={onCancel}
-            canModify={canModify}
+            onCancel={onCancelPhaseForm} // Use context's onCancel
+            canModify={effectiveCanModify}
           />
         );
       default:

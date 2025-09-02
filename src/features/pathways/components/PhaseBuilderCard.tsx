@@ -15,18 +15,19 @@ import { PhaseTaskManagementPanel } from "./PhaseTaskManagementPanel";
 import { BranchingConfigForm } from "./BranchingConfigForm";
 import { Separator } from "@/components/ui/separator";
 import { format } from "date-fns"; // Import format
+import { useTemplateBuilder } from "../context/TemplateBuilderContext"; // Import context
 
 interface PhaseBuilderCardProps {
   phase: Phase;
   index: number;
   onDelete: (phaseId: string) => void;
-  onPhaseUpdated: () => void; // Callback for when any internal form saves
-  canModify: boolean;
   isExpanded: boolean; // New prop to control expansion
   onToggleExpand: (phaseId: string) => void; // New prop to toggle expansion
 }
 
-export function PhaseBuilderCard({ phase, index, onDelete, onPhaseUpdated, canModify, isExpanded, onToggleExpand }: PhaseBuilderCardProps) {
+export function PhaseBuilderCard({ phase, index, onDelete, isExpanded, onToggleExpand }: PhaseBuilderCardProps) {
+  const { canModifyTemplate, refreshTemplateData, onCancelPhaseForm } = useTemplateBuilder(); // Consume context
+
   // Determine icon based on phase type
   const getPhaseIcon = (type: string) => {
     switch (type) {
@@ -123,7 +124,7 @@ export function PhaseBuilderCard({ phase, index, onDelete, onPhaseUpdated, canMo
               </CardHeader>
             </div>
             <CardContent className="flex-shrink-0 flex items-center space-x-2 p-0 pl-4">
-              {canModify && (
+              {canModifyTemplate && (
                 <>
                   <Button variant="outline" size="icon" className="rounded-md" onClick={(e) => { e.stopPropagation(); onToggleExpand(phase.id); }}>
                     {isExpanded ? <ChevronUp className="h-4 w-4" /> : <Settings className="h-4 w-4" />}
@@ -172,10 +173,10 @@ export function PhaseBuilderCard({ phase, index, onDelete, onPhaseUpdated, canMo
                 <PhaseDetailsForm
                   pathwayTemplateId={phase.pathway_template_id}
                   initialData={phase}
-                  onPhaseSaved={onPhaseUpdated}
-                  onCancel={() => onToggleExpand(phase.id)} // Collapse on cancel
+                  onPhaseSaved={refreshTemplateData}
+                  onCancel={onCancelPhaseForm} // Use context's onCancel
                   nextOrderIndex={phase.order_index}
-                  canModify={canModify}
+                  canModify={canModifyTemplate}
                 />
 
                 <Separator className="my-4" />
@@ -183,9 +184,9 @@ export function PhaseBuilderCard({ phase, index, onDelete, onPhaseUpdated, canMo
                 <PhaseConfigurationPanel
                   phase={phase}
                   parentId={phase.pathway_template_id}
-                  onConfigSaved={onPhaseUpdated}
-                  onCancel={() => onToggleExpand(phase.id)} // Collapse on cancel
-                  canModify={canModify}
+                  onConfigSaved={refreshTemplateData}
+                  onCancel={onCancelPhaseForm} // Use context's onCancel
+                  canModify={canModifyTemplate}
                 />
 
                 <Separator className="my-4" />
@@ -193,7 +194,7 @@ export function PhaseBuilderCard({ phase, index, onDelete, onPhaseUpdated, canMo
                 <PhaseTaskManagementPanel
                   phaseId={phase.id}
                   pathwayTemplateId={phase.pathway_template_id}
-                  canModify={canModify}
+                  canModify={canModifyTemplate}
                 />
 
                 {isConditional && (
@@ -202,9 +203,9 @@ export function PhaseBuilderCard({ phase, index, onDelete, onPhaseUpdated, canMo
                     <BranchingConfigForm
                       pathwayTemplateId={phase.pathway_template_id}
                       phase={phase}
-                      onConfigSaved={onPhaseUpdated}
-                      onCancel={() => onToggleExpand(phase.id)} // Collapse on cancel
-                      canModify={canModify}
+                      onConfigSaved={refreshTemplateData}
+                      onCancel={onCancelPhaseForm} // Use context's onCancel
+                      canModify={canModifyTemplate}
                     />
                   </>
                 )}

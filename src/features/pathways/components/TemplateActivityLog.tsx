@@ -10,6 +10,7 @@ import { TemplateActivityLog as TemplateActivityLogType } from "../services/temp
 import { format, parseISO } from "date-fns";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { useTemplateBuilder } from "../context/TemplateBuilderContext"; // Import context
 
 interface TemplateActivityLogProps {
   templateId: string;
@@ -18,6 +19,9 @@ interface TemplateActivityLogProps {
 
 export function TemplateActivityLog({ templateId, refreshTrigger }: TemplateActivityLogProps) {
   const { user, isLoading: isSessionLoading } = useSession();
+  const { canModifyTemplate } = useTemplateBuilder(); // Consume context
+  const effectiveCanModify = canModifyTemplate; // Use context value
+
   const [activityLogs, setActivityLogs] = useState<TemplateActivityLogType[]>([]);
   const [isLoadingLogs, setIsLoadingLogs] = useState(true);
 

@@ -54,6 +54,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { publishPathwayTemplateAction, updatePathwayTemplateStatusAction } from "../actions";
 import { CloneTemplateDialog } from "./CloneTemplateDialog";
+import { useTemplateBuilder } from "../context/TemplateBuilderContext"; // Import context
 
 interface PathwayTemplateTableProps {
   templates: PathwayTemplate[];
@@ -84,6 +85,9 @@ export function PathwayTemplateTable({
   handleDelete,
   fetchTemplates,
 }: PathwayTemplateTableProps) {
+  const { canModifyTemplate } = useTemplateBuilder(); // Consume context
+  const effectiveCanModify = canModifyTemplate; // Use context value
+
   const [visibleColumns, setVisibleColumns] = useState<Record<ColumnKey, boolean>>(defaultVisibleColumns);
   const [isCloneDialogOpen, setIsCloneDialogOpen] = useState(false);
   const [templateToClone, setTemplateToClone] = useState<PathwayTemplate | null>(null);
@@ -282,7 +286,7 @@ export function PathwayTemplateTable({
                                 <Eye className="mr-2 h-4 w-4" /> View Details
                               </Link>
                             </DropdownMenuItem>
-                            {canEditOrDelete && (
+                            {effectiveCanModify && (
                               <>
                                 <DropdownMenuItem asChild className="text-body-medium hover:bg-muted hover:text-muted-foreground cursor-pointer">
                                   <Link href={`/pathways/${template.id}`}>

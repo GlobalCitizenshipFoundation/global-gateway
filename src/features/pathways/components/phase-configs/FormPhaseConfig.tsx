@@ -24,6 +24,7 @@ import { PlusCircle, Trash2, GripVertical, GitFork, Save, X } from "lucide-react
 import { BaseConfigurableItem } from "@/types/supabase"; // Corrected import path
 import { updatePhaseConfigAction as defaultUpdatePhaseConfigAction } from "../../actions";
 import { cn } from "@/lib/utils";
+import { useTemplateBuilder } from "../../context/TemplateBuilderContext"; // Import context
 
 // Zod schema for a single form field
 const formFieldSchema = z.object({
@@ -49,12 +50,15 @@ interface FormPhaseConfigProps {
   phase: BaseConfigurableItem;
   parentId: string;
   onConfigSaved: () => void;
-  onCancel: () => void; // Added onCancel prop
-  canModify: boolean;
+  onCancel: () => void; // This prop will now be overridden by context
+  canModify: boolean; // This prop will now be overridden by context
   updatePhaseConfigAction?: (phaseId: string, parentId: string, configUpdates: Record<string, any>) => Promise<BaseConfigurableItem | null>;
 }
 
-export function FormPhaseConfig({ phase, parentId, onConfigSaved, onCancel, canModify, updatePhaseConfigAction }: FormPhaseConfigProps) {
+export function FormPhaseConfig({ phase, parentId, onConfigSaved, onCancel: propOnCancel, canModify: propCanModify, updatePhaseConfigAction }: FormPhaseConfigProps) {
+  const { canModifyTemplate, onCancelPhaseForm } = useTemplateBuilder(); // Consume context
+  const effectiveCanModify = canModifyTemplate; // Use context value
+
   const form = useForm<z.infer<typeof formPhaseConfigSchema>>({
     resolver: zodResolver(formPhaseConfigSchema),
     defaultValues: {
@@ -79,7 +83,8 @@ export function FormPhaseConfig({ phase, parentId, onConfigSaved, onCancel, canM
   const onSubmit = async (values: z.infer<typeof formPhaseConfigSchema>) => {
     console.log("FormPhaseConfig onSubmit called with values:", values);
     console.log("Form state errors on submit:", form.formState.errors);
-    if (!canModify) {
+    console.log("Form state isValid on submit:", form.formState.isValid);
+    if (!effectiveCanModify) {
       toast.error("You do not have permission to modify this phase configuration.");
       return;
     }
@@ -110,7 +115,7 @@ export function FormPhaseConfig({ phase, parentId, onConfigSaved, onCancel, canM
     { value: "Section Header", label: "Section Header" }, // Added Section Header
   ];
 
-  console.log("FormPhaseConfig rendered for phase:", phase.id, "canModify:", canModify);
+  console.log("FormPhaseConfig rendered for phase:", phase.id, "canModify:", effectiveCanModify);
   console.log("Form state errors on render:", form.formState.errors);
 
   return (
@@ -132,7 +137,7 @@ export function FormPhaseConfig({ phase, parentId, onConfigSaved, onCancel, canM
                     <GripVertical className="h-5 w-5 text-muted-foreground cursor-grab" />
                     <h4 className="text-title-medium text-foreground">Field #{index + 1}</h4>
                   </div>
-                  {canModify && (
+                  {effectiveCanModify && (
                     <Button
                       type="button"
                       variant="destructive"
@@ -152,7 +157,7 @@ export function FormPhaseConfig({ phase, parentId, onConfigSaved, onCancel, canM
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="text-label-large">Field Type</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value} disabled={!canModify}>
+                      <Select onValueChange={field.onChange} defaultValue={field.value} disabled={!effectiveCanModify}>
                         <FormControl>
                           <SelectTrigger className="rounded-md">
                             <SelectValue placeholder="Select field type" />
@@ -179,7 +184,7 @@ export function FormPhaseConfig({ phase, parentId, onConfigSaved, onCancel, canM
                       <FormItem>
                         <FormLabel className="text-label-large">Section Title</FormLabel>
                         <FormControl>
-                          <Input {...field} placeholder="e.g., Personal Information" className="rounded-md" disabled={!canModify} value={field.value || ""} />
+                          <Input {...field} placeholder="e.g., Personal Information" className="rounded-md" disabled={!effectiveCanModify} value={field.value || ""} />
                         </FormControl>
                         <FormDescription className="text-body-small">
                           This text will appear as a header to group subsequent fields.
@@ -197,7 +202,7 @@ export function FormPhaseConfig({ phase, parentId, onConfigSaved, onCancel, canM
                         <FormItem>
                           <FormLabel className="text-label-large">Field Label</FormLabel>
                           <FormControl>
-                            <Input {...field} placeholder="e.g., Your Full Name" className="rounded-md" disabled={!canModify} />
+                            <Input {...field} placeholder="e.g., Your Full Name" className="rounded-md" disabled={!effectiveCanModify} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -219,7 +224,7 @@ export function FormPhaseConfig({ phase, parentId, onConfigSaved, onCancel, canM
                                 onChange={(e) => optionsField.onChange(e.target.value.split("\n").map(s => s.trim()).filter(Boolean))}
                                 placeholder="Option 1\nOption 2\nOption 3"
                                 className="resize-y min-h-[80px] rounded-md"
-                                disabled={!canModify}
+                                disabled={!effectiveCanModify}
                               />
                             </FormControl>
                             <FormDescription className="text-body-small">
@@ -247,7 +252,7 @@ export function FormPhaseConfig({ phase, parentId, onConfigSaved, onCancel, canM
                               checked={field.value}
                               onCheckedChange={field.onChange}
                               className="data-[state=checked]:bg-primary data-[state=unchecked]:bg-muted-foreground"
-                              disabled={!canModify}
+                              disabled={!effectiveCanModify}
                             />
                           </FormControl>
                           <FormMessage />
@@ -262,7 +267,7 @@ export function FormPhaseConfig({ phase, parentId, onConfigSaved, onCancel, canM
                         <FormItem>
                           <FormLabel className="text-label-large">Helper Text</FormLabel>
                           <FormControl>
-                            <Input {...field} placeholder="e.g., Enter your full legal name" className="rounded-md" disabled={!canModify} value={field.value || ""} />
+                            <Input {...field} placeholder="e.g., Enter your full legal name" className="rounded-md" disabled={!effectiveCanModify} value={field.value || ""} />
                           </FormControl>
                           <FormDescription className="text-body-small">
                             Optional: Short text to guide the user.
@@ -279,7 +284,7 @@ export function FormPhaseConfig({ phase, parentId, onConfigSaved, onCancel, canM
                         <FormItem>
                           <FormLabel className="text-label-large">Default Value</FormLabel>
                           <FormControl>
-                            <Input {...field} placeholder="Optional default value" className="rounded-md" disabled={!canModify} value={field.value || ""} />
+                            <Input {...field} placeholder="Optional default value" className="rounded-md" disabled={!effectiveCanModify} value={field.value || ""} />
                           </FormControl>
                           <FormDescription className="text-body-small">
                             Optional: A pre-filled value for the field.
@@ -296,7 +301,7 @@ export function FormPhaseConfig({ phase, parentId, onConfigSaved, onCancel, canM
                         <FormItem>
                           <FormLabel className="text-label-large">Validation Regex (Optional)</FormLabel>
                           <FormControl>
-                            <Input {...field} placeholder="e.g., ^[A-Za-z ]+$" className="rounded-md" disabled={!canModify} value={field.value || ""} />
+                            <Input {...field} placeholder="e.g., ^[A-Za-z ]+$" className="rounded-md" disabled={!effectiveCanModify} value={field.value || ""} />
                           </FormControl>
                           <FormDescription className="text-body-small">
                             Optional: A regular expression for custom validation (e.g., for specific formats).
@@ -315,7 +320,7 @@ export function FormPhaseConfig({ phase, parentId, onConfigSaved, onCancel, canM
                             <GitFork className="h-4 w-4 text-muted-foreground" /> Conditional Logic (Optional)
                           </FormLabel>
                           <FormControl>
-                            <Input {...field} placeholder="e.g., showIf: {fieldId: 'q1', operator: 'equals', value: 'Yes'}" className="rounded-md" disabled={!canModify} value={field.value || ""} />
+                            <Input {...field} placeholder="e.g., showIf: {fieldId: 'q1', operator: 'equals', value: 'Yes'}" className="rounded-md" disabled={!effectiveCanModify} value={field.value || ""} />
                           </FormControl>
                           <FormDescription className="text-body-small">
                             Define rules to show/hide this field based on other field values. (e.g., `showIf: &lbrace;fieldId: 'field_id', operator: 'equals', value: 'some_value'&rbrace;`).
@@ -329,7 +334,7 @@ export function FormPhaseConfig({ phase, parentId, onConfigSaved, onCancel, canM
               </Card>
             ))}
 
-            {canModify && (
+            {effectiveCanModify && (
               <Button
                 type="button"
                 variant="outline"
@@ -341,10 +346,10 @@ export function FormPhaseConfig({ phase, parentId, onConfigSaved, onCancel, canM
             )}
 
             <div className="flex justify-end space-x-2">
-              <Button type="button" variant="outline" onClick={onCancel} className="rounded-md text-label-large">
+              <Button type="button" variant="outline" onClick={onCancelPhaseForm} className="rounded-md text-label-large">
                 <X className="mr-2 h-4 w-4" /> Cancel
               </Button>
-              {canModify && (
+              {effectiveCanModify && (
                 <Button type="submit" className="w-full rounded-md text-label-large" disabled={form.formState.isSubmitting}>
                   {form.formState.isSubmitting ? "Saving..." : <><Save className="mr-2 h-4 w-4" /> Save Form Configuration</>}
                 </Button>

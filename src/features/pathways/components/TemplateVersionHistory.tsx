@@ -19,16 +19,20 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area"; // Import ScrollArea
+import { useTemplateBuilder } from "../context/TemplateBuilderContext"; // Import context
 
 interface TemplateVersionHistoryProps {
   pathwayTemplateId: string;
-  canModify: boolean; // Can create new versions or rollback
+  canModify: boolean; // This prop will now be overridden by context
   onTemplateRolledBack: () => void;
   refreshTrigger: number; // New prop to trigger refresh
 }
 
-export function TemplateVersionHistory({ pathwayTemplateId, canModify, onTemplateRolledBack, refreshTrigger }: TemplateVersionHistoryProps) {
+export function TemplateVersionHistory({ pathwayTemplateId, canModify: propCanModify, onTemplateRolledBack, refreshTrigger }: TemplateVersionHistoryProps) {
   const { user, isLoading: isSessionLoading } = useSession();
+  const { canModifyTemplate } = useTemplateBuilder(); // Consume context
+  const effectiveCanModify = canModifyTemplate; // Use context value
+
   const [versions, setVersions] = useState<PathwayTemplateVersion[]>([]);
   const [isLoadingVersions, setIsLoadingVersions] = useState(true);
   const [isSnapshotDialogOpen, setIsSnapshotDialogOpen] = useState(false);
@@ -126,7 +130,7 @@ export function TemplateVersionHistory({ pathwayTemplateId, canModify, onTemplat
                     <Eye className="h-4 w-4" />
                     <span className="sr-only">View Snapshot</span>
                   </Button>
-                  {canModify && version.version_number !== versions[0].version_number && (
+                  {effectiveCanModify && version.version_number !== versions[0].version_number && (
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
                         <Button variant="tonal" size="icon" className="rounded-md">

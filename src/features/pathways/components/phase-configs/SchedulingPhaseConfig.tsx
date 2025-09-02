@@ -21,6 +21,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BaseConfigurableItem } from "@/types/supabase"; // Corrected import path
 import { updatePhaseConfigAction as defaultUpdatePhaseConfigAction } from "../../actions";
 import { Save, X } from "lucide-react"; // Added Save and X icons
+import { useTemplateBuilder } from "../../context/TemplateBuilderContext"; // Import context
 
 // Zod schema for the Scheduling Phase configuration
 const schedulingPhaseConfigSchema = z.object({
@@ -34,12 +35,15 @@ interface SchedulingPhaseConfigProps {
   phase: BaseConfigurableItem;
   parentId: string;
   onConfigSaved: () => void;
-  onCancel: () => void; // Added onCancel prop
-  canModify: boolean;
+  onCancel: () => void; // This prop will now be overridden by context
+  canModify: boolean; // This prop will now be overridden by context
   updatePhaseConfigAction?: (phaseId: string, parentId: string, configUpdates: Record<string, any>) => Promise<BaseConfigurableItem | null>;
 }
 
-export function SchedulingPhaseConfig({ phase, parentId, onConfigSaved, onCancel, canModify, updatePhaseConfigAction }: SchedulingPhaseConfigProps) {
+export function SchedulingPhaseConfig({ phase, parentId, onConfigSaved, onCancel: propOnCancel, canModify: propCanModify, updatePhaseConfigAction }: SchedulingPhaseConfigProps) {
+  const { canModifyTemplate, onCancelPhaseForm } = useTemplateBuilder(); // Consume context
+  const effectiveCanModify = canModifyTemplate; // Use context value
+
   const form = useForm<z.infer<typeof schedulingPhaseConfigSchema>>({
     resolver: zodResolver(schedulingPhaseConfigSchema),
     defaultValues: {
@@ -52,7 +56,7 @@ export function SchedulingPhaseConfig({ phase, parentId, onConfigSaved, onCancel
   });
 
   const onSubmit = async (values: z.infer<typeof schedulingPhaseConfigSchema>) => {
-    if (!canModify) {
+    if (!effectiveCanModify) {
       toast.error("You do not have permission to modify this phase configuration.");
       return;
     }
@@ -93,7 +97,7 @@ export function SchedulingPhaseConfig({ phase, parentId, onConfigSaved, onCancel
                 <FormItem>
                   <FormLabel className="text-label-large">Interview Duration (minutes)</FormLabel>
                   <FormControl>
-                    <Input type="number" {...field} placeholder="e.g., 30" className="rounded-md" disabled={!canModify} />
+                    <Input type="number" {...field} placeholder="e.g., 30" className="rounded-md" disabled={!effectiveCanModify} />
                   </FormControl>
                   <FormDescription className="text-body-small">
                     The standard length of each interview slot.
@@ -110,7 +114,7 @@ export function SchedulingPhaseConfig({ phase, parentId, onConfigSaved, onCancel
                 <FormItem>
                   <FormLabel className="text-label-large">Buffer Time (minutes)</FormLabel>
                   <FormControl>
-                    <Input type="number" {...field} placeholder="e.g., 15" className="rounded-md" disabled={!canModify} />
+                    <Input type="number" {...field} placeholder="e.g., 15" className="rounded-md" disabled={!effectiveCanModify} />
                   </FormControl>
                   <FormDescription className="text-body-small">
                     Time added between interviews for breaks or preparation.
@@ -126,7 +130,7 @@ export function SchedulingPhaseConfig({ phase, parentId, onConfigSaved, onCancel
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-label-large">Host Selection</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value} disabled={!canModify}>
+                  <Select onValueChange={field.onChange} defaultValue={field.value} disabled={!effectiveCanModify}>
                     <FormControl>
                       <SelectTrigger className="rounded-md">
                         <SelectValue placeholder="Select interview hosts" />
@@ -155,7 +159,7 @@ export function SchedulingPhaseConfig({ phase, parentId, onConfigSaved, onCancel
                 <FormItem>
                   <FormLabel className="text-label-large">Automated Meeting Link (Optional)</FormLabel>
                   <FormControl>
-                    <Input {...field} placeholder="e.g., https://zoom.us/j/your-meeting-id" className="rounded-md" disabled={!canModify} value={field.value || ""} />
+                    <Input {...field} placeholder="e.g., https://zoom.us/j/your-meeting-id" className="rounded-md" disabled={!effectiveCanModify} value={field.value || ""} />
                   </FormControl>
                   <FormDescription className="text-body-small">
                     Provide a base URL for automated meeting links. If left empty, a generic link will be generated.
@@ -166,10 +170,10 @@ export function SchedulingPhaseConfig({ phase, parentId, onConfigSaved, onCancel
             />
 
             <div className="flex justify-end space-x-2">
-              <Button type="button" variant="outline" onClick={onCancel} className="rounded-md text-label-large">
+              <Button type="button" variant="outline" onClick={onCancelPhaseForm} className="rounded-md text-label-large">
                 <X className="mr-2 h-4 w-4" /> Cancel
               </Button>
-              {canModify && (
+              {effectiveCanModify && (
                 <Button type="submit" className="w-full rounded-md text-label-large" disabled={form.formState.isSubmitting}>
                   {form.formState.isSubmitting ? "Saving..." : <><Save className="mr-2 h-4 w-4" /> Save Scheduling Configuration</>}
                 </Button>

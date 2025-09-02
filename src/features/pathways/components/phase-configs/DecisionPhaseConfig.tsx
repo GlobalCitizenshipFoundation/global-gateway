@@ -22,6 +22,7 @@ import { PlusCircle, Trash2, GripVertical, GitFork, Save, X } from "lucide-react
 import { BaseConfigurableItem } from "@/types/supabase"; // Corrected import path
 import { updatePhaseConfigAction as defaultUpdatePhaseConfigAction } from "../../actions";
 import { Checkbox } from "@/components/ui/checkbox";
+import { useTemplateBuilder } from "../../context/TemplateBuilderContext"; // Import context
 
 // Zod schema for a single decision outcome
 const decisionOutcomeSchema = z.object({
@@ -50,12 +51,15 @@ interface DecisionPhaseConfigProps {
   phase: BaseConfigurableItem;
   parentId: string;
   onConfigSaved: () => void;
-  onCancel: () => void; // Added onCancel prop
-  canModify: boolean;
+  onCancel: () => void; // This prop will now be overridden by context
+  canModify: boolean; // This prop will now be overridden by context
   updatePhaseConfigAction?: (phaseId: string, parentId: string, configUpdates: Record<string, any>) => Promise<BaseConfigurableItem | null>;
 }
 
-export function DecisionPhaseConfig({ phase, parentId, onConfigSaved, onCancel, canModify, updatePhaseConfigAction }: DecisionPhaseConfigProps) {
+export function DecisionPhaseConfig({ phase, parentId, onConfigSaved, onCancel: propOnCancel, canModify: propCanModify, updatePhaseConfigAction }: DecisionPhaseConfigProps) {
+  const { canModifyTemplate, onCancelPhaseForm } = useTemplateBuilder(); // Consume context
+  const effectiveCanModify = canModifyTemplate; // Use context value
+
   const form = useForm<z.infer<typeof decisionPhaseConfigSchema>>({
     resolver: zodResolver(decisionPhaseConfigSchema),
     defaultValues: {
@@ -80,7 +84,7 @@ export function DecisionPhaseConfig({ phase, parentId, onConfigSaved, onCancel, 
   });
 
   const onSubmit = async (values: z.infer<typeof decisionPhaseConfigSchema>) => {
-    if (!canModify) {
+    if (!effectiveCanModify) {
       toast.error("You do not have permission to modify this phase configuration.");
       return;
     }
@@ -135,7 +139,7 @@ export function DecisionPhaseConfig({ phase, parentId, onConfigSaved, onCancel, 
                     <GripVertical className="h-5 w-5 text-muted-foreground cursor-grab" />
                     <h4 className="text-title-medium text-foreground">Outcome #{index + 1}</h4>
                   </div>
-                  {canModify && (
+                  {effectiveCanModify && (
                     <Button
                       type="button"
                       variant="destructive"
@@ -156,7 +160,7 @@ export function DecisionPhaseConfig({ phase, parentId, onConfigSaved, onCancel, 
                     <FormItem>
                       <FormLabel className="text-label-large">Outcome Label</FormLabel>
                       <FormControl>
-                        <Input {...field} placeholder="e.g., Accepted" className="rounded-md" disabled={!canModify} />
+                        <Input {...field} placeholder="e.g., Accepted" className="rounded-md" disabled={!effectiveCanModify} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -178,7 +182,7 @@ export function DecisionPhaseConfig({ phase, parentId, onConfigSaved, onCancel, 
                         <Checkbox
                           checked={field.value}
                           onCheckedChange={field.onChange}
-                          disabled={!canModify}
+                          disabled={!effectiveCanModify}
                         />
                       </FormControl>
                       <FormMessage />
@@ -188,7 +192,7 @@ export function DecisionPhaseConfig({ phase, parentId, onConfigSaved, onCancel, 
               </Card>
             ))}
 
-            {canModify && (
+            {effectiveCanModify && (
               <Button
                 type="button"
                 variant="outline"
@@ -212,7 +216,7 @@ export function DecisionPhaseConfig({ phase, parentId, onConfigSaved, onCancel, 
                     <GitFork className="h-5 w-5 text-muted-foreground" />
                     <h4 className="text-title-medium text-foreground">Rule #{index + 1}</h4>
                   </div>
-                  {canModify && (
+                  {effectiveCanModify && (
                     <Button
                       type="button"
                       variant="destructive"
@@ -233,7 +237,7 @@ export function DecisionPhaseConfig({ phase, parentId, onConfigSaved, onCancel, 
                     <FormItem>
                       <FormLabel className="text-label-large">Condition</FormLabel>
                       <FormControl>
-                        <Input {...field} placeholder="e.g., average_review_score > 4" className="rounded-md" disabled={!canModify} />
+                        <Input {...field} placeholder="e.g., average_review_score > 4" className="rounded-md" disabled={!effectiveCanModify} />
                       </FormControl>
                       <FormDescription className="text-body-small">
                         Define a condition (e.g., `application.data.gpa &gt; 3.5` or `average_review_score &gt; 4`).
@@ -249,7 +253,7 @@ export function DecisionPhaseConfig({ phase, parentId, onConfigSaved, onCancel, 
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="text-label-large">Outcome</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value} disabled={!canModify}>
+                      <Select onValueChange={field.onChange} value={field.value} disabled={!effectiveCanModify}>
                         <FormControl>
                           <SelectTrigger className="rounded-md">
                             <SelectValue placeholder="Select an outcome" />
@@ -284,7 +288,7 @@ export function DecisionPhaseConfig({ phase, parentId, onConfigSaved, onCancel, 
                     <FormItem>
                       <FormLabel className="text-label-large">Priority (Optional)</FormLabel>
                       <FormControl>
-                        <Input type="number" {...field} placeholder="e.g., 1" className="rounded-md" disabled={!canModify} value={field.value ?? ""} />
+                        <Input type="number" {...field} placeholder="e.g., 1" className="rounded-md" disabled={!effectiveCanModify} value={field.value ?? ""} />
                       </FormControl>
                       <FormDescription className="text-body-small">
                         Rules with higher priority will be evaluated first.
@@ -296,7 +300,7 @@ export function DecisionPhaseConfig({ phase, parentId, onConfigSaved, onCancel, 
               </Card>
             ))}
 
-            {canModify && (
+            {effectiveCanModify && (
               <Button
                 type="button"
                 variant="outline"
@@ -313,7 +317,7 @@ export function DecisionPhaseConfig({ phase, parentId, onConfigSaved, onCancel, 
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-label-large">Associated Email Template</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value || ""} disabled={!canModify}>
+                  <Select onValueChange={field.onChange} defaultValue={field.value || ""} disabled={!effectiveCanModify}>
                     <FormControl>
                       <SelectTrigger className="rounded-md">
                         <SelectValue placeholder="Select an email template (optional)" />
@@ -341,7 +345,7 @@ export function DecisionPhaseConfig({ phase, parentId, onConfigSaved, onCancel, 
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-label-large">Automated Next Step</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value || ""} disabled={!canModify}>
+                  <Select onValueChange={field.onChange} defaultValue={field.value || ""} disabled={!effectiveCanModify}>
                     <FormControl>
                       <SelectTrigger className="rounded-md">
                         <SelectValue placeholder="Select an automated action (optional)" />
@@ -364,10 +368,10 @@ export function DecisionPhaseConfig({ phase, parentId, onConfigSaved, onCancel, 
             />
 
             <div className="flex justify-end space-x-2">
-              <Button type="button" variant="outline" onClick={onCancel} className="rounded-md text-label-large">
+              <Button type="button" variant="outline" onClick={onCancelPhaseForm} className="rounded-md text-label-large">
                 <X className="mr-2 h-4 w-4" /> Cancel
               </Button>
-              {canModify && (
+              {effectiveCanModify && (
                 <Button type="submit" className="w-full rounded-md text-label-large" disabled={form.formState.isSubmitting}>
                   {form.formState.isSubmitting ? "Saving..." : <><Save className="mr-2 h-4 w-4" /> Save Decision Configuration</>}
                 </Button>
