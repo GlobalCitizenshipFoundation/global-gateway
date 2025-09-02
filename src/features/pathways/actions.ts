@@ -42,6 +42,7 @@ async function authorizeTemplateAction(templateId: string | null, action: 'read'
   const { data: { user }, error: userError } = await supabase.auth.getUser();
 
   if (userError || !user) {
+    console.error("[pathways/actions] authorizeTemplateAction - User not authenticated:", userError?.message); // LOG ADDED
     redirect("/login");
   }
 
@@ -829,14 +830,8 @@ async function authorizePhaseTaskAction(taskId: string | null, phaseId: string, 
   const userRole: string = user.user_metadata?.role || '';
   const isAdmin = userRole === 'admin';
 
-  // First, authorize access to the parent phase's template
-  const supabaseAnon = await createClient(); // Use anon client for initial phase fetch to avoid RLS issues if template is private
-  const { data: phaseData, error: phaseError } = await supabaseAnon.from('phases').select('pathway_template_id').eq('id', phaseId).single();
-  if (phaseError || !phaseData) {
-    console.error(`[pathways/actions] authorizePhaseTaskAction(${taskId}, ${phaseId}, ${pathwayTemplateId}, ${action}) - Phase not found:`, phaseError?.message); // LOG ADDED
-    throw new Error("PhaseNotFound");
-  }
-  await authorizeTemplateAction(phaseData.pathway_template_id, 'read');
+  // Authorize access to the parent phase's template using the provided pathwayTemplateId
+  await authorizeTemplateAction(pathwayTemplateId, 'read');
   const { template } = await authorizeTemplateAction(pathwayTemplateId, 'read'); // Re-fetch template with full auth
   if (!template) {
     console.error(`[pathways/actions] authorizePhaseTaskAction(${taskId}, ${phaseId}, ${pathwayTemplateId}, ${action}) - Parent template not found.`); // LOG ADDED
