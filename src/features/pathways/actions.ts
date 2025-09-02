@@ -176,7 +176,9 @@ export async function createPathwayTemplateAction(formData: FormData): Promise<P
     revalidatePath("/pathways");
     return newTemplate;
   } catch (error: any) {
-    console.error("[pathways/actions] createPathwayTemplateAction - Error during creation:", error.message); // LOG ADDED
+    // --- START DYAD ADDITION ---
+    console.error("[pathways/actions] createPathwayTemplateAction - Error during creation:", error); // Log the full error object
+    // --- END DYAD ADDITION ---
     throw error;
   }
 }

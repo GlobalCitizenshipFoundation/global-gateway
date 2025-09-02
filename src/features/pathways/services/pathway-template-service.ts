@@ -62,6 +62,11 @@ export async function createPathwayTemplate(
 ): Promise<PathwayTemplate | null> {
   const supabase = await getSupabase();
   console.log("[pathway-template-service] createPathwayTemplate - Attempting insert with:", { name, description, is_private, creator_id, status, last_updated_by, application_open_date, participation_deadline, general_instructions, is_visible_to_applicants, tags }); // LOG ADDED
+  
+  // --- START DYAD ADDITION ---
+  console.log("[pathway-template-service] createPathwayTemplate - Executing Supabase insert...");
+  // --- END DYAD ADDITION ---
+
   const { data, error } = await supabase
     .from("pathway_templates")
     .insert([{
