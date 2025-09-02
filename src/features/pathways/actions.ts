@@ -134,6 +134,10 @@ export async function createPathwayTemplateAction(formData: FormData): Promise<P
     redirect("/login");
   }
 
+  // --- START DYAD ADDITION ---
+  console.log("[pathways/actions] createPathwayTemplateAction - Entering action to create template.");
+  // --- END DYAD ADDITION ---
+
   const name = formData.get("name") as string;
   const description = formData.get("description") as string | null;
   const is_private = formData.get("is_private") === "on";
@@ -176,9 +180,7 @@ export async function createPathwayTemplateAction(formData: FormData): Promise<P
     revalidatePath("/pathways");
     return newTemplate;
   } catch (error: any) {
-    // --- START DYAD ADDITION ---
     console.error("[pathways/actions] createPathwayTemplateAction - Error during creation:", error); // Log the full error object
-    // --- END DYAD ADDITION ---
     throw error;
   }
 }
