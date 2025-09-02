@@ -54,7 +54,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { publishPathwayTemplateAction, updatePathwayTemplateStatusAction } from "../actions";
 import { CloneTemplateDialog } from "./CloneTemplateDialog";
-import { useTemplateBuilder } from "../context/TemplateBuilderContext"; // Import context
+import { useTemplateBuilder } from "../context/TemplateBuilderContext"; // Import context, but make its usage optional
 
 interface PathwayTemplateTableProps {
   templates: PathwayTemplate[];
@@ -85,8 +85,9 @@ export function PathwayTemplateTable({
   handleDelete,
   fetchTemplates,
 }: PathwayTemplateTableProps) {
-  const { canModifyTemplate } = useTemplateBuilder(); // Consume context
-  const effectiveCanModify = canModifyTemplate; // Use context value
+  // Attempt to consume context, but provide a fallback if not in a provider
+  const templateBuilderContext = React.useContext(useTemplateBuilder);
+  const effectiveCanModify = templateBuilderContext?.canModifyTemplate ?? isAdmin; // Fallback to isAdmin if context not available
 
   const [visibleColumns, setVisibleColumns] = useState<Record<ColumnKey, boolean>>(defaultVisibleColumns);
   const [isCloneDialogOpen, setIsCloneDialogOpen] = useState(false);

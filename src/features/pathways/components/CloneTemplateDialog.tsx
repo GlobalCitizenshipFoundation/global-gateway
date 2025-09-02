@@ -32,7 +32,7 @@ const cloneFormSchema = z.object({
 
 interface CloneTemplateDialogProps {
   isOpen: boolean;
-  onClose: () => void;
+  onClose: () => void; // This callback will now be responsible for refreshing data
   templateId: string;
   originalTemplateName: string;
 }
@@ -64,7 +64,7 @@ export function CloneTemplateDialog({
       const clonedTemplate = await clonePathwayTemplateAction(templateId, values.newName);
       if (clonedTemplate) {
         toast.success(`Template "${clonedTemplate.name}" cloned successfully!`);
-        onClose();
+        onClose(); // Call the provided onClose callback to trigger data refresh
         router.push(`/pathways/${clonedTemplate.id}`); // Corrected path
       }
     } catch (error: any) {
