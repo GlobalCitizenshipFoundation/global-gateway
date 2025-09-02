@@ -20,19 +20,19 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { PlusCircle, Trash2, GripVertical, Mail, Clock, Save, X } from "lucide-react"; // Added Save and X icons
-import { BaseConfigurableItem } from "@/types/supabase"; // Corrected import path
+import { PlusCircle, Trash2, GripVertical, Mail, Clock, Save, X } from "lucide-react";
+import { BaseConfigurableItem } from "@/types/supabase";
 import { updatePhaseConfigAction as defaultUpdatePhaseConfigAction } from "../../actions";
-import { useTemplateBuilder } from "../../context/TemplateBuilderContext"; // Import context
+// import { useTemplateBuilder } from "../../context/TemplateBuilderContext"; // Removed context import
 
 // Zod schema for a single recommender information field
 const recommenderFieldSchema = z.object({
   id: z.string().uuid().optional(),
   label: z.string().min(1, "Field label is required."),
-  type: z.enum(["Text", "Email", "Phone", "Organization", "Relationship", "Rich Text Area", "Date", "Checkbox", "Radio Group"]), // Expanded types
+  type: z.enum(["Text", "Email", "Phone", "Organization", "Relationship", "Rich Text Area", "Date", "Checkbox", "Radio Group"]),
   required: z.boolean(),
-  helperText: z.string().nullable().optional(), // Added helperText
-  options: z.array(z.string().min(1, "Option cannot be empty.")).optional(), // For Select, Radio, Checkbox
+  helperText: z.string().nullable().optional(),
+  options: z.array(z.string().min(1, "Option cannot be empty.")).optional(),
 });
 
 // Zod schema for the Recommendation Phase configuration
@@ -40,22 +40,30 @@ const recommendationPhaseConfigSchema = z.object({
   numRecommendersRequired: z.coerce.number().min(1, "At least 1 recommender is required.").max(5, "Cannot require more than 5 recommenders."),
   recommenderInformationFields: z.array(recommenderFieldSchema),
   reminderSchedule: z.string().min(1, "Reminder schedule is required."),
-  automatedRequestSending: z.boolean(), // New field for automated request sending
-  requestEmailTemplateId: z.string().uuid("Invalid email template ID.").nullable().optional(), // New field for email template
+  automatedRequestSending: z.boolean(),
+  requestEmailTemplateId: z.string().uuid("Invalid email template ID.").nullable().optional(),
 });
 
 interface RecommendationPhaseConfigProps {
   phase: BaseConfigurableItem;
   parentId: string;
   onConfigSaved: () => void;
-  onCancel: () => void; // This prop will now be overridden by context
-  canModify: boolean; // This prop will now be overridden by context
+  onCancel: () => void; // Now explicitly a prop
+  canModify: boolean; // Now explicitly a prop
   updatePhaseConfigAction?: (phaseId: string, parentId: string, configUpdates: Record<string, any>) => Promise<BaseConfigurableItem | null>;
 }
 
-export function RecommendationPhaseConfig({ phase, parentId, onConfigSaved, onCancel: propOnCancel, canModify: propCanModify, updatePhaseConfigAction }: RecommendationPhaseConfigProps) {
-  const { canModifyTemplate, onCancelPhaseForm } = useTemplateBuilder(); // Consume context
-  const effectiveCanModify = canModifyTemplate; // Use context value
+export function RecommendationPhaseConfig({
+  phase,
+  parentId,
+  onConfigSaved,
+  onCancel, // Use prop directly
+  canModify, // Use prop directly
+  updatePhaseConfigAction,
+}: RecommendationPhaseConfigProps) {
+  // const { canModifyTemplate, onCancelPhaseForm } = useTemplateBuilder(); // Removed context consumption
+  // const effectiveCanModify = canModifyTemplate; // Removed context consumption
+  const effectiveCanModify = canModify; // Use prop directly
 
   const form = useForm<z.infer<typeof recommendationPhaseConfigSchema>>({
     resolver: zodResolver(recommendationPhaseConfigSchema),
@@ -68,7 +76,7 @@ export function RecommendationPhaseConfig({ phase, parentId, onConfigSaved, onCa
         options: field.options ?? [],
       })) || [],
       reminderSchedule: phase.config?.reminderSchedule || "weekly",
-      automatedRequestSending: phase.config?.automatedRequestSending ?? false, // Default to false
+      automatedRequestSending: phase.config?.automatedRequestSending ?? false,
       requestEmailTemplateId: phase.config?.requestEmailTemplateId || null,
     },
     mode: "onChange",
@@ -105,10 +113,10 @@ export function RecommendationPhaseConfig({ phase, parentId, onConfigSaved, onCa
     { value: "Phone", label: "Phone Number" },
     { value: "Organization", label: "Organization Name" },
     { value: "Relationship", label: "Relationship to Applicant" },
-    { value: "Rich Text Area", label: "Rich Text Area" }, // New type
-    { value: "Date", label: "Date Picker" }, // New type
-    { value: "Checkbox", label: "Checkbox" }, // New type
-    { value: "Radio Group", label: "Radio Group" }, // New type
+    { value: "Rich Text Area", label: "Rich Text Area" },
+    { value: "Date", label: "Date Picker" },
+    { value: "Checkbox", label: "Checkbox" },
+    { value: "Radio Group", label: "Radio Group" },
   ];
 
   const reminderScheduleOptions = [
@@ -385,7 +393,7 @@ export function RecommendationPhaseConfig({ phase, parentId, onConfigSaved, onCa
             />
 
             <div className="flex justify-end space-x-2">
-              <Button type="button" variant="outline" onClick={onCancelPhaseForm} className="rounded-md text-label-large">
+              <Button type="button" variant="outline" onClick={onCancel} className="rounded-md text-label-large">
                 <X className="mr-2 h-4 w-4" /> Cancel
               </Button>
               {effectiveCanModify && (

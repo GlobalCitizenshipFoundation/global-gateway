@@ -18,48 +18,49 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Phase } from "@/types/supabase"; // Import from types/supabase
+import { Phase } from "@/types/supabase";
 import { createPhaseAction, updatePhaseAction } from "../actions";
-import { Save, X, CalendarDays, Archive } from "lucide-react"; // Import Save, X, CalendarDays icons, Archive icon
+import { Save, X, CalendarDays } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
-import { Switch } from "@/components/ui/switch"; // Import Switch
-import { useTemplateBuilder } from "../context/TemplateBuilderContext"; // Import context
+import { Switch } from "@/components/ui/switch";
+// import { useTemplateBuilder } from "../context/TemplateBuilderContext"; // Removed context import
 
 const phaseFormSchema = z.object({
   name: z.string().min(1, { message: "Phase name is required." }).max(100, { message: "Name cannot exceed 100 characters." }),
   type: z.string().min(1, { message: "Phase type is required." }),
   description: z.string().max(500, { message: "Description cannot exceed 500 characters." }).nullable().optional(),
-  phase_start_date: z.date().nullable().optional(), // New field
-  phase_end_date: z.date().nullable().optional(), // New field
-  applicant_instructions: z.string().max(5000, { message: "Applicant instructions cannot exceed 5000 characters." }).nullable().optional(), // New field
-  manager_instructions: z.string().max(5000, { message: "Manager instructions cannot exceed 5000 characters." }).nullable().optional(), // New field
-  is_visible_to_applicants: z.boolean().optional(), // New field
+  phase_start_date: z.date().nullable().optional(),
+  phase_end_date: z.date().nullable().optional(),
+  applicant_instructions: z.string().max(5000, { message: "Applicant instructions cannot exceed 5000 characters." }).nullable().optional(),
+  manager_instructions: z.string().max(5000, { message: "Manager instructions cannot exceed 5000 characters." }).nullable().optional(),
+  is_visible_to_applicants: z.boolean().optional(),
 });
 
 interface PhaseDetailsFormProps {
   pathwayTemplateId: string;
-  initialData?: Phase; // Optional for creation
+  initialData?: Phase;
   onPhaseSaved: () => void;
-  onCancel: () => void; // This prop will now be overridden by context
-  nextOrderIndex: number; // Only relevant for creation, but kept for consistency
-  canModify: boolean; // This prop will now be overridden by context
-  isNewPhaseForm?: boolean; // New prop to distinguish creation form
+  onCancel: () => void; // Now explicitly a prop
+  nextOrderIndex: number;
+  canModify: boolean; // Now explicitly a prop
+  isNewPhaseForm?: boolean;
 }
 
 export function PhaseDetailsForm({
   pathwayTemplateId,
   initialData,
   onPhaseSaved,
-  onCancel: propOnCancel, // Rename prop to avoid conflict with context
+  onCancel, // Use prop directly
   nextOrderIndex,
-  canModify: propCanModify, // Rename prop to avoid conflict with context
+  canModify, // Use prop directly
   isNewPhaseForm = false,
 }: PhaseDetailsFormProps) {
-  const { canModifyTemplate, onCancelPhaseForm } = useTemplateBuilder(); // Consume context
-  const effectiveCanModify = canModifyTemplate; // Use context value
+  // const { canModifyTemplate, onCancelPhaseForm } = useTemplateBuilder(); // Removed context consumption
+  // const effectiveCanModify = canModifyTemplate; // Removed context consumption
+  const effectiveCanModify = canModify; // Use prop directly
 
   const phaseTypes = [
     { value: "Form", label: "Form" },
@@ -75,7 +76,7 @@ export function PhaseDetailsForm({
     resolver: zodResolver(phaseFormSchema),
     defaultValues: {
       name: initialData?.name || "",
-      type: initialData?.type || phaseTypes[0].value, // Set default to first type if not provided
+      type: initialData?.type || phaseTypes[0].value,
       description: initialData?.description || "",
       phase_start_date: initialData?.phase_start_date ? new Date(initialData.phase_start_date) : null,
       phase_end_date: initialData?.phase_end_date ? new Date(initialData.phase_end_date) : null,
@@ -92,7 +93,7 @@ export function PhaseDetailsForm({
 
     form.reset({
       name: initialData?.name || "",
-      type: initialData?.type || phaseTypes[0].value, // Reset to first type if not provided
+      type: initialData?.type || phaseTypes[0].value,
       description: initialData?.description || "",
       phase_start_date: initialData?.phase_start_date ? new Date(initialData.phase_start_date) : null,
       phase_end_date: initialData?.phase_end_date ? new Date(initialData.phase_end_date) : null,
@@ -100,7 +101,7 @@ export function PhaseDetailsForm({
       manager_instructions: initialData?.manager_instructions || "",
       is_visible_to_applicants: initialData?.is_visible_to_applicants ?? true,
     });
-  }, [initialData, form, phaseTypes]); // Added phaseTypes to dependencies
+  }, [initialData, form, phaseTypes]);
 
   const onSubmit = async (values: z.infer<typeof phaseFormSchema>) => {
     console.log("[PhaseDetailsForm] onSubmit called with values:", values);
@@ -116,7 +117,6 @@ export function PhaseDetailsForm({
       formData.append("name", values.name);
       formData.append("type", values.type);
       formData.append("description", values.description || "");
-      // Pass null for optional date/text fields if they are empty
       formData.append("phase_start_date", values.phase_start_date ? values.phase_start_date.toISOString() : "");
       formData.append("phase_end_date", values.phase_end_date ? values.phase_end_date.toISOString() : "");
       formData.append("applicant_instructions", values.applicant_instructions || "");
@@ -359,7 +359,7 @@ export function PhaseDetailsForm({
               />
 
               <div className="flex justify-end space-x-2">
-                <Button type="button" variant="outline" onClick={onCancelPhaseForm} className="rounded-md text-label-large">
+                <Button type="button" variant="outline" onClick={onCancel} className="rounded-md text-label-large">
                   <X className="mr-2 h-4 w-4" /> Cancel
                 </Button>
                 <Button type="submit" className="rounded-md text-label-large" disabled={form.formState.isSubmitting || !effectiveCanModify}>

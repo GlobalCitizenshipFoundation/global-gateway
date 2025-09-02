@@ -4,13 +4,13 @@ import React, { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { History, RotateCcw, Eye, GitFork, Clock, Archive } from "lucide-react"; // Changed Rollback to RotateCcw, added Clock, Archive
+import { History, RotateCcw, Eye, GitFork, Clock, Archive } from "lucide-react";
 import { useSession } from "@/context/SessionContextProvider";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PathwayTemplateVersion } from "../services/template-versioning-service";
 import { getTemplateVersionsAction, rollbackTemplateToVersionAction } from "../actions";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { format, parseISO } from "date-fns"; // Added parseISO, format
+import { format, parseISO } from "date-fns";
 import {
   Dialog,
   DialogContent,
@@ -18,20 +18,21 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { ScrollArea } from "@/components/ui/scroll-area"; // Import ScrollArea
-import { useTemplateBuilder } from "../context/TemplateBuilderContext"; // Import context
+import { ScrollArea } from "@/components/ui/scroll-area";
+// import { useTemplateBuilder } from "../context/TemplateBuilderContext"; // Removed context import
 
 interface TemplateVersionHistoryProps {
   pathwayTemplateId: string;
-  canModify: boolean; // This prop will now be overridden by context
+  canModify: boolean; // Now explicitly a prop
   onTemplateRolledBack: () => void;
-  refreshTrigger: number; // New prop to trigger refresh
+  refreshTrigger: number;
 }
 
-export function TemplateVersionHistory({ pathwayTemplateId, canModify: propCanModify, onTemplateRolledBack, refreshTrigger }: TemplateVersionHistoryProps) {
+export function TemplateVersionHistory({ pathwayTemplateId, canModify, onTemplateRolledBack, refreshTrigger }: TemplateVersionHistoryProps) {
   const { user, isLoading: isSessionLoading } = useSession();
-  const { canModifyTemplate } = useTemplateBuilder(); // Consume context
-  const effectiveCanModify = canModifyTemplate; // Use context value
+  // const { canModifyTemplate } = useTemplateBuilder(); // Removed context consumption
+  // const effectiveCanModify = canModifyTemplate; // Removed context consumption
+  const effectiveCanModify = canModify; // Use prop directly
 
   const [versions, setVersions] = useState<PathwayTemplateVersion[]>([]);
   const [isLoadingVersions, setIsLoadingVersions] = useState(true);
@@ -56,15 +57,15 @@ export function TemplateVersionHistory({ pathwayTemplateId, canModify: propCanMo
     if (!isSessionLoading && user) {
       fetchVersions();
     }
-  }, [user, isSessionLoading, pathwayTemplateId, refreshTrigger]); // Added refreshTrigger to dependencies
+  }, [user, isSessionLoading, pathwayTemplateId, refreshTrigger]);
 
   const handleRollback = async (versionId: string, versionNumber: number) => {
     try {
       const rolledBackTemplate = await rollbackTemplateToVersionAction(pathwayTemplateId, versionId);
       if (rolledBackTemplate) {
         toast.success(`Template rolled back to version ${versionNumber} successfully!`);
-        onTemplateRolledBack(); // Notify parent to re-fetch template details
-        fetchVersions(); // Re-fetch versions to update history
+        onTemplateRolledBack();
+        fetchVersions();
       }
     } catch (error: any) {
       toast.error(error.message || "Failed to rollback template.");
@@ -164,7 +165,6 @@ export function TemplateVersionHistory({ pathwayTemplateId, canModify: propCanMo
         )}
       </CardContent>
 
-      {/* Snapshot View Dialog */}
       <Dialog open={isSnapshotDialogOpen} onOpenChange={setIsSnapshotDialogOpen}>
         <DialogContent className="sm:max-w-[900px] rounded-xl shadow-lg bg-card text-card-foreground border-border max-h-[90vh] overflow-y-auto">
           <DialogHeader>

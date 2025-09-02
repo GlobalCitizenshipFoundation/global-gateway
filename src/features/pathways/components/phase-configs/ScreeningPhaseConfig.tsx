@@ -19,15 +19,15 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { PlusCircle, Trash2, GripVertical, ListChecks, Save, X } from "lucide-react"; // Added Save and X icons
-import { BaseConfigurableItem } from "@/types/supabase"; // Corrected import path
+import { PlusCircle, Trash2, GripVertical, ListChecks, Save, X } from "lucide-react";
+import { BaseConfigurableItem } from "@/types/supabase";
 import { updatePhaseConfigAction as defaultUpdatePhaseConfigAction } from "../../actions";
 import { cn } from "@/lib/utils";
-import { useTemplateBuilder } from "../../context/TemplateBuilderContext"; // Import context
+// import { useTemplateBuilder } from "../../context/TemplateBuilderContext"; // Removed context import
 
 // Zod schema for a single screening criterion
 const screeningCriterionSchema = z.object({
-  id: z.string().uuid().optional(), // Optional for new criteria
+  id: z.string().uuid().optional(),
   criterion: z.string().min(1, "Screening criterion is required."),
   description: z.string().nullable().optional(),
   required: z.boolean(),
@@ -44,14 +44,22 @@ interface ScreeningPhaseConfigProps {
   phase: BaseConfigurableItem;
   parentId: string;
   onConfigSaved: () => void;
-  onCancel: () => void; // This prop will now be overridden by context
-  canModify: boolean; // This prop will now be overridden by context
+  onCancel: () => void; // Now explicitly a prop
+  canModify: boolean; // Now explicitly a prop
   updatePhaseConfigAction?: (phaseId: string, parentId: string, configUpdates: Record<string, any>) => Promise<BaseConfigurableItem | null>;
 }
 
-export function ScreeningPhaseConfig({ phase, parentId, onConfigSaved, onCancel: propOnCancel, canModify: propCanModify, updatePhaseConfigAction }: ScreeningPhaseConfigProps) {
-  const { canModifyTemplate, onCancelPhaseForm } = useTemplateBuilder(); // Consume context
-  const effectiveCanModify = canModifyTemplate; // Use context value
+export function ScreeningPhaseConfig({
+  phase,
+  parentId,
+  onConfigSaved,
+  onCancel, // Use prop directly
+  canModify, // Use prop directly
+  updatePhaseConfigAction,
+}: ScreeningPhaseConfigProps) {
+  // const { canModifyTemplate, onCancelPhaseForm } = useTemplateBuilder(); // Removed context consumption
+  // const effectiveCanModify = canModifyTemplate; // Removed context consumption
+  const effectiveCanModify = canModify; // Use prop directly
 
   const form = useForm<z.infer<typeof screeningPhaseConfigSchema>>({
     resolver: zodResolver(screeningPhaseConfigSchema),
@@ -246,7 +254,7 @@ export function ScreeningPhaseConfig({ phase, parentId, onConfigSaved, onCancel:
             )}
 
             <div className="flex justify-end space-x-2">
-              <Button type="button" variant="outline" onClick={onCancelPhaseForm} className="rounded-md text-label-large">
+              <Button type="button" variant="outline" onClick={onCancel} className="rounded-md text-label-large">
                 <X className="mr-2 h-4 w-4" /> Cancel
               </Button>
               {effectiveCanModify && (

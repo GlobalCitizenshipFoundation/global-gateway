@@ -3,8 +3,8 @@
 import React, { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Trash2, GripVertical, Settings, GitFork, FileText, Award, Mail, Calendar, MailCheck, Info, ExternalLink, ListChecks, ChevronDown, ChevronUp, CalendarDays, Archive } from "lucide-react"; // Added CalendarDays icon, Archive icon
-import { Phase } from "@/types/supabase"; // Import from types/supabase
+import { Trash2, GripVertical, Settings, GitFork, FileText, Award, Mail, Calendar, MailCheck, Info, ExternalLink, ListChecks, ChevronDown, ChevronUp, CalendarDays, Archive } from "lucide-react";
+import { Phase } from "@/types/supabase";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Draggable } from "@hello-pangea/dnd";
 import { cn } from "@/lib/utils";
@@ -14,21 +14,35 @@ import { PhaseConfigurationPanel } from "./PhaseConfigurationPanel";
 import { PhaseTaskManagementPanel } from "./PhaseTaskManagementPanel";
 import { BranchingConfigForm } from "./BranchingConfigForm";
 import { Separator } from "@/components/ui/separator";
-import { format } from "date-fns"; // Import format
-import { useTemplateBuilder } from "../context/TemplateBuilderContext"; // Import context
+import { format } from "date-fns";
+// import { useTemplateBuilder } from "../context/TemplateBuilderContext"; // Removed context import
 
 interface PhaseBuilderCardProps {
   phase: Phase;
   index: number;
   onDelete: (phaseId: string) => void;
-  isExpanded: boolean; // New prop to control expansion
-  onToggleExpand: (phaseId: string) => void; // New prop to toggle expansion
+  isExpanded: boolean;
+  onToggleExpand: (phaseId: string) => void;
+  canModify: boolean; // Now explicitly a prop
+  onCancel: () => void; // Now explicitly a prop
+  refreshTemplateData: () => void; // Now explicitly a prop
 }
 
-export function PhaseBuilderCard({ phase, index, onDelete, isExpanded, onToggleExpand }: PhaseBuilderCardProps) {
-  const { canModifyTemplate, refreshTemplateData, onCancelPhaseForm } = useTemplateBuilder(); // Consume context
+export function PhaseBuilderCard({
+  phase,
+  index,
+  onDelete,
+  isExpanded,
+  onToggleExpand,
+  canModify, // Use prop directly
+  onCancel, // Use prop directly
+  refreshTemplateData, // Use prop directly
+}: PhaseBuilderCardProps) {
+  // const { canModifyTemplate, refreshTemplateData, onCancelPhaseForm } = useTemplateBuilder(); // Removed context consumption
+  // const effectiveCanModify = canModifyTemplate; // Removed context consumption
+  const effectiveCanModify = canModify; // Use prop directly
+  const effectiveOnCancel = onCancel; // Use prop directly
 
-  // Determine icon based on phase type
   const getPhaseIcon = (type: string) => {
     switch (type) {
       case "Form": return <FileText className="h-5 w-5" />;
@@ -42,7 +56,6 @@ export function PhaseBuilderCard({ phase, index, onDelete, isExpanded, onToggleE
     }
   };
 
-  // Determine border color classes based on phase type
   const getPhaseBorderColorClass = (type: string) => {
     switch (type) {
       case "Form": return "border-phase-form";
@@ -56,7 +69,6 @@ export function PhaseBuilderCard({ phase, index, onDelete, isExpanded, onToggleE
     }
   };
 
-  // Determine icon color classes based on phase type
   const getPhaseIconColorClass = (type: string) => {
     switch (type) {
       case "Form": return "text-phase-form";
@@ -70,7 +82,6 @@ export function PhaseBuilderCard({ phase, index, onDelete, isExpanded, onToggleE
     }
   };
 
-  // Basic check for incomplete configuration
   const isConfigIncomplete = Object.keys(phase.config || {}).length === 0;
   const isConditional = phase.type === "Decision" || phase.type === "Review";
 
@@ -81,22 +92,21 @@ export function PhaseBuilderCard({ phase, index, onDelete, isExpanded, onToggleE
           ref={provided.innerRef}
           {...provided.draggableProps}
           className={cn(
-            "rounded-xl shadow-md transition-all duration-200 border-l-8 bg-card text-foreground", // Changed background to bg-card
-            getPhaseBorderColorClass(phase.type), // Only border color
+            "rounded-xl shadow-md transition-all duration-200 border-l-8 bg-card text-foreground",
+            getPhaseBorderColorClass(phase.type),
             snapshot.isDragging ? "shadow-lg ring-2 ring-primary-container" : "hover:shadow-lg",
             "flex flex-col"
           )}
         >
-          {/* Always visible header part */}
           <div className="flex items-center p-4">
             <div {...provided.dragHandleProps} className="cursor-grab p-2 -ml-2 mr-2 text-muted-foreground hover:text-foreground transition-colors">
               <GripVertical className="h-5 w-5" />
             </div>
-            <div 
-              className="flex-grow flex items-center cursor-pointer" 
-              onClick={() => onToggleExpand(phase.id)} // Toggle expand on header click
+            <div
+              className="flex-grow flex items-center cursor-pointer"
+              onClick={() => onToggleExpand(phase.id)}
             >
-              <div className={cn("flex-shrink-0 mr-4", getPhaseIconColorClass(phase.type))}> {/* Dynamic icon color */}
+              <div className={cn("flex-shrink-0 mr-4", getPhaseIconColorClass(phase.type))}>
                 {getPhaseIcon(phase.type)}
               </div>
               <CardHeader className="flex-grow p-0">
@@ -124,7 +134,7 @@ export function PhaseBuilderCard({ phase, index, onDelete, isExpanded, onToggleE
               </CardHeader>
             </div>
             <CardContent className="flex-shrink-0 flex items-center space-x-2 p-0 pl-4">
-              {canModifyTemplate && (
+              {effectiveCanModify && (
                 <>
                   <Button variant="outline" size="icon" className="rounded-md" onClick={(e) => { e.stopPropagation(); onToggleExpand(phase.id); }}>
                     {isExpanded ? <ChevronUp className="h-4 w-4" /> : <Settings className="h-4 w-4" />}
@@ -160,11 +170,10 @@ export function PhaseBuilderCard({ phase, index, onDelete, isExpanded, onToggleE
             </CardContent>
           </div>
 
-          {/* Collapsible content for configuration */}
           <div
             className={cn(
               "overflow-hidden transition-max-height duration-300 ease-in-out",
-              isExpanded ? "max-h-full-content p-4 pt-0" : "max-h-0 p-0" 
+              isExpanded ? "max-h-full-content p-4 pt-0" : "max-h-0 p-0"
             )}
           >
             {isExpanded && (
@@ -174,9 +183,9 @@ export function PhaseBuilderCard({ phase, index, onDelete, isExpanded, onToggleE
                   pathwayTemplateId={phase.pathway_template_id}
                   initialData={phase}
                   onPhaseSaved={refreshTemplateData}
-                  onCancel={onCancelPhaseForm} // Use context's onCancel
+                  onCancel={effectiveOnCancel}
                   nextOrderIndex={phase.order_index}
-                  canModify={canModifyTemplate}
+                  canModify={effectiveCanModify}
                 />
 
                 <Separator className="my-4" />
@@ -185,8 +194,8 @@ export function PhaseBuilderCard({ phase, index, onDelete, isExpanded, onToggleE
                   phase={phase}
                   parentId={phase.pathway_template_id}
                   onConfigSaved={refreshTemplateData}
-                  onCancel={onCancelPhaseForm} // Use context's onCancel
-                  canModify={canModifyTemplate}
+                  onCancel={effectiveOnCancel}
+                  canModify={effectiveCanModify}
                 />
 
                 <Separator className="my-4" />
@@ -194,7 +203,7 @@ export function PhaseBuilderCard({ phase, index, onDelete, isExpanded, onToggleE
                 <PhaseTaskManagementPanel
                   phaseId={phase.id}
                   pathwayTemplateId={phase.pathway_template_id}
-                  canModify={canModifyTemplate}
+                  canModify={effectiveCanModify}
                 />
 
                 {isConditional && (
@@ -204,17 +213,16 @@ export function PhaseBuilderCard({ phase, index, onDelete, isExpanded, onToggleE
                       pathwayTemplateId={phase.pathway_template_id}
                       phase={phase}
                       onConfigSaved={refreshTemplateData}
-                      onCancel={onCancelPhaseForm} // Use context's onCancel
-                      canModify={canModifyTemplate}
+                      onCancel={effectiveOnCancel}
+                      canModify={effectiveCanModify}
                     />
                   </>
                 )}
-                
-                {/* Collapse button at the end */}
+
                 <div className="flex justify-center mt-8">
-                  <Button 
-                    variant="outline" 
-                    className="rounded-full px-6 py-3 text-label-large" 
+                  <Button
+                    variant="outline"
+                    className="rounded-full px-6 py-3 text-label-large"
                     onClick={() => onToggleExpand(phase.id)}
                   >
                     <ChevronUp className="mr-2 h-5 w-5" /> Collapse Phase

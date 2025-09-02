@@ -39,8 +39,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Switch } from "@/components/ui/switch"; // Added missing Switch import
-import { useTemplateBuilder } from "../context/TemplateBuilderContext"; // Import context
+import { Switch } from "@/components/ui/switch";
+// import { useTemplateBuilder } from "../context/TemplateBuilderContext"; // Removed context import
 
 const taskFormSchema = z.object({
   name: z.string().min(1, "Task name is required.").max(100, "Name cannot exceed 100 characters."),
@@ -53,20 +53,21 @@ const taskFormSchema = z.object({
 
 interface PhaseTaskManagementPanelProps {
   phaseId: string;
-  pathwayTemplateId: string; // Needed for authorization in actions
-  canModify: boolean; // This prop will now be overridden by context
+  pathwayTemplateId: string;
+  canModify: boolean; // Now explicitly a prop
 }
 
-export function PhaseTaskManagementPanel({ phaseId, pathwayTemplateId, canModify: propCanModify }: PhaseTaskManagementPanelProps) {
+export function PhaseTaskManagementPanel({ phaseId, pathwayTemplateId, canModify }: PhaseTaskManagementPanelProps) {
   const { user, isLoading: isSessionLoading } = useSession();
-  const { canModifyTemplate } = useTemplateBuilder(); // Consume context
-  const effectiveCanModify = canModifyTemplate; // Use context value
+  // const { canModifyTemplate } = useTemplateBuilder(); // Removed context consumption
+  // const effectiveCanModify = canModifyTemplate; // Removed context consumption
+  const effectiveCanModify = canModify; // Use prop directly
 
   const [tasks, setTasks] = useState<PhaseTask[]>([]);
   const [isLoadingTasks, setIsLoadingTasks] = useState(true);
   const [isTaskFormOpen, setIsTaskFormOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<PhaseTask | undefined>(undefined);
-  const [isCollapsed, setIsCollapsed] = useState(false); // State for collapse
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
   const form = useForm<z.infer<typeof taskFormSchema>>({
     resolver: zodResolver(taskFormSchema),
@@ -124,18 +125,16 @@ export function PhaseTaskManagementPanel({ phaseId, pathwayTemplateId, canModify
   }, [isTaskFormOpen, editingTask, form]);
 
   const onSubmit = async (values: z.infer<typeof taskFormSchema>) => {
-    // Determine permissions for the current submission
     const isAssignedToCurrentUserForEditingTask = user?.id === editingTask?.assigned_to_user_id;
     const canUpdateStatusForEditingTask = effectiveCanModify || isAssignedToCurrentUserForEditingTask;
     const canEditDetailsForEditingTask = effectiveCanModify;
 
-    if (!editingTask && !effectiveCanModify) { // Trying to add a new task without permission
+    if (!editingTask && !effectiveCanModify) {
       toast.error("You do not have permission to add tasks.");
       return;
     }
 
     if (editingTask) {
-      // If editing an existing task, check if user has permission for the specific changes
       const hasDetailChanges = values.name !== editingTask.name ||
                                values.description !== editingTask.description ||
                                values.assigned_to_role !== editingTask.assigned_to_role ||
@@ -178,7 +177,7 @@ export function PhaseTaskManagementPanel({ phaseId, pathwayTemplateId, canModify
 
       if (result) {
         toast.success(`Task ${editingTask ? "updated" : "created"} successfully!`);
-        fetchTasks(); // Re-fetch to ensure consistency
+        fetchTasks();
         setIsTaskFormOpen(false);
         setEditingTask(undefined);
       }
@@ -193,7 +192,7 @@ export function PhaseTaskManagementPanel({ phaseId, pathwayTemplateId, canModify
       const success = await deletePhaseTaskAction(taskId, phaseId, pathwayTemplateId);
       if (success) {
         toast.success("Task deleted successfully!");
-        setTasks(prevTasks => prevTasks.filter(task => task.id !== taskId)); // Optimistic update
+        setTasks(prevTasks => prevTasks.filter(task => task.id !== taskId));
       }
     } catch (error: any) {
       toast.error(error.message || "Failed to delete task.");
@@ -202,7 +201,6 @@ export function PhaseTaskManagementPanel({ phaseId, pathwayTemplateId, canModify
 
   const handleToggleTaskStatus = async (task: PhaseTask) => {
     const newStatus = task.status === 'pending' ? 'completed' : 'pending';
-    // Optimistic update
     setTasks(prevTasks => prevTasks.map(t => t.id === task.id ? { ...t, status: newStatus } : t));
 
     try {
@@ -214,7 +212,6 @@ export function PhaseTaskManagementPanel({ phaseId, pathwayTemplateId, canModify
       }
     } catch (error: any) {
       toast.error(error.message || "Failed to update task status.");
-      // Revert optimistic update on error
       setTasks(prevTasks => prevTasks.map(t => t.id === task.id ? { ...t, status: task.status } : t));
     }
   };
@@ -234,15 +231,12 @@ export function PhaseTaskManagementPanel({ phaseId, pathwayTemplateId, canModify
     { value: "evaluator", label: "Evaluator" },
   ];
 
-  // Placeholder for fetching actual users for assignment.
-  // In a real app, this would be a more sophisticated user search/selection.
   const availableUsers = [
     { id: user?.id || "current_user_id", name: user?.user_metadata?.first_name || "Current User" },
     { id: "user_1", name: "Alice Smith" },
     { id: "user_2", name: "Bob Johnson" },
   ];
 
-  // Determine permissions for the dialog's current editing task
   const isAssignedToCurrentUserForEditingTask = user?.id === editingTask?.assigned_to_user_id;
   const canUpdateStatusForEditingTask = effectiveCanModify || isAssignedToCurrentUserForEditingTask;
   const canEditDetailsForEditingTask = effectiveCanModify;
@@ -260,7 +254,7 @@ export function PhaseTaskManagementPanel({ phaseId, pathwayTemplateId, canModify
         Define and manage sub-tasks for this phase.
       </p>
 
-      <div className={cn("overflow-hidden transition-max-height duration-300 ease-in-out", isCollapsed ? "max-h-0" : "max-h-[1000px]")}> {/* Dynamic max-h */}
+      <div className={cn("overflow-hidden transition-max-height duration-300 ease-in-out", isCollapsed ? "max-h-0" : "max-h-[1000px]")}>
         {isLoadingTasks ? (
           <div className="space-y-4">
             {[...Array(2)].map((_, i) => (
@@ -274,8 +268,8 @@ export function PhaseTaskManagementPanel({ phaseId, pathwayTemplateId, canModify
             ) : (
               tasks.map((task) => {
                 const isAssignedToCurrentUser = user?.id === task.assigned_to_user_id;
-                const canUpdateStatus = effectiveCanModify || isAssignedToCurrentUser; // Creator/Admin or assigned user can update status
-                const canEditDetails = effectiveCanModify; // Only creator/admin can edit details
+                const canUpdateStatus = effectiveCanModify || isAssignedToCurrentUser;
+                const canEditDetails = effectiveCanModify;
 
                 return (
                   <Card key={task.id} className="rounded-lg border p-4 space-y-2">
@@ -294,7 +288,7 @@ export function PhaseTaskManagementPanel({ phaseId, pathwayTemplateId, canModify
                       <div className="flex items-center space-x-2">
                         {canEditDetails && (
                           <Button variant="outline" size="icon" className="rounded-md" onClick={() => { setEditingTask(task); setIsTaskFormOpen(true); }}>
-                            <PlusCircle className="h-4 w-4" /> {/* Reusing PlusCircle for edit, could be Edit icon */}
+                            <PlusCircle className="h-4 w-4" />
                             <span className="sr-only">Edit Task</span>
                           </Button>
                         )}
@@ -377,7 +371,6 @@ export function PhaseTaskManagementPanel({ phaseId, pathwayTemplateId, canModify
           </Button>
         )}
 
-        {/* Task Form Dialog */}
         <Dialog open={isTaskFormOpen} onOpenChange={setIsTaskFormOpen}>
           <DialogContent className="sm:max-w-[425px] rounded-xl shadow-lg bg-card text-card-foreground border-border">
             <DialogHeader>
@@ -530,7 +523,7 @@ export function PhaseTaskManagementPanel({ phaseId, pathwayTemplateId, canModify
                       <FormControl>
                         <Switch
                           checked={field.value === 'completed'}
-                          onCheckedChange={(checked: boolean) => field.onChange(checked ? 'completed' : 'pending')} // Explicitly typed 'checked'
+                          onCheckedChange={(checked: boolean) => field.onChange(checked ? 'completed' : 'pending')}
                           className="data-[state=checked]:bg-primary data-[state=unchecked]:bg-muted-foreground"
                           disabled={!canUpdateStatusForEditingTask}
                         />

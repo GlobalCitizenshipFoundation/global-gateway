@@ -51,7 +51,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { getProfileByIdAction } from "@/features/user-profile/actions";
 import { TagInput } from "@/components/TagInput";
-import { TemplateBuilderContextProvider, useTemplateBuilder } from "../context/TemplateBuilderContext"; // Import context
+import { TemplateBuilderContextProvider } from "../context/TemplateBuilderContext"; // Import context provider
 
 // Zod schema for the entire template builder page (template details + phases)
 const templateBuilderSchema = z.object({
@@ -93,7 +93,7 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
   const [isActivityLogOpen, setIsActivityLogOpen] = useState(false);
   const [creatorProfile, setCreatorProfile] = useState<Profile | null>(null);
   const [lastUpdaterProfile, setLastUpdaterProfile] = useState<Profile | null>(null);
-  const [refreshTrigger, setRefreshTrigger] = useState(0); // Used to force re-render of children that depend on it
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   const templateForm = useForm<z.infer<typeof templateBuilderSchema>>({
     resolver: zodResolver(templateBuilderSchema),
@@ -124,19 +124,17 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
     resolver: zodResolver(inlinePhaseCreationSchema),
     defaultValues: {
       name: "",
-      type: phaseTypes[0].value, // Initialize with the first phase type as default
+      type: phaseTypes[0].value,
     },
     mode: "onChange",
   });
 
-  // Effect to reset and validate inlinePhaseForm when it becomes visible
   useEffect(() => {
     if (isAddingNewPhase) {
       inlinePhaseForm.reset({
         name: "",
-        type: phaseTypes[0].value, // Reset to the first phase type as default
+        type: phaseTypes[0].value,
       });
-      // Removed inlinePhaseForm.trigger() from here to avoid potential race conditions
     }
   }, [isAddingNewPhase, inlinePhaseForm, phaseTypes]);
 
@@ -155,7 +153,6 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
         return;
       }
       setTemplate(fetchedTemplate);
-      // Only reset form if it's not dirty, to prevent overwriting user input
       if (!templateForm.formState.isDirty) {
         templateForm.reset({
           name: fetchedTemplate.name,
@@ -165,11 +162,10 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
           participation_deadline: fetchedTemplate.participation_deadline ? new Date(fetchedTemplate.participation_deadline) : null,
           general_instructions: fetchedTemplate.general_instructions || "",
           is_visible_to_applicants: fetchedTemplate.is_visible_to_applicants ?? true,
-          tags: fetchedTemplate.tags || [], // Default to empty array
+          tags: fetchedTemplate.tags || [],
         });
       }
 
-      // Fetch creator and last updater profiles
       const [creatorProfileData, lastUpdaterProfileData] = await Promise.all([
         fetchedTemplate.creator_id ? getProfileByIdAction(fetchedTemplate.creator_id) : Promise.resolve(null),
         fetchedTemplate.last_updated_by ? getProfileByIdAction(fetchedTemplate.last_updated_by) : Promise.resolve(null),
@@ -181,7 +177,7 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
       if (fetchedPhases) {
         setPhases(fetchedPhases);
       }
-      setRefreshTrigger(prev => prev + 1); // Increment trigger to refresh children
+      setRefreshTrigger(prev => prev + 1);
     } catch (error: any) {
       toast.error(error.message || "Failed to load pathway template details.");
       router.push("/pathways");
@@ -199,12 +195,11 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
     }
   }, [user, isSessionLoading, fetchTemplateAndPhases]);
 
-  // Unsaved changes warning logic
   useEffect(() => {
     const handleBeforeUnload = (event: BeforeUnloadEvent) => {
       if (templateForm.formState.isDirty) {
         event.preventDefault();
-        event.returnValue = ''; // Required for Chrome
+        event.returnValue = '';
       }
     };
 
@@ -227,7 +222,7 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
   const handleDiscardChanges = () => {
     setShowUnsavedChangesWarning(false);
     if (nextPath) {
-      templateForm.reset(); // Reset form to clear dirty state
+      templateForm.reset();
       router.push(nextPath);
     }
   };
@@ -238,15 +233,14 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
   };
 
   const handleTemplateDetailsSave = async (values: z.infer<typeof templateBuilderSchema>) => {
-    // Ensure template is not null for existing templates
     if (templateId && !template) {
       toast.error("Template data is not loaded. Cannot save.");
       return;
     }
 
-    const currentUser = user!; // Safe due to earlier redirect
+    const currentUser = user!;
     const isAdmin = (currentUser.user_metadata?.role || '') === 'admin';
-    const canModify = template ? (template.creator_id === currentUser.id || isAdmin) : true; // For new templates, assume can modify.
+    const canModify = template ? (template.creator_id === currentUser.id || isAdmin) : true;
 
     if (!canModify) {
       toast.error("You do not have permission to modify this template.");
@@ -261,8 +255,7 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
       formData.append("participation_deadline", values.participation_deadline ? values.participation_deadline.toISOString() : "");
       formData.append("general_instructions", values.general_instructions || "");
       formData.append("is_visible_to_applicants", values.is_visible_to_applicants ? "on" : "off");
-      formData.append("tags", JSON.stringify(values.tags || [])); // Send tags as a JSON string
-
+      formData.append("tags", JSON.stringify(values.tags || []));
 
       let result: PathwayTemplate | null;
       if (templateId) {
@@ -271,23 +264,23 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
         result = await createPathwayTemplateAction(formData);
       }
 
-      console.log("[pathways/components/PathwayTemplateBuilderPage.tsx] handleTemplateDetailsSave - createPathwayTemplateAction Result:", result); // LOG ADDED
+      console.log("[pathways/components/PathwayTemplateBuilderPage.tsx] handleTemplateDetailsSave - createPathwayTemplateAction Result:", result);
 
       if (result) {
         toast.success(`Template ${templateId ? "updated" : "created"} successfully!`);
-        setTemplate(result); // Update local template state with the new/updated data
+        setTemplate(result);
         templateForm.reset({
           ...values,
-          tags: values.tags || [], // Ensure tags are reset correctly as an array
-        }); // Reset form to clear dirty state
+          tags: values.tags || [],
+        });
         if (!templateId) {
           router.push(`/pathways/${result.id}`);
         } else {
-          fetchTemplateAndPhases(); // Re-fetch to update profiles and activity log
+          fetchTemplateAndPhases();
         }
       }
     } catch (error: any) {
-      console.error("[pathways/components/PathwayTemplateBuilderPage.tsx] handleTemplateDetailsSave - Error during template save:", error); // LOG ADDED
+      console.error("[pathways/components/PathwayTemplateBuilderPage.tsx] handleTemplateDetailsSave - Error during template save:", error);
       toast.error(error.message || "Failed to save template details.");
     }
   };
@@ -297,21 +290,19 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
       setPhases(prevPhases => {
         const existingIndex = prevPhases.findIndex(p => p.id === updatedPhase.id);
         if (existingIndex > -1) {
-          // Update existing phase
           return prevPhases.map(p => p.id === updatedPhase.id ? updatedPhase : p);
         } else {
-          // Add new phase (for creation)
           return [...prevPhases, updatedPhase].sort((a, b) => a.order_index - b.order_index);
         }
       });
     }
-    fetchTemplateAndPhases(); // Full re-fetch for now to ensure all related data (tasks, etc.) is consistent
+    fetchTemplateAndPhases();
     setIsAddingNewPhase(false);
   };
 
   const onCancelPhaseForm = () => {
     setIsAddingNewPhase(false);
-    setExpandedPhaseIds(new Set()); // Collapse all phase forms on cancel
+    setExpandedPhaseIds(new Set());
   };
 
   const handleDeletePhase = async (phaseId: string) => {
@@ -323,8 +314,8 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
       const success = await deletePhaseActionService(phaseId, templateId);
       if (success) {
         toast.success("Phase deleted successfully!");
-        setPhases(prevPhases => prevPhases.filter(p => p.id !== phaseId)); // Optimistic update
-        fetchTemplateAndPhases(); // Re-fetch to ensure order_index is correct and activity log is updated
+        setPhases(prevPhases => prevPhases.filter(p => p.id !== phaseId));
+        fetchTemplateAndPhases();
         setExpandedPhaseIds((prev: Set<string>) => {
           const newSet = new Set(prev);
           newSet.delete(phaseId);
@@ -350,7 +341,7 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
       order_index: index,
     }));
 
-    setPhases(updatedPhases); // Optimistic update
+    setPhases(updatedPhases);
 
     try {
       const success = await reorderPhasesAction(
@@ -428,7 +419,7 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
       }
       return newSet;
     });
-    setIsAddingNewPhase(false); // Hide inline creator if expanding/collapsing a phase
+    setIsAddingNewPhase(false);
   };
 
   const isAllPhasesExpanded = phases.length > 0 && expandedPhaseIds.size === phases.length;
@@ -459,7 +450,7 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
 
     if (!inlinePhaseForm.formState.isValid) {
       console.error("[PathwayTemplateBuilderPage] Form is invalid, preventing API call. Forcing trigger to show errors.");
-      inlinePhaseForm.trigger(); // Force validation to display messages
+      inlinePhaseForm.trigger();
       console.log("[PathwayTemplateBuilderPage] Errors after trigger:", inlinePhaseForm.formState.errors);
       toast.error("Please correct the errors in the new phase form.");
       return;
@@ -484,7 +475,7 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
       const result = await createPhaseAction(templateId, formData);
       if (result) {
         toast.success(`Phase "${result.name}" created successfully!`);
-        handlePhaseUpdated(result); // Pass the new phase to update local state
+        handlePhaseUpdated(result);
         inlinePhaseForm.reset();
       }
     } catch (error: any) {
@@ -565,7 +556,6 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
 
         <Form {...templateForm}>
           <form onSubmit={templateForm.handleSubmit(handleTemplateDetailsSave)} className="space-y-8">
-            {/* Template Basics Card - Always render for new or existing templates */}
             <Card className="rounded-xl shadow-lg p-6">
               <CardHeader className="p-0 mb-4">
                 <CardTitle className="text-headline-large font-bold text-foreground flex items-center gap-2">
@@ -686,7 +676,6 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
               </CardContent>
             </Card>
 
-            {/* Essential Information Card - Always render for new or existing templates */}
             <Card className="rounded-xl shadow-lg p-6">
               <CardHeader className="p-0 mb-4">
                 <CardTitle className="text-headline-large font-bold text-foreground">
@@ -806,7 +795,6 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
               </CardContent>
             </Card>
 
-            {/* Action Buttons for Template Details */}
             <CardFooter className="flex flex-wrap justify-end items-center gap-2 mt-8 pt-6 border-t border-border">
               {canModifyTemplate && (
                 <Button type="submit" variant="tonal" className="rounded-full px-6 py-3 text-label-large" disabled={templateForm.formState.isSubmitting}>
@@ -815,12 +803,10 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
               )}
               {!isNewTemplate && canModifyTemplate && (
                 <>
-                  {/* Publish Template */}
                   <Button variant="default" className="rounded-full px-6 py-3 text-label-large" onClick={handlePublishTemplate} disabled={currentTemplate.status === 'published'}>
                     <CheckCircle className="mr-2 h-5 w-5" /> {currentTemplate.status === 'published' ? "Published" : "Publish Template"}
                   </Button>
 
-                  {/* More Actions Dropdown */}
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button variant="outline" size="icon" className="rounded-full">
@@ -832,12 +818,10 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
                       <DropdownMenuLabel className="text-body-medium">More Actions</DropdownMenuLabel>
                       <DropdownMenuSeparator className="bg-border" />
 
-                      {/* Clone Template */}
                       <DropdownMenuItem onSelect={() => handleClone(currentTemplate)} className="text-body-medium hover:bg-muted hover:text-muted-foreground cursor-pointer">
                         <Copy className="mr-2 h-4 w-4" /> Clone Template
                       </DropdownMenuItem>
 
-                      {/* Archive / Unarchive Template */}
                       {currentTemplate.status === 'archived' ? (
                         <DropdownMenuItem onSelect={() => handleUpdateStatus('draft')} className="text-body-medium hover:bg-muted hover:text-muted-foreground cursor-pointer">
                           <RotateCcw className="mr-2 h-4 w-4" /> Unarchive
@@ -850,7 +834,6 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
 
                       <DropdownMenuSeparator className="bg-border" />
 
-                      {/* Delete Template */}
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
                           <DropdownMenuItem onSelect={(e: Event) => e.preventDefault()} className="text-body-medium text-destructive hover:bg-destructive-container hover:text-destructive cursor-pointer">
@@ -883,7 +866,6 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
           </form>
         </Form>
 
-        {/* Only show phases section if template exists (i.e., not a brand new template being created) */}
         {!isNewTemplate && template && (
           <>
             <div className="flex justify-between items-center mt-8">
@@ -973,133 +955,129 @@ export function PathwayTemplateBuilderPage({ templateId, initialTemplate, initia
                 {canModifyTemplate && (
                   <Button onClick={() => setIsAddingNewPhase(true)} className="mt-6 rounded-full px-6 py-3 text-label-large">
                     <PlusCircle className="mr-2 h-5 w-5" /> Add First Phase
-                  </Link>
-                </Button>
-              )}
-            </Card>
-          ) : (
-            <DragDropContext onDragEnd={handleReorderPhases}>
-              <Droppable droppableId="pathway-phases">
-                {(provided) => (
-                  <div {...provided.droppableProps} ref={provided.innerRef} className="space-y-4">
-                    {phases.map((phase: Phase, index: number) => (
-                      <PhaseBuilderCard
-                        key={phase.id}
-                        phase={phase}
-                        index={index}
-                        onDelete={handleDeletePhase}
-                        onPhaseUpdated={() => handlePhaseUpdated()} // Use the granular update handler
-                        canModify={canModifyTemplate}
-                        isExpanded={expandedPhaseIds.has(phase.id)}
-                        onToggleExpand={handleToggleExpandPhase}
-                      />
-                    ))}
-                    {provided.placeholder}
-                  </div>
+                  </Button>
                 )}
-              </Droppable>
-            </DragDropContext>
-          )}
+              </Card>
+            ) : (
+              <DragDropContext onDragEnd={handleReorderPhases}>
+                <Droppable droppableId="pathway-phases">
+                  {(provided) => (
+                    <div {...provided.droppableProps} ref={provided.innerRef} className="space-y-4">
+                      {phases.map((phase: Phase, index: number) => (
+                        <PhaseBuilderCard
+                          key={phase.id}
+                          phase={phase}
+                          index={index}
+                          onDelete={handleDeletePhase}
+                          canModify={canModifyTemplate}
+                          isExpanded={expandedPhaseIds.has(phase.id)}
+                          onToggleExpand={handleToggleExpandPhase}
+                          onCancel={onCancelPhaseForm}
+                          refreshTemplateData={fetchTemplateAndPhases}
+                        />
+                      ))}
+                      {provided.placeholder}
+                    </div>
+                  )}
+                </Droppable>
+              </DragDropContext>
+            )}
 
-          <CardFooter className="flex flex-col md:flex-row md:justify-between md:items-center text-body-small text-muted-foreground border-t border-border pt-6 mt-8">
-            <div className="flex flex-col items-start mb-4 md:mb-0">
-              <p>
-                Created by{" "}
-                <span className="font-medium">
-                  {getProfileDisplayName(creatorProfile)}
-                </span>{" "}
-                on {format(new Date(currentTemplate.created_at), "MMM dd, yyyy 'at' HH:mm:ss (zzz)")}
-              </p>
-              <p>
-                Last updated by{" "}
-                <span className="font-medium">
-                  {getProfileDisplayName(lastUpdaterProfile)}
-                </span>{" "}
-                on {format(new Date(currentTemplate.updated_at), "MMM dd, yyyy 'at' HH:mm:ss (zzz)")}
-              </p>
-            </div>
-            <div className="flex flex-wrap justify-end items-center gap-2">
-              {/* Version History Trigger */}
-              <Button variant="outline" className="rounded-full px-6 py-3 text-label-large" onClick={() => setIsVersionHistoryOpen(true)}>
-                <History className="mr-2 h-5 w-5" /> Version History
-              </Button>
-              {/* Activity Log Trigger */}
-              <Button variant="outline" className="rounded-full px-6 py-3 text-label-large" onClick={() => setIsActivityLogOpen(true)}>
-                <Activity className="mr-2 h-5 w-5" /> Activity Log
-              </Button>
-            </div>
-          </CardFooter>
-        </>
-      )}
+            <CardFooter className="flex flex-col md:flex-row md:justify-between md:items-center text-body-small text-muted-foreground border-t border-border pt-6 mt-8">
+              <div className="flex flex-col items-start mb-4 md:mb-0">
+                <p>
+                  Created by{" "}
+                  <span className="font-medium">
+                    {getProfileDisplayName(creatorProfile)}
+                  </span>{" "}
+                  on {format(new Date(currentTemplate.created_at), "MMM dd, yyyy 'at' HH:mm:ss (zzz)")}
+                </p>
+                <p>
+                  Last updated by{" "}
+                  <span className="font-medium">
+                    {getProfileDisplayName(lastUpdaterProfile)}
+                  </span>{" "}
+                  on {format(new Date(currentTemplate.updated_at), "MMM dd, yyyy 'at' HH:mm:ss (zzz)")}
+                </p>
+              </div>
+              <div className="flex flex-wrap justify-end items-center gap-2">
+                <Button variant="outline" className="rounded-full px-6 py-3 text-label-large" onClick={() => setIsVersionHistoryOpen(true)}>
+                  <History className="mr-2 h-5 w-5" /> Version History
+                </Button>
+                <Button variant="outline" className="rounded-full px-6 py-3 text-label-large" onClick={() => setIsActivityLogOpen(true)}>
+                  <Activity className="mr-2 h-5 w-5" /> Activity Log
+                </Button>
+              </div>
+            </CardFooter>
+          </>
+        )}
 
-      {/* Unsaved Changes Warning Dialog */}
-      <AlertDialog open={showUnsavedChangesWarning} onOpenChange={setShowUnsavedChangesWarning}>
-        <AlertDialogContent className="rounded-xl shadow-lg bg-card text-card-foreground border-border">
-          <AlertDialogHeader>
-            <AlertDialogTitle className="text-headline-small">Unsaved Changes</AlertDialogTitle>
-            <AlertDialogDescription className="text-body-medium text-muted-foreground">
-              You have unsaved changes. Do you want to discard them and leave this page?
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={handleStayOnPage} className="rounded-md text-label-large">Stay on Page</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDiscardChanges}
-              className="rounded-md text-label-large bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              Discard Changes
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+        <AlertDialog open={showUnsavedChangesWarning} onOpenChange={setShowUnsavedChangesWarning}>
+          <AlertDialogContent className="rounded-xl shadow-lg bg-card text-card-foreground border-border">
+            <AlertDialogHeader>
+              <AlertDialogTitle className="text-headline-small">Unsaved Changes</AlertDialogTitle>
+              <AlertDialogDescription className="text-body-medium text-muted-foreground">
+                You have unsaved changes. Do you want to discard them and leave this page?
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={handleStayOnPage} className="rounded-md text-label-large">Stay on Page</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleDiscardChanges}
+                className="rounded-md text-label-large bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                Discard Changes
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
 
-      {/* Clone Template Dialog */}
-      {templateToClone && (
-        <CloneTemplateDialog
-          isOpen={isCloneDialogOpen}
-          onClose={() => { setIsCloneDialogOpen(false); setTemplateToClone(null); fetchTemplateAndPhases(); }}
-          templateId={templateToClone.id}
-          originalTemplateName={templateToClone.name}
-        />
-      )}
+        {templateToClone && (
+          <CloneTemplateDialog
+            isOpen={isCloneDialogOpen}
+            onClose={() => { setIsCloneDialogOpen(false); setTemplateToClone(null); fetchTemplateAndPhases(); }}
+            templateId={templateToClone.id}
+            originalTemplateName={templateToClone.name}
+          />
+        )}
 
-      {/* Version History Dialog */}
-      {templateId && (
-        <Dialog open={isVersionHistoryOpen} onOpenChange={setIsVersionHistoryOpen}>
-          <DialogContent className="sm:max-w-[900px] rounded-xl shadow-lg bg-card text-card-foreground border-border max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle className="text-headline-small">Template Version History</DialogTitle>
-              <DialogDescription className="text-body-medium text-muted-foreground">
-                View and manage past versions of this pathway template.
-              </DialogDescription>
-            </DialogHeader>
-            <TemplateVersionHistory
-              pathwayTemplateId={templateId}
-              canModify={canModifyTemplate}
-              onTemplateRolledBack={fetchTemplateAndPhases}
-              refreshTrigger={refreshTrigger}
-            />
-          </DialogContent>
-        </Dialog>
-      )}
+        {templateId && (
+          <Dialog open={isVersionHistoryOpen} onOpenChange={setIsVersionHistoryOpen}>
+            <DialogContent className="sm:max-w-[900px] rounded-xl shadow-lg bg-card text-card-foreground border-border max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle className="text-headline-small">Template Version History</DialogTitle>
+                <DialogDescription className="text-body-medium text-muted-foreground">
+                  View and manage past versions of this pathway template.
+                </DialogDescription>
+              </DialogHeader>
+              <TemplateVersionHistory
+                pathwayTemplateId={templateId}
+                canModify={canModifyTemplate}
+                onTemplateRolledBack={fetchTemplateAndPhases}
+                refreshTrigger={refreshTrigger}
+              />
+            </DialogContent>
+          </Dialog>
+        )}
 
-      {/* Activity Log Dialog */}
-      {templateId && (
-        <Dialog open={isActivityLogOpen} onOpenChange={setIsActivityLogOpen}>
-          <DialogContent className="sm:max-w-[900px] rounded-xl shadow-lg bg-card text-card-foreground border-border max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle className="text-headline-small">Template Activity Log</DialogTitle>
-              <DialogDescription className="text-body-medium text-muted-foreground">
-                A chronological record of all changes and events for this template.
-              </DialogDescription>
-            </DialogHeader>
-            <TemplateActivityLog
-              templateId={templateId}
-              refreshTrigger={refreshTrigger}
-            />
-          </DialogContent>
-        </Dialog>
-      )}
+        {templateId && (
+          <Dialog open={isActivityLogOpen} onOpenChange={setIsActivityLogOpen}>
+            <DialogContent className="sm:max-w-[900px] rounded-xl shadow-lg bg-card text-card-foreground border-border max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle className="text-headline-small">Template Activity Log</DialogTitle>
+                <DialogDescription className="text-body-medium text-muted-foreground">
+                  A chronological record of all changes and events for this template.
+                </DialogDescription>
+              </DialogHeader>
+              <TemplateActivityLog
+                templateId={templateId}
+                refreshTrigger={refreshTrigger}
+                canModify={canModifyTemplate}
+              />
+            </DialogContent>
+          </Dialog>
+        )}
+      </div>
     </TemplateBuilderContextProvider>
   );
 }

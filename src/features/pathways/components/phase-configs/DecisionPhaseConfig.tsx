@@ -18,11 +18,11 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { PlusCircle, Trash2, GripVertical, GitFork, Save, X } from "lucide-react"; // Added Save and X icons
-import { BaseConfigurableItem } from "@/types/supabase"; // Corrected import path
+import { PlusCircle, Trash2, GripVertical, GitFork, Save, X } from "lucide-react";
+import { BaseConfigurableItem } from "@/types/supabase";
 import { updatePhaseConfigAction as defaultUpdatePhaseConfigAction } from "../../actions";
 import { Checkbox } from "@/components/ui/checkbox";
-import { useTemplateBuilder } from "../../context/TemplateBuilderContext"; // Import context
+// import { useTemplateBuilder } from "../../context/TemplateBuilderContext"; // Removed context import
 
 // Zod schema for a single decision outcome
 const decisionOutcomeSchema = z.object({
@@ -42,7 +42,7 @@ const decisionRuleSchema = z.object({
 // Zod schema for the Decision Phase configuration
 const decisionPhaseConfigSchema = z.object({
   decisionOutcomes: z.array(decisionOutcomeSchema).min(1, "At least one decision outcome is required."),
-  decisionRules: z.array(decisionRuleSchema).optional(), // New field for decision rules
+  decisionRules: z.array(decisionRuleSchema).optional(),
   associatedEmailTemplate: z.string().nullable().optional(),
   automatedNextStep: z.string().nullable().optional(),
 });
@@ -51,20 +51,28 @@ interface DecisionPhaseConfigProps {
   phase: BaseConfigurableItem;
   parentId: string;
   onConfigSaved: () => void;
-  onCancel: () => void; // This prop will now be overridden by context
-  canModify: boolean; // This prop will now be overridden by context
+  onCancel: () => void; // Now explicitly a prop
+  canModify: boolean; // Now explicitly a prop
   updatePhaseConfigAction?: (phaseId: string, parentId: string, configUpdates: Record<string, any>) => Promise<BaseConfigurableItem | null>;
 }
 
-export function DecisionPhaseConfig({ phase, parentId, onConfigSaved, onCancel: propOnCancel, canModify: propCanModify, updatePhaseConfigAction }: DecisionPhaseConfigProps) {
-  const { canModifyTemplate, onCancelPhaseForm } = useTemplateBuilder(); // Consume context
-  const effectiveCanModify = canModifyTemplate; // Use context value
+export function DecisionPhaseConfig({
+  phase,
+  parentId,
+  onConfigSaved,
+  onCancel, // Use prop directly
+  canModify, // Use prop directly
+  updatePhaseConfigAction,
+}: DecisionPhaseConfigProps) {
+  // const { canModifyTemplate, onCancelPhaseForm } = useTemplateBuilder(); // Removed context consumption
+  // const effectiveCanModify = canModifyTemplate; // Removed context consumption
+  const effectiveCanModify = canModify; // Use prop directly
 
   const form = useForm<z.infer<typeof decisionPhaseConfigSchema>>({
     resolver: zodResolver(decisionPhaseConfigSchema),
     defaultValues: {
       decisionOutcomes: (phase.config?.decisionOutcomes as z.infer<typeof decisionOutcomeSchema>[]) || [],
-      decisionRules: (phase.config?.decisionRules as z.infer<typeof decisionRuleSchema>[]) || [], // Default for new field
+      decisionRules: (phase.config?.decisionRules as z.infer<typeof decisionRuleSchema>[]) || [],
       associatedEmailTemplate: phase.config?.associatedEmailTemplate || "",
       automatedNextStep: phase.config?.automatedNextStep || "",
     },
@@ -91,7 +99,7 @@ export function DecisionPhaseConfig({ phase, parentId, onConfigSaved, onCancel: 
     try {
       const updatedConfig = { ...phase.config, ...values };
       const action = updatePhaseConfigAction || defaultUpdatePhaseConfigAction;
-      const result = await action(phase.id, parentId, updatedConfig); // Use parentId here
+      const result = await action(phase.id, parentId, updatedConfig);
       if (result) {
         toast.success("Decision phase configuration updated successfully!");
         onConfigSaved();
@@ -113,8 +121,8 @@ export function DecisionPhaseConfig({ phase, parentId, onConfigSaved, onCancel: 
     { value: "move_to_onboarding", label: "Move to Onboarding" },
     { value: "archive_application", label: "Archive Application" },
     { value: "send_follow_up", label: "Send Follow-up Email" },
-    { value: "initiate_sub_workflow", label: "Initiate Sub-Workflow" }, // New advanced action
-    { value: "update_crm", label: "Update External CRM" }, // New advanced action
+    { value: "initiate_sub_workflow", label: "Initiate Sub-Workflow" },
+    { value: "update_crm", label: "Update External CRM" },
   ];
 
   return (
@@ -368,7 +376,7 @@ export function DecisionPhaseConfig({ phase, parentId, onConfigSaved, onCancel: 
             />
 
             <div className="flex justify-end space-x-2">
-              <Button type="button" variant="outline" onClick={onCancelPhaseForm} className="rounded-md text-label-large">
+              <Button type="button" variant="outline" onClick={onCancel} className="rounded-md text-label-large">
                 <X className="mr-2 h-4 w-4" /> Cancel
               </Button>
               {effectiveCanModify && (

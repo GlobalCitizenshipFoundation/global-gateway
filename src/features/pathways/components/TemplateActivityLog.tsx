@@ -10,17 +10,19 @@ import { TemplateActivityLog as TemplateActivityLogType } from "../services/temp
 import { format, parseISO } from "date-fns";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { useTemplateBuilder } from "../context/TemplateBuilderContext"; // Import context
+// import { useTemplateBuilder } from "../context/TemplateBuilderContext"; // Removed context import
 
 interface TemplateActivityLogProps {
   templateId: string;
-  refreshTrigger: number; // New prop to trigger refresh
+  refreshTrigger: number;
+  canModify: boolean; // Now explicitly a prop
 }
 
-export function TemplateActivityLog({ templateId, refreshTrigger }: TemplateActivityLogProps) {
+export function TemplateActivityLog({ templateId, refreshTrigger, canModify }: TemplateActivityLogProps) {
   const { user, isLoading: isSessionLoading } = useSession();
-  const { canModifyTemplate } = useTemplateBuilder(); // Consume context
-  const effectiveCanModify = canModifyTemplate; // Use context value
+  // const { canModifyTemplate } = useTemplateBuilder(); // Removed context consumption
+  // const effectiveCanModify = canModifyTemplate; // Removed context consumption
+  const effectiveCanModify = canModify; // Use prop directly
 
   const [activityLogs, setActivityLogs] = useState<TemplateActivityLogType[]>([]);
   const [isLoadingLogs, setIsLoadingLogs] = useState(true);
@@ -34,7 +36,6 @@ export function TemplateActivityLog({ templateId, refreshTrigger }: TemplateActi
       }
     } catch (error: any) {
       console.error("Error fetching activity logs:", error.message);
-      // toast.error(error.message || "Failed to load activity logs."); // Removed toast to avoid spamming
     } finally {
       setIsLoadingLogs(false);
     }
@@ -44,7 +45,7 @@ export function TemplateActivityLog({ templateId, refreshTrigger }: TemplateActi
     if (!isSessionLoading && user) {
       fetchActivityLogs();
     }
-  }, [user, isSessionLoading, templateId, refreshTrigger]); // Added refreshTrigger to dependencies
+  }, [user, isSessionLoading, templateId, refreshTrigger]);
 
   const getUserInitials = (firstName: string | null | undefined, lastName: string | null | undefined) => {
     const firstInitial = firstName ? firstName.charAt(0) : '';
