@@ -8,43 +8,116 @@ async function getSupabase() {
   return await createClient();
 }
 
-// Define the common select string for pathway templates to include joined profiles
-// Corrected syntax for nested joins to profiles via auth.users
-const pathwayTemplateSelect = `
+// Define a base select string for pathway templates to include basic user info (id, email)
+// We will fetch full profile details in a separate step.
+const pathwayTemplateBaseSelect = `
   *,
-  creator_profile:creator_id(auth.users(profiles(first_name, last_name, avatar_url))),
-  last_updater_profile:last_updated_by(auth.users(profiles(first_name, last_name, avatar_url)))
+  creator_user:creator_id(id, email),
+  last_updater_user:last_updated_by(id, email)
 `;
 
 export async function getPathwayTemplates(): Promise<PathwayTemplate[] | null> {
   const supabase = await getSupabase();
   const { data, error } = await supabase
     .from("pathway_templates")
-    .select(pathwayTemplateSelect) // Use the common select string
+    .select(pathwayTemplateBaseSelect) // Use the base select string
     .order("created_at", { ascending: false });
 
   if (error) {
-    console.error("[pathway-template-service] getPathwayTemplates - Error fetching templates:", error.message); // LOG ADDED
+    console.error("[pathway-template-service] getPathwayTemplates - Error fetching templates:", error.message);
     return null;
   }
-  console.log("[pathway-template-service] getPathwayTemplates - Fetched data:", data); // LOG ADDED
-  return data as unknown as PathwayTemplate[]; // Explicitly cast to unknown then PathwayTemplate[]
+
+  if (!data || data.length === 0) {
+    return [];
+  }
+
+  // Extract unique user IDs from creator_id and last_updated_by
+  const userIds = new Set<string>();
+  data.forEach((template: any) => {
+    if (template.creator_user?.id) userIds.add(template.creator_user.id);
+    if (template.last_updater_user?.id) userIds.add(template.last_updater_user.id);
+  });
+
+  let profilesMap = new Map<string, Profile>();
+  if (userIds.size > 0) {
+    const { data: profilesData, error: profilesError } = await supabase
+      .from("profiles")
+      .select("id, first_name, last_name, avatar_url")
+      .in("id", Array.from(userIds));
+
+    if (profilesError) {
+      console.error("[pathway-template-service] getPathwayTemplates - Error fetching profiles:", profilesError.message);
+      // Continue without profiles if there's an error
+    } else if (profilesData) {
+      profilesData.forEach(p => profilesMap.set(p.id, p as Profile));
+    }
+  }
+
+  // Manually merge profile data
+  const enrichedData = data.map((template: any) => {
+    const creatorProfile = template.creator_user?.id ? profilesMap.get(template.creator_user.id) : null;
+    const lastUpdaterProfile = template.last_updater_user?.id ? profilesMap.get(template.last_updater_user.id) : null;
+
+    return {
+      ...template,
+      creator_profile: creatorProfile ? { ...creatorProfile, email: template.creator_user.email } : null,
+      last_updater_profile: lastUpdaterProfile ? { ...lastUpdaterProfile, email: template.last_updater_user.email } : null,
+    } as PathwayTemplate;
+  });
+
+  console.log("[pathway-template-service] getPathwayTemplates - Fetched and enriched data:", enrichedData);
+  return enrichedData;
 }
 
 export async function getPathwayTemplateById(id: string): Promise<PathwayTemplate | null> {
   const supabase = await getSupabase();
   const { data, error } = await supabase
     .from("pathway_templates")
-    .select(pathwayTemplateSelect) // Use the common select string
+    .select(pathwayTemplateBaseSelect) // Use the base select string
     .eq("id", id)
     .single();
 
   if (error) {
-    console.error(`[pathway-template-service] getPathwayTemplateById(${id}) - Error fetching template:`, error.message); // LOG ADDED
+    console.error(`[pathway-template-service] getPathwayTemplateById(${id}) - Error fetching template:`, error.message);
     return null;
   }
-  console.log(`[pathway-template-service] getPathwayTemplateById(${id}) - Fetched data:`, data); // LOG ADDED
-  return data as unknown as PathwayTemplate; // Explicitly cast to unknown then PathwayTemplate
+
+  if (!data) {
+    return null;
+  }
+
+  // Extract user IDs
+  const userIds = new Set<string>();
+  if (data.creator_user?.id) userIds.add(data.creator_user.id);
+  if (data.last_updater_user?.id) userIds.add(data.last_updater_user.id);
+
+  let profilesMap = new Map<string, Profile>();
+  if (userIds.size > 0) {
+    const { data: profilesData, error: profilesError } = await supabase
+      .from("profiles")
+      .select("id, first_name, last_name, avatar_url")
+      .in("id", Array.from(userIds));
+
+    if (profilesError) {
+      console.error(`[pathway-template-service] getPathwayTemplateById(${id}) - Error fetching profiles:`, profilesError.message);
+    } else if (profilesData) {
+      profilesData.forEach(p => profilesMap.set(p.id, p as Profile));
+    }
+  }
+
+  // Manually merge profile data
+  const creatorProfile = data.creator_user?.id ? profilesMap.get(data.creator_user.id) : null;
+  const lastUpdaterProfile = data.last_updater_user?.id ? profilesMap.get(data.last_updater_user.id) : null;
+
+  const enrichedData = {
+    ...data,
+    creator_profile: creatorProfile ? { ...creatorProfile, email: data.creator_user.email } : null,
+    last_updater_profile: lastUpdaterProfile ? { ...lastUpdaterProfile, email: data.last_updater_user.email } : null,
+  } as PathwayTemplate;
+
+  console.log(`[pathway-template-service] getPathwayTemplateById(${id}) - Fetched and enriched data:`, enrichedData);
+  return enrichedData;
 }
 
 export async function createPathwayTemplate(
@@ -61,7 +134,7 @@ export async function createPathwayTemplate(
   tags: string[] | null // Added tags parameter
 ): Promise<PathwayTemplate | null> {
   const supabase = await getSupabase();
-  console.log("[pathway-template-service] createPathwayTemplate - Attempting insert with:", { name, description, is_private, creator_id, status, last_updated_by, application_open_date, participation_deadline, general_instructions, is_visible_to_applicants, tags }); // LOG ADDED
+  console.log("[pathway-template-service] createPathwayTemplate - Attempting insert with:", { name, description, is_private, creator_id, status, last_updated_by, application_open_date, participation_deadline, general_instructions, is_visible_to_applicants, tags });
   
   const { data, error } = await supabase
     .from("pathway_templates")
@@ -78,15 +151,45 @@ export async function createPathwayTemplate(
       is_visible_to_applicants,
       tags, // Include tags in the insert statement
     }])
-    .select(pathwayTemplateSelect) // Use the common select string for return
+    .select(pathwayTemplateBaseSelect) // Use the base select string for return
     .single();
 
   if (error) {
-    console.error("[pathway-template-service] createPathwayTemplate - Error inserting template:", error.message); // LOG ADDED
+    console.error("[pathway-template-service] createPathwayTemplate - Error inserting template:", error.message);
     throw error; // Throw the error so the calling action can catch it
   }
-  console.log("[pathway-template-service] createPathwayTemplate - Insert successful, data:", data); // LOG ADDED
-  return data as unknown as PathwayTemplate; // Explicitly cast to unknown then PathwayTemplate
+
+  // Manually enrich the newly created template with profile data
+  const newTemplateData = data as any;
+  const userIds = new Set<string>();
+  if (newTemplateData.creator_user?.id) userIds.add(newTemplateData.creator_user.id);
+  if (newTemplateData.last_updater_user?.id) userIds.add(newTemplateData.last_updater_user.id);
+
+  let profilesMap = new Map<string, Profile>();
+  if (userIds.size > 0) {
+    const { data: profilesData, error: profilesError } = await supabase
+      .from("profiles")
+      .select("id, first_name, last_name, avatar_url")
+      .in("id", Array.from(userIds));
+
+    if (profilesError) {
+      console.error("[pathway-template-service] createPathwayTemplate - Error fetching profiles for new template:", profilesError.message);
+    } else if (profilesData) {
+      profilesData.forEach(p => profilesMap.set(p.id, p as Profile));
+    }
+  }
+
+  const creatorProfile = newTemplateData.creator_user?.id ? profilesMap.get(newTemplateData.creator_user.id) : null;
+  const lastUpdaterProfile = newTemplateData.last_updater_user?.id ? profilesMap.get(newTemplateData.last_updater_user.id) : null;
+
+  const enrichedNewTemplate = {
+    ...newTemplateData,
+    creator_profile: creatorProfile ? { ...creatorProfile, email: newTemplateData.creator_user.email } : null,
+    last_updater_profile: lastUpdaterProfile ? { ...lastUpdaterProfile, email: newTemplateData.last_updater_user.email } : null,
+  } as PathwayTemplate;
+
+  console.log("[pathway-template-service] createPathwayTemplate - Insert successful, enriched data:", enrichedNewTemplate);
+  return enrichedNewTemplate;
 }
 
 export async function updatePathwayTemplate(
@@ -99,15 +202,45 @@ export async function updatePathwayTemplate(
     .from("pathway_templates")
     .update({ ...updates, updated_at: new Date().toISOString(), last_updated_by: updaterId })
     .eq("id", id)
-    .select(pathwayTemplateSelect) // Use the common select string for return
+    .select(pathwayTemplateBaseSelect) // Use the base select string for return
     .single();
 
   if (error) {
-    console.error(`[pathway-template-service] updatePathwayTemplate(${id}) - Error updating template:`, error.message); // LOG ADDED
+    console.error(`[pathway-template-service] updatePathwayTemplate(${id}) - Error updating template:`, error.message);
     return null;
   }
-  console.log(`[pathway-template-service] updatePathwayTemplate(${id}) - Update successful, data:`, data); // LOG ADDED
-  return data as unknown as PathwayTemplate; // Explicitly cast to unknown then PathwayTemplate
+
+  // Manually enrich the updated template with profile data
+  const updatedTemplateData = data as any;
+  const userIds = new Set<string>();
+  if (updatedTemplateData.creator_user?.id) userIds.add(updatedTemplateData.creator_user.id);
+  if (updatedTemplateData.last_updater_user?.id) userIds.add(updatedTemplateData.last_updater_user.id);
+
+  let profilesMap = new Map<string, Profile>();
+  if (userIds.size > 0) {
+    const { data: profilesData, error: profilesError } = await supabase
+      .from("profiles")
+      .select("id, first_name, last_name, avatar_url")
+      .in("id", Array.from(userIds));
+
+    if (profilesError) {
+      console.error("[pathway-template-service] updatePathwayTemplate - Error fetching profiles for updated template:", profilesError.message);
+    } else if (profilesData) {
+      profilesData.forEach(p => profilesMap.set(p.id, p as Profile));
+    }
+  }
+
+  const creatorProfile = updatedTemplateData.creator_user?.id ? profilesMap.get(updatedTemplateData.creator_user.id) : null;
+  const lastUpdaterProfile = updatedTemplateData.last_updater_user?.id ? profilesMap.get(updatedTemplateData.last_updater_user.id) : null;
+
+  const enrichedUpdatedTemplate = {
+    ...updatedTemplateData,
+    creator_profile: creatorProfile ? { ...creatorProfile, email: updatedTemplateData.creator_user.email } : null,
+    last_updater_profile: lastUpdaterProfile ? { ...lastUpdaterProfile, email: updatedTemplateData.last_updater_user.email } : null,
+  } as PathwayTemplate;
+
+  console.log(`[pathway-template-service] updatePathwayTemplate(${id}) - Update successful, enriched data:`, enrichedUpdatedTemplate);
+  return enrichedUpdatedTemplate;
 }
 
 export async function deletePathwayTemplate(id: string): Promise<boolean> {
@@ -118,10 +251,10 @@ export async function deletePathwayTemplate(id: string): Promise<boolean> {
     .eq("id", id);
 
   if (error) {
-    console.error(`[pathway-template-service] deletePathwayTemplate(${id}) - Error deleting template:`, error.message); // LOG ADDED
+    console.error(`[pathway-template-service] deletePathwayTemplate(${id}) - Error deleting template:`, error.message);
     return false;
   }
-  console.log(`[pathway-template-service] deletePathwayTemplate(${id}) - Delete successful.`); // LOG ADDED
+  console.log(`[pathway-template-service] deletePathwayTemplate(${id}) - Delete successful.`);
   return true;
 }
 
@@ -139,10 +272,10 @@ export async function getPhasesByPathwayTemplateId(
     console.error(
       `[pathway-template-service] getPhasesByPathwayTemplateId(${pathwayTemplateId}) - Error fetching phases:`,
       error.message
-    ); // LOG ADDED
+    );
     return null;
   }
-  console.log(`[pathway-template-service] getPhasesByPathwayTemplateId(${pathwayTemplateId}) - Fetched data:`, data); // LOG ADDED
+  console.log(`[pathway-template-service] getPhasesByPathwayTemplateId(${pathwayTemplateId}) - Fetched data:`, data);
   return data;
 }
 
@@ -183,10 +316,10 @@ export async function createPhase(
     .single();
 
   if (error) {
-    console.error("[pathway-template-service] createPhase - Error creating phase:", error.message); // LOG ADDED
+    console.error("[pathway-template-service] createPhase - Error creating phase:", error.message);
     return null;
   }
-  console.log("[pathway-template-service] createPhase - Insert successful, data:", data); // LOG ADDED
+  console.log("[pathway-template-service] createPhase - Insert successful, data:", data);
   return data;
 }
 
@@ -204,10 +337,10 @@ export async function updatePhase(
     .single();
 
   if (error) {
-    console.error(`[pathway-template-service] updatePhase(${id}) - Error updating phase:`, error.message); // LOG ADDED
+    console.error(`[pathway-template-service] updatePhase(${id}) - Error updating phase:`, error.message);
     return null;
   }
-  console.log(`[pathway-template-service] updatePhase(${id}) - Update successful, data:`, data); // LOG ADDED
+  console.log(`[pathway-template-service] updatePhase(${id}) - Update successful, data:`, data);
   return data;
 }
 
@@ -225,7 +358,7 @@ export async function updatePhaseBranchingConfig(
     .single();
 
   if (fetchError || !currentPhase) {
-    console.error(`[pathway-template-service] updatePhaseBranchingConfig(${id}) - Error fetching phase for config update:`, fetchError?.message); // LOG ADDED
+    console.error(`[pathway-template-service] updatePhaseBranchingConfig(${id}) - Error fetching phase for config update:`, fetchError?.message);
     return null;
   }
 
@@ -239,10 +372,10 @@ export async function updatePhaseBranchingConfig(
     .single();
 
   if (error) {
-    console.error(`[pathway-template-service] updatePhaseBranchingConfig(${id}) - Error updating phase branching config:`, error.message); // LOG ADDED
+    console.error(`[pathway-template-service] updatePhaseBranchingConfig(${id}) - Error updating phase branching config:`, error.message);
     return null;
   }
-  console.log(`[pathway-template-service] updatePhaseBranchingConfig(${id}) - Update successful, data:`, data); // LOG ADDED
+  console.log(`[pathway-template-service] updatePhaseBranchingConfig(${id}) - Update successful, data:`, data);
   return data;
 }
 
@@ -251,10 +384,10 @@ export async function deletePhase(id: string): Promise<boolean> {
   const { error } = await supabase.from("phases").delete().eq("id", id);
 
   if (error) {
-    console.error(`[pathway-template-service] deletePhase(${id}) - Error deleting phase:`, error.message); // LOG ADDED
+    console.error(`[pathway-template-service] deletePhase(${id}) - Error deleting phase:`, error.message);
     return false;
   }
-  console.log(`[pathway-template-service] deletePhase(${id}) - Delete successful.`); // LOG ADDED
+  console.log(`[pathway-template-service] deletePhase(${id}) - Delete successful.`);
   return true;
 }
 
@@ -272,7 +405,7 @@ export async function clonePathwayTemplate(
     .single();
 
   if (templateError || !originalTemplate) {
-    console.error("[pathway-template-service] clonePathwayTemplate - Error fetching original template for cloning:", templateError?.message); // LOG ADDED
+    console.error("[pathway-template-service] clonePathwayTemplate - Error fetching original template for cloning:", templateError?.message);
     return null;
   }
 
@@ -283,7 +416,7 @@ export async function clonePathwayTemplate(
     .order("order_index", { ascending: true });
 
   if (phasesError) {
-    console.error("[pathway-template-service] clonePathwayTemplate - Error fetching original phases for cloning:", phasesError.message); // LOG ADDED
+    console.error("[pathway-template-service] clonePathwayTemplate - Error fetching original phases for cloning:", phasesError.message);
     return null;
   }
 
@@ -305,20 +438,48 @@ export async function clonePathwayTemplate(
         tags: originalTemplate.tags, // Include tags from original template
       },
     ])
-    .select(pathwayTemplateSelect) // Use the common select string for return
+    .select(pathwayTemplateBaseSelect) // Use the base select string for return
     .single();
 
   if (newTemplateError || !newTemplateData) {
-    console.error("[pathway-template-service] clonePathwayTemplate - Error creating new template during cloning:", newTemplateError?.message); // LOG ADDED
+    console.error("[pathway-template-service] clonePathwayTemplate - Error creating new template during cloning:", newTemplateError?.message);
     return null;
   }
-  const newTemplate = newTemplateData as unknown as PathwayTemplate; // Explicitly cast to unknown then PathwayTemplate
+  const newTemplate = newTemplateData as any; // Cast to any for intermediate processing
 
-  console.log("[pathway-template-service] clonePathwayTemplate - New template created during cloning:", newTemplate); // LOG ADDED
+  // Manually enrich the newly created template with profile data
+  const userIds = new Set<string>();
+  if (newTemplate.creator_user?.id) userIds.add(newTemplate.creator_user.id);
+  if (newTemplate.last_updater_user?.id) userIds.add(newTemplate.last_updater_user.id);
+
+  let profilesMap = new Map<string, Profile>();
+  if (userIds.size > 0) {
+    const { data: profilesData, error: profilesError } = await supabase
+      .from("profiles")
+      .select("id, first_name, last_name, avatar_url")
+      .in("id", Array.from(userIds));
+
+    if (profilesError) {
+      console.error("[pathway-template-service] clonePathwayTemplate - Error fetching profiles for new template:", profilesError.message);
+    } else if (profilesData) {
+      profilesData.forEach(p => profilesMap.set(p.id, p as Profile));
+    }
+  }
+
+  const creatorProfile = newTemplate.creator_user?.id ? profilesMap.get(newTemplate.creator_user.id) : null;
+  const lastUpdaterProfile = newTemplate.last_updater_user?.id ? profilesMap.get(newTemplate.last_updater_user.id) : null;
+
+  const enrichedNewTemplate = {
+    ...newTemplate,
+    creator_profile: creatorProfile ? { ...creatorProfile, email: newTemplate.creator_user.email } : null,
+    last_updater_profile: lastUpdaterProfile ? { ...lastUpdaterProfile, email: newTemplate.last_updater_user.email } : null,
+  } as PathwayTemplate;
+
+  console.log("[pathway-template-service] clonePathwayTemplate - New template created during cloning:", enrichedNewTemplate);
 
   // Create new phases for the cloned template
   const newPhasesData = originalPhases.map((phase) => ({
-    pathway_template_id: newTemplate.id, // Access id from the explicitly cast newTemplate
+    pathway_template_id: enrichedNewTemplate.id, // Use the ID from the enriched new template
     name: phase.name,
     type: phase.type,
     description: phase.description,
@@ -338,12 +499,12 @@ export async function clonePathwayTemplate(
       .insert(newPhasesData);
 
     if (newPhasesError) {
-      console.error("[pathway-template-service] clonePathwayTemplate - Error creating new phases during cloning:", newPhasesError.message); // LOG ADDED
+      console.error("[pathway-template-service] clonePathwayTemplate - Error creating new phases during cloning:", newPhasesError.message);
       // Optionally, delete the newly created template if phase creation fails
-      await supabase.from("pathway_templates").delete().eq("id", newTemplate.id); // Access id from the explicitly cast newTemplate
+      await supabase.from("pathway_templates").delete().eq("id", enrichedNewTemplate.id);
       return null;
     }
-    console.log("[pathway-template-service] clonePathwayTemplate - New phases created during cloning:", newPhasesData); // LOG ADDED
+    console.log("[pathway-template-service] clonePathwayTemplate - New phases created during cloning:", newPhasesData);
   }
-  return newTemplate; // Explicitly cast to PathwayTemplate
+  return enrichedNewTemplate;
 }
