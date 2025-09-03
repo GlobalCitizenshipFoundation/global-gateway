@@ -9,11 +9,11 @@ async function getSupabase() {
 }
 
 // Define the common select string for pathway templates to include joined profiles
-// Corrected syntax for nested joins to profiles via auth.users
+// Corrected syntax for direct joins to profiles via foreign key columns
 const pathwayTemplateSelect = `
   *,
-  creator_profile:auth.users!pathway_templates_creator_id_fkey(profiles(first_name, last_name, avatar_url)),
-  last_updater_profile:auth.users!pathway_templates_last_updated_by_fkey(profiles(first_name, last_name, avatar_url))
+  creator_profile:profiles!pathway_templates_creator_id_fkey(first_name, last_name, avatar_url),
+  last_updater_profile:profiles!pathway_templates_last_updated_by_fkey(first_name, last_name, avatar_url)
 `;
 
 export async function getPathwayTemplates(): Promise<PathwayTemplate[] | null> {
@@ -82,9 +82,7 @@ export async function createPathwayTemplate(
     .single();
 
   if (error) {
-    // --- START DYAD ADDITION ---
-    console.error("[pathway-template-service] createPathwayTemplate - Supabase insert error:", error); // Log the full error object
-    // --- END DYAD ADDITION ---
+    console.error("[pathway-template-service] createPathwayTemplate - Error inserting template:", error.message); // LOG ADDED
     throw error; // Throw the error so the calling action can catch it
   }
   console.log("[pathway-template-service] createPathwayTemplate - Insert successful, data:", data); // LOG ADDED
