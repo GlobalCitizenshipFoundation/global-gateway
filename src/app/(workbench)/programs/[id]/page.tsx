@@ -4,14 +4,12 @@ import { ProgramDetail } from "@/features/programs/components/ProgramDetail";
 import { getProgramByIdAction } from "@/features/programs/actions";
 
 interface ProgramDetailPageProps {
-  params: Promise<{ id: string }>;
-  searchParams?: Promise<Record<string, string | string[] | undefined>>; // Adjusted type for Next.js type checker
+  params: { id: string };
+  searchParams?: { [key: string]: string | string[] | undefined };
 }
 
-export default async function ProgramDetailPage(props: ProgramDetailPageProps) {
-  const { params } = props;
-  const resolvedParams = await params;
-  const { id } = resolvedParams;
+export default async function ProgramDetailPage({ params }: ProgramDetailPageProps) {
+  const { id } = params;
   const program = await getProgramByIdAction(id);
 
   if (!program) {

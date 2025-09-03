@@ -4,14 +4,12 @@ import { PackageDetail } from "@/features/packages/components/PackageDetail";
 import { getPackageByIdAction } from "@/features/packages/actions";
 
 interface PackageDetailPageProps {
-  params: Promise<{ id: string }>;
-  searchParams?: Promise<Record<string, string | string[] | undefined>>; // Adjusted type for Next.js type checker
+  params: { id: string };
+  searchParams?: { [key: string]: string | string[] | undefined };
 }
 
-export default async function PackageDetailPage(props: PackageDetailPageProps) {
-  const { params } = props;
-  const resolvedParams = await params;
-  const { id } = resolvedParams;
+export default async function PackageDetailPage({ params }: PackageDetailPageProps) {
+  const { id } = params;
   const pkg = await getPackageByIdAction(id);
 
   if (!pkg) {

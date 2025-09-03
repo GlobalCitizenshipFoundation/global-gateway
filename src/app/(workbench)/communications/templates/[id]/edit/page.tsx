@@ -4,13 +4,11 @@ import { getCommunicationTemplateByIdAction } from "@/features/communications/ac
 import React from "react";
 
 interface EditCommunicationTemplatePageProps {
-  params: Promise<{ id: string }>; // Adjusted type for Next.js type checker
+  params: { id: string };
 }
 
-export default async function EditCommunicationTemplatePage(props: EditCommunicationTemplatePageProps) {
-  const { params } = props;
-  const resolvedParams = await params; // Await params to resolve proxy
-  const { id } = resolvedParams;
+export default async function EditCommunicationTemplatePage({ params }: EditCommunicationTemplatePageProps) {
+  const { id } = params;
   const template = await getCommunicationTemplateByIdAction(id);
 
   if (!template) {
