@@ -9,11 +9,11 @@ async function getSupabase() {
 }
 
 // Define the common select string for pathway templates to include joined profiles
-// Corrected syntax for direct joins to profiles via foreign key columns
+// Corrected syntax for nested joins to profiles via auth.users
 const pathwayTemplateSelect = `
   *,
-  creator_profile:profiles!pathway_templates_creator_id_fkey(first_name, last_name, avatar_url),
-  last_updater_profile:profiles!pathway_templates_last_updated_by_fkey(first_name, last_name, avatar_url)
+  creator_profile:creator_id(auth.users(profiles(first_name, last_name, avatar_url))),
+  last_updater_profile:last_updated_by(auth.users(profiles(first_name, last_name, avatar_url)))
 `;
 
 export async function getPathwayTemplates(): Promise<PathwayTemplate[] | null> {
