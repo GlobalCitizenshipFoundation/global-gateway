@@ -12,8 +12,8 @@ async function getSupabase() {
 // Corrected syntax for nested joins to profiles via auth.users
 const pathwayTemplateSelect = `
   *,
-  creator_profile:creator_id(auth.users(profiles(first_name, last_name, avatar_url))),
-  last_updater_profile:last_updated_by(auth.users(profiles(first_name, last_name, avatar_url)))
+  creator_profile:creator_id(auth.users(profiles!id(first_name, last_name, avatar_url))),
+  last_updater_profile:last_updated_by(auth.users(profiles!id(first_name, last_name, avatar_url)))
 `;
 
 export async function getPathwayTemplates(): Promise<PathwayTemplate[] | null> {
